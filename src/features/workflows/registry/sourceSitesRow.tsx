@@ -97,12 +97,20 @@ function statusBadge(status: 'ok' | 'empty' | 'error' | 'waiting' | 'directed' |
   return { cls: TONE_BADGE[meta.tone], icon: meta.icon, label: t(meta.labelKey), detail, title }
 }
 
-function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?: string): JSX.Element {
-  const color = tone === 'ok' ? 'text-emerald-300' : tone === 'warn' ? 'text-amber-300' : 'text-white/40'
+/**
+ * Un chiffre de la rangée de stats.
+ *
+ * `strong` distingue les trois mesures COMMERCIALES (appariés, écart médian, produits où
+ * il est moins cher) des compteurs de collecte. Sans cette hiérarchie, neuf chiffres du
+ * même gris se valaient à l'œil, et la seule question qui compte — « où suis-je face à
+ * lui ? » — se cherchait au milieu de mesures d'intendance.
+ */
+function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?: string, strong?: boolean): JSX.Element {
+  const color = tone === 'ok' ? 'text-emerald-300' : tone === 'warn' ? 'text-amber-300' : 'text-white/55'
   return (
-    <span className="inline-flex items-baseline gap-1 whitespace-nowrap" title={title}>
-      <span className="text-white/25">{label}</span>
-      <span className={`tabular-nums ${color}`}>{value}</span>
+    <span className={`inline-flex items-baseline gap-1 whitespace-nowrap ${strong ? 'text-[11px]' : ''}`} title={title}>
+      <span className={strong ? 'text-white/45' : 'text-white/35'}>{label}</span>
+      <span className={`tabular-nums ${strong ? 'font-semibold' : ''} ${color}`}>{value}</span>
     </span>
   )
 }
@@ -287,7 +295,7 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
               compte des produits DISTINCTS, donc additionner les sites le dépasse
               forcément (un produit vendu par 5 concurrents pèse 5 ici, 1 là-bas). */}
           {stats.matched != null && chip('appariés', stats.matched.toLocaleString('fr-FR'), stats.matched > 0 ? 'ok' : 'mute',
-            'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.')}
+            'Vos produits retrouvés CHEZ CE CONCURRENT. N’additionnez pas les sites : un produit vendu par plusieurs concurrents est compté une fois par site, mais une seule fois dans le total du tableau de bord.', true)}
           {(() => {
             // Médiane d'abord ; moyenne en repli pour les rapports antérieurs.
             const gap = stats.medGapPct ?? stats.avgGapPct
@@ -296,13 +304,16 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
             return chip('son écart', pct(gap), gap < -1 ? 'warn' : 'ok',
               isMedian
                 ? 'Écart MÉDIAN de SES prix face aux vôtres, sur les produits appariés. Négatif = il vend moins cher que vous. La médiane et non la moyenne : quelques appariements aberrants (lot de 10 face à votre unité) suffisent à faire dériver une moyenne à +300 %.'
-                : 'Écart MOYEN de SES prix face aux vôtres (rapport antérieur à la médiane) — relancez « Comparer catalogue » pour obtenir la médiane, plus fiable.')
+                : 'Écart MOYEN de SES prix face aux vôtres (rapport antérieur à la médiane) — relancez « Comparer catalogue » pour obtenir la médiane, plus fiable.',
+              true)
           })()}
           {stats.cheaper != null && stats.matched != null && stats.matched > 0 && chip(
             'moins cher sur', `${stats.cheaper.toLocaleString('fr-FR')}/${stats.matched.toLocaleString('fr-FR')}`,
             stats.cheaper > 0 ? 'warn' : 'ok',
-            'Nombre de vos produits sur lesquels CE concurrent est moins cher que vous.')}
-          {/* Ensuite seulement, la collecte. */}
+            'Nombre de vos produits sur lesquels CE concurrent est moins cher que vous.', true)}
+          {/* Ensuite seulement, la collecte — séparée à l'œil, pour qu'on ne cherche plus
+              les trois chiffres commerciaux au milieu des mesures d'intendance. */}
+          <span className="text-white/15" aria-hidden>|</span>
           {chip('fiches', (stats.products ?? 0).toLocaleString('fr-FR'), (stats.products ?? 0) > 0 ? 'ok' : 'mute',
             'Fiches distinctes relevées sur CE site (doublons de pagination exclus). Ce n’est pas votre catalogue : c’est le sien.')}
           {stats.pctPrice != null && chip('prix', `${stats.pctPrice}%`, stats.pctPrice >= 80 ? 'ok' : 'warn',
