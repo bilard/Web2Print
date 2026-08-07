@@ -178,7 +178,8 @@ function utf8Bytes(s: string): number {
   return Buffer.byteLength(s, 'utf8')
 }
 
-interface StoredReport {
+/** Forme du rapport persisté. Exporté : le rendu HTML du mail le relit tel quel. */
+export interface StoredReport {
   runAt: number
   kpis: ReportKpis
   byCompetitor: CompetitorStat[]

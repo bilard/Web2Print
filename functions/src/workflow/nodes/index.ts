@@ -10,6 +10,7 @@ import './google'
 import './webScraping'
 import './webhookPost'
 import './costReport'   // jumeau serveur cost-report (headless, lit Firestore)
+import './priceWatchReport' // jumeau serveur price-watch-report (mail du matin, cron)
 import './analyticsReport' // jumeau serveur analytics-report (headless, owner-only)
 import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton serveur)
 import './higgsfield'   // jumeau serveur higgsfield (génération image/vidéo via SDK)
