@@ -1699,7 +1699,7 @@ export const en: Record<TranslationKey, string> = {
   'node.compare-catalog.descriptionColumn.label': 'Description column',
   'node.compare-catalog.descriptionColumn.help': 'Used to extract the original refs ("Replaces origin: …") for aftermarket parts.',
   'node.compare-catalog.familyColumn.label': 'Family column (table column)',
-  'node.compare-catalog.familyColumn.help': 'Carried as-is into the exported table. It feeds neither the tree on the "Competitors" screen (see "Taxonomy columns") nor the scraping targeting (see the "Harvest competitors" node).',
+  'node.compare-catalog.familyColumn.help': 'Carried into the exported table AND into the report: it feeds the "Family" filter and the per-family statistics of the Price monitoring dashboard. Clearing it strips them of their analysis axis. It does not, however, draw the tree on the "Competitors" screen (see "Taxonomy columns") nor target the scraping (see the "Harvest competitors" node).',
   'node.harvest-competitor.familyColumn.label': 'Family column (scraping targeting)',
   'node.compare-catalog.taxoColumns.label': 'Taxonomy columns (broadest to finest)',
   'node.compare-catalog.urlColumn.label': 'URL column (source page)',

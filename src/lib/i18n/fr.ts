@@ -1777,7 +1777,7 @@ export const fr = {
   'node.compare-catalog.descriptionColumn.label': 'Colonne Description',
   'node.compare-catalog.descriptionColumn.help': 'Sert à extraire les réf. d’origine (« Remplace origine: … ») pour les pièces adaptables.',
   'node.compare-catalog.familyColumn.label': 'Colonne Famille (colonne du tableau)',
-  'node.compare-catalog.familyColumn.help': "Reprise telle quelle dans le tableau exporté. N'alimente ni l'arbre de l'écran « Concurrents » (voir « Colonnes Taxonomie ») ni le ciblage du scraping (voir le node « Moisson concurrents »).",
+  'node.compare-catalog.familyColumn.help': "Reprise dans le tableau exporté ET dans le rapport : c'est elle qui alimente le filtre « Famille » et les statistiques par famille du tableau de bord Veille tarifaire. La vider les prive de leur axe d'analyse. En revanche elle ne dessine pas l'arbre de l'écran « Concurrents » (voir « Colonnes Taxonomie ») et ne cible pas le scraping (voir le node « Moisson concurrents »).",
   'node.harvest-competitor.familyColumn.label': 'Colonne Famille (ciblage du scraping)',
   'node.compare-catalog.taxoColumns.label': 'Colonnes Taxonomie (du plus large au plus fin)',
   'node.compare-catalog.urlColumn.label': 'Colonne URL (fiche source)',

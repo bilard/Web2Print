@@ -1698,7 +1698,7 @@ export const es: Record<TranslationKey, string> = {
   'node.compare-catalog.descriptionColumn.label': 'Columna Descripción',
   'node.compare-catalog.descriptionColumn.help': 'Sirve para extraer las ref. originales («Sustituye origen: …») para las piezas adaptables.',
   'node.compare-catalog.familyColumn.label': 'Columna Familia (columna de la tabla)',
-  'node.compare-catalog.familyColumn.help': 'Se traslada tal cual a la tabla exportada. No alimenta ni el árbol de la pantalla «Competidores» (véase «Columnas de taxonomía») ni la segmentación del scraping (véase el nodo «Cosecha de competidores»).',
+  'node.compare-catalog.familyColumn.help': 'Se traslada a la tabla exportada Y al informe: alimenta el filtro «Familia» y las estadísticas por familia del panel de Vigilancia de precios. Vaciarla los priva de su eje de análisis. En cambio, no dibuja el árbol de la pantalla «Competidores» (véase «Columnas de taxonomía») ni segmenta el scraping (véase el nodo «Cosecha de competidores»).',
   'node.harvest-competitor.familyColumn.label': 'Columna Familia (segmentación del scraping)',
   'node.compare-catalog.taxoColumns.label': 'Columnas de taxonomía (de la más amplia a la más fina)',
   'node.compare-catalog.urlColumn.label': 'Columna URL (ficha de origen)',
