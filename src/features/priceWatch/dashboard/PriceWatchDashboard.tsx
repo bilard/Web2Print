@@ -170,11 +170,13 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
       <ExpandableChart render={(h) => <PriceScatter ck={ck} onSelect={toggle} height={h} />} />
       <ExpandableChart render={() => <HeatmapMatrix ck={ck} onSelect={toggle} />} />
       {/* Deux lectures temporelles complémentaires : MA dérive (indice, une courbe) et
-          celle de CHAQUE concurrent (flux des écarts). */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-        <ExpandableChart render={(h) => <PriceIndexTrend history={history} height={h} />} />
-        <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
-      </div>
+          celle de CHAQUE concurrent (flux des écarts).
+          ⚠ EMPILÉES, pas côte à côte : ce sont des séries TEMPORELLES, et un axe de dates
+          coupé en deux écrase l'échelle horizontale — les points s'entassent, la légende
+          des concurrents passe sur deux lignes, et le titre se tronque. Pleine largeur,
+          chacune retrouve son axe. */}
+      <ExpandableChart render={(h) => <PriceIndexTrend history={history} height={h} />} />
+      <ExpandableChart render={(h) => <CompetitorTrend history={history} sites={report.sites} height={h} />} />
       <PriceMoves events={priceMoves} filter={filter} links={links} />
       <OpportunityPanel ck={ck} />
 
