@@ -323,6 +323,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // CARBURATEUR » ↔ « Filtre à huile » sous la même réf.). Sans ce chiffre, ces
     // produits passent en « sans correspondance » sans que rien ne dise pourquoi.
     if (m.vetoed > 0) ctx.log('info', t('run.compareCatalog.vetoed', { count: m.vetoed }))
+    // Un concurrent qui disparaît de la feuille sans un mot, c'est le prochain « où sont
+    // mes concurrents ? » — on le dit, avec le nom des sites.
+    if (m.emptySites.length > 0) {
+      ctx.log('info', t('run.compareCatalog.emptySites', {
+        count: m.emptySites.length, sites: m.emptySites.join(', '),
+      }))
+    }
     if (m.matched === 0) {
       ctx.log('warn', t('run.compareCatalog.noMatchAtAll', {
         listings: totalListings, products: products.length,

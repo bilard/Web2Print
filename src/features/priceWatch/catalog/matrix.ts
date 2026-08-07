@@ -40,6 +40,10 @@ export interface MatrixResult {
   unmatched: number
   /** Produits sans clé de jointure exploitable en entrée. */
   noKey: number
+  /** Concurrents écartés de la feuille faute du moindre appariement. Journalisé : un
+   *  concurrent qui disparaît de l'export sans trace, c'est le prochain « où sont mes
+   *  concurrents ? ». */
+  emptySites: string[]
   /** Fiches prouvées puis ÉCARTÉES parce que leur libellé nommait une autre pièce.
    *  Chiffré dans le journal du run : sans ce compteur, la différence entre « le
    *  concurrent ne l'a pas » et « il l'a, mais ce n'était pas le bon article » est
@@ -187,7 +191,15 @@ export function matrixFromPairing(
 ): MatrixResult {
   const matchedOnly = opts.matchedOnly ?? true
   const labels = opts.labels ?? {}
-  const columns = [...baseColumns(labels), ...sites.flatMap((s) => siteColumns(s.domain, opts.siteFields))]
+  // Un concurrent sans le moindre appariement n'apporte que neuf colonnes vides sur toute
+  // la hauteur de la feuille. On ne les écrit pas — mais JAMAIS au point de tout vider :
+  // sans aucun site retenu, on garde la liste complète. Un appariement qui échoue en bloc
+  // (index maigre, clés absentes) ne doit pas se traduire par un export amputé en silence,
+  // cf. le recalcul qui avait ramené 20 980 produits appariés à 72.
+  const withCells = new Set<string>()
+  for (const cells of pairing.cellsByProduct.values()) for (const c of cells) withCells.add(c.siteId)
+  const kept = withCells.size > 0 ? sites.filter((s) => withCells.has(s.siteId)) : sites
+  const columns = [...baseColumns(labels), ...kept.flatMap((s) => siteColumns(s.domain, opts.siteFields))]
 
   const rows: Record<string, unknown>[] = []
   let matched = 0, matchedExact = 0, matchedOriginOnly = 0, unmatched = 0, noKey = 0
@@ -236,6 +248,7 @@ export function matrixFromPairing(
 
   return {
     columns, rows, matched, matchedExact, matchedOriginOnly, unmatched, noKey,
+    emptySites: sites.filter((s) => !kept.includes(s)).map((s) => s.domain),
     vetoed: pairing.totals.vetoed,
   }
 }

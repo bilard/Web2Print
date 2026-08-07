@@ -2247,6 +2247,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.siteIndexCount': '{domain}: {count} producto(s) en el índice.',
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
+  'run.compareCatalog.emptySites': '{count} competidor(es) sin ninguna coincidencia, excluidos de la hoja: {sites}.',
   'run.compareCatalog.vetoed': '{count} ficha(s) descartada(s): la referencia coincidía, pero el nombre designaba otra pieza (filtro ↔ carburador…). Mejor un hueco que un precio falso.',
   'run.compareCatalog.taxoConfigIgnored': 'Taxonomía introducida IGNORADA: «{asked}» no designa ninguna columna de la hoja; la detección automática ha tomado el relevo. Encabezados disponibles: {headers}',
   'run.compareCatalog.taxoColumns': 'Taxonomía: {list}',

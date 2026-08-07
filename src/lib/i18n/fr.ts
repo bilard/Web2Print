@@ -2369,6 +2369,7 @@ export const fr = {
   'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index.",
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
+  'run.compareCatalog.emptySites': '{count} concurrent(s) sans aucun appariement, écartés de la feuille : {sites}.',
   'run.compareCatalog.vetoed': '{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre ↔ carburateur…). Un trou vaut mieux qu\u2019un faux prix.',
   'run.compareCatalog.taxoConfigIgnored': 'Taxonomie saisie IGNORÉE — « {asked} » ne désigne aucune colonne de la feuille ; la détection automatique a repris la main. En-têtes disponibles : {headers}',
   'run.compareCatalog.taxoColumns': 'Taxonomie : {list}',

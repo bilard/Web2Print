@@ -190,6 +190,12 @@ registerServerNode({
     }))
     // Jumeau du client : fiches refusées par le libellé, puis 0 apparié.
     if (m.vetoed > 0) ctx.log('info', t(ctx.locale, 'run.compareCatalog.vetoed', { count: m.vetoed }))
+    // Jumeau du client : un concurrent écarté de la feuille doit laisser une trace.
+    if (m.emptySites.length > 0) {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.emptySites', {
+        count: m.emptySites.length, sites: m.emptySites.join(', '),
+      }))
+    }
     // Jumeau du client : 0 apparié = matrice VIDE, donc export en échec plus bas. On le
     // dit ici, où l'on sait encore pourquoi (taille et pertinence de l'index).
     if (m.matched === 0) {

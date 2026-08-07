@@ -683,6 +683,14 @@ async function capWideColumns(token: string, spreadsheetId: string, gid: number,
 
 /** Construit un blob XLSX depuis une ExcelSheet (single-sheet workbook).
  *  `formulas` : colonnes ajoutées en fin de tableau comme FORMULES vivantes. */
+/** Exposé pour le test qui tient l'invariant « une colonne déclarée = une colonne du
+ *  tableur » — invariant invisible à l'écran, et dont dépendent les groupes pliables. */
+export async function exportSheetToXlsxBlob(
+  sheet: ExcelSheet, sheetName: string, formulas?: FormulaColumn[],
+): Promise<Blob> {
+  return sheetToXlsxBlob(sheet, sheetName, formulas)
+}
+
 async function sheetToXlsxBlob(
   sheet: ExcelSheet,
   sheetName: string,
@@ -698,27 +706,32 @@ async function sheetToXlsxBlob(
   const formats = sheet.columns.map((col) =>
     detectColumnFormat(col.key, col.label || col.key, sheet.rows.map((r) => cellValue(col, r, sheet.columns))),
   )
-  const rows = sheet.rows.map((row) => {
-    const out: Record<string, unknown> = {}
-    sheet.columns.forEach((col, ci) => {
+  // ⚠️ Grille de VALEURS, pas objets-par-libellé.
+  //
+  // On construisait chaque ligne en `{ [label]: valeur }` avant de la donner à
+  // `json_to_sheet`. Deux colonnes de même libellé n'en faisaient alors qu'UNE : la veille
+  // tarifaire donne « Prix TTC », « Prix HT »… à chacun de ses quatorze concurrents, et
+  // seul le dernier arrivait dans le fichier — treize blocs perdus, sans le moindre
+  // message. La grille positionnelle ne peut pas se tromper de colonne, et elle rétablit
+  // l'invariant dont le reste de la fonction dépend déjà : une colonne du tableur pour
+  // une colonne de `sheet.columns` (cf. `baseCol` des formules).
+  const header = sheet.columns.map((col) => col.label || col.key)
+  const body = sheet.rows.map((row) =>
+    sheet.columns.map((col, ci) => {
       const raw = cellValue(col, row, sheet.columns)
       const fmt = formats[ci]
       const num = !fmt.text && typeof raw === 'string' ? numericString(raw) : null
-      out[col.label || col.key] = num !== null ? num : raw
-    })
-    return out
-  })
+      return num !== null ? num : raw
+    }),
+  )
   // Test des formules SANS données amont : on injecte 1 ligne d'essai (colonnes data
   // vides) pour que les colonnes-formule s'écrivent et soient évaluables/éditables.
-  if (rows.length === 0 && formulas && formulas.length > 0) {
-    const empty: Record<string, unknown> = {}
-    for (const col of sheet.columns) empty[col.label || col.key] = ''
-    rows.push(empty)
-  }
-  const ws = XLSX.utils.json_to_sheet(rows)
+  if (body.length === 0 && formulas && formulas.length > 0) body.push(sheet.columns.map(() => ''))
+  const ws = XLSX.utils.aoa_to_sheet([header, ...body])
+  const rows = body
 
-  // Format (`z`) par colonne de données (hors en-tête). `json_to_sheet` ordonne les
-  // colonnes selon `sheet.columns` (insertion de out[label||key]), donc l'index ci colle.
+  // Format (`z`) par colonne de données (hors en-tête). La grille suit l'ordre de
+  // `sheet.columns`, donc l'index `ci` désigne bien la colonne du tableur.
   formats.forEach((fmt, ci) => {
     if (!fmt.z) return
     for (let r = 0; r < rows.length; r++) {
