@@ -462,17 +462,17 @@ async function applySheetColorRules(token: string, spreadsheetId: string, sheet:
 /**
  * Plages à replier, une par concurrent.
  *
- * ⚠️ Le groupe démarre à la DEUXIÈME colonne du bloc, jamais la première. Deux
- * raisons, la seconde étant décisive :
- *  1. replié, on garde une colonne visible qui NOMME le concurrent — sinon il
- *     disparaît complètement et on ne sait plus ce qu'on a fermé ;
- *  2. surtout, Google Sheets FUSIONNE les groupes adjacents de même niveau.
- *     Neuf colonnes par concurrent, posées bout à bout, donnaient UN SEUL
- *     groupe couvrant tous les concurrents — un crochet géant qui ne regroupe
- *     rien. La colonne laissée hors du groupe sert de séparateur.
+ * ⚠️ Google Sheets FUSIONNE les groupes adjacents de même niveau : deux blocs
+ * qui se touchent n'en font qu'un, un crochet géant qui ne regroupe rien. Il
+ * faut donc TOUJOURS au moins une colonne libre entre deux groupes.
  *
- * ⚠️ Conséquence : un concurrent de moins de 3 colonnes n'est pas groupé (il ne
- * resterait qu'une colonne à replier, sans intérêt).
+ * Le bloc est couvert en ENTIER quand une colonne non marquée le précède —
+ * c'est le rôle de la colonne de section produite par `siteColumns`. Sans elle
+ * (feuilles d'une autre origine, blocs collés), le groupe cède sa première
+ * colonne pour ne pas fusionner avec le précédent : mieux vaut une colonne hors
+ * du repli qu'un seul bloc pour tout le monde.
+ *
+ * ⚠️ Conséquence : un bloc réduit à une seule colonne repliable n'est pas groupé.
  */
 export function contiguousGroups(groups: (string | undefined)[]): { start: number; end: number }[] {
   const out: { start: number; end: number }[] = []
@@ -482,8 +482,11 @@ export function contiguousGroups(groups: (string | undefined)[]): { start: numbe
     if (!g) { i++; continue }
     let j = i + 1
     while (j < groups.length && groups[j] === g) j++
-    // `i + 1` : la première colonne reste visible et sépare ce groupe du suivant.
-    if (j - (i + 1) > 1) out.push({ start: i + 1, end: j })
+    // Adjacent au groupe précédent ? On lui cède la première colonne, sinon Sheets
+    // recolle les deux plages en une seule.
+    const prev = out[out.length - 1]
+    const start = prev && prev.end === i ? i + 1 : i
+    if (j - start > 1) out.push({ start, end: j })
     i = j
   }
   return out

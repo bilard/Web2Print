@@ -94,10 +94,17 @@ function baseColumns(labels: SourceLabels): MatrixColumn[] {
  */
 function siteColumns(domain: string): MatrixColumn[] {
   const s = domain.replace(/[^a-z0-9]+/gi, '_')
-  // ⚠️ Ces 9 colonnes DOIVENT rester contiguës : l'export les replie comme un
+  // ⚠️ Ces colonnes DOIVENT rester contiguës : l'export les replie comme un
   // groupe unique, et un groupe Google Sheets est une plage, pas une sélection.
   const g = domain
   return [
+    // Colonne de SECTION, hors du groupe et volontairement vide. Google Sheets fusionne
+    // les groupes adjacents de même niveau : sans une colonne libre entre deux
+    // concurrents, les quatorze blocs n'en formaient qu'un, un crochet géant qui ne
+    // regroupait rien. Ce rôle de séparateur était tenu par la colonne du NOM, qui
+    // restait donc dehors et décalée à l'écran ; une colonne dédiée l'y rend, et sert
+    // d'étiquette quand le bloc est replié — c'est elle qu'on voit alors.
+    { key: `bloc_${s}`, label: `▸ ${domain}`, kind: 'text' },
     { key: `nom_${s}`, label: `Produit — ${domain}`, kind: 'text', group: g },
     { key: `prix_ttc_${s}`, label: `Prix TTC — ${domain}`, kind: 'price', group: g },
     { key: `prix_ht_${s}`, label: `Prix HT — ${domain}`, kind: 'price', group: g },
