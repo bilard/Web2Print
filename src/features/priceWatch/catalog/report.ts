@@ -141,12 +141,34 @@ export interface ReportKpis {
   priceIndexBest?: number | null
 }
 
+/** Une famille du catalogue, agrégée sur TOUS les produits appariés. */
+export interface FamilyStat {
+  famille: string
+  /** Produits appariés de cette famille — le catalogue entier, pas l'échantillon. */
+  products: number
+  /** Ceux dont au moins un concurrent est moins cher. */
+  undercut: number
+}
+
 export interface CatalogReport {
   kpis: ReportKpis
   byCompetitor: CompetitorStat[]
+  /**
+   * Familles du catalogue, comptées sur l'ENSEMBLE des appariés.
+   *
+   * ⚠ Sans elles, la navigation par famille comptait les lignes de `products`, que la
+   * persistance range par écart et PLAFONNE : elle annonçait « tout le catalogue : 388 »
+   * pour 21 850 produits appariés, et ne listait que les familles des plus sous-cotés.
+   * Bornée (200 familles) : le doc `latest` tient sous 1 Mo, et au-delà la navigation
+   * cesse d'être une navigation.
+   */
+  byFamily: FamilyStat[]
   /** Tous les produits appariés (la persistance range et plafonne avant écriture). */
   products: ProductRow[]
 }
+
+/** Familles les plus fournies d'abord — c'est l'ordre de la navigation. */
+const FAMILY_CAP = 200
 
 /** Médiane d'une série (null si vide). Robuste aux prix aberrants d'un mauvais parsing.
  *  Exportée : le tableau de bord s'en sert aussi, et deux médianes qui divergeraient
@@ -306,7 +328,21 @@ export function reportFromPairing(
     ...(s.harvest ? { harvest: s.harvest } : {}),
   }))
 
-  return { kpis, byCompetitor, products: rows }
+  // Familles agrégées sur TOUTES les lignes appariées, avant tout classement ni plafond.
+  const famAgg = new Map<string, { products: number; undercut: number }>()
+  for (const r of rows) {
+    const key = (r.famille ?? '').trim() || '—'
+    const e = famAgg.get(key) ?? { products: 0, undercut: 0 }
+    e.products++
+    if (r.undercut) e.undercut++
+    famAgg.set(key, e)
+  }
+  const byFamily: FamilyStat[] = [...famAgg.entries()]
+    .map(([famille, e]) => ({ famille, ...e }))
+    .sort((a, b) => b.products - a.products || a.famille.localeCompare(b.famille, 'fr'))
+    .slice(0, FAMILY_CAP)
+
+  return { kpis, byCompetitor, byFamily, products: rows }
 }
 
 /** Range les produits par écart le plus négatif (les plus « sous-cotés » d'abord). */

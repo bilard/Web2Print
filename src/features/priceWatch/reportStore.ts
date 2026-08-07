@@ -9,7 +9,7 @@ import {
   reportLatestDoc, reportHistoryDoc, watchRootDoc, REPORT_HISTORY_MAX,
   priceStateCol, priceEventsDoc, PRICE_EVENTS_MAX, PRICE_EVENTS_BYTES, PRICE_STATE_BYTES,
 } from './paths'
-import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type ReportKpis } from './catalog/report'
+import { rankProducts, type CatalogReport, type ProductRow, type CompetitorStat, type FamilyStat, type ReportKpis } from './catalog/report'
 import type { SourceProduct } from './catalog/match'
 import { retainHistory } from './history'
 import { DEFAULT_VAT_RATE } from './catalog/match'
@@ -296,6 +296,9 @@ export interface StoredReport {
   runAt: number
   kpis: ReportKpis
   byCompetitor: CompetitorStat[]
+  /** Familles du catalogue, comptées sur TOUS les appariés (pas sur `products`, plafonné).
+   *  Absent des rapports antérieurs : la navigation retombe alors sur l'échantillon. */
+  byFamily?: FamilyStat[]
   sites: { siteId: string; domain: string }[]
   products: ProductRow[]
   totalMatched: number
@@ -340,7 +343,7 @@ export async function saveCatalogReport(
   // (rankProducts) tant qu'on tient le budget, et on marque `truncated` dès qu'on coupe.
   const ranked = rankProducts(report.products)
   const overhead = utf8Bytes(JSON.stringify({
-    runAt, kpis: report.kpis, byCompetitor: report.byCompetitor, sites,
+    runAt, kpis: report.kpis, byCompetitor: report.byCompetitor, byFamily: report.byFamily, sites,
     products: [], totalMatched: report.products.length, truncated: true,
   }))
   const capped: ProductRow[] = []
@@ -355,6 +358,7 @@ export async function saveCatalogReport(
     runAt,
     kpis: report.kpis,
     byCompetitor: report.byCompetitor,
+    byFamily: report.byFamily,
     sites,
     products: capped,
     totalMatched: report.products.length,

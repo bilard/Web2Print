@@ -343,7 +343,13 @@ export function buildCockpit(report: StoredReport, filter: CockpitFilter = EMPTY
     e.count++; if (p.undercut) e.undercut++
     allFamAgg.set(k, e)
   }
-  const allFamilies = [...allFamAgg.entries()].map(([famille, e]) => ({ famille, count: e.count, undercut: e.undercut })).sort((a, b) => b.count - a.count)
+  // ⚠ Les familles viennent du RAPPORT quand il les porte : elles y sont comptées sur TOUS
+  // les appariés. Les agréger depuis `products` ne décrivait que l'échantillon persisté —
+  // « tout le catalogue : 388 » pour 21 850 produits, et seulement les familles des plus
+  // sous-cotés. Repli sur l'échantillon pour les rapports antérieurs, faute de mieux.
+  const allFamilies = report.byFamily?.length
+    ? report.byFamily.map((f) => ({ famille: f.famille, count: f.products, undercut: f.undercut }))
+    : [...allFamAgg.entries()].map(([famille, e]) => ({ famille, count: e.count, undercut: e.undercut })).sort((a, b) => b.count - a.count)
   const familyKeys = allFamilies.slice(0, maxFamilies).map((f) => f.famille)
 
   const heatAgg = new Map<string, Map<string, number[]>>()
