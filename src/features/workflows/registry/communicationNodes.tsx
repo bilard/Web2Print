@@ -746,6 +746,14 @@ const sendGmailNode: NodeSpec<
     // port `data` (ex : sortie « html » du node « Rapport de coûts IA »). En mode HTML,
     // on adapte un document autonome pour un mail (extraction <body> + <style>).
     const rawString = typeof inputs.data === 'string' ? inputs.data : null
+    // CORPS VIDE + du HTML en entrée : l'intention ne fait aucun doute, on l'injecte.
+    // Sans cela, le mail partait VIDE parce qu'il manquait un `{{html}}` que rien
+    // n'obligeait à connaître — le champ affiche une aide en gris, qu'on prend pour du
+    // contenu. Un corps explicitement rempli reste évidemment prioritaire.
+    if (rawString !== null && !finalBody.trim()) {
+      finalBody = '{{html}}'
+      ctx.log('info', t('run.gm.bodyFromData'))
+    }
     const hasHtmlToken = /\{\{\s*html\s*\}\}/.test(finalBody)
     if (rawString !== null && hasHtmlToken) {
       if (!config.isHtml) {

@@ -2457,6 +2457,7 @@ export const es: Record<TranslationKey, string> = {
   'run.gm.rowSentId': '[{i}/{total}] → {to} (id: {id})',
   'run.gm.noRecipientConfig': 'Destinatario ausente.',
   'run.gm.htmlUnchecked': '{{html}} detectado pero la casilla «HTML» está desmarcada: el marcado se enviará como texto sin formato. Marcar «HTML» para una representación visual.',
+  'run.gm.bodyFromData': 'Cuerpo vacío y contenido recibido en «data»: ese contenido pasa a ser el cuerpo del correo (equivale a un cuerpo «{{html}}»).',
   'run.gm.htmlInjected': 'Contenido {{html}} inyectado en el cuerpo ({count} car.).',
   'run.gm.htmlTokenNoData': '{{html}} presente en el cuerpo pero el puerto «data» no contiene HTML (cadena). Conectar ÚNICAMENTE la salida «html» del nodo de origen al puerto «data» (una sola arista).',
   'run.gm.dataNotInserted': 'Contenido HTML/texto recibido en el puerto «data» pero no insertado: añadir {{html}} en el cuerpo para mostrarlo.',

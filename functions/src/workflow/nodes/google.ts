@@ -840,6 +840,9 @@ function prepareHtmlForEmail(html: string): string {
 // Injecte le contenu HTML/texte brut reçu sur le port `data` à la place de {{html}}.
 function injectHtmlToken(body: string, data: unknown, isHtml: boolean): string {
   if (typeof data !== 'string') return body
+  // CORPS VIDE + du HTML en entrée : ce contenu EST le corps (jumeau du client). Sans
+  // cela le mail partait vide faute d'un `{{html}}` que rien n'obligeait à connaître.
+  if (!body.trim()) return isHtml ? prepareHtmlForEmail(data) : data
   if (!/\{\{\s*html\s*\}\}/.test(body)) return body
   const injected = isHtml ? prepareHtmlForEmail(data) : data
   return body.replace(/\{\{\s*html\s*\}\}/g, () => injected)
