@@ -17,7 +17,6 @@ import { PriceMoves } from './PriceMoves'
 import { OpportunityPanel } from './OpportunityPanel'
 import { CatalogTree } from './CatalogTree'
 import { OpsCockpit } from './OpsCockpit'
-import { ScrapeSpendWidget } from './ScrapeSpendWidget'
 import { CompetitorAuditModal } from './CompetitorAuditModal'
 import { AnalyticsTable } from './AnalyticsTable'
 import { ProductList } from './ProductList'
@@ -112,7 +111,6 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
           progressBySite={new Map(report.byCompetitor
             .filter((c) => c.harvest && c.audit.indexed > 0) // pas de barre si 0 fiche collectée (« complet » trompeur)
             .map((c) => [c.siteId, c.harvest!.progress]))} />
-        <ScrapeSpendWidget />
       </div>
       <div className="flex-1 min-w-0 space-y-3">
       {report.truncated && (
