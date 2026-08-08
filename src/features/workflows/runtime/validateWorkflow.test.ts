@@ -177,7 +177,26 @@ describe('cohérence ENTRE nodes (Veille tarifaire)', () => {
     ], [['s', 'h', 'sites'], ['s', 'c', 'sites']]), getSpec)
     const warn = issues.filter((i) => i.severity === 'warning')
     expect(warn).toHaveLength(1)
-    expect(warn[0].message).toMatch(/run précédent/)
+    // L'avertissement porte sur le COLLECTEUR, pas sur le comparatif : c'est lui qu'il
+    // faut rebrancher, et c'est sur sa carte que se trouve la correction en un clic.
+    expect(warn[0].nodeId).toBe('h')
+    expect(warn[0].fix).toBe('order-before-compare')
+  })
+
+  it('⚠ UN alimenteur branché ne couvre pas les AUTRES', () => {
+    // La règle ne regardait que « au moins un » : une moisson branchée dispensait la
+    // recherche dirigée, qui partait donc en parallèle du comparatif et écrivait ses
+    // trouvailles trop tard pour être comparées.
+    const issues = validateWorkflow(wf([
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'F1', sites: 'x.fr' } },
+      { id: 'd', type: 'directed-search', config: { watchId: 'F1', sites: 'x.fr' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'F1', sites: 'x.fr' } },
+      { id: 's', type: 'source-sites', config: { watchId: 'F1', sites: [{ domain: 'x.fr', enabled: true }] } },
+      // `d` est branché (sinon il serait orphelin, donc ignoré comme à l'exécution) mais
+      // il n'atteint PAS le comparatif : c'est exactement le cas qui passait au travers.
+    ], [['h', 'c'], ['s', 'd', 'sites']]), getSpec)
+    const warn = issues.filter((i) => i.severity === 'warning')
+    expect(warn.map((w) => w.nodeId)).toEqual(['d'])
   })
 
   it('comparatif seul (recalcul) : aucun avertissement', () => {

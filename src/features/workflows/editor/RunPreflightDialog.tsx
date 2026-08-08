@@ -1,7 +1,7 @@
 // Popup de cohérence AVANT lancement : liste les trous détectés (source non connectée,
 // paramètre / export requis manquant) par carte. L'utilisateur corrige, ou force le
 // lancement en connaissance de cause. N'apparaît QUE s'il y a au moins une incohérence.
-import { AlertTriangle, ArrowRight, Scissors } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Scissors, Link2 } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { WorkflowIssue } from '../runtime/validateWorkflow'
 import { useTranslation } from '@/lib/i18n'
@@ -15,16 +15,19 @@ interface Props {
   onFocus: (nodeId: string) => void
   /** Retire la carte et recoud le flux. Absent = pas de droit d'écriture. */
   onDropNode?: (nodeId: string, label: string) => void
+  /** Branche ce node en amont du comparatif (ordonnancement). */
+  onOrderNode?: (nodeId: string, label: string) => void
 }
 
-export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDropNode }: Props) {
+export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDropNode, onOrderNode }: Props) {
   const { t } = useTranslation()
   // Regroupe par carte pour un affichage lisible.
-  const byNode = new Map<string, { label: string; messages: string[]; canDrop: boolean }>()
+  const byNode = new Map<string, { label: string; messages: string[]; canDrop: boolean; canOrder: boolean }>()
   for (const i of issues) {
-    const entry = byNode.get(i.nodeId) ?? { label: i.nodeLabel, messages: [], canDrop: false }
+    const entry = byNode.get(i.nodeId) ?? { label: i.nodeLabel, messages: [], canDrop: false, canOrder: false }
     entry.messages.push(i.message)
     if (i.fix === 'drop-node') entry.canDrop = true
+    if (i.fix === 'order-before-compare') entry.canOrder = true
     byNode.set(i.nodeId, entry)
   }
 
@@ -69,6 +72,16 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDro
                   </li>
                 ))}
               </ul>
+              {entry.canOrder && onOrderNode && (
+                <button
+                  type="button"
+                  onClick={() => onOrderNode(nodeId, entry.label)}
+                  className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] text-[11px] text-white/70 hover:text-white/90 transition-colors"
+                >
+                  <Link2 className="w-3 h-3" />
+                  {t('wfc.orderNode')}
+                </button>
+              )}
               {entry.canDrop && onDropNode && (
                 <button
                   type="button"

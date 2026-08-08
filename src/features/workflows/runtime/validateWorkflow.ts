@@ -24,7 +24,7 @@ export interface WorkflowIssue {
   /** Correction applicable en un clic depuis le pré-vol. `drop-node` = retirer la carte
    *  et recoudre le flux (cf. `dropNodeAndRewire`) : sans elle, « corriger » voulait dire
    *  supprimer la carte À LA MAIN puis retrouver quel lien rebrancher. */
-  fix?: 'drop-node'
+  fix?: 'drop-node' | 'order-before-compare'
 }
 
 /** Complétude non exprimable via `required` (valeur portée par la ConfigComponent,
@@ -119,21 +119,24 @@ function crossNodeIssues(
     }
   }
 
-  // 2. Un comparatif qui ne suit aucun alimenteur compare l'index d'un run ANTÉRIEUR.
-  //    Légitime pour un recalcul, suspect quand la moisson est là mais pas branchée.
+  // 2. Un comparatif qui ne suit pas ses alimenteurs compare l'index d'un run ANTÉRIEUR.
+  //    ⚠ Contrôlé alimenteur PAR alimenteur : la règle ne regardait que « au moins un »,
+  //    si bien qu'une moisson branchée couvrait une recherche dirigée qui, elle, partait
+  //    en parallèle. Ses trouvailles arrivaient donc APRÈS la comparaison — le comparatif
+  //    ne les voyait pas, et rien ne le disait.
   const feeders = active.filter((n) => INDEX_FEEDERS.has(n.type))
   for (const cmp of active.filter((n) => n.type === 'compare-catalog')) {
-    if (feeders.length === 0) continue
-    if (feeders.some((f) => reaches(wf, f.id, cmp.id))) continue
-    issues.push({
-      nodeId: cmp.id,
-      nodeLabel: labelOf(cmp.type),
-      severity: 'warning',
-      message: t('wfv.noFeederUpstream', {
-        feeders: feeders.map((f) => labelOf(f.type)).join(', '),
-        first: labelOf(feeders[0].type),
-      }),
-    })
+    const loose = feeders.filter((f) => !reaches(wf, f.id, cmp.id))
+    if (loose.length === 0) continue
+    for (const f of loose) {
+      issues.push({
+        nodeId: f.id,
+        nodeLabel: labelOf(f.type),
+        severity: 'warning',
+        message: t('wfv.feederNotOrdered', { compare: labelOf(cmp.type) }),
+        fix: 'order-before-compare',
+      })
+    }
   }
 
   return issues

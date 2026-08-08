@@ -11,6 +11,7 @@ import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
 import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflow'
 import { dropNodeAndRewire } from '../runtime/dropNodeAndRewire'
+import { orderBeforeCompare } from '../runtime/orderBeforeCompare'
 import { RunPreflightDialog } from './RunPreflightDialog'
 import { PreflightBanner } from './PreflightBanner'
 import { useFocusNode } from './focusNodeStore'
@@ -171,6 +172,17 @@ export function WorkflowEditorPage() {
     useWorkflowStore.getState().patch({ nodes: next.nodes, edges: next.edges })
     setPreflight(null)
     notify.success(t('wfc.dropped', { label }), '')
+  }
+  // Ordonnancement : le node de collecte passe EN AMONT du comparatif, pour que celui-ci
+  // relise l'index APRÈS que la collecte y a écrit.
+  const orderNode = (nodeId: string, label: string) => {
+    const cmp = wf.nodes.find((n) => n.type === 'compare-catalog')
+    if (!cmp) return
+    const next = orderBeforeCompare(wf, nodeId, cmp.id, (ty) => nodeRegistry.get(ty))
+    if (next === wf) { notify.error(t('wfc.orderFailed'), ''); return }
+    useWorkflowStore.getState().patch({ nodes: next.nodes, edges: next.edges })
+    setPreflight(null)
+    notify.success(t('wfc.ordered', { label }), '')
   }
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
   const saveNow = async () => {
@@ -354,6 +366,7 @@ export function WorkflowEditorPage() {
             onProceed={preflight.inspectOnly ? undefined : () => { const s = preflight.stepByStep; setPreflight(null); void executeNow(s) }}
             onFocus={(nodeId) => { useFocusNode.getState().focus(nodeId); setPreflight(null) }}
             onDropNode={canSave ? dropNode : undefined}
+            onOrderNode={canSave ? orderNode : undefined}
           />
         )}
     </ReactFlowProvider>

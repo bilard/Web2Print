@@ -13,10 +13,10 @@
 /** Budget de texte par appel, en caractères d'ENTRÉE. La réponse fait grossièrement la
  *  même taille (on réécrit ce qu'on reçoit), et le plafond de sortie est fixé bien
  *  au-dessus — la marge absorbe les notes du modèle. */
-export const CHUNK_CHARS = 4000
+const CHUNK_CHARS = 4000
 /** Bornes de confort, indépendantes du volume. */
-export const CHUNK_MIN_ITEMS = 1
-export const CHUNK_MAX_ITEMS = 10
+const CHUNK_MIN_ITEMS = 1
+const CHUNK_MAX_ITEMS = 10
 
 /**
  * Regroupe `items` en lots dont le poids cumulé reste sous `maxChars`.

@@ -2517,11 +2517,15 @@ export const fr = {
   'wfv.serverUnsupported': "Cette carte ne s'exécute pas côté serveur : le run planifié s'arrêtera dessus et toutes les cartes en aval seront sautées.",
   'wfv.serverIgnored': 'Le run planifié ne fera pas ce travail : cette carte n’est pas exécutée côté serveur. La donnée passe sans être traitée.',
   'wfc.dropNode': 'Retirer la carte et recoudre le flux',
+  'wfc.orderNode': 'Brancher en amont du comparatif',
+  'wfc.ordered': '« {label} » passe désormais avant le comparatif.',
+  'wfc.orderFailed': 'Aucun port d’ordonnancement libre sur le comparatif — à brancher à la main.',
   'wfc.dropped': '« {label} » retirée, le flux a été recousu.',
   'wfv.inputNotWired': 'Entrée « {port} » non connectée (source manquante).',
   'wfv.configRequired': 'Paramètre « {field} » requis, non renseigné.',
   'wfv.watchIdMismatch': "Ce node adresse le suivi « {watchId} » alors que d'autres nodes du workflow en adressent {others} autre(s) ({list}). La moisson écrirait dans un suivi et le comparatif relirait dans un autre — 0 apparié, sans erreur visible. Aligne le champ « Identifiant du suivi », ou branche tous ces nodes au MÊME node « Sites sources ».",
   'wfv.noFeederUpstream': "Aucun node de collecte ({feeders}) n'est branché EN AMONT : le comparatif relira l'index du run précédent, pas celui que ce run va produire. Relie « {first} » à ce node si tu veux comparer des données fraîches.",
+  'wfv.feederNotOrdered': 'Ce node de collecte n’est pas branché EN AMONT de « {compare} » : les deux partent en parallèle, et le comparatif peut relire l’index AVANT que ce node y ait écrit ses trouvailles. Elles ne seront donc pas comparées ce run-ci.',
 
   // — Messages de RUN des workflows ——————————————————————————————————
   //
