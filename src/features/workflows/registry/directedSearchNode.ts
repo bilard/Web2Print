@@ -14,6 +14,8 @@ import { parseSitesConfig, stableId } from '@/features/priceWatch/core'
 import { resolveSitesInput, sitesForRole, normalizeDomain } from '@/features/priceWatch/sourceSites'
 import { savePage, loadCompetitorMeta, saveCompetitorMeta } from '@/features/priceWatch/catalog/store'
 import { directedPass, type DirectedSourceProduct, type DirectedSite } from '@/features/priceWatch/catalog/searchDirected'
+import { loadPairingRules } from '@/features/priceWatch/pairingRulesStore'
+import { rulesDifferFromDefault, summarizeRules } from '@/features/priceWatch/catalog/pairingRules'
 import { extractOriginRefs } from '@/features/priceWatch/catalog/match'
 import { buildSiteFetcher } from '@/features/priceWatch/catalog/siteFetch'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
@@ -191,7 +193,16 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
       }
       return html
     }
+    // Mêmes règles que le comparatif : elles vivent dans le suivi, pas dans ce node. Sans
+    // cette relecture, ce chemin resterait sur les littéraux et enregistrerait des fiches
+    // que « Comparer catalogue » refuserait ensuite — le compteur de trouvailles dirait
+    // alors autre chose que le rapport.
+    const stored = await loadPairingRules(uid, watchId)
+    if (rulesDifferFromDefault(stored.rules)) {
+      ctx.log('info', t('run.compareCatalog.rules', { summary: JSON.stringify(summarizeRules(stored.rules)) }))
+    }
     const pass = await directedPass(products, sites, startCursor % Math.max(1, products.length), budget, {
+      rules: stored.rules,
       fetchHtml: fetchWithBreaker,
       signal: timedSignal,
       log: (m) => ctx.log('info', m),

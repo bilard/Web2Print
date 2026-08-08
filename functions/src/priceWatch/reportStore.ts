@@ -233,7 +233,9 @@ export async function saveCatalogReport(
   /** `trend: false` = analyse PARTIELLE (index encore en cours de remplissage) : le
    *  tableau de bord est rafraîchi, mais AUCUN point d'historique n'est émis — sinon la
    *  courbe raconterait la progression du scraping, pas le mouvement des prix. */
-  opts: { label?: string; trend?: boolean } = {},
+  /** `rules` = résumé des RÈGLES d'appariement en vigueur. Sans lui, deux rapports du
+   *  même suivi peuvent être incomparables sans que rien ne le dise (jumeau client). */
+  opts: { label?: string; trend?: boolean; rules?: Record<string, unknown> } = {},
 ): Promise<void> {
   const db = getFirestore()
   // Cap par OCTETS (pas seulement par nombre) : Firestore refuse tout doc > 1 048 576 o.
@@ -261,6 +263,7 @@ export async function saveCatalogReport(
     products: capped,
     totalMatched: report.products.length,
     truncated: capped.length < report.products.length,
+    ...(opts.rules ? { rules: opts.rules } : {}),
   }
   await db.doc(reportLatestDoc(uid, watchId)).set(stripUndefined(stored))
 

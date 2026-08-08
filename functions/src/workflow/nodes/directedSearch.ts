@@ -25,6 +25,8 @@ import { getSiteCredentials } from '../../scraper/siteCredentials'
 import { krampBatchScrape } from '../../scraper/krampFirecrawl'
 import { krampAuthPass } from '../../priceWatch/catalog/krampAuthPass'
 import { t } from '../../i18n'
+import { loadPairingRules } from '../../priceWatch/pairingRulesStore'
+import { rulesDifferFromDefault, summarizeRules } from '../../priceWatch/catalog/pairingRules'
 
 const VAT = 0.2
 
@@ -211,7 +213,14 @@ registerServerNode({
     // Index de départ du tick pour la passe générique (la passe auth a son propre curseur).
     const startIdx = startCursor % Math.max(1, products.length)
 
+    // Règles du suivi — la recherche dirigée SERVEUR les applique comme le comparatif,
+    // sinon elle enregistre des fiches qui seront écartées ensuite.
+    const rules = await loadPairingRules(ctx.uid, watchId)
+    if (rulesDifferFromDefault(rules)) {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.rules', { summary: JSON.stringify(summarizeRules(rules)) }))
+    }
     const pass = await directedPass(products, regularSites, startIdx, budget, {
+      rules,
       fetchHtml: async (url) => {
         const host = (url.match(/^https?:\/\/([^/]+)/i)?.[1] ?? url).toLowerCase()
         const forced = fetcherByHost.get(bare(host))
@@ -238,6 +247,7 @@ registerServerNode({
         if (ctx.signal?.aborted) break
         if (!key) { ctx.log('warn', t(ctx.locale, 'run.directed.authNoFirecrawlKey', { host: cred!.host })); break }
         const authHits = await krampAuthPass(authSlice, {
+          rules,
           scrape: (urls) => krampBatchScrape(urls, cred!, key, 90_000, ctx.signal),
           signal: ctx.signal,
           log: (m) => ctx.log('info', m),

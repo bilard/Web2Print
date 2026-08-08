@@ -305,6 +305,11 @@ export interface StoredReport {
   products: ProductRow[]
   totalMatched: number
   truncated: boolean
+  /** Résumé des RÈGLES d'appariement en vigueur pendant ce run. Sans lui, deux rapports
+   *  du même suivi peuvent être incomparables sans que rien ne le dise : une preuve
+   *  coupée ou un veto desserré déplace les chiffres autant qu'un changement de marché.
+   *  Absent des rapports antérieurs au réglage — ils ont tous tourné sous les défauts. */
+  rules?: Record<string, unknown>
 }
 
 /**
@@ -336,7 +341,7 @@ export async function saveCatalogReport(
   report: CatalogReport,
   sites: { siteId: string; domain: string }[],
   runAt: number,
-  opts: { label?: string; workflowId?: string; trend?: boolean } = {},
+  opts: { label?: string; workflowId?: string; trend?: boolean; rules?: Record<string, unknown> } = {},
 ): Promise<void> {
   // Cap par OCTETS, pas seulement par nombre : Firestore REFUSE tout doc > 1 048 576 o
   // (INVALID_ARGUMENT). À l'échelle F1 (des milliers d'appariés × 17 concurrents avec
@@ -365,6 +370,7 @@ export async function saveCatalogReport(
     products: capped,
     totalMatched: report.products.length,
     truncated: capped.length < report.products.length,
+    ...(opts.rules ? { rules: opts.rules } : {}),
   }
   await setDoc(doc(db, reportLatestDoc(uid, watchId)), stripUndefined(stored))
 

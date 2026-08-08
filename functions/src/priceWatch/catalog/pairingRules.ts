@@ -141,18 +141,33 @@ function bool(v: unknown, fallback: boolean): boolean {
   return typeof v === 'boolean' ? v : fallback
 }
 
-/** Lexique nettoyé : familles nommées, mots normalisés (minuscules sans accents, comme
- *  `nameTokens`), entrées vides écartées. Une famille sans mot ne dirait rien. */
+/** Minuscules, sans accents, sans ponctuation — la forme que produit `nameTokens`, et
+ *  donc la seule sous laquelle un mot du lexique peut rencontrer un mot de libellé. */
+function foldWord(raw: unknown): string {
+  return String(raw).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+}
+
+/**
+ * Lexique nettoyé : familles nommées, mots normalisés, entrées vides écartées. Une
+ * famille sans mot ne dirait rien.
+ *
+ * ⚠ L'IDENTIFIANT de famille est normalisé comme les mots, et pas seulement mis en
+ * minuscules. Sans cela, « Déflecteur » et « deflecteur » formeraient deux familles
+ * DISTINCTES : deux libellés désignant la même pièce n'auraient alors aucune famille
+ * commune, et le veto déclarerait une contradiction là où il y a identité — précisément
+ * l'erreur que ce lexique doit éviter.
+ */
 export function normalizeFamilyLexicon(raw: unknown): FamilyLexicon {
   if (typeof raw !== 'object' || raw === null) return {}
   const out: FamilyLexicon = {}
   for (const [family, words] of Object.entries(raw as Record<string, unknown>)) {
-    const id = String(family).trim().toLowerCase()
+    const id = foldWord(family)
     if (!id || !Array.isArray(words)) continue
-    const cleaned = [...new Set(words
-      .map((w) => String(w).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, ''))
-      .filter((w) => w.length >= 3))]
-    if (cleaned.length > 0) out[id] = cleaned
+    const cleaned = words.map(foldWord).filter((w) => w.length >= 3)
+    if (cleaned.length === 0) continue
+    // Une famille nommée deux fois sous des graphies différentes s'ENRICHIT : c'est le
+    // pendant de la règle ci-dessus, côté fusion.
+    out[id] = [...new Set([...(out[id] ?? []), ...cleaned])]
   }
   return out
 }

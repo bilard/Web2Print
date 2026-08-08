@@ -58,3 +58,11 @@ export const PRICE_EVENTS_BYTES = 900_000
  *  la clé est de longueur variable (stableId retombe sur le nom du produit) et Firestore
  *  refuse tout doc > 1 048 576 o. Cf. chunkState. */
 export const PRICE_STATE_BYTES = 900_000
+
+// --- Règles d'appariement ---
+// Le jeu de paramètres qui pilote le moteur (clés, preuves acceptées, démentis). Il vit
+// en FIRESTORE et non dans la config d'un node : ses consommateurs ne sont pas tous
+// joignables par un edge de workflow — l'écran « Concurrents », la passe Kramp et les
+// crons serveur liraient sinon les littéraux, et le réglage ne s'appliquerait qu'à moitié.
+export const pairingRulesDoc = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/settings/pairing`

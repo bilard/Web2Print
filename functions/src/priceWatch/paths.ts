@@ -32,3 +32,8 @@ export const PRICE_EVENTS_MAX = 2000
 export const PRICE_EVENTS_BYTES = 900_000
 /** Budget d'OCTETS par tranche d'état (jamais un cap par nombre — cf. chunkState). */
 export const PRICE_STATE_BYTES = 900_000
+
+/** Règles d'appariement du suivi — jumeau du chemin client. Le cron DOIT lire le même
+ *  document que le navigateur, sinon un réglage ne s'applique qu'à moitié. */
+export const pairingRulesDoc = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/settings/pairing`

@@ -13,6 +13,8 @@ import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
 import { reportFromPairing } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
+import { loadPairingRules } from '../../priceWatch/pairingRulesStore'
+import { rulesDifferFromDefault, summarizeRules } from '../../priceWatch/catalog/pairingRules'
 import { matrixFromPairing, SITE_FIELDS, type SiteField, type SiteRef, type MatrixColumn } from '../../priceWatch/catalog/matrix'
 import { extractOriginRefs, type SourceProduct } from '../../priceWatch/catalog/match'
 import { createPairingRun } from '../../priceWatch/catalog/pairingRun'
@@ -152,7 +154,14 @@ registerServerNode({
     // à 512 Mio. Chaque site est apparié dès qu'il est lu, seules les cellules PROUVÉES
     // sont retenues, et son index part au ramasse-miettes avant la lecture du suivant.
     const vatRate = Math.max(0, Number(config.vatRate) || 20) / 100
-    const pairing = createPairingRun(sourceProducts, { vatRate })
+    // Mêmes règles que le navigateur : elles vivent dans le suivi. Un cron qui resterait
+    // sur les littéraux produirait un second rapport pour le même suivi, sans que rien
+    // ne le signale — c'est tout l'intérêt de les avoir mises en Firestore.
+    const rules = await loadPairingRules(ctx.uid, watchId)
+    if (rulesDifferFromDefault(rules)) {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.rules', { summary: JSON.stringify(summarizeRules(rules)) }))
+    }
+    const pairing = createPairingRun(sourceProducts, { vatRate, rules })
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
@@ -211,7 +220,7 @@ registerServerNode({
     try {
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.reportBuilding'))
       const report = reportFromPairing(sourceProducts, siteRefs, pairing, { harvestBySite })
-      await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName })
+      await saveCatalogReport(ctx.uid, watchId, report, siteRefs, Date.now(), { label: ctx.workflowName, rules: summarizeRules(rules) })
       // Catalogue source (comme le node client) : sans lui, un suivi alimenté seulement
       // par le cron n'a rien à relire pour un recalcul mono-site après un ▶ — et l'écran
       // « Concurrents » n'a rien à apparier.

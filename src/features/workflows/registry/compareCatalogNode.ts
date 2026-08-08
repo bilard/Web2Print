@@ -17,6 +17,8 @@ import { createPairingRun } from '@/features/priceWatch/catalog/pairingRun'
 import { reportFromPairing } from '@/features/priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '@/features/priceWatch/reportStore'
 import { resolveCompareColumns, hasNoJoinKey } from '@/features/priceWatch/catalog/compareColumns'
+import { loadPairingRules } from '@/features/priceWatch/pairingRulesStore'
+import { rulesDifferFromDefault, summarizeRules } from '@/features/priceWatch/catalog/pairingRules'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from '@/features/priceWatch/catalog/displayColumns'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
@@ -263,7 +265,14 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // ⚠ TVA résolue AVANT l'appariement : c'est lui qui convertit désormais les prix
     // concurrents, et un taux par défaut appliqué ici diviserait tous les prix par 21.
     const vatRate = Math.max(0, (config.vatRate || 20)) / 100
-    const pairing = createPairingRun(products, { vatRate })
+    // Règles d'appariement du suivi. Relues en Firestore et non reçues sur un edge :
+    // l'écran « Concurrents » et les crons lisent le même document, et un réglage qui ne
+    // vaudrait que pour ce node ne s'appliquerait qu'à moitié.
+    const stored = await loadPairingRules(uid, watchId)
+    if (rulesDifferFromDefault(stored.rules)) {
+      ctx.log('info', t('run.compareCatalog.rules', { summary: JSON.stringify(summarizeRules(stored.rules)) }))
+    }
+    const pairing = createPairingRun(products, { vatRate, rules: stored.rules })
     for (const [i, s] of siteRefs.entries()) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(uid, watchId, s.siteId)
@@ -347,7 +356,13 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
       mark('rapport — début')
       const report = reportFromPairing(products, siteRefs, pairing, { harvestBySite })
       mark('rapport — construit')
-      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { label: (config.label ?? '').trim() || ctx.workflowName || '', workflowId: ctx.workflowId })
+      await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), {
+        label: (config.label ?? '').trim() || ctx.workflowName || '',
+        workflowId: ctx.workflowId,
+        // Le jeu de règles EFFECTIF voyage avec les chiffres qu'il a produits : sans lui,
+        // deux rapports du même suivi peuvent être incomparables sans que rien ne le dise.
+        rules: summarizeRules(stored.rules),
+      })
       mark('rapport — écrit')
       ctx.setProgress?.(90)
       // Persiste le catalogue source → le recalcul mono-site (après un ▶ dans « Sites

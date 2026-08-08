@@ -37,6 +37,7 @@ import { useCompilation } from './useCompilation'
 import { useAllVerdicts } from './useAllVerdicts'
 import { ExplorerCompileBar } from './ExplorerCompileBar'
 import { useSourceSheet } from './useSourceSheet'
+import { usePairingRules } from '../usePairingRules'
 import { useVerdicts } from './useVerdicts'
 import { useVisuals } from '../visual/useVisuals'
 import { useTranslation, intlLocale } from '@/lib/i18n'
@@ -77,6 +78,11 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   const source = useSourceCatalog(watchId)
   const { listings, loading, error, reload } = useSiteListings(watchId, compiling ? null : active)
   const src = useSourceSheet(watchId)
+  // ⚠ Cet écran DOIT apparier avec les mêmes règles que le comparatif, sinon il montre
+  // des cellules absentes du rapport (ou l'inverse) et l'audit porte sur autre chose que
+  // ce qui a été livré. C'est la raison pour laquelle les règles vivent en Firestore et
+  // non dans la config d'un node : cet écran n'appartient à aucun workflow.
+  const pairingRules = usePairingRules(watchId)
   const { extras } = src
   // Jugements d'audit du concurrent affiché : ils survivent à la session.
   const verdicts = useVerdicts(watchId, active)
@@ -100,6 +106,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
       const out = pairSiteListings(source.products, active, listings, {
         vatRate: source.vatRate, extras: extras.lookup,
         imagePrefix: src.imagePrefix, productUrl: src.productUrl,
+        rules: pairingRules.rules,
       })
       // Cet appariement tourne SUR LE CHEMIN DE RENDU et rejoue quand le catalogue source
       // arrive : à 186 000 fiches, une seconde ici fige l'onglet. Mesuré pour qu'un
@@ -107,7 +114,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
       debugLog('[pw-explorer] appariement', out.length, 'lignes en', Math.round(performance.now() - t0), 'ms')
       return out
     },
-    [active, listings, source.products, source.vatRate, extras, src.imagePrefix, src.productUrl],
+    [active, listings, source.products, source.vatRate, extras, src.imagePrefix, src.productUrl, pairingRules.rules],
   )
   // Le verdict des PHOTOS pèse dans l'indice — c'est le seul démenti qui porte sur les
   // objets et non sur des chaînes de caractères. Recousu ICI et non dans `pairSiteListings` :
