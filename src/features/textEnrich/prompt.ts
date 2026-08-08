@@ -9,7 +9,7 @@
 // de ce qu'il demandait.
 import { z } from 'zod'
 import type { EnrichKind } from './revision'
-import type { EnrichUnit } from './pass'
+import { unitKey, type EnrichUnit } from './pass'
 import { aiHints, renderTemplate } from './template'
 
 /**
@@ -86,7 +86,7 @@ export function buildBatchPrompt(units: EnrichUnit[], opts: PromptOptions = {}):
   const consigne = plan.prompt.trim()
 
   const items = units.map((u) => {
-    const lines = [`--- ${JSON.stringify(u.field)} id=${JSON.stringify(unitId(u))}`]
+    const lines = [`--- ${JSON.stringify(u.field)} id=${JSON.stringify(unitKey(u))}`]
     if (u.sourceLang) lines.push(`langue détectée : ${u.sourceLang}`)
     lines.push(u.text)
     // Le gabarit ne demande au modèle QUE ses morceaux manquants : le reste est assemblé
@@ -109,12 +109,6 @@ export function buildBatchPrompt(units: EnrichUnit[], opts: PromptOptions = {}):
   ].filter((s) => s !== undefined).join('\n')
 }
 
-/** Identifiant d'une unité dans le prompt. Repris tel quel par le modèle, il rattache
- *  chaque réponse à son champ — une renumérotation écrirait sur le mauvais produit. */
-export function unitId(unit: EnrichUnit): string {
-  return `${unit.productId}::${unit.field}`
-}
-
 /**
  * Rattache les réponses à leurs unités.
  *
@@ -128,7 +122,7 @@ export function mapBatch(
   parsed: EnrichBatch,
   units: EnrichUnit[],
 ): { texts: Record<string, string>; notes: Record<string, string> } {
-  const known = new Set(units.map(unitId))
+  const known = new Set(units.map(unitKey))
   const texts: Record<string, string> = {}
   const notes: Record<string, string> = {}
   for (const r of parsed.results) {

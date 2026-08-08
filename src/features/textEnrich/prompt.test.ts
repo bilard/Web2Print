@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildBatchPrompt, mapBatch, unitId, finalText, schemaForLLM, EnrichBatchSchema } from './prompt'
+import { buildBatchPrompt, mapBatch, finalText, schemaForLLM, EnrichBatchSchema } from './prompt'
+import { unitKey } from './pass'
 import { defaultNameTemplate } from './template'
 import type { EnrichUnit } from './pass'
 import type { FieldPlan } from './fieldPlan'
@@ -34,8 +35,8 @@ describe('contenu du lot', () => {
   it('porte un identifiant par texte', () => {
     const us = [unit('p1', 'LAME 510'), unit('p2', 'COURROIE A97')]
     const p = buildBatchPrompt(us)
-    expect(p).toContain(unitId(us[0]))
-    expect(p).toContain(unitId(us[1]))
+    expect(p).toContain(unitKey(us[0]))
+    expect(p).toContain(unitKey(us[1]))
     expect(p).toContain('LAME 510')
     expect(p).toContain('COURROIE A97')
   })
@@ -72,12 +73,12 @@ describe('rattachement des réponses', () => {
   it('associe chaque texte à son unité', () => {
     const { texts } = mapBatch({
       results: [
-        { id: unitId(us[0]), text: 'Lame de tondeuse 510 mm' },
-        { id: unitId(us[1]), text: 'Courroie trapézoïdale A97' },
+        { id: unitKey(us[0]), text: 'Lame de tondeuse 510 mm' },
+        { id: unitKey(us[1]), text: 'Courroie trapézoïdale A97' },
       ],
     }, us)
-    expect(texts[unitId(us[0])]).toBe('Lame de tondeuse 510 mm')
-    expect(texts[unitId(us[1])]).toBe('Courroie trapézoïdale A97')
+    expect(texts[unitKey(us[0])]).toBe('Lame de tondeuse 510 mm')
+    expect(texts[unitKey(us[1])]).toBe('Courroie trapézoïdale A97')
   })
 
   it('⚠ LÈVE sur un identifiant inconnu au lieu de l’ignorer', () => {
@@ -88,15 +89,15 @@ describe('rattachement des réponses', () => {
   })
 
   it('ignore une réponse vide plutôt que d’écraser le texte par du blanc', () => {
-    const { texts } = mapBatch({ results: [{ id: unitId(us[0]), text: '   ' }] }, us)
+    const { texts } = mapBatch({ results: [{ id: unitKey(us[0]), text: '   ' }] }, us)
     expect(texts).toEqual({})
   })
 
   it('récupère la justification quand elle est demandée', () => {
     const { notes } = mapBatch({
-      results: [{ id: unitId(us[0]), text: 'Lame de tondeuse 510 mm', note: 'Développé l’abréviation et ajouté l’unité.' }],
+      results: [{ id: unitKey(us[0]), text: 'Lame de tondeuse 510 mm', note: 'Développé l’abréviation et ajouté l’unité.' }],
     }, us)
-    expect(notes[unitId(us[0])]).toContain('abréviation')
+    expect(notes[unitKey(us[0])]).toContain('abréviation')
   })
 })
 
