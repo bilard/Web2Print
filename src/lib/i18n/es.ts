@@ -5794,6 +5794,7 @@ export const es: Record<TranslationKey, string> = {
   'pwte.run': 'Traducir {count} fichas',
   'pwte.running': 'Traduciendo… {done} / {total}',
   'pwte.progress': '{done} / {total} procesadas · {kept} escritas · {refused} rechazadas',
+  'pwte.providerFailed': '{provider} no ha respondido ({message}) — pasamos al siguiente.',
   'pwte.doneToast': '{count} de {asked} fichas escritas · {refused} rechazadas · {silent} sin respuesta del modelo.',
   'pwte.none': 'Nada que procesar con estos filtros.',
   'pwte.before': 'Antes',

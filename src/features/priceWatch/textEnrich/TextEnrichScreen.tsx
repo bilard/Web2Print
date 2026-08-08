@@ -16,6 +16,7 @@ import { generateJson } from '@/features/ai/llmRouter'
 import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
 import { TextEnrichFilters } from './TextEnrichFilters'
 import { rejectionParts, type RejectionPart } from './violationSummary'
+import { chunkByVolume } from './chunkByVolume'
 import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
 import { langBreakdown } from './langBreakdown'
@@ -24,9 +25,11 @@ import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
 } from '../textRevisionsStore'
 
-/** Textes envoyés au modèle en une fois. Au-delà, les réponses se dégradent et une erreur
- *  coûte tout le lot ; en deçà, on paie trop d'allers-retours. */
-const BATCH = 20
+/** Plafond de SORTIE. Le défaut du routeur (8192) suffit à une extraction, pas à une
+ *  réécriture : ici la réponse pèse au moins autant que l'entrée, plus la note explicative
+ *  de chaque fiche. Trop bas, la sortie est tronquée en silence et le JSON devient
+ *  invalide — l'écran reste alors à « 0 / 10 » sans rien dire. */
+const MAX_OUTPUT_TOKENS = 16000
 
 interface Line {
   product: SourceProduct
@@ -153,9 +156,11 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
     let refused = 0
     let silent = 0
     const reasons = new Map<string, RejectionPart[]>()
+    // Le poids d'une fiche, tel qu'il part au modèle.
+    const chunks = chunkByVolume(batchList, (l) => l.product.name.length + (l.product.description?.length ?? 0))
+    let processed = 0
     try {
-      for (let i = 0; i < batchList.length; i += BATCH) {
-        const chunk = batchList.slice(i, i + BATCH)
+      for (const chunk of chunks) {
         const raw = await generateJson({
           task: 'data.textEnrich',
           prompt: buildScreenPrompt(chunk.map((l) => ({
@@ -166,6 +171,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           schema: ScreenBatchSchema,
           schemaForLLM: screenSchemaForLLM,
           version: 'text-enrich-screen/v2',
+          maxTokens: MAX_OUTPUT_TOKENS,
+          // ⚠ Un fournisseur qui tombe et cède la main au suivant doit se VOIR : sans ça,
+          // un quota épuisé se manifeste par un écran qui n'avance pas, et on cherche la
+          // panne dans le module.
+          onProviderFailed: ({ provider, error }) => {
+            toast.warning(t('pwte.providerFailed', { provider, message: error.message.slice(0, 120) }))
+          },
         })
 
         const written: TextRevision[] = []
@@ -226,8 +238,9 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           })
         }
         setRejected((prev) => new Map([...prev, ...reasons]))
+        processed += chunk.length
         setLive({ kept, refused })
-        setDone(Math.min(i + BATCH, batchList.length))
+        setDone(processed)
       }
       toast.success(t('pwte.doneToast', {
         count: n(kept), asked: n(batchList.length), refused: n(refused), silent: n(silent),
