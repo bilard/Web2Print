@@ -11,7 +11,7 @@
 // de lignes, perdre « qui est à gauche, qui est à droite » au premier scroll rendait la
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, Loader2, Download, FileSpreadsheet, PanelLeftClose, ChevronsRight, Boxes, Languages } from 'lucide-react'
+import { RefreshCw, Loader2, Download, FileSpreadsheet, PanelLeftClose, ChevronsRight } from 'lucide-react'
 import { useCompetitorMeta, useCatalogReport } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
 import { buildRail, ExplorerSiteRail } from './ExplorerSiteRail'
@@ -29,7 +29,7 @@ import { useGlobalSearch } from './useGlobalSearch'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { withVisual } from './confidence'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
-import { computeStats } from './stats'
+import { computeStats, countBands, countSourceFacts } from './stats'
 import { rowsToCsv } from './exportCsv'
 import { downloadRowsXlsx } from './exportXlsx'
 import { rowDomain, rowSiteId } from './compilation'
@@ -37,6 +37,7 @@ import { useCompilation } from './useCompilation'
 import { useAllVerdicts } from './useAllVerdicts'
 import { ExplorerCompileBar } from './ExplorerCompileBar'
 import { ExplorerCatalog } from './ExplorerCatalog'
+import { ExplorerRailModes, type ExplorerMode } from './ExplorerRailModes'
 import { TextEnrichScreen } from '../textEnrich/TextEnrichScreen'
 import { useSourceSheet } from './useSourceSheet'
 import { usePairingRules } from '../usePairingRules'
@@ -180,11 +181,13 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // Mode « Mon catalogue » : la liste centrale montre les produits SOURCE, sans
   // concurrent. C'est l'autre moitié de l'écran, celle qui manquait — on ne pouvait
   // consulter son propre catalogue qu'à travers ce qu'un marchand en vendait.
-  const [catalogMode, setCatalogMode] = useState(false)
-  // Écran de traduction : même donnée que « Mon catalogue », autre travail. Il vit ICI
-  // et pas dans le workflow parce que c'est ici qu'on constate qu'un texte est en
-  // allemand — et qu'on veut le corriger sans monter une chaîne de cartes.
-  const [enrichMode, setEnrichMode] = useState(false)
+  // UN seul mode courant : les trois vues (concurrent, catalogue, traduction) occupent la
+  // même zone centrale, et deux drapeaux indépendants laissaient possible un état où les
+  // deux sont vrais. L'écran de traduction vit ICI et pas dans le workflow parce que
+  // c'est ici qu'on constate qu'un texte est en allemand.
+  const [mode, setMode] = useState<ExplorerMode>(null)
+  const catalogMode = mode === 'catalog'
+  const enrichMode = mode === 'enrich'
   const searchHitsBySite = useMemo(
     () => new Map(globalSearch.hits.map((h) => [h.siteId, h.count])),
     [globalSearch.hits],
@@ -215,24 +218,10 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   const stats = useMemo(() => computeStats(filtered, visualOf), [filtered, visualOf])
   // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
   // expliquer une liste vidée par le filtre de fiabilité.
-  const bands = useMemo(() => {
-    let sure = 0, check = 0, doubt = 0
-    for (const r of rows) {
-      if (r.confidence?.band === 'sure') sure++
-      else if (r.confidence?.band === 'check') check++
-      else if (r.confidence?.band === 'doubt') doubt++
-    }
-    return { sure, check, doubt }
-  }, [rows])
+  const bands = useMemo(() => countBands(rows), [rows])
 
-  // Ce que le catalogue source porte vraiment : dit d'un coup d'œil s'il faut relancer
-  // « Comparer catalogue » pour obtenir taxonomie et visuels.
   const facts = useMemo(() => ({
-    products: source.products.length,
-    withImage: source.products.filter((p) => p.image).length,
-    withTaxo: source.products.filter((p) => p.taxo?.length).length,
-    withDescription: source.products.filter((p) => p.description).length,
-    withUrl: source.products.filter((p) => p.url).length,
+    ...countSourceFacts(source.products),
     workflowId,
     partial: source.partial,
     expected: source.expected,
@@ -351,23 +340,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.competitors')}
               <span className="ml-auto tabular-nums text-white/20">{sites.length}</span>
             </button>
-            <button type="button"
-              onClick={() => { setCatalogMode((v) => !v); setEnrichMode(false); compilation.reset() }}
-              className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] border-b border-white/[0.06] transition-colors ${
-                catalogMode ? 'bg-indigo-500/15 text-white' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'
-              }`}>
-              <Boxes className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t('pwx.catalog.title')}</span>
-              <span className="ml-auto tabular-nums text-white/30">{source.products.length.toLocaleString(intlLocale(locale))}</span>
-            </button>
-            <button type="button"
-              onClick={() => { setEnrichMode((v) => !v); setCatalogMode(false); compilation.reset() }}
-              className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] border-b border-white/[0.06] transition-colors ${
-                enrichMode ? 'bg-indigo-500/15 text-white' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'
-              }`}>
-              <Languages className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t('pwte.title')}</span>
-            </button>
+            <ExplorerRailModes mode={mode} catalogCount={source.products.length}
+              onPick={(m) => { setMode(m); compilation.reset() }} />
             <ExplorerCompileBar state={compilation} sites={scannable.length} ready={!noSource}
               onRun={() => void compilation.run(
                 scannable, source.products,
@@ -377,7 +351,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
             <div className="flex-1 min-h-0">
               <ExplorerSiteRail items={sites} active={catalogMode || enrichMode || compiling ? null : active}
                 loading={loading} searchHits={searchHitsBySite}
-                onPick={(id) => { compilation.reset(); setCatalogMode(false); setEnrichMode(false); setSiteId(id) }} />
+                onPick={(id) => { compilation.reset(); setMode(null); setSiteId(id) }} />
             </div>
           </div>
         ) : (

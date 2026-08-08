@@ -75,3 +75,36 @@ export function computeStats(
     visualDiff, visualDone, visualComparable,
   }
 }
+
+/**
+ * Répartition des bandes de fiabilité sur TOUTES les lignes du site, filtres compris ou
+ * non.
+ *
+ * ⚠ Calculée sur `rows` et non sur les lignes filtrées, à dessein : elle sert justement à
+ * expliquer une liste vidée PAR le filtre de fiabilité. La calculer après filtrage
+ * répondrait « 0 douteux » à qui vient de masquer les douteux.
+ */
+export function countBands(rows: PairedRow[]): { sure: number; check: number; doubt: number } {
+  let sure = 0, check = 0, doubt = 0
+  for (const r of rows) {
+    if (r.confidence?.band === 'sure') sure++
+    else if (r.confidence?.band === 'check') check++
+    else if (r.confidence?.band === 'doubt') doubt++
+  }
+  return { sure, check, doubt }
+}
+
+/** Ce que le catalogue source porte vraiment. Dit d'un coup d'œil s'il faut relancer
+ *  « Comparer catalogue » pour obtenir la taxonomie et les visuels. */
+export function countSourceFacts(products: {
+  image?: string; taxo?: string[]; description?: string; url?: string
+}[]): { products: number; withImage: number; withTaxo: number; withDescription: number; withUrl: number } {
+  let withImage = 0, withTaxo = 0, withDescription = 0, withUrl = 0
+  for (const p of products) {
+    if (p.image) withImage++
+    if (p.taxo?.length) withTaxo++
+    if (p.description) withDescription++
+    if (p.url) withUrl++
+  }
+  return { products: products.length, withImage, withTaxo, withDescription, withUrl }
+}
