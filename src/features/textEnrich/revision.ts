@@ -174,6 +174,14 @@ export interface EnrichPass {
   costUsd?: number
   /** Vrai si le passage s'est arrêté sur son plafond — il reste donc du travail. */
   cappedBy?: 'spend' | 'rows'
+  /** Qui a produit ces textes. La cascade peut basculer d'un fournisseur à l'autre en
+   *  cours de route : c'est le PREMIER retenu qui est noté, faute de mieux. Sans cette
+   *  trace, deux passages au rendu très différent sont inexplicables. */
+  provider?: string
+  model?: string
+  /** Ce que le modèle dit avoir changé, par unité. Alimente l'écran de comparaison, où
+   *  la justification est ce qui permet d'accepter ou de rejeter sans relire le produit. */
+  notes?: Record<string, string>
 }
 
 /** Compteurs vierges d'un passage. Toutes les raisons de refus sont présentes dès le

@@ -28,6 +28,13 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif
+  // ⚠ `text-enrich` n'est PAS ici pour une raison technique de navigateur : il pourrait
+  // parfaitement tourner côté serveur. Son moteur n'est simplement pas encore porté (il
+  // s'appuie sur le lotisseur de complétion de colonne, côté client). Il est déclaré
+  // non exécutable, et donc marqué EN ERREUR par le cron — pas ignoré gracieusement :
+  // un run planifié qui « réussirait » sans avoir rien enrichi ferait ensuite exporter
+  // des textes non enrichis en croyant les avoir traités. Mieux vaut que ça s'arrête.
+  'text-enrich',
 ])
 
 /** Sous-ensemble de SERVER_UNSUPPORTED purement VISUEL/aperçu (sortie sans valeur de
