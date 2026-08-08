@@ -52,7 +52,12 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   const [prompt, setPrompt] = useState('')
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(0)
-  const [limit, setLimit] = useState(200)
+  // ⚠ La saisie est gardée TELLE QUELLE, en texte. Corriger à chaque frappe rendait le
+  // champ intapable : commencer « 5 » pour 500 devenait 10 sous les doigts, et le vider
+  // était impossible. Le plancher ne s'applique plus à la frappe — seulement au sens :
+  // un champ vide ou nul désactive le bouton, il ne réécrit rien.
+  const [limitText, setLimitText] = useState('200')
+  const limit = Math.max(0, Math.trunc(Number(limitText)) || 0)
 
   useEffect(() => {
     if (!uid || !watchId) return
@@ -242,15 +247,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           {searching && <span className="text-amber-300/80">{t('pwte.searchOverrides')}</span>}
           <label className="flex items-center gap-1.5">
             {t('pwte.limit')}
-            {/* ⚠ `step={100}` avec un plancher à 1 déposait sur 1 : depuis 200, un clic de
-                trop passait par 0, ramené à 1 — et remonter redonnait 101, jamais 200.
-                Le pas et le plancher sont désormais accordés : 200 → 150 → 100 → 50 → 10,
-                sans jamais traverser 0. */}
-            <input type="number" min={10} step={50} value={limit}
-              onChange={(e) => setLimit(Math.max(10, Number(e.target.value) || 10))}
+            {/* Les flèches donnent des valeurs rondes (200 → 150 → 100 → 50 → 1) ; au
+                clavier, rien n'est corrigé sous les doigts. */}
+            <input type="number" min={1} step={50} value={limitText}
+              onChange={(e) => setLimitText(e.target.value)}
               className="h-7 w-20 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent" />
           </label>
-          <button type="button" onClick={() => void run()} disabled={running || todo.length === 0}
+          <button type="button" onClick={() => void run()} disabled={running || todo.length === 0 || limit < 1}
             className="ml-auto flex items-center gap-1.5 rounded bg-indigo-500/90 px-3 py-1.5 text-[11px] font-medium text-[#fff] hover:bg-indigo-500 disabled:opacity-40">
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
             {running
