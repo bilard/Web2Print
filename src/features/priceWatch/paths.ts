@@ -66,3 +66,13 @@ export const PRICE_STATE_BYTES = 900_000
 // crons serveur liraient sinon les littéraux, et le réglage ne s'appliquerait qu'à moitié.
 export const pairingRulesDoc = (uid: string, watchId: string) =>
   `${watchDoc(uid, watchId)}/settings/pairing`
+
+// Textes réécrits (traduction, enrichissement), rangés À CÔTÉ du catalogue et jamais
+// DEDANS.
+//
+// ⚠ Le catalogue source est réécrit en bloc à chaque « Comparer catalogue ». Y poser les
+// traductions les ferait disparaître au comparatif suivant, sans un mot — et la mémoire
+// de l'original avec. Une collection distincte survit aux recalculs, et l'écran superpose
+// les deux à la lecture.
+export const textRevisionsCol = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/textRevisions`
