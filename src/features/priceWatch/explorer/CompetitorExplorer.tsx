@@ -11,7 +11,7 @@
 // de lignes, perdre « qui est à gauche, qui est à droite » au premier scroll rendait la
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, Loader2, Download, FileSpreadsheet, PanelLeftClose, ChevronsRight } from 'lucide-react'
+import { RefreshCw, Loader2, Download, FileSpreadsheet, PanelLeftClose, ChevronsRight, Boxes } from 'lucide-react'
 import { useCompetitorMeta, useCatalogReport } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
 import { buildRail, ExplorerSiteRail } from './ExplorerSiteRail'
@@ -36,6 +36,7 @@ import { rowDomain, rowSiteId } from './compilation'
 import { useCompilation } from './useCompilation'
 import { useAllVerdicts } from './useAllVerdicts'
 import { ExplorerCompileBar } from './ExplorerCompileBar'
+import { ExplorerCatalog } from './ExplorerCatalog'
 import { useSourceSheet } from './useSourceSheet'
 import { usePairingRules } from '../usePairingRules'
 import { useVerdicts } from './useVerdicts'
@@ -175,6 +176,10 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   )
   // Reporté sur le rail, la seule vue d'ensemble des vingt-quatre concurrents : « trouvé
   // chez 13 » ne disait pas LESQUELS parmi ceux de gauche.
+  // Mode « Mon catalogue » : la liste centrale montre les produits SOURCE, sans
+  // concurrent. C'est l'autre moitié de l'écran, celle qui manquait — on ne pouvait
+  // consulter son propre catalogue qu'à travers ce qu'un marchand en vendait.
+  const [catalogMode, setCatalogMode] = useState(false)
   const searchHitsBySite = useMemo(
     () => new Map(globalSearch.hits.map((h) => [h.siteId, h.count])),
     [globalSearch.hits],
@@ -341,6 +346,15 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.competitors')}
               <span className="ml-auto tabular-nums text-white/20">{sites.length}</span>
             </button>
+            <button type="button"
+              onClick={() => { setCatalogMode((v) => !v); compilation.reset() }}
+              className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] border-b border-white/[0.06] transition-colors ${
+                catalogMode ? 'bg-indigo-500/15 text-white' : 'text-white/55 hover:bg-white/[0.04] hover:text-white'
+              }`}>
+              <Boxes className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('pwx.catalog.title')}</span>
+              <span className="ml-auto tabular-nums text-white/30">{source.products.length.toLocaleString(intlLocale(locale))}</span>
+            </button>
             <ExplorerCompileBar state={compilation} sites={scannable.length} ready={!noSource}
               onRun={() => void compilation.run(
                 scannable, source.products,
@@ -348,9 +362,9 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               )}
               onClose={() => { compilation.reset(); setPage(0) }} />
             <div className="flex-1 min-h-0">
-              <ExplorerSiteRail items={sites} active={compiling ? null : active} loading={loading}
+              <ExplorerSiteRail items={sites} active={catalogMode || compiling ? null : active} loading={loading}
                 searchHits={searchHitsBySite}
-                onPick={(id) => { compilation.reset(); setSiteId(id) }} />
+                onPick={(id) => { compilation.reset(); setCatalogMode(false); setSiteId(id) }} />
             </div>
           </div>
         ) : (
@@ -387,6 +401,11 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
           </button>
         )}
 
+        {/* Mon catalogue REMPLACE la vue par paires : il n'y a pas de concurrent en face,
+            et garder une colonne vide à droite laisserait croire à un appariement raté. */}
+        {catalogMode ? (
+          <ExplorerCatalog products={source.products} query={filter.q} imagePrefix={src.imagePrefix} />
+        ) : (
         <div className="flex-1 min-w-0 overflow-auto">
           <div className="grid grid-cols-2 text-[10px] uppercase tracking-wider sticky top-0 z-20 bg-surface-2 border-b border-white/10 shadow-[0_1px_0_rgba(255,255,255,0.04)]">
             {/* Le résultat du filtre, CHIFFRÉ, à l'endroit où la liste commence. Le compte
@@ -509,6 +528,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
             ))
           )}
         </div>
+        )}
       </div>
     </div>
   )

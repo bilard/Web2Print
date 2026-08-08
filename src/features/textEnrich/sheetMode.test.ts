@@ -71,21 +71,32 @@ describe('application à la feuille', () => {
 })
 
 describe('colonnes de sortie', () => {
+  const col = (key: string, label?: string) => ({ key, label: label ?? key })
+
   it('place la jumelle juste après sa colonne', () => {
     // Reléguée en fin de feuille, elle obligerait à faire défiler quatorze colonnes pour
     // comparer deux textes qui ne tiennent déjà pas dans une cellule.
-    expect(sheetColumnsWithSources(['ref', 'nom', 'prix'], ['nom']))
+    expect(sheetColumnsWithSources([col('ref'), col('nom'), col('prix')], ['nom']).map((c) => c.key))
       .toEqual(['ref', 'nom', 'nom (source)', 'prix'])
   })
 
+  it('⚠ rend des OBJETS et garde les métadonnées d’entrée', () => {
+    // L'export Excel et l'aperçu cherchent `c.key` : une liste de chaînes leur donne
+    // `undefined` partout, et la feuille sort sans en-têtes — après un passage payé.
+    const cols = [{ key: 'nom', label: 'Libellé', fieldType: 'text' }]
+    const out = sheetColumnsWithSources(cols, ['nom'])
+    expect(out[0]).toEqual(cols[0])
+    expect(out[1]).toEqual({ key: 'nom (source)', label: 'Libellé (source)' })
+  })
+
   it('n’en ajoute pas pour un champ non traité', () => {
-    expect(sheetColumnsWithSources(['ref', 'nom'], [])).toEqual(['ref', 'nom'])
+    expect(sheetColumnsWithSources([col('ref'), col('nom')], []).map((c) => c.key)).toEqual(['ref', 'nom'])
   })
 
   it('⚠ ne double pas la jumelle sur une feuille déjà passée par la carte', () => {
     // Deux cartes en série, ou un second run : « nom (source) (source) » n'aurait aucun
     // sens et écraserait la vraie mémoire de l'original.
-    expect(sheetColumnsWithSources(['nom', 'nom (source)'], ['nom']))
+    expect(sheetColumnsWithSources([col('nom'), col('nom (source)')], ['nom']).map((c) => c.key))
       .toEqual(['nom', 'nom (source)'])
   })
 

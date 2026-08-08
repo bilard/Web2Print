@@ -73,20 +73,34 @@ export function applySheetRevisions(
   })
 }
 
+/** Colonne de feuille, réduite à ce dont l'aval a besoin. */
+export interface SheetColumn { key: string; label?: string }
+
 /**
  * Colonnes de la feuille de sortie : celles d'entrée, plus une jumelle par champ traité.
+ *
+ * ⚠ Des OBJETS, pas des chaînes. L'export Excel et l'aperçu de données cherchent `c.key` :
+ * une liste de chaînes leur donne `undefined` partout, et la feuille sort sans en-têtes
+ * ni cellules — après un passage payé. Les colonnes d'entrée sont donc reprises TELLES
+ * QUELLES, avec leur libellé et leurs métadonnées.
  *
  * ⚠ La jumelle se place JUSTE APRÈS sa colonne d'origine, pas en fin de feuille. Sur les
  * quatorze colonnes d'un catalogue, un « nom (source) » relégué au bout oblige à faire
  * défiler pour comparer deux textes qui ne tiennent déjà pas dans une cellule.
  */
-export function sheetColumnsWithSources(columns: string[], fields: string[]): string[] {
+export function sheetColumnsWithSources<T extends SheetColumn>(
+  columns: T[],
+  fields: string[],
+): (T | SheetColumn)[] {
   const touched = new Set(fields)
-  const out: string[] = []
+  const present = new Set(columns.map((c) => c.key))
+  const out: (T | SheetColumn)[] = []
   for (const c of columns) {
     out.push(c)
     // Une feuille déjà passée par la carte porte la jumelle : ne pas la doubler.
-    if (touched.has(c) && !columns.includes(sourceColumnOf(c))) out.push(sourceColumnOf(c))
+    if (touched.has(c.key) && !present.has(sourceColumnOf(c.key))) {
+      out.push({ key: sourceColumnOf(c.key), label: sourceColumnOf(c.label ?? c.key) })
+    }
   }
   return out
 }

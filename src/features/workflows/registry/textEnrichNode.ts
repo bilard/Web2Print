@@ -22,7 +22,8 @@ import { planPass, runPass, type EnrichUnit } from '@/features/textEnrich/pass'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
 import {
-  applySheetRevisions, sheetColumnsWithSources, sheetTargets, type SheetRow,
+  applySheetRevisions, sheetColumnsWithSources, sheetTargets,
+  type SheetColumn, type SheetRow,
 } from '@/features/textEnrich/sheetMode'
 import {
   DEFAULT_TEXT_ENRICH_CONFIG, configToPlans, configProblem, missingProtectedColumns,
@@ -44,7 +45,9 @@ interface RevisionRow {
   apres: string
   justification: string
 }
-type EnrichOutputs = { enriched: { rows: RevisionRow[] } | { name: string; columns: string[]; rows: SheetRow[] } }
+type EnrichOutputs = {
+  enriched: { rows: RevisionRow[] } | { name: string; columns: SheetColumn[]; rows: SheetRow[] }
+}
 
 const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutputs> = {
   type: 'text-enrich',
@@ -81,7 +84,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     // ⚠ Le port branché mais porteur d'autre chose qu'une feuille signe un amont en
     // échec. Sans ce garde-fou, on retomberait sur le projet PIM — c'est-à-dire sur un
     // TOUT AUTRE jeu de fiches que celui qu'on croit traiter, ou sur rien du tout.
-    const sheet = inputs.sheet as { name?: string; columns?: unknown[]; rows?: SheetRow[] } | undefined
+    const sheet = inputs.sheet as { name?: string; columns?: SheetColumn[]; rows?: SheetRow[] } | undefined
     const wired = inputs.sheet != null
     if (wired && !Array.isArray(sheet?.rows)) throw new Error(t('run.textEnrich.badPortPayload'))
     const fromSheet = wired && Array.isArray(sheet?.rows)
@@ -111,7 +114,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     /** La feuille d'entrée, telle quelle. */
     const passthrough = () => ({
       name: sheet?.name ?? 'sheet',
-      columns: (sheet?.columns ?? []).map((c) => String((c as { key?: string }).key ?? c)),
+      columns: sheet?.columns ?? [],
       rows: sheetRows,
     })
 
@@ -261,10 +264,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
       return {
         enriched: {
           name: sheet?.name ?? 'sheet',
-          columns: sheetColumnsWithSources(
-            (sheet?.columns ?? []).map((c) => String((c as { key?: string }).key ?? c)),
-            planKeys,
-          ),
+          columns: sheetColumnsWithSources(sheet?.columns ?? [], planKeys),
           rows: applied,
         },
       }
