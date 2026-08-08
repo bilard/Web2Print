@@ -67,6 +67,7 @@ type LLMTask =
   | 'web.searchPlan'
   | 'web.discoveryFilter'
   | 'data.columnCompletion'
+  | 'data.textEnrich'
   | 'design.promoPlan'
   /** Analyse rédigée du rapport de veille tarifaire, à partir d'une consigne UTILISATEUR. */
   | 'priceWatch.analysis'
@@ -165,6 +166,10 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // 'telegram.chat'. NE PAS mettre 'claude-opus-4-8' ici, sinon le fallback gemini retombe sur
   // son défaut (souvent gemini-3.5-flash, JSON ~50 % d'échec, cf. mémoire projet).
   'data.columnCompletion': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // Enrichissement des textes produit (traduction, reformulation, gabarit de nom). Même
+  // profil que la complétion de colonne : Claude en primaire pour un JSON fiable, gemini
+  // ÉPINGLÉ en fallback — un gemini-3.5-flash échouerait une fois sur deux sur ce schéma.
+  'data.textEnrich': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
   // Génération de plan de composition retail (Visuels Promo) : placement sémantique de blocs
   // en pourcentages → gemini-3.1-pro-preview (responseSchema fiable sur v1beta) ; Claude fallback.
   'design.promoPlan': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },
@@ -213,6 +218,11 @@ const TASK_TEMPERATURE: Record<LLMTask, number> = {
   // Complétion de colonne : résultats textuels basés sur le contexte de la ligne,
   // légèrement créatif (résumé, traduction, reformulation) → 0.4.
   'data.columnCompletion':  0.4,
+  // Enrichissement de texte produit : on reformule ce qui EXISTE, on n'invente pas. Plus
+  // bas que la complétion de colonne — la vérification refuse ce que la créativité
+  // ajouterait (référence altérée, valeur arrondie, marque inventée), donc une
+  // température haute ne produirait que des rejets.
+  'data.textEnrich':        0.2,
   // Génération de plan promo : composition créative (placements en %) → légèrement créatif.
   'design.promoPlan':       0.3,
   // Plan de catalogue : composition créative (thème, densités) mais bornée par le schéma.
