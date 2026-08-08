@@ -1753,6 +1753,7 @@ export const en: Record<TranslationKey, string> = {
   'node.text-enrich.useTemplate': 'Template',
   'node.text-enrich.includeEmpty': 'Empty fields',
   'node.text-enrich.brandField': 'Brand column',
+  'node.text-enrich.ref2Field': 'Manufacturer ref column',
   'node.text-enrich.refField': 'Reference column',
   'node.text-enrich.eanField': 'Barcode column',
   'run.textEnrich.problem.no-project': 'Name the PIM project whose products should be enriched.',

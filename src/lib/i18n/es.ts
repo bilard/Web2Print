@@ -1752,6 +1752,7 @@ export const es: Record<TranslationKey, string> = {
   'node.text-enrich.useTemplate': 'Plantilla',
   'node.text-enrich.includeEmpty': 'Campos vacíos',
   'node.text-enrich.brandField': 'Columna marca',
+  'node.text-enrich.ref2Field': 'Columna ref. fabricante',
   'node.text-enrich.refField': 'Columna referencia',
   'node.text-enrich.eanField': 'Columna código de barras',
   'run.textEnrich.problem.no-project': 'Indique el proyecto PIM cuyas fichas deben enriquecerse.',

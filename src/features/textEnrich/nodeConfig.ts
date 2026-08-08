@@ -31,6 +31,14 @@ export interface TextEnrichConfig {
   /** Colonnes portant les éléments intouchables, pour la vérification d'après-coup. */
   brandField: string
   refField: string
+  /** Seconde colonne de référence — la CONSTRUCTEUR, typiquement.
+   *
+   *  ⚠ Elle existe parce que « Comparer catalogue » en gère deux (`refColumn` et
+   *  `ref2Column`), et que l'appariement s'appuie sur les deux. N'en protéger qu'une
+   *  laisserait un titre réécrit perdre la référence constructeur sans que rien ne
+   *  refuse la proposition — et cette référence-là vit souvent en FIN de libellé,
+   *  là où une réécriture coupe. */
+  ref2Field: string
   eanField: string
   /** Demander au modèle ce qu'il a changé — c'est ce que lit l'écran de comparaison. */
   withNote: boolean
@@ -72,6 +80,7 @@ export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
   ],
   brandField: 'marque',
   refField: 'reference',
+  ref2Field: '',
   eanField: 'ean',
   withNote: true,
   capUsd: 5,
@@ -149,7 +158,11 @@ export function protectedFieldsOf(
     const v = row[key]
     return v == null || v === '' ? [] : [String(v)]
   }
-  return { refs: read(config.refField), eans: read(config.eanField), brands: read(config.brandField) }
+  return {
+    refs: [...read(config.refField), ...read(config.ref2Field)],
+    eans: read(config.eanField),
+    brands: read(config.brandField),
+  }
 }
 
 /**
@@ -168,6 +181,6 @@ export function missingProtectedColumns(
 ): string[] {
   const present = new Set<string>()
   for (const row of rows) for (const k of Object.keys(row)) present.add(k)
-  return [config.brandField, config.refField, config.eanField]
+  return [config.brandField, config.refField, config.ref2Field, config.eanField]
     .filter((k) => k.trim() !== '' && !present.has(k))
 }

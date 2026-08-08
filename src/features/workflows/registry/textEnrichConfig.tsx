@@ -266,8 +266,8 @@ export function TextEnrichConfigPanel({
         </div>
       ))}
 
-      <div className="grid grid-cols-3 gap-2">
-        {(['brandField', 'refField', 'eanField'] as const).map((f) => (
+      <div className="grid grid-cols-2 gap-2">
+        {(['brandField', 'refField', 'ref2Field', 'eanField'] as const).map((f) => (
           <label key={f} className="space-y-1 text-[11px] text-muted-foreground">
             <span className="block">{t(`node.text-enrich.${f}` as 'node.text-enrich.brandField')}</span>
             <ColumnField value={config[f]} onPick={(v) => onChange({ ...config, [f]: v })}

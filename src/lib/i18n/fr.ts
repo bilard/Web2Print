@@ -1831,6 +1831,7 @@ export const fr = {
   'node.text-enrich.useTemplate': 'Gabarit',
   'node.text-enrich.includeEmpty': 'Champs vides',
   'node.text-enrich.brandField': 'Colonne marque',
+  'node.text-enrich.ref2Field': 'Colonne réf. constructeur',
   'node.text-enrich.refField': 'Colonne référence',
   'node.text-enrich.eanField': 'Colonne code-barres',
   'run.textEnrich.problem.no-project': 'Indiquez le projet PIM dont les fiches doivent être enrichies.',

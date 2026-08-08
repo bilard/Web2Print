@@ -115,6 +115,18 @@ describe('éléments intouchables', () => {
     expect(got).toEqual({ brands: ['STIGA'], refs: ['1134-4319-01'], eans: ['7391736312057'] })
   })
 
+  it('⚠ protège AUSSI la référence constructeur', () => {
+    // « Comparer catalogue » apparie sur deux colonnes de référence. N'en protéger qu'une
+    // laisserait un titre réécrit perdre la seconde sans qu'aucune vérification ne refuse
+    // la proposition — et elle vit souvent en FIN de libellé, là où une réécriture coupe.
+    const got = protectedFieldsOf(cfg({ ref2Field: 'mpn' }), { reference: 'A1', mpn: 'GX390' })
+    expect(got.refs).toEqual(['A1', 'GX390'])
+  })
+
+  it('ignore la seconde référence quand elle n’est pas réglée', () => {
+    expect(protectedFieldsOf(cfg(), { reference: 'A1', mpn: 'GX390' }).refs).toEqual(['A1'])
+  })
+
   it('ignore les cellules vides plutôt que de protéger une chaîne vide', () => {
     // Une chaîne vide « présente dans l'original » serait introuvable dans la proposition,
     // et ferait échouer la vérification sur toutes les fiches sans référence.
