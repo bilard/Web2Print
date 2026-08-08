@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import { PriceWatchDashboard } from './dashboard/PriceWatchDashboard'
-import { PairingRulesPanel } from './rules/PairingRulesPanel'
+import { PairingRulesPage } from './rules/PairingRulesPage'
 import { WatchSelector } from './dashboard/WatchSelector'
 import { useWatchList } from './useCatalogReport'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
@@ -23,7 +23,11 @@ export function PriceWatchPanel() {
   // ou si son choix a disparu.
   const watches = useWatchList()
   const [watchId, setWatchId] = useState<string | null>(null)
-  const [rulesOpen, setRulesOpen] = useState(false)
+  // Vue courante du module. Une PAGE et non une modale : un formulaire de quatre étages
+  // avec son aperçu chiffré ne se pilote pas dans une boîte posée sur l'écran qu'elle
+  // recouvre. Et une vue interne plutôt qu'une route : le suivi actif, le concurrent
+  // mesuré et le brouillon survivent ainsi au va-et-vient.
+  const [view, setView] = useState<'dashboard' | 'rules'>('dashboard')
   useEffect(() => {
     if (watches.length === 0) { setWatchId(null); return }
     if (!watchId || !watches.some((w) => w.watchId === watchId)) setWatchId(watches[0].watchId)
@@ -32,9 +36,9 @@ export function PriceWatchPanel() {
   useModuleIntent('price-watch', (action) => {
     if (!action.startsWith('section:')) return
     const key = action.slice('section:'.length)
-    // Les règles ne sont plus une section de la page : l'entrée de menu OUVRE leur
-    // fenêtre. Aucun défilement à tenter, donc aucune cible à attendre.
-    if (key === 'rules') { setRulesOpen(true); return }
+    // Les règles ne sont plus une section de la page : l'entrée de menu ouvre leur PAGE.
+    // Aucun défilement à tenter, donc aucune cible à attendre.
+    if (key === 'rules') { setView('rules'); return }
     // ⚠ Défilement INSTANTANÉ, jamais `behavior: 'smooth'`. Mesuré sur cette page : le
     // défilement fluide ne part même pas — `scrollTop` reste à 0 sur toute la durée,
     // alors que le même appel en `auto` atteint 5 619 px. Ce tableau de bord se repeint
@@ -60,6 +64,10 @@ export function PriceWatchPanel() {
     window.setTimeout(goTo, 1600)
   })
 
+  if (view === 'rules') {
+    return <PairingRulesPage watchId={watchId} onBack={() => setView('dashboard')} />
+  }
+
   return (
     <div className="space-y-6 pt-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -75,7 +83,7 @@ export function PriceWatchPanel() {
           {/* Accès direct : le menu en arbre ouvre la même fenêtre, mais il faut aussi
               pouvoir y aller depuis l'écran qu'on est en train de lire. */}
           <button
-            type="button" onClick={() => setRulesOpen(true)}
+            type="button" onClick={() => setView('rules')}
             className="text-xs rounded px-3 py-1.5 border border-white/10 text-white/60
               hover:text-white hover:border-white/25 transition-colors flex items-center gap-1.5"
           >
@@ -88,7 +96,6 @@ export function PriceWatchPanel() {
 
       <PriceWatchDashboard watchId={watchId} />
 
-      {rulesOpen && <PairingRulesPanel watchId={watchId} onClose={() => setRulesOpen(false)} />}
     </div>
   )
 }
