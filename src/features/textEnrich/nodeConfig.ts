@@ -107,8 +107,13 @@ export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
 
 /** Ce qui empêche le passage de partir. Vérifié AVANT le premier appel : découvrir une
  *  consigne vide après trois cents fiches coûte de l'argent et une révision à annuler. */
-export function configProblem(config: TextEnrichConfig): 'no-project' | 'no-plan' | 'no-prompt' | 'duplicate-key' | null {
-  if (config.projectId.trim() === '') return 'no-project'
+export function configProblem(
+  config: TextEnrichConfig,
+  /** Une feuille est branchée en entrée : elle fournit les fiches, le projet devient
+   *  inutile. Sans ce drapeau, la carte exigerait un projet PIM à qui n'en a pas. */
+  hasSheet = false,
+): 'no-project' | 'no-plan' | 'no-prompt' | 'duplicate-key' | null {
+  if (!hasSheet && config.projectId.trim() === '') return 'no-project'
   const plans = configToPlans(config)
   if (plans.length === 0) return 'no-plan'
   // La consigne EST la demande de l'utilisateur : sans elle, le modèle n'aurait que la

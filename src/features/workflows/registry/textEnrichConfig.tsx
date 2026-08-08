@@ -23,15 +23,63 @@ import type { EnrichKind } from '@/features/textEnrich/revision'
 const KINDS: EnrichKind[] = ['translate', 'improve', 'structure']
 const INPUT = 'h-7 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent'
 
+/**
+ * Choisir une colonne plutôt que la taper.
+ *
+ * Une clé mal orthographiée ne produit AUCUNE erreur : le passage compte tout « hors
+ * périmètre » et annonce « rien à traiter » — un succès parfaitement propre, et
+ * parfaitement vide. Sur une feuille de quatorze colonnes aux en-têtes inconnus d'avance,
+ * c'est la panne la plus probable.
+ *
+ * ⚠ DÉFINI HORS DU COMPOSANT. Déclaré à l'intérieur, il serait recréé à chaque rendu :
+ * React démonterait le champ à chaque frappe et le focus sauterait au premier caractère.
+ */
+function ColumnField({ value, onPick, cols, placeholder, className }: {
+  value: string
+  onPick: (v: string) => void
+  /** Colonnes de la feuille branchée. Vide = saisie libre (mode PIM). */
+  cols: string[]
+  placeholder?: string
+  className?: string
+}) {
+  if (cols.length === 0) {
+    return (
+      <input value={value} onChange={(e) => onPick(e.target.value)} placeholder={placeholder}
+        className={`${INPUT} ${className ?? ''}`} />
+    )
+  }
+  return (
+    <select value={value} onChange={(e) => onPick(e.target.value)} className={`${INPUT} ${className ?? ''}`}>
+      <option value="">{placeholder ?? '—'}</option>
+      {/* Une colonne réglée qui a disparu de la feuille reste proposée, suivie d'un
+          astérisque : la retirer du menu changerait le réglage en silence. */}
+      {!cols.includes(value) && value !== '' && <option value={value}>{value} *</option>}
+      {cols.map((c) => <option key={c} value={c}>{c}</option>)}
+    </select>
+  )
+}
+
 export function TextEnrichConfigPanel({
-  config, onChange,
-}: { config: TextEnrichConfig; onChange: (next: TextEnrichConfig) => void }) {
+  config, onChange, availableColumns,
+}: {
+  config: TextEnrichConfig
+  onChange: (next: TextEnrichConfig) => void
+  /** Colonnes de la feuille branchée en amont. Vide = pas de feuille (mode PIM). */
+  availableColumns?: string[]
+}) {
   const { t } = useTranslation()
-  const problem = configProblem(config)
+  const problem = configProblem(config, availableColumns != null && availableColumns.length > 0)
   const [projects, setProjects] = useState<PimProjectSummary[]>([])
   const [loading, setLoading] = useState(true)
+  // ⚠ Des colonnes connues = une feuille est branchée. C'est le seul signal dont dispose
+  // un panneau de config : il ne voit pas le graphe.
+  const cols = availableColumns ?? []
+  const fromSheet = cols.length > 0
 
   useEffect(() => {
+    // Inutile quand une feuille alimente la carte : le projet PIM ne sert alors à rien,
+    // et lire la collection pour rien coûte une requête à chaque ouverture du panneau.
+    if (fromSheet) { setLoading(false); return }
     let alive = true
     const uid = getWorkspaceUid()
     if (!uid) { setLoading(false); return }
@@ -42,7 +90,7 @@ export function TextEnrichConfigPanel({
       .catch(() => undefined)
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
-  }, [])
+  }, [fromSheet])
 
   const setPlan = (i: number, patch: Partial<PlanConfig>) => {
     onChange({ ...config, plans: config.plans.map((p, j) => (j === i ? { ...p, ...patch } : p)) })
@@ -59,10 +107,11 @@ export function TextEnrichConfigPanel({
     <div className="space-y-3">
       {/* Le projet se CHOISIT : son identifiant est un doc Firestore, que personne ne
           connaît de mémoire. Saisie libre en repli, si la liste ne charge pas. */}
-      <label className="block space-y-1 text-[11px] text-muted-foreground">
+      <label className={`block space-y-1 text-[11px] text-muted-foreground ${fromSheet ? 'opacity-40' : ''}`}>
         <span className="flex items-center gap-1.5">
           {t('node.text-enrich.projectId')}
-          {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+          {loading && !fromSheet && <Loader2 className="h-3 w-3 animate-spin" />}
+          {fromSheet && <span className="text-amber-400/80">— {t('node.text-enrich.sheetWins')}</span>}
         </span>
         {projects.length > 0 ? (
           <select
@@ -146,10 +195,9 @@ export function TextEnrichConfigPanel({
               onChange={(e) => setPlan(i, { enabled: e.target.checked })}
               className="h-3.5 w-3.5 accent-accent"
             />
-            <input
-              value={plan.key} onChange={(e) => setPlan(i, { key: e.target.value })}
-              placeholder={t('node.text-enrich.fieldKey')}
-              className={`${INPUT} min-w-0 flex-1`}
+            <ColumnField
+              value={plan.key} onPick={(v) => setPlan(i, { key: v })} cols={cols}
+              placeholder={t('node.text-enrich.fieldKey')} className="min-w-0 flex-1"
             />
             <select
               value={plan.kind} onChange={(e) => setPlan(i, { kind: e.target.value as EnrichKind })}
@@ -222,10 +270,8 @@ export function TextEnrichConfigPanel({
         {(['brandField', 'refField', 'eanField'] as const).map((f) => (
           <label key={f} className="space-y-1 text-[11px] text-muted-foreground">
             <span className="block">{t(`node.text-enrich.${f}` as 'node.text-enrich.brandField')}</span>
-            <input
-              value={config[f]} onChange={(e) => onChange({ ...config, [f]: e.target.value })}
-              className={`${INPUT} w-full`}
-            />
+            <ColumnField value={config[f]} onPick={(v) => onChange({ ...config, [f]: v })}
+              cols={cols} className="w-full" />
           </label>
         ))}
       </div>

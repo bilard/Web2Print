@@ -22,6 +22,9 @@ import { planPass, runPass, type EnrichUnit } from '@/features/textEnrich/pass'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
 import {
+  applySheetRevisions, sheetColumnsWithSources, sheetTargets, type SheetRow,
+} from '@/features/textEnrich/sheetMode'
+import {
   DEFAULT_TEXT_ENRICH_CONFIG, configToPlans, configProblem, missingProtectedColumns,
   protectedFieldsOf, type TextEnrichConfig,
 } from '@/features/textEnrich/nodeConfig'
@@ -41,15 +44,17 @@ interface RevisionRow {
   apres: string
   justification: string
 }
-type EnrichOutputs = { enriched: { rows: RevisionRow[] } }
+type EnrichOutputs = { enriched: { rows: RevisionRow[] } | { name: string; columns: string[]; rows: SheetRow[] } }
 
-const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOutputs> = {
+const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutputs> = {
   type: 'text-enrich',
   category: 'enrichment',
   labelKey: 'node.text-enrich.label',
   descriptionKey: 'node.text-enrich.desc',
   icon: Languages,
-  inputs: [],
+  // ⚠ Branchée, la feuille L'EMPORTE sur le projet PIM. C'est le chemin normal quand la
+  // donnée vient d'un import (Sheets, Excel) et n'a jamais rejoint le PIM.
+  inputs: [{ name: 'sheet', type: 'sheet' }],
   outputs: [{ name: 'enriched', type: 'sheet' }],
   outputColumns: ['produit', 'champ', 'avant', 'apres', 'justification'],
   // Les plans de champs sont une liste d'objets : le schéma générique ne sait pas les
@@ -72,14 +77,39 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
   },
   ConfigComponent: TextEnrichConfigPanel,
   runtime: 'client',
-  run: async (ctx, config) => {
+  run: async (ctx, config, inputs) => {
+    // ⚠ Le port branché mais porteur d'autre chose qu'une feuille signe un amont en
+    // échec. Sans ce garde-fou, on retomberait sur le projet PIM — c'est-à-dire sur un
+    // TOUT AUTRE jeu de fiches que celui qu'on croit traiter, ou sur rien du tout.
+    const sheet = inputs.sheet as { name?: string; columns?: unknown[]; rows?: SheetRow[] } | undefined
+    const wired = inputs.sheet != null
+    if (wired && !Array.isArray(sheet?.rows)) throw new Error(t('run.textEnrich.badPortPayload'))
+    const fromSheet = wired && Array.isArray(sheet?.rows)
+
     // Vérifié AVANT tout appel : découvrir une consigne vide après trois cents fiches
     // coûte de l'argent ET des révisions à annuler une à une.
-    const problem = configProblem(config)
+    const problem = configProblem(config, fromSheet)
     if (problem) throw new Error(t(`run.textEnrich.problem.${problem}` as 'run.textEnrich.problem.no-project'))
 
-    const targets = await loadTargets(config.projectId)
     const plans = configToPlans(config)
+    const planKeys = [...new Set(plans.map((p) => p.key))]
+    const sheetRows: SheetRow[] = fromSheet ? (sheet?.rows ?? []) : []
+    const targets = fromSheet
+      ? sheetTargets(sheetRows, planKeys)
+      : await loadTargets(config.projectId)
+
+    // ⚠ DIT, parce que la même carte est idempotente sur l'autre chemin. Une feuille
+    // traverse le graphe et meurt avec le run : rien ne retient qu'un texte a déjà été
+    // traité, donc chaque exécution refait — et refacture — le même travail.
+    if (fromSheet) ctx.log('info', t('run.textEnrich.sheetMode', { rows: sheetRows.length }))
+
+    /** La feuille d'entrée, telle quelle. */
+    const passthrough = () => ({
+      name: sheet?.name ?? 'sheet',
+      columns: (sheet?.columns ?? []).map((c) => String((c as { key?: string }).key ?? c)),
+      rows: sheetRows,
+    })
+
     const { units, counts } = planPass(targets, plans)
 
     // Chiffré AVANT d'appeler quoi que ce soit : l'utilisateur voit le volume réel, pas
@@ -98,11 +128,13 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
 
     if (config.dryRun) {
       ctx.log('info', t('run.textEnrich.dryRun'))
-      return { enriched: { rows: [] } }
+      // La feuille repart INCHANGÉE plutôt que vide : une simulation ne doit pas assécher
+      // l'aval du graphe, sinon on ne peut simuler qu'en bout de chaîne.
+      return { enriched: fromSheet ? passthrough() : { rows: [] } }
     }
     if (units.length === 0) {
       ctx.log('info', t('run.textEnrich.nothingToDo'))
-      return { enriched: { rows: [] } }
+      return { enriched: fromSheet ? passthrough() : { rows: [] } }
     }
 
     // ⚠ La borne s'applique APRÈS le chiffrage, pour que le journal annonce le total réel
@@ -110,7 +142,13 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
     // « 500 à faire » croirait le catalogue presque terminé.
     const capped = units.slice(0, Math.max(1, config.maxUnits))
     if (capped.length < units.length) {
-      ctx.log('warn', t('run.textEnrich.capped', { kept: capped.length, total: units.length }))
+      // ⚠ Deux messages, parce que la reprise ne veut pas dire la même chose. En mode PIM,
+      // relancer avance : le marqueur écarte ce qui est fait. Sur une feuille, relancer
+      // retraite ÉTERNELLEMENT les mêmes premières lignes — promettre « relancez pour la
+      // suite » serait faux, et coûteux à découvrir.
+      ctx.log('warn', fromSheet
+        ? t('run.textEnrich.cappedSheet', { kept: capped.length, total: units.length })
+        : t('run.textEnrich.capped', { kept: capped.length, total: units.length }))
     }
 
     const passId = `${Date.now().toString(36)}-${(ctx.workflowId ?? 'local').slice(0, 6)}`
@@ -172,12 +210,17 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
       popUsage()
     }
 
-    // Écrites APRÈS le passage, en un bloc : une écriture par lot laisserait, sur une
-    // interruption, des fiches révisées sans synthèse — donc invisibles dans l'écran de
-    // comparaison, et impossibles à annuler en masse.
-    await saveRevisions(config.projectId, revisions.map((r) => ({
-      productId: r.productId, field: r.field, value: r.value,
-    })))
+    // ⚠ RIEN N'EST PERSISTÉ en mode feuille, et ce n'est pas un oubli : il n'y a pas de
+    // fiche où poser la révision, et l'original voyage dans la colonne jumelle. L'écran de
+    // comparaison ne couvrira donc que les données du PIM.
+    if (!fromSheet) {
+      // Écrites APRÈS le passage, en un bloc : une écriture par lot laisserait, sur une
+      // interruption, des fiches révisées sans synthèse — donc invisibles dans l'écran de
+      // comparaison, et impossibles à annuler en masse.
+      await saveRevisions(config.projectId, revisions.map((r) => ({
+        productId: r.productId, field: r.field, value: r.value,
+      })))
+    }
 
     const pass: EnrichPass = {
       passId,
@@ -194,12 +237,33 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
       ...(model ? { model } : {}),
       ...(Object.keys(notes).length > 0 ? { notes } : {}),
     }
-    await savePass(config.projectId, pass)
+    if (!fromSheet) await savePass(config.projectId, pass)
 
     if (result.cappedBy === 'spend') ctx.log('warn', t('run.textEnrich.spendCapped', { cap: config.capUsd }))
     ctx.log('info', t('run.textEnrich.done', {
       revised: result.counts.revised, rejected: result.counts.rejected, passId,
     }))
+
+    if (fromSheet) {
+      const applied = applySheetRevisions(sheetRows, revisions.map((r) => ({
+        productId: r.productId,
+        field: r.field,
+        // L'original vient du calque de révision : la valeur du champ porte déjà le
+        // texte retenu.
+        before: r.value.enrich?.original ?? null,
+        after: r.value.value,
+      })))
+      return {
+        enriched: {
+          name: sheet?.name ?? 'sheet',
+          columns: sheetColumnsWithSources(
+            (sheet?.columns ?? []).map((c) => String((c as { key?: string }).key ?? c)),
+            planKeys,
+          ),
+          rows: applied,
+        },
+      }
+    }
 
     return {
       enriched: {
