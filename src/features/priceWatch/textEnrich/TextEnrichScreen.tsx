@@ -124,7 +124,14 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   // Ce qui reste à faire : les fiches déjà réécrites n'y sont plus. Relancer ne repaie
   // donc jamais deux fois le même texte — c'est ce que le chemin par feuille ne savait
   // pas faire.
-  const todo = useMemo(() => shown.filter((l) => !l.revision), [shown])
+  // ⚠ Les fiches REFUSÉES sortent de la file. Sans ça, chaque relance reprenait les mêmes
+  // deux cents en tête de liste, se faisait refuser pour la même raison, et n'avançait
+  // jamais d'une ligne — en repayant le modèle à chaque tour. Elles restent affichées avec
+  // leur motif ; c'est la file qui les saute, pas l'écran qui les cache.
+  const todo = useMemo(
+    () => shown.filter((l) => !l.revision && !rejected.has(l.product.id)),
+    [shown, rejected],
+  )
   const limit = rawLimit > 0 ? rawLimit : todo.length
 
   const run = async () => {
