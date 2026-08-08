@@ -5790,6 +5790,7 @@ export const es: Record<TranslationKey, string> = {
   'pwte.limit': 'Procesar como máximo (0 = todo)',
   'pwte.run': 'Traducir {count} fichas',
   'pwte.running': 'Traduciendo… {done} / {total}',
+  'pwte.progress': '{done} / {total} procesadas · {kept} escritas · {refused} rechazadas',
   'pwte.doneToast': '{count} de {asked} fichas escritas · {refused} rechazadas · {silent} sin respuesta del modelo.',
   'pwte.none': 'Nada que procesar con estos filtros.',
   'pwte.before': 'Antes',

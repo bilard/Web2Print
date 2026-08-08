@@ -5983,6 +5983,7 @@ export const fr = {
   'pwte.limit': 'Traiter au plus (0 = tout)',
   'pwte.run': 'Traduire {count} fiches',
   'pwte.running': 'Traduction… {done} / {total}',
+  'pwte.progress': '{done} / {total} traitées · {kept} écrites · {refused} refusées',
   'pwte.doneToast': '{count} fiches écrites sur {asked} · {refused} refusées · {silent} sans réponse du modèle.',
   'pwte.none': 'Rien à traiter avec ces filtres.',
   'pwte.before': 'Avant',

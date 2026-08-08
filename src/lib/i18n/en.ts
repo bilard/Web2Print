@@ -5791,6 +5791,7 @@ export const en: Record<TranslationKey, string> = {
   'pwte.limit': 'Process at most (0 = all)',
   'pwte.run': 'Translate {count} listings',
   'pwte.running': 'Translating… {done} / {total}',
+  'pwte.progress': '{done} / {total} processed · {kept} written · {refused} rejected',
   'pwte.doneToast': '{count} of {asked} records written · {refused} rejected · {silent} with no answer from the model.',
   'pwte.none': 'Nothing to process with these filters.',
   'pwte.before': 'Before',

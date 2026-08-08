@@ -64,6 +64,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   const [prompt, setPrompt] = useState('')
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(0)
+  /** Ce qui est déjà tombé pendant le run. Le bouton seul affichait « 0 / 200 » pendant
+   *  toute la durée du premier lot : rien ne distinguait un traitement en cours d'un
+   *  écran figé. */
+  const [live, setLive] = useState({ kept: 0, refused: 0 })
   // ⚠ La saisie est gardée TELLE QUELLE, en texte. Corriger à chaque frappe rendait le
   // champ intapable : commencer « 5 » pour 500 devenait 10 sous les doigts, et le vider
   // était impossible. Le plancher ne s'applique plus à la frappe — seulement au sens :
@@ -128,6 +132,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
     if (batchList.length === 0) return
     setRunning(true)
     setDone(0)
+    setLive({ kept: 0, refused: 0 })
     let kept = 0
     let refused = 0
     let silent = 0
@@ -205,6 +210,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           })
         }
         setRejected((prev) => new Map([...prev, ...reasons]))
+        setLive({ kept, refused })
         setDone(Math.min(i + BATCH, batchList.length))
       }
       toast.success(t('pwte.doneToast', {
@@ -253,6 +259,25 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           canRun={!running && todo.length > 0 && (modes.translate || modes.improve)}
           onRun={() => void run()}
         />
+
+        {/* Progression VISIBLE. Le compteur du bouton ne bouge qu'à la fin d'un lot de
+            vingt : entre deux, plus rien ne bougeait à l'écran et l'attente ressemblait
+            à une panne. La barre avance, et le détail dit ce qui tombe. */}
+        {running && (
+          <div className="space-y-1" role="status" aria-live="polite">
+            <div className="h-1 w-full overflow-hidden rounded bg-white/[0.06]">
+              <div className="h-full bg-indigo-400/80 transition-[width] duration-500"
+                style={{ width: `${Math.round((done / Math.max(1, Math.min(limit, todo.length))) * 100)}%` }} />
+            </div>
+            <p className="flex items-center gap-2 text-[10px] text-white/40">
+              <Loader2 className="w-3 h-3 animate-spin text-indigo-300" />
+              {t('pwte.progress', {
+                done: n(done), total: n(Math.min(limit, todo.length)),
+                kept: n(live.kept), refused: n(live.refused),
+              })}
+            </p>
+          </div>
+        )}
       </div>
 
       {loading ? (
