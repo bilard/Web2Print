@@ -1737,7 +1737,7 @@ export const en: Record<TranslationKey, string> = {
   'node.text-enrich.langNone': 'no language recognised',
   'node.text-enrich.langUndecided': '{count} undetermined',
   'node.text-enrich.langEmpty': '{count} empty',
-  'node.text-enrich.maxUnits': 'Maximum fields processed',
+  'node.text-enrich.maxUnits': 'Maximum fields processed (0 = all)',
   'node.text-enrich.withNote': 'Ask the model what it changed',
   'node.text-enrich.dryRun': 'Dry run: measure without writing',
   'node.text-enrich.sheetWins': 'a sheet is wired, it takes precedence',

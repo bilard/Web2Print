@@ -1815,7 +1815,7 @@ export const fr = {
   'node.text-enrich.langNone': 'aucune langue reconnue',
   'node.text-enrich.langUndecided': '{count} indéterminés',
   'node.text-enrich.langEmpty': '{count} vides',
-  'node.text-enrich.maxUnits': 'Champs traités au maximum',
+  'node.text-enrich.maxUnits': 'Champs traités au maximum (0 = tous)',
   'node.text-enrich.withNote': 'Demander au modèle ce qu’il a changé',
   'node.text-enrich.dryRun': 'Simulation : chiffrer sans rien écrire',
   'node.text-enrich.sheetWins': 'une feuille est branchée, elle l’emporte',

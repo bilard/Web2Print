@@ -147,8 +147,8 @@ export function TextEnrichConfigPanel({
         <label className="space-y-1 text-[11px] text-muted-foreground">
           <span className="block">{t('node.text-enrich.maxUnits')}</span>
           <input
-            type="number" min={1} step={100} value={config.maxUnits ?? 500}
-            onChange={(e) => onChange({ ...config, maxUnits: Number(e.target.value) || 1 })}
+            type="number" min={0} step={100} value={config.maxUnits ?? 500}
+            onChange={(e) => onChange({ ...config, maxUnits: Math.max(0, Number(e.target.value) || 0) })}
             className={`${INPUT} w-full`}
           />
         </label>

@@ -171,7 +171,11 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     // ⚠ La borne s'applique APRÈS le chiffrage, pour que le journal annonce le total réel
     // (« 41 200 à faire, 500 traités ») et non la portion tronquée. Un utilisateur qui lit
     // « 500 à faire » croirait le catalogue presque terminé.
-    const capped = units.slice(0, Math.max(1, config.maxUnits))
+    // 0 = pas de borne, comme le plafond de dépense juste à côté. Sans cette valeur, il
+    // fallait saisir un nombre plus grand que le catalogue pour « tout traiter » — donc
+    // deviner ce nombre, et le refaire à chaque fois que le catalogue grossit.
+    const limit = Number(config.maxUnits) > 0 ? Number(config.maxUnits) : units.length
+    const capped = units.slice(0, limit)
     if (capped.length < units.length) {
       // ⚠ Deux messages, parce que la reprise ne veut pas dire la même chose. En mode PIM,
       // relancer avance : le marqueur écarte ce qui est fait. Sur une feuille, relancer
