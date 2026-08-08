@@ -5769,7 +5769,7 @@ export const es: Record<TranslationKey, string> = {
   'pwte.lang.all': 'Todos los idiomas',
   'pwte.lang.undecided': 'indeterminado',
   'pwte.searchOverrides': 'Búsqueda activa: el filtro de idioma está suspendido',
-  'pwte.limit': 'Procesar como máximo',
+  'pwte.limit': 'Procesar como máximo (0 = todo)',
   'pwte.run': 'Traducir {count} fichas',
   'pwte.running': 'Traduciendo… {done} / {total}',
   'pwte.doneToast': '{count} fichas traducidas de {asked} intentadas.',

@@ -5962,7 +5962,7 @@ export const fr = {
   'pwte.lang.all': 'Toutes langues',
   'pwte.lang.undecided': 'indéterminé',
   'pwte.searchOverrides': 'Recherche en cours — le filtre de langue est suspendu',
-  'pwte.limit': 'Traiter au plus',
+  'pwte.limit': 'Traiter au plus (0 = tout)',
   'pwte.run': 'Traduire {count} fiches',
   'pwte.running': 'Traduction… {done} / {total}',
   'pwte.doneToast': '{count} fiches traduites sur {asked} tentées.',

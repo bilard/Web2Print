@@ -5770,7 +5770,7 @@ export const en: Record<TranslationKey, string> = {
   'pwte.lang.all': 'All languages',
   'pwte.lang.undecided': 'undetermined',
   'pwte.searchOverrides': 'Search active — the language filter is suspended',
-  'pwte.limit': 'Process at most',
+  'pwte.limit': 'Process at most (0 = all)',
   'pwte.run': 'Translate {count} listings',
   'pwte.running': 'Translating… {done} / {total}',
   'pwte.doneToast': '{count} listings translated out of {asked} attempted.',

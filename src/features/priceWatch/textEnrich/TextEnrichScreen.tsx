@@ -57,7 +57,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   // était impossible. Le plancher ne s'applique plus à la frappe — seulement au sens :
   // un champ vide ou nul désactive le bouton, il ne réécrit rien.
   const [limitText, setLimitText] = useState('200')
-  const limit = Math.max(0, Math.trunc(Number(limitText)) || 0)
+  /** 0 (ou champ vide) = TOUT ce qui reste à traiter — même sens que sur la carte de
+   *  workflow. Sans cette valeur, « tout traduire » demandait de saisir un nombre plus
+   *  grand que son catalogue, donc de le connaître, et de le refaire à chaque ajout. */
+  const rawLimit = Math.max(0, Math.trunc(Number(limitText)) || 0)
 
   useEffect(() => {
     if (!uid || !watchId) return
@@ -99,6 +102,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   // donc jamais deux fois le même texte — c'est ce que le chemin par feuille ne savait
   // pas faire.
   const todo = useMemo(() => shown.filter((l) => !l.revision), [shown])
+  const limit = rawLimit > 0 ? rawLimit : todo.length
 
   const run = async () => {
     const batchList = todo.slice(0, limit)
@@ -247,13 +251,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           {searching && <span className="text-amber-300/80">{t('pwte.searchOverrides')}</span>}
           <label className="flex items-center gap-1.5">
             {t('pwte.limit')}
-            {/* Les flèches donnent des valeurs rondes (200 → 150 → 100 → 50 → 1) ; au
-                clavier, rien n'est corrigé sous les doigts. */}
-            <input type="number" min={1} step={50} value={limitText}
+            {/* Les flèches donnent des valeurs rondes (200 → 150 → 100 → 50 → 0 = tout) ;
+                au clavier, rien n'est corrigé sous les doigts. */}
+            <input type="number" min={0} step={50} value={limitText}
               onChange={(e) => setLimitText(e.target.value)}
               className="h-7 w-20 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent" />
           </label>
-          <button type="button" onClick={() => void run()} disabled={running || todo.length === 0 || limit < 1}
+          <button type="button" onClick={() => void run()} disabled={running || todo.length === 0}
             className="ml-auto flex items-center gap-1.5 rounded bg-indigo-500/90 px-3 py-1.5 text-[11px] font-medium text-[#fff] hover:bg-indigo-500 disabled:opacity-40">
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
             {running
