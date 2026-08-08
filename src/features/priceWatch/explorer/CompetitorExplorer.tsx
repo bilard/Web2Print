@@ -48,7 +48,7 @@ import { debugLog } from '@/lib/debugLog'
 
 const iconBtn = 'bg-well text-white/55 text-xs rounded px-2.5 py-2 border border-white/10 hover:text-white hover:border-white/25 disabled:opacity-40 disabled:hover:text-white/55 disabled:hover:border-white/10 flex items-center gap-1.5 transition-colors shrink-0'
 
-export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | null; workflowId?: string }) {
+export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: { watchId: string | null; workflowId?: string; initialMode?: ExplorerMode }) {
   const { t, locale } = useTranslation()
   // Milliers séparés : à six chiffres, « 186170 » ne se lit pas d'un coup d'œil.
   const nf = (v: number) => v.toLocaleString(intlLocale(locale))
@@ -185,7 +185,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
   // même zone centrale, et deux drapeaux indépendants laissaient possible un état où les
   // deux sont vrais. L'écran de traduction vit ICI et pas dans le workflow parce que
   // c'est ici qu'on constate qu'un texte est en allemand.
-  const [mode, setMode] = useState<ExplorerMode>(null)
+  const [mode, setMode] = useState<ExplorerMode>(initialMode)
   const catalogMode = mode === 'catalog'
   const enrichMode = mode === 'enrich'
   const searchHitsBySite = useMemo(

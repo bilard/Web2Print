@@ -46,6 +46,8 @@ const ScrapingModal = lazy(() =>
 )
 // Explorateur des fiches concurrents (veille tarifaire) : chargé à la demande — il tire
 // tout le module priceWatch, inutile tant que l'écran n'est pas ouvert.
+import type { ExplorerMode } from '@/features/priceWatch/explorer/ExplorerRailModes'
+
 const CompetitorExplorerPanel = lazy(() =>
   import('@/features/priceWatch/explorer/CompetitorExplorerPanel').then((m) => ({ default: m.CompetitorExplorerPanel })),
 )
@@ -120,6 +122,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const [showRight, setShowRight] = useState(true)
   // Explorateur concurrents : occupe la zone centrale, comme la fiche produit.
   const [competitorsOpen, setCompetitorsOpen] = useState(false)
+  /** Vue sur laquelle l'explorateur s'ouvre — `null` = son choix habituel. */
+  const [explorerMode, setExplorerMode] = useState<ExplorerMode>(null)
   /** Ouvre l'explorateur en dégageant la place : colonnes du PIM repliées et menu du
    *  tableau de bord réduit. La comparaison F1 ↔ concurrent est une vue à deux colonnes
    *  d'images — chaque panneau ouvert lui retire de la largeur utile. */
@@ -161,6 +165,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       case 'action:export-ec': if (canExport) setEcExportOpen(true); break
       // Ouvert depuis la Veille tarifaire : le contrôle des appariements douteux vit ici.
       case 'action:competitors': setCompetitorsOpen(true); break
+      // Même écran, ouvert directement sur la vue « Traduire et améliorer les textes ».
+      case 'action:enrich-texts': setExplorerMode('enrich'); openCompetitors(); break
     }
   })
 
@@ -762,7 +768,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           {competitorsOpen ? (
             <div className="flex-1 flex overflow-hidden">
               <Suspense fallback={<div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.loading')}</div>}>
-                <CompetitorExplorerPanel onClose={() => setCompetitorsOpen(false)} />
+                <CompetitorExplorerPanel initialMode={explorerMode} onClose={() => setCompetitorsOpen(false)} />
               </Suspense>
             </div>
           ) : hasSelectedDb && hasData ? (

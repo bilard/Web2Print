@@ -126,6 +126,10 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'action:update',       labelKey: 'nav.data.update',      intent: 'data:action:update',       permission: 'pim.import' },
       { id: 'action:export-xlsx',  labelKey: 'nav.data.exportXlsx',  intent: 'data:action:export-xlsx',  permission: 'pim.export' },
       { id: 'action:export-ec',    labelKey: 'nav.data.exportEc',    intent: 'data:action:export-ec',    permission: 'pim.export' },
+      // Écran de traduction / réécriture des textes produit. Il vivait derrière le bouton
+      // « Concurrents » de l'explorateur — introuvable pour qui cherche à traduire ses
+      // textes et n'a rien à faire de la veille tarifaire. Il s'ouvre désormais d'ici.
+      { id: 'action:enrich-texts', labelKey: 'pwte.title', intent: 'data:action:enrich-texts', permission: 'pim.edit' },
     ],
   },
   { id: 'taxonomies', group: 'product-data', icon: FolderTree, labelKey: 'nav.taxonomies', accent: 'text-teal-400',    activeBg: 'bg-teal-500/[0.1]',    activeText: 'text-teal-300',
