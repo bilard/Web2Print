@@ -16,7 +16,7 @@ import type { VetoReason } from '../catalog/match'
 import type { KeyBranch, PairingWeights } from '../pairingWeights'
 import { formatFamilyLexicon, parseFamilyLexicon } from '../pairingRulesConfig'
 import { useTranslation } from '@/lib/i18n'
-import { Ban, Info } from 'lucide-react'
+import { Ban, Info, Loader2 } from 'lucide-react'
 
 /** Explication longue, accessible au survol. L'écran garde une phrase courte : sur quatre
  *  étages, trois lignes de prose chacun repoussaient les réglages eux-mêmes hors de vue —
@@ -35,7 +35,17 @@ const numCls = 'bg-well text-white text-[13px] rounded px-2 py-0.5 w-16 border b
 
 /** Barre de poids : la LARGEUR compare les branches d'un même étage entre elles. Sans
  *  elle, sept nombres alignés se lisent un par un au lieu de se comparer d'un coup. */
-function Weight({ n, max, muted }: { n: number | undefined; max: number; muted?: boolean }) {
+function Weight(
+  { n, max, muted, loading }:
+  { n: number | undefined; max: number; muted?: boolean; loading?: boolean },
+) {
+  if (loading) {
+    return (
+      <span className="w-20 shrink-0 flex justify-end">
+        <Loader2 className="w-3 h-3 text-white/30 animate-spin" />
+      </span>
+    )
+  }
   if (n == null) return <span className="text-[11px] text-white/25 tabular-nums w-20 text-right shrink-0">—</span>
   const pct = max > 0 ? Math.max(2, Math.round((n / max) * 100)) : 0
   return (
@@ -70,9 +80,10 @@ function Branch(
 }
 
 function Stage(
-  { step, title, subtitle, help, inbound, children, total }:
+  { step, title, subtitle, help, inbound, children, total, loading }:
   {
     step: string; title: string; subtitle: string; help: string
+    loading?: boolean
     /** Ce que cet étage REÇOIT du précédent. Dit ici, et non par une flèche intercalée :
      *  en deux colonnes, une flèche posée entre deux blocs désigne le voisin de droite et
      *  non l'étage suivant — elle mentirait sur la cascade. */
@@ -85,7 +96,7 @@ function Stage(
       <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-[11px] font-semibold text-[#6366f1] tabular-nums">{step}</span>
         <h3 className="text-[13px] font-semibold text-white">{title}</h3>
-        {total}
+        {loading ? <Loader2 className="w-3 h-3 text-white/30 animate-spin self-center" /> : total}
         <Hint text={help} />
       </header>
       <p className="text-[11px] text-white/35 mb-1.5 leading-snug">
@@ -106,8 +117,15 @@ const KEY_BRANCHES: { branch: KeyBranch; rank: string }[] = [
 const VETOES: VetoReason[] = ['family', 'price-abyss', 'no-corroboration']
 
 export function RulesTree(
-  { rules, onChange, weights }:
-  { rules: PairingRules; onChange: (next: PairingRules) => void; weights: PairingWeights | null },
+  { rules, onChange, weights, loading }:
+  {
+    rules: PairingRules
+    onChange: (next: PairingRules) => void
+    weights: PairingWeights | null
+    /** Relecture du concurrent en cours. Les poids affichent alors une attente ACTIVE :
+     *  un tiret immobile pendant vingt secondes de lecture se lit comme un écran mort. */
+    loading?: boolean
+  },
 ) {
   const { t } = useTranslation()
   const set = (patch: Partial<PairingRules>) => onChange({ ...rules, ...patch })
@@ -119,7 +137,7 @@ export function RulesTree(
     <div className="grid gap-2 lg:grid-cols-2 items-start">
       {/* ÉTAGE 1 — les clés, dans leur ordre de priorité réel. */}
       <Stage
-        step="①" title={t('pw.rules.tree.keys.title')} subtitle={t('pw.rules.tree.keys.subShort')} help={t('pw.rules.tree.keys.sub')}
+        step="①" loading={loading} title={t('pw.rules.tree.keys.title')} subtitle={t('pw.rules.tree.keys.subShort')} help={t('pw.rules.tree.keys.sub')}
         inbound={t('pw.rules.tree.in.source')}
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.keys.emitted', { n: weights.keysEmitted })}</span>}
       >
@@ -135,7 +153,7 @@ export function RulesTree(
                 onChange={(e) => set({ useOriginRefs: e.target.checked })}
               />
             ) : undefined}
-            weight={<Weight n={weights?.byKey[branch]} max={maxKey} />}
+            weight={<Weight n={weights?.byKey[branch]} max={maxKey} loading={loading} />}
           />
         ))}
         {/* Les deux seuils NE PRODUISENT PAS d'appariement : ils suppriment des clés. Leur
@@ -163,7 +181,7 @@ export function RulesTree(
 
       {/* ÉTAGE 2 — les preuves, dans l'ordre où proveMatch les teste. */}
       <Stage
-        step="②" title={t('pw.rules.tree.evidence.title')} subtitle={t('pw.rules.tree.evidence.subShort')} help={t('pw.rules.tree.evidence.sub')}
+        step="②" loading={loading} title={t('pw.rules.tree.evidence.title')} subtitle={t('pw.rules.tree.evidence.subShort')} help={t('pw.rules.tree.evidence.sub')}
         inbound={t('pw.rules.tree.flow.toEvidence')}
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.evidence.total', { n: weights.matched })}</span>}
       >
@@ -180,7 +198,7 @@ export function RulesTree(
                 onChange={(ev) => set({ evidence: { ...rules.evidence, [e]: ev.target.checked } })}
               />
             )}
-            weight={<Weight n={weights?.byEvidence[e] ?? (weights ? 0 : undefined)} max={maxEv} muted={!rules.evidence[e]} />}
+            weight={<Weight n={weights?.byEvidence[e] ?? (weights ? 0 : undefined)} max={maxEv} muted={!rules.evidence[e]} loading={loading} />}
           />
         ))}
       </Stage>
@@ -188,7 +206,7 @@ export function RulesTree(
 
       {/* ÉTAGE 3 — les démentis, qui ne voient que ce qui a été prouvé. */}
       <Stage
-        step="③" title={t('pw.rules.tree.vetoes.title')} subtitle={t('pw.rules.tree.vetoes.subShort')} help={t('pw.rules.tree.vetoes.sub')}
+        step="③" loading={loading} title={t('pw.rules.tree.vetoes.title')} subtitle={t('pw.rules.tree.vetoes.subShort')} help={t('pw.rules.tree.vetoes.sub')}
         inbound={t('pw.rules.tree.flow.toVetoes')}
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.vetoes.total', { n: weights.vetoed })}</span>}
       >
@@ -216,7 +234,7 @@ export function RulesTree(
                     : set({ corroborateNumericKeys: e.target.checked }))}
                 />
               )}
-              weight={<Weight n={weights?.byVeto[v] ?? (weights ? 0 : undefined)} max={maxVeto} muted={!on} />}
+              weight={<Weight n={weights?.byVeto[v] ?? (weights ? 0 : undefined)} max={maxVeto} muted={!on} loading={loading} />}
             />
           )
         })}
@@ -256,7 +274,7 @@ export function RulesTree(
       {/* ÉTAGE 4 — le prix : hors appariement, mais il décide de ce qui entre dans le
           comparatif, donc il appartient à la même cascade. */}
       <Stage
-        step="④" title={t('pw.rules.tree.price.title')} subtitle={t('pw.rules.tree.price.subShort')} help={t('pw.rules.tree.price.sub')}
+        step="④" loading={loading} title={t('pw.rules.tree.price.title')} subtitle={t('pw.rules.tree.price.subShort')} help={t('pw.rules.tree.price.sub')}
         inbound={t('pw.rules.tree.flow.toPrice')}
       >
         <div className="pl-3 border-l border-white/10 flex flex-wrap items-end gap-x-4 gap-y-1 pt-1">

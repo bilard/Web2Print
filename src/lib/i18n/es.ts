@@ -1853,6 +1853,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.rules.tree.flow.toVetoes': '② le pasa los emparejamientos probados',
   'pw.rules.tree.flow.toPrice': '③ le pasa los pares retenidos',
   'pw.rules.tree.in.source': 'parte de su catálogo',
+  'pw.rules.measure.loadingSource': 'Relectura del catálogo fuente — bloque {done} de {total}…',
   'node.compare-catalog.label': 'Comparar catálogo',
   'node.compare-prices.label': 'Comparar precios',
   'node.pw-report.prompt.label': 'Consigna (compone el correo)',

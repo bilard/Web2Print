@@ -13,7 +13,7 @@ import { RulesTree } from './RulesTree'
 import { RulesPreview } from './RulesPreview'
 import type { PairingRules } from '../catalog/pairingRules'
 import { useTranslation } from '@/lib/i18n'
-import { Info } from 'lucide-react'
+import { Info, Loader2 } from 'lucide-react'
 
 export function RulesWorkbench(
   { watchId, rules, onChange, baseline }:
@@ -67,7 +67,19 @@ export function RulesWorkbench(
           <option value="">{t('pw.rules.preview.pickSiteOption')}</option>
           {sites.map((s) => <option key={s.siteId} value={s.siteId}>{s.domain}</option>)}
         </select>
-        {measuring && <span className="text-[11px] text-white/40">{t('pwx.lectureDesFichesCollectees')}</span>}
+        {/* La relecture d'un index mûr, c'est des dizaines de milliers de fiches : sans
+            avancement, on ne distingue pas « ça travaille » de « c'est bloqué ». Le
+            catalogue source se lit par tranches et sait le dire ; les fiches du site, non. */}
+        {measuring && (
+          <span className="text-[11px] text-white/40 flex items-center gap-1.5">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            {source.loading && source.progress.total > 0
+              ? t('pw.rules.measure.loadingSource', {
+                done: source.progress.done, total: source.progress.total,
+              })
+              : t('pwx.lectureDesFichesCollectees')}
+          </span>
+        )}
         {weights && (
           <span className="text-[11px] text-white/40">
             {t('pw.rules.measure.scope', {
@@ -87,7 +99,7 @@ export function RulesWorkbench(
         </p>
       )}
 
-      <RulesTree rules={rules} onChange={onChange} weights={weights} />
+      <RulesTree rules={rules} onChange={onChange} weights={weights} loading={measuring} />
 
       <div className="space-y-2 pt-1">
         <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/40 flex items-center gap-1.5">
@@ -99,7 +111,7 @@ export function RulesWorkbench(
             <Info className="w-3 h-3 text-white/25 hover:text-white/60" />
           </span>
         </h3>
-        <RulesPreview products={source.products} listings={listings} current={baseline} proposed={rules} />
+        <RulesPreview products={source.products} listings={listings} current={baseline} proposed={rules} loading={measuring} />
       </div>
     </div>
   )

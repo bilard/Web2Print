@@ -6,6 +6,7 @@
 // plus jamais terminé. Un site suffit à trancher un réglage — les proportions se
 // transposent, et le run complet donnera le chiffre exact.
 import { useMemo, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { previewPairing } from '../pairingPreview'
 import type { SourceProduct } from '../catalog/match'
 import type { CompetitorListing } from '../catalog/prestashop'
@@ -25,12 +26,15 @@ const PAGE = 100
  *  déjà pour mesurer l'arbre, et deux hooks sur les mêmes documents doublaient la lecture
  *  d'un index de plusieurs dizaines de milliers de fiches. */
 export function RulesPreview(
-  { products, listings, current, proposed }:
+  { products, listings, current, proposed, loading }:
   {
     products: SourceProduct[]
     listings: CompetitorListing[]
     current: PairingRules
     proposed: PairingRules
+    /** Relecture en cours : les tuiles gardent leur place et tournent, au lieu de
+     *  disparaître et de faire sauter la mise en page à l'arrivée des chiffres. */
+    loading?: boolean
   },
 ) {
   const { t } = useTranslation()
@@ -51,6 +55,21 @@ export function RulesPreview(
     [preview],
   )
 
+  if (loading) {
+    return (
+      <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
+        {[t('pw.rules.preview.before'), t('pw.rules.preview.after'),
+          t('pw.rules.preview.lost'), t('pw.rules.preview.gained')].map((label) => (
+          <div key={label} className="bg-surface rounded-lg px-3 py-2">
+            <div className="text-[11px] text-white/40 leading-tight">{label}</div>
+            <div className="h-[1.75rem] flex items-center">
+              <Loader2 className="w-4 h-4 text-white/30 animate-spin" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
   if (!preview) return <p className="text-xs text-white/40">{t('pw.rules.preview.pickSite')}</p>
 
   const delta = preview.after - preview.before
