@@ -779,7 +779,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             {canEditTexts && (
             <button
               onClick={() => openExplorerOn('enrich')}
-              className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center gap-2 whitespace-nowrap border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
                 competitorsOpen && explorerMode === 'enrich'
                   ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
                   : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'
@@ -787,7 +787,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               title={t('pwte.title')}
             >
               <Languages className="w-4 h-4" />
-              {t('pwte.title')}
+              {/* Libellé COURT : le nom complet du module (« Traduire et améliorer les
+                  textes ») repassait sur deux lignes et faisait de ce bouton le seul
+                  large de la rangée. Le titre au survol porte le nom entier. */}
+              {t('pwte.buttonShort')}
             </button>
             )}
           </div>

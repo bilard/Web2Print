@@ -5763,6 +5763,7 @@ export const es: Record<TranslationKey, string> = {
   'run.harvest.benchmarkRefreshed': 'Ventana de ejecución agotada: benchmark recalculado aquí mismo — {count} productos emparejados en {sites} sitio(s).',
   'run.harvest.benchmarkSkipped': 'Benchmark no recalculado: {message} (las fichas recopiladas están guardadas).',
   'pwte.title': 'Traducir y mejorar los textos',
+  'pwte.buttonShort': 'Traducir (IA)',
   'pwte.counts': '{todo} por procesar · {done} ya hechos · {total} en el catálogo',
   'pwte.promptPlaceholder': 'Su consigna (opcional): estilo, longitud, qué conservar…',
   'pwte.lang.all': 'Todos los idiomas',

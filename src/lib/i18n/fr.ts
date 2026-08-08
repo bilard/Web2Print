@@ -5956,6 +5956,7 @@ export const fr = {
   'run.harvest.benchmarkRefreshed': 'Fenêtre du run épuisée : benchmark recalculé ici même — {count} produits appariés sur {sites} site(s).',
   'run.harvest.benchmarkSkipped': 'Benchmark non recalculé : {message} (les fiches moissonnées sont enregistrées).',
   'pwte.title': 'Traduire et améliorer les textes',
+  'pwte.buttonShort': 'Traduire (IA)',
   'pwte.counts': '{todo} à traiter · {done} déjà faits · {total} au catalogue',
   'pwte.promptPlaceholder': 'Votre consigne (facultative) : style, longueur, ce qu’il faut garder…',
   'pwte.lang.all': 'Toutes langues',

@@ -5764,6 +5764,7 @@ export const en: Record<TranslationKey, string> = {
   'run.harvest.benchmarkRefreshed': 'Run window exhausted: benchmark recalculated right here — {count} matched products across {sites} site(s).',
   'run.harvest.benchmarkSkipped': 'Benchmark not recalculated: {message} (the harvested records are saved).',
   'pwte.title': 'Translate and improve texts',
+  'pwte.buttonShort': 'Translate (AI)',
   'pwte.counts': '{todo} to process · {done} already done · {total} in the catalogue',
   'pwte.promptPlaceholder': 'Your instruction (optional): style, length, what to keep…',
   'pwte.lang.all': 'All languages',
