@@ -1757,7 +1757,7 @@ export const es: Record<TranslationKey, string> = {
   'node.text-enrich.eanField': 'Columna código de barras',
   'run.textEnrich.problem.no-project': 'Indique el proyecto PIM cuyas fichas deben enriquecerse.',
   'run.textEnrich.problem.no-plan': 'Ningún campo activado: no hay nada que procesar.',
-  'run.textEnrich.problem.no-prompt': 'Una consigna está vacía. Sin ella, el modelo escribiría texto genérico en las fichas.',
+  'run.textEnrich.problem.no-prompt': 'La consigna de «{field}» está vacía. Sin ella, el modelo escribiría texto genérico en las fichas.',
   'run.textEnrich.problem.duplicate-key': 'Dos planes apuntan a la misma columna: chocarían en un mismo pase. Desactive uno: traducir y luego ampliar requiere dos pases.',
   'run.textEnrich.badPortPayload': 'La entrada conectada no lleva ninguna hoja: el nodo anterior ha fallado o ha producido otra cosa.',
   'run.textEnrich.sheetMode': 'Hoja recibida: {rows} filas. ⚠ No se memoriza nada: cada ejecución rehace el trabajo y lo vuelve a facturar. El original se conserva en una columna «(source)».',

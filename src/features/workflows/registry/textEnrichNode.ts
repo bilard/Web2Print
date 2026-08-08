@@ -89,7 +89,12 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     // Vérifié AVANT tout appel : découvrir une consigne vide après trois cents fiches
     // coûte de l'argent ET des révisions à annuler une à une.
     const problem = configProblem(config, fromSheet)
-    if (problem) throw new Error(t(`run.textEnrich.problem.${problem}` as 'run.textEnrich.problem.no-project'))
+    if (problem) {
+      throw new Error(t(
+        `run.textEnrich.problem.${problem.code}` as 'run.textEnrich.problem.no-project',
+        { field: problem.key ?? '' },
+      ))
+    }
 
     const plans = configToPlans(config)
     const planKeys = [...new Set(plans.map((p) => p.key))]

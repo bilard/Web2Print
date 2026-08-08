@@ -1758,7 +1758,7 @@ export const en: Record<TranslationKey, string> = {
   'node.text-enrich.eanField': 'Barcode column',
   'run.textEnrich.problem.no-project': 'Name the PIM project whose products should be enriched.',
   'run.textEnrich.problem.no-plan': 'No field enabled: there is nothing to process.',
-  'run.textEnrich.problem.no-prompt': 'One instruction is empty. Without it the model would write generic text into your products.',
+  'run.textEnrich.problem.no-prompt': 'The instruction for “{field}” is empty. Without it the model would write generic text into your products.',
   'run.textEnrich.problem.duplicate-key': 'Two plans target the same column: they would collide within one pass. Disable one — translating then expanding takes two passes.',
   'run.textEnrich.badPortPayload': 'The wired input carries no sheet: the upstream node failed or produced something else.',
   'run.textEnrich.sheetMode': 'Sheet received: {rows} rows. ⚠ Nothing is remembered — every run redoes the work, and bills for it again. The original is kept in a “(source)” column.',

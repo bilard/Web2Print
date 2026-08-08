@@ -116,19 +116,27 @@ export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
 
 /** Ce qui empêche le passage de partir. Vérifié AVANT le premier appel : découvrir une
  *  consigne vide après trois cents fiches coûte de l'argent et une révision à annuler. */
+type ProblemCode = 'no-project' | 'no-plan' | 'no-prompt' | 'duplicate-key'
+
+/** Le problème, et LA COLONNE en cause quand il y en a une. Sans elle, « une consigne est
+ *  vide » envoie chercher parmi quatre lignes repliées — et le message est le seul retour
+ *  qu'on ait, puisque le node échoue avant d'écrire la moindre ligne de journal. */
+export interface ConfigProblem { code: ProblemCode; key?: string }
+
 export function configProblem(
   config: TextEnrichConfig,
   /** Une feuille est branchée en entrée : elle fournit les fiches, le projet devient
    *  inutile. Sans ce drapeau, la carte exigerait un projet PIM à qui n'en a pas. */
   hasSheet = false,
-): 'no-project' | 'no-plan' | 'no-prompt' | 'duplicate-key' | null {
-  if (!hasSheet && config.projectId.trim() === '') return 'no-project'
+): ConfigProblem | null {
+  if (!hasSheet && config.projectId.trim() === '') return { code: 'no-project' }
   const plans = configToPlans(config)
-  if (plans.length === 0) return 'no-plan'
+  if (plans.length === 0) return { code: 'no-plan' }
   // La consigne EST la demande de l'utilisateur : sans elle, le modèle n'aurait que la
   // ligne générique de la nature du travail, et produirait du texte de catalogue générique
   // — exactement ce qu'il ne faut pas écrire dans des fiches.
-  if (plans.some((p) => p.prompt.trim() === '')) return 'no-prompt'
+  const promptless = plans.find((p) => p.prompt.trim() === '')
+  if (promptless) return { code: 'no-prompt', key: promptless.key }
   // ⚠ DEUX PLANS SUR LA MÊME COLONNE, C'EST UNE COLLISION, pas un enchaînement.
   // Les unités d'un lot sont identifiées par `produit::champ` — le plan n'entre pas dans
   // la clé. Deux plans sur `nom` produisent donc deux unités indiscernables : le prompt
@@ -143,7 +151,7 @@ export function configProblem(
   // vérification d'ordre, laquelle croyait l'enchaînement possible en un passage.
   const seen = new Set<string>()
   for (const p of plans) {
-    if (seen.has(p.key)) return 'duplicate-key'
+    if (seen.has(p.key)) return { code: 'duplicate-key', key: p.key }
     seen.add(p.key)
   }
   return null

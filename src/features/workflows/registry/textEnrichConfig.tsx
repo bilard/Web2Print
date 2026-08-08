@@ -188,7 +188,14 @@ export function TextEnrichConfigPanel({
       <p className="text-[11px] leading-snug text-muted-foreground">{t('node.text-enrich.orderHint')}</p>
 
       {config.plans.map((plan, i) => (
-        <div key={i} className="space-y-2 rounded-md border border-border bg-surface-2 p-2.5">
+        <div
+          key={i}
+          // La ligne en cause se DÉSIGNE, elle ne se décrit pas : sur quatre lignes
+          // repliées, un message en bas de panneau laisse chercher.
+          className={`space-y-2 rounded-md border bg-surface-2 p-2.5 ${
+            problem?.key === plan.key && plan.enabled ? 'border-amber-500/60' : 'border-border'
+          }`}
+        >
           <div className="flex items-center gap-1.5">
             <input
               type="checkbox" checked={plan.enabled} title={t('node.text-enrich.enabled')}
@@ -227,7 +234,9 @@ export function TextEnrichConfigPanel({
             value={plan.prompt} onChange={(e) => setPlan(i, { prompt: e.target.value })}
             placeholder={t('node.text-enrich.promptPlaceholder')}
             rows={3}
-            className="w-full rounded border border-border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent"
+            className={`w-full rounded border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent ${
+              plan.enabled && plan.prompt.trim() === '' ? 'border-amber-500/60' : 'border-border'
+            }`}
           />
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground">
@@ -280,7 +289,8 @@ export function TextEnrichConfigPanel({
           après un clic laisse chercher lequel des huit réglages était en cause. */}
       {problem && (
         <p className="text-[11px] leading-snug text-amber-400">
-          {t(`run.textEnrich.problem.${problem}` as 'run.textEnrich.problem.no-project')}
+          {t(`run.textEnrich.problem.${problem.code}` as 'run.textEnrich.problem.no-project',
+            { field: problem.key ?? '' })}
         </p>
       )}
     </div>

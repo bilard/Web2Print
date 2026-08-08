@@ -1836,7 +1836,7 @@ export const fr = {
   'node.text-enrich.eanField': 'Colonne code-barres',
   'run.textEnrich.problem.no-project': 'Indiquez le projet PIM dont les fiches doivent être enrichies.',
   'run.textEnrich.problem.no-plan': 'Aucun champ activé : il n’y a rien à traiter.',
-  'run.textEnrich.problem.no-prompt': 'Une consigne est vide. Sans elle, le modèle écrirait du texte passe-partout dans les fiches.',
+  'run.textEnrich.problem.no-prompt': 'La consigne de « {field} » est vide. Sans elle, le modèle écrirait du texte passe-partout dans les fiches.',
   'run.textEnrich.problem.duplicate-key': 'Deux plans visent la même colonne : ils se marcheraient dessus dans le même passage. Désactivez-en un — traduire puis étoffer se fait en deux passages.',
   'run.textEnrich.badPortPayload': 'L’entrée branchée ne porte pas de feuille : le node amont a échoué ou produit autre chose.',
   'run.textEnrich.sheetMode': 'Feuille reçue : {rows} lignes. ⚠ Rien n’est mémorisé — chaque exécution refait le travail, et le refacture. L’original est gardé dans une colonne « (source) ».',

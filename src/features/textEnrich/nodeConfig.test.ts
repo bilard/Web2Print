@@ -52,17 +52,21 @@ describe('ce qui empêche de partir', () => {
   })
 
   it('refuse sans projet', () => {
-    expect(configProblem(cfg({ projectId: '  ' }))).toBe('no-project')
+    expect(configProblem(cfg({ projectId: '  ' }))?.code).toBe('no-project')
   })
 
   it('refuse quand tout est désactivé', () => {
-    expect(configProblem(cfg({ plans: [plan({ enabled: false })] }))).toBe('no-plan')
+    expect(configProblem(cfg({ plans: [plan({ enabled: false })] }))?.code).toBe('no-plan')
   })
 
   it('⚠ refuse une consigne vide', () => {
     // Sans consigne, le modèle n'a que la ligne générique de la nature du travail : il
     // produirait du texte de catalogue passe-partout, et l'écrirait dans les fiches.
-    expect(configProblem(cfg({ plans: [plan({ prompt: '   ' })] }))).toBe('no-prompt')
+    // La colonne en cause est NOMMÉE : « une consigne est vide » envoie sinon chercher
+    // parmi quatre lignes repliées, et c'est le seul retour qu'on ait — le node échoue
+    // avant d'écrire la moindre ligne de journal.
+    expect(configProblem(cfg({ plans: [plan({ prompt: '   ', key: 'description' })] })))
+      .toEqual({ code: 'no-prompt', key: 'description' })
   })
 
   it('⚠ refuse DEUX plans sur la même colonne', () => {
@@ -73,7 +77,7 @@ describe('ce qui empêche de partir', () => {
     // dans les deux cas, puisque les unités sont toutes calculées avant le premier appel.
     expect(configProblem(cfg({
       plans: [plan({ kind: 'translate' }), plan({ kind: 'improve' })],
-    }))).toBe('duplicate-key')
+    }))).toEqual({ code: 'duplicate-key', key: 'nom' })
   })
 
   it('accepte les mêmes natures sur des colonnes différentes', () => {
@@ -93,7 +97,7 @@ describe('ce qui empêche de partir', () => {
   it('la config par défaut est incomplète, à dessein', () => {
     // Ni projet ni consigne : la carte ne doit pas pouvoir tourner à la pose, sinon un
     // clic distrait lance un passage payant sur un catalogue entier.
-    expect(configProblem(DEFAULT_TEXT_ENRICH_CONFIG)).toBe('no-project')
+    expect(configProblem(DEFAULT_TEXT_ENRICH_CONFIG)?.code).toBe('no-project')
   })
 
   it('⚠ le réglage par défaut n’active jamais deux plans sur la même colonne', () => {
