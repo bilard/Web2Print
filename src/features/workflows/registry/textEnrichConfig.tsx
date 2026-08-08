@@ -1,11 +1,22 @@
-// Panneau des plans de champs de la carte « Enrichir les textes ».
+// Panneau de config de la carte « Enrichir les textes ».
 //
-// Les réglages scalaires (projet, plafond, borne) restent au schéma générique : ici on ne
-// rend que ce qu'il ne sait pas faire — une liste ORDONNÉE de plans. Contrôles en HTML
-// brut, comme le reste du dossier : le panneau latéral fait quatre cents pixels, et les
-// composants de formulaire du design system y sont trop hauts.
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+// ⚠ IL REND TOUT, y compris les réglages scalaires que `configSchema` déclare déjà.
+// `NodeConfigPanel` choisit l'un OU l'autre : dès qu'un `ConfigComponent` existe, la liste
+// générique du schéma n'est PAS rendue. Un panneau qui ne s'occuperait que des plans
+// laisserait donc le projet PIM, le plafond et la borne invisibles — la carte serait
+// impossible à régler, et rien ne le signalerait.
+//
+// Le `configSchema` reste déclaré côté node malgré ça : il porte le `required` que lit le
+// pré-vol du workflow, et prompt-to-flow y lit les champs remplissables. Les deux vues
+// écrivent le même objet, il n'y a donc pas deux états — seulement deux libellés.
+//
+// Contrôles en HTML brut, comme le reste du dossier : le panneau latéral fait quatre cents
+// pixels, et les composants de formulaire du design system y sont trop hauts.
+import { useEffect, useState } from 'react'
+import { ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
+import { listPimProjects, type PimProjectSummary } from '@/features/merge/pimSource'
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { configProblem, type PlanConfig, type TextEnrichConfig } from '@/features/textEnrich/nodeConfig'
 import type { EnrichKind } from '@/features/textEnrich/revision'
 
@@ -17,6 +28,21 @@ export function TextEnrichConfigPanel({
 }: { config: TextEnrichConfig; onChange: (next: TextEnrichConfig) => void }) {
   const { t } = useTranslation()
   const problem = configProblem(config)
+  const [projects, setProjects] = useState<PimProjectSummary[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    const uid = getWorkspaceUid()
+    if (!uid) { setLoading(false); return }
+    listPimProjects(uid)
+      .then((list) => { if (alive) setProjects(list) })
+      // Un échec de liste ne doit pas rendre la carte inutilisable : on retombe sur la
+      // saisie libre de l'identifiant, qui marche toujours.
+      .catch(() => undefined)
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [])
 
   const setPlan = (i: number, patch: Partial<PlanConfig>) => {
     onChange({ ...config, plans: config.plans.map((p, j) => (j === i ? { ...p, ...patch } : p)) })
@@ -31,6 +57,66 @@ export function TextEnrichConfigPanel({
 
   return (
     <div className="space-y-3">
+      {/* Le projet se CHOISIT : son identifiant est un doc Firestore, que personne ne
+          connaît de mémoire. Saisie libre en repli, si la liste ne charge pas. */}
+      <label className="block space-y-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          {t('node.text-enrich.projectId')}
+          {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+        </span>
+        {projects.length > 0 ? (
+          <select
+            value={config.projectId} onChange={(e) => onChange({ ...config, projectId: e.target.value })}
+            className={`${INPUT} w-full`}
+          >
+            <option value="">{t('node.text-enrich.pickProject')}</option>
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        ) : (
+          <input
+            value={config.projectId} onChange={(e) => onChange({ ...config, projectId: e.target.value })}
+            className={`${INPUT} w-full`}
+          />
+        )}
+      </label>
+
+      <div className="grid grid-cols-2 gap-2">
+        <label className="space-y-1 text-[11px] text-muted-foreground">
+          <span className="block">{t('node.text-enrich.capUsd')}</span>
+          <input
+            type="number" min={0} step={1} value={config.capUsd}
+            onChange={(e) => onChange({ ...config, capUsd: Number(e.target.value) || 0 })}
+            className={`${INPUT} w-full`}
+          />
+        </label>
+        <label className="space-y-1 text-[11px] text-muted-foreground">
+          <span className="block">{t('node.text-enrich.maxUnits')}</span>
+          <input
+            type="number" min={1} step={100} value={config.maxUnits}
+            onChange={(e) => onChange({ ...config, maxUnits: Number(e.target.value) || 1 })}
+            className={`${INPUT} w-full`}
+          />
+        </label>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox" checked={config.withNote} className="h-3.5 w-3.5 accent-accent"
+            onChange={(e) => onChange({ ...config, withNote: e.target.checked })}
+          />
+          {t('node.text-enrich.withNote')}
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox" checked={config.dryRun} className="h-3.5 w-3.5 accent-accent"
+            onChange={(e) => onChange({ ...config, dryRun: e.target.checked })}
+          />
+          {t('node.text-enrich.dryRun')}
+        </label>
+      </div>
+
+      <div className="h-px bg-border" />
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-white">{t('node.text-enrich.plansTitle')}</span>
         <button
@@ -48,8 +134,8 @@ export function TextEnrichConfigPanel({
         </button>
       </div>
 
-      {/* ⚠ L'ordre est SIGNIFIANT : le moteur applique les plans dans l'ordre de la liste,
-          et c'est lui seul qui garantit qu'on traduit avant d'étoffer. D'où les flèches. */}
+      {/* Les flèches ne servent QUE de confort de lecture depuis qu'un même champ ne peut
+          plus porter deux plans dans un passage : l'ordre ne décide plus rien. */}
       <p className="text-[11px] leading-snug text-muted-foreground">{t('node.text-enrich.orderHint')}</p>
 
       {config.plans.map((plan, i) => (
