@@ -13,14 +13,14 @@
 // page : là-bas l'espace existe, ici il n'existe pas.
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { RotateCcw, SlidersHorizontal, X } from 'lucide-react'
+import { Check, CircleDot, Loader2, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
 import { usePairingRules } from '@/features/priceWatch/usePairingRules'
 import { RulesWorkbench } from '@/features/priceWatch/rules/RulesWorkbench'
 import { configToRules, rulesToConfig, type PairingRulesConfig as Cfg } from '@/features/priceWatch/pairingRulesConfig'
 import { DEFAULT_PAIRING_RULES, MATCH_EVIDENCES, rulesDifferFromDefault, type PairingRules } from '@/features/priceWatch/catalog/pairingRules'
-import { t } from '@/lib/i18n'
+import { intlLocale, t, useTranslation } from '@/lib/i18n'
 
 /** Ce que le réglage change, en une ligne — pour juger sans ouvrir. */
 function summaryOf(rules: PairingRules): string {
@@ -40,7 +40,15 @@ export function PairingRulesConfigPanel({ config, onChange }: {
   onChange: (next: Cfg) => void
   availableColumns?: string[]
 }) {
+  const { locale } = useTranslation()
   const workflowId = useWorkflowStore((s) => s.current?.id)
+  // ⚠ Statut d'enregistrement REPRIS de l'en-tête de l'éditeur, pas réinventé : la fenêtre
+  // recouvre justement le badge qui le portait, et rien n'y disait si le réglage était
+  // parti en base. Sur un formulaire qu'on quitte d'un clic sur le fond, c'est la seule
+  // chose qui distingue « c'est enregistré » de « je viens de tout perdre ».
+  const dirty = useWorkflowStore((s) => s.dirty)
+  const saving = useWorkflowStore((s) => s.saving)
+  const lastSavedAt = useWorkflowStore((s) => s.lastSavedAt)
   // Même dérivation qu'au runtime : mesurer sur un AUTRE suivi que celui où les règles
   // s'appliqueront donnerait des poids qui ne veulent rien dire.
   const watchId = deriveWatchId(config.watchId, workflowId ?? undefined)
@@ -105,6 +113,24 @@ export function PairingRulesConfigPanel({ config, onChange }: {
                 <p className="text-[11px] text-white/45">{t('node.pairing-rules.dialogNote', { watchId })}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {saving ? (
+                  <span className="text-xs text-white/50 flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('wfe.saving')}
+                  </span>
+                ) : dirty ? (
+                  <span className="text-xs text-amber-400 flex items-center gap-1.5" title={t('wfe.unsaved')}>
+                    <CircleDot className="w-3.5 h-3.5" /> {t('wfe.unsaved.label')}
+                  </span>
+                ) : (
+                  <span
+                    className="text-xs text-emerald-400 flex items-center gap-1.5"
+                    title={lastSavedAt
+                      ? t('wfe.savedAt', { time: new Date(lastSavedAt).toLocaleTimeString(intlLocale(locale)) })
+                      : t('wfe.upToDate')}
+                  >
+                    <Check className="w-3.5 h-3.5" /> {t('wfe.savedShort')}
+                  </span>
+                )}
                 {/* La sortie de secours manquait ici : le node pouvait être réglé sans
                     moyen de revenir à l'état d'origine autrement qu'en remettant chaque
                     champ à la main. Contrairement à l'écran de la veille, elle applique
