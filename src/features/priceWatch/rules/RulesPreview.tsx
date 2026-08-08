@@ -12,7 +12,7 @@ import type { CompetitorListing } from '../catalog/prestashop'
 import type { PairingRules } from '../catalog/pairingRules'
 import { useTranslation } from '@/lib/i18n'
 
-const cardCls = 'bg-surface rounded-lg p-4'
+const cardCls = 'bg-surface rounded-lg px-3 py-2.5'
 
 /** Paires retenues en mémoire par l'aperçu. Un durcissement peut en produire des milliers
  *  (13 980 relevés sur un vrai suivi) ; on en garde assez pour parcourir sérieusement sans
@@ -57,40 +57,43 @@ export function RulesPreview(
   const unchanged = preview.lostTotal === 0 && preview.gainedTotal === 0
 
   return (
-    <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-4">
-        <div className={cardCls}>
-          <div className="text-xs text-white/40">{t('pw.rules.preview.before')}</div>
-          <div className="text-xl text-white tabular-nums">{preview.before}</div>
-        </div>
-        <div className={cardCls}>
-          <div className="text-xs text-white/40">{t('pw.rules.preview.after')}</div>
-          <div className={`text-xl tabular-nums ${delta < 0 ? 'text-amber-400' : delta > 0 ? 'text-emerald-400' : 'text-white'}`}>
-            {preview.after}{delta !== 0 && <span className="text-xs ml-1">({delta > 0 ? '+' : ''}{delta})</span>}
+    <div className="space-y-2">
+      {/* ⚠ « Perdus » se lisait comme une perte SUBIE. Ces quatre nombres décrivent une
+          SIMULATION : rien n'est appliqué avant l'enregistrement, et le libellé le dit
+          maintenant lui-même — une infobulle ne suffit pas pour lever un contresens. */}
+      <div className="grid gap-2 grid-cols-2 sm:grid-cols-4">
+        {([
+          ['before', preview.before, t('pw.rules.preview.before'), null, 'text-white'],
+          ['after', preview.after, t('pw.rules.preview.after'), null,
+            delta < 0 ? 'text-amber-400' : delta > 0 ? 'text-emerald-400' : 'text-white'],
+          ['lost', preview.lostTotal, t('pw.rules.preview.lost'), t('pw.rules.preview.lostHelp'), 'text-white'],
+          ['gained', preview.gainedTotal, t('pw.rules.preview.gained'), t('pw.rules.preview.gainedHelp'), 'text-white'],
+        ] as const).map(([key, value, label, help, tone]) => (
+          <div key={key} className="bg-surface rounded-lg px-3 py-2" title={help ?? undefined}>
+            <div className="text-[11px] text-white/40 leading-tight">{label}</div>
+            <div className={`text-lg tabular-nums leading-tight ${tone}`}>
+              {value}
+              {key === 'after' && delta !== 0 && (
+                <span className="text-[11px] ml-1">({delta > 0 ? '+' : ''}{delta})</span>
+              )}
+            </div>
           </div>
-        </div>
-        <div className={cardCls}>
-          <div className="text-xs text-white/40">{t('pw.rules.preview.lost')}</div>
-          <div className="text-xl text-white tabular-nums">{preview.lostTotal}</div>
-        </div>
-        <div className={cardCls}>
-          <div className="text-xs text-white/40">{t('pw.rules.preview.gained')}</div>
-          <div className="text-xl text-white tabular-nums">{preview.gainedTotal}</div>
-        </div>
+        ))}
       </div>
+      <p className="text-[11px] text-white/30">{t('pw.rules.preview.sim')}</p>
 
-      {unchanged && <p className="text-xs text-white/40">{t('pw.rules.preview.unchanged')}</p>}
+      {unchanged && <p className="text-[11px] text-white/40">{t('pw.rules.preview.unchanged')}</p>}
 
       {/* Par NATURE DE PREUVE : c'est ce qui dit OÙ le réglage a mordu, et donc s'il a
           fait ce qu'on croyait lui demander. */}
       {preview.byEvidence.length > 0 && (
-        <div className={cardCls}>
-          <div className="text-xs font-semibold uppercase tracking-wide text-white/40 mb-2">
+        <div className="bg-surface rounded-lg px-3 py-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-white/40 mb-1">
             {t('pw.rules.preview.byEvidence')}
           </div>
-          <div className="space-y-1">
+          <div>
             {preview.byEvidence.map((row) => (
-              <div key={row.evidence} className="flex items-baseline justify-between gap-4 text-sm">
+              <div key={row.evidence} className="flex items-baseline justify-between gap-4 text-[13px] py-0.5">
                 <span className="text-white/70">{t(`pw.rules.evidence.${row.evidence}` as 'pw.rules.evidence.gtin13')}</span>
                 <span className="tabular-nums text-white/50">
                   {row.before}
@@ -99,7 +102,7 @@ export function RulesPreview(
               </div>
             ))}
           </div>
-          <div className="text-xs text-white/40 mt-2">
+          <div className="text-[11px] text-white/40 mt-1">
             {t('pw.rules.preview.vetoed', { before: preview.vetoed.before, after: preview.vetoed.after })}
           </div>
         </div>

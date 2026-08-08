@@ -2,7 +2,7 @@
 // qu'il produit. Les mêmes règles que le node de workflow — même document Firestore —
 // pour que régler ici et régler dans le flux soient le même geste.
 import { useEffect, useState } from 'react'
-import { RotateCcw, Save } from 'lucide-react'
+import { Info, RotateCcw, Save } from 'lucide-react'
 import { usePairingRules } from '../usePairingRules'
 import { DEFAULT_PAIRING_RULES, rulesDifferFromDefault, type PairingRules } from '../catalog/pairingRules'
 import { RulesWorkbench } from './RulesWorkbench'
@@ -36,11 +36,16 @@ export function PairingRulesPanel({ watchId }: { watchId: string | null }) {
   }
 
   return (
-    <section data-pw-section="rules" className="space-y-4">
+    <section data-pw-section="rules" className="space-y-2">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white">{t('pw.rules.title')}</h2>
-          <p className="text-xs text-white/50 max-w-3xl">{t('pw.rules.intro')}</p>
+          <p className="text-[11px] text-white/45 max-w-3xl flex items-center gap-1.5">
+            {t('pw.rules.introShort')}
+            <span title={t('pw.rules.intro')} className="inline-flex shrink-0 cursor-help">
+              <Info className="w-3 h-3 text-white/25 hover:text-white/60" />
+            </span>
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/* Le retour aux défauts est un BOUTON et non un discours : c'est la sortie de
@@ -66,10 +71,10 @@ export function PairingRulesPanel({ watchId }: { watchId: string | null }) {
       </header>
 
       {stored.fromDefaults && !stored.loading && (
-        <p className="text-xs text-white/40">{t('pw.rules.neverSet')}</p>
+        <p className="text-[11px] text-white/35">{t('pw.rules.neverSet')}</p>
       )}
       {stored.updatedAt != null && (
-        <p className="text-xs text-white/40">
+        <p className="text-[11px] text-white/35">
           {t('pw.rules.lastWrite', {
             when: new Date(stored.updatedAt).toLocaleString(),
             by: stored.updatedBy === 'node' ? t('pw.rules.byNode') : t('pw.rules.byScreen'),

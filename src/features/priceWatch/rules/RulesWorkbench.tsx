@@ -13,6 +13,7 @@ import { RulesTree } from './RulesTree'
 import { RulesPreview } from './RulesPreview'
 import type { PairingRules } from '../catalog/pairingRules'
 import { useTranslation } from '@/lib/i18n'
+import { Info } from 'lucide-react'
 
 export function RulesWorkbench(
   { watchId, rules, onChange, baseline }:
@@ -54,7 +55,7 @@ export function RulesWorkbench(
   const measuring = !!site && (loading || source.loading)
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
           {t('pw.rules.measure.on')}
@@ -88,11 +89,16 @@ export function RulesWorkbench(
 
       <RulesTree rules={rules} onChange={onChange} weights={weights} />
 
-      <div className="space-y-2 pt-2">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
+      <div className="space-y-2 pt-1">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-white/40 flex items-center gap-1.5">
           {t('pw.rules.preview.title')}
+          <span className="font-normal normal-case text-white/30">· {t('pw.rules.measure.scopeShort')}</span>
+          {/* La portée d'un seul concurrent DOIT rester visible — mais deux lignes de
+              prose entre les chiffres et l'arbre les séparaient de leur cause. */}
+          <span title={t('pw.rules.preview.scope')} className="inline-flex shrink-0 cursor-help">
+            <Info className="w-3 h-3 text-white/25 hover:text-white/60" />
+          </span>
         </h3>
-        <p className="text-[11px] text-white/40">{t('pw.rules.preview.scope')}</p>
         <RulesPreview products={source.products} listings={listings} current={baseline} proposed={rules} />
       </div>
     </div>
