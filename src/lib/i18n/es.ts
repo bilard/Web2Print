@@ -1377,6 +1377,7 @@ export const es: Record<TranslationKey, string> = {
   'wfx.runServer': 'Ejecutar (servidor)',
   'wfx.suspendLabel': 'Suspender',
   'wfx.runNow': 'Ejecutar ahora en el servidor',
+  'wfx.serverBlocked': '«{label}» no se ejecuta en el servidor: esta ejecución se detendría en ella y omitiría todo lo posterior. Corrígelo desde el banner superior.',
   'wfx.suspend.help': 'Suspender el flujo: desactiva el cron (sin más ejecuciones) y detiene la ejecución en curso. Reactivable en el nodo Cron.',
   // — Workflows : aperçu des données ————————————————————————————————————
   'wfd.pageAll': 'Todo',

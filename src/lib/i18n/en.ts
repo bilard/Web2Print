@@ -1378,6 +1378,7 @@ export const en: Record<TranslationKey, string> = {
   'wfx.runServer': 'Run (server)',
   'wfx.suspendLabel': 'Suspend',
   'wfx.runNow': 'Run now on the server',
+  'wfx.serverBlocked': '"{label}" does not run on the server: this run would stop on it and skip everything downstream. Fix it from the banner at the top.',
   'wfx.suspend.help': 'Suspend the flow: disables the cron (no further runs) and stops the current run. Can be re-enabled in the Cron node.',
   // — Workflows : aperçu des données ————————————————————————————————————
   'wfd.pageAll': 'All',

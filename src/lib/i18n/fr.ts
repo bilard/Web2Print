@@ -1448,6 +1448,7 @@ export const fr = {
   'wfx.runServer': 'Lancer (serveur)',
   'wfx.suspendLabel': 'Suspendre',
   'wfx.runNow': 'Exécuter maintenant côté serveur',
+  'wfx.serverBlocked': "« {label} » ne s'exécute pas côté serveur : ce run s'arrêterait dessus et sauterait tout l'aval. Corrige-le depuis le bandeau, en haut.",
   'wfx.suspend.help': 'Suspendre le flux : désactive le cron (plus aucune relance) et arrête le run en cours. Réactivable dans le node Cron.',
 
   // — Workflows : aperçu des données ————————————————————————————————————

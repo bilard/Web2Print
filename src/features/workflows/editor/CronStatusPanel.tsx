@@ -8,6 +8,8 @@ import { db, functions } from '@/lib/firebase/config'
 import { formatCountdown } from '../runtime/cronLabels'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
+import { breaksServerRun } from '../runtime/serverCapability'
+import { nodeRegistry } from '../registry'
 import { saveWorkflow } from '../persistence/workflowsApi'
 import { useTranslation } from '@/lib/i18n'
 import { useCan } from '@/features/access/useAccess'
@@ -53,6 +55,17 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
   if (!sched?.enabled) return <>{children}</>
 
   const onRun = async () => {
+    // Refus AVANT l'appel : une carte que le serveur ne sait pas exécuter met le run en
+    // erreur et fait sauter tout l'aval. Partir quand même, c'est attendre plusieurs
+    // minutes pour lire l'échec dans les logs — exactement ce qu'on cherche à éviter.
+    // Ce bouton ne passe pas par le pré-vol du canevas : le contrôle est donc refait ici.
+    const wfNow = useWorkflowStore.getState().current
+    const blocking = wfNow?.nodes.find((n) => breaksServerRun(n.type))
+    if (blocking) {
+      const label = nodeRegistry.get(blocking.type)?.labelKey
+      toast.error(t('wfx.serverBlocked', { label: label ? t(label) : blocking.type }))
+      return
+    }
     setRunning(true)
     // Un run CLIENT resté « en cours » (isRunning) masque l'écho serveur sur les cartes
     // (garde dans hydrateServerRun). On le réinitialise : le run lancé ici est serveur,
