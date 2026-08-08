@@ -100,6 +100,9 @@ export interface MatchResult {
    *  Remonté jusqu'au journal du run : un produit qui devient « sans correspondance »
    *  doit pouvoir dire pourquoi, sinon il a juste l'air d'avoir disparu. */
   vetoed?: number
+  /** Le même compte, VENTILÉ par démenti. Sert à dire à l'écran de réglage ce que chaque
+   *  garde-fou coûte réellement : « refuse 14 » se règle, « refuse » ne se règle pas. */
+  vetoedBy?: Partial<Record<VetoReason, number>>
 }
 
 /**
@@ -186,21 +189,43 @@ function corroborated(
  * Un prix source absent neutralise le seul test qui en dépend (le gouffre) : c'est une
  * dégradation propre, pas une exemption — les deux autres démentis restent armés.
  */
+/** Le démenti qui a refusé une paire. `null` = aucun, la paire est retenue. */
+export type VetoReason = 'family' | 'price-abyss' | 'no-corroboration'
+
+/**
+ * QUEL démenti refuse cette paire — ou `null` si elle passe.
+ *
+ * ⚠ Rend le PREMIER qui se déclenche, et s'arrête là : c'est exactement l'ordre
+ * d'évaluation du moteur (les trois tests étaient chaînés par `||`). Une paire refusée
+ * pour deux raisons n'est donc comptée qu'une fois, sous la première — sans quoi les
+ * compteurs par démenti dépasseraient le total des refus et l'écran mentirait sur ce que
+ * chaque réglage coûte.
+ */
+export function vetoReason(
+  source: { name?: string; price?: number },
+  candidate: { name?: string; price?: number },
+  proof: MatchProof,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): VetoReason | null {
+  // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
+  if (keyIsBarcode(proof)) return null
+  const sourceName = source.name ?? ''
+  if (rules.familyVeto && familiesConflict(sourceName, candidate.name, rules.extraFamilies)) return 'family'
+  if (priceAbyss(source.price, candidate.price, rules.priceAbyssRatio)) return 'price-abyss'
+  // Le libellé doit CONFIRMER quand la clé, elle, ne prouve rien : une suite de
+  // chiffres nus n'appartient à personne.
+  if (rules.corroborateNumericKeys
+    && !keyIsDistinctive(proof) && !corroborated(sourceName, candidate.name, rules)) return 'no-corroboration'
+  return null
+}
+
 export function vetoedPair(
   source: { name?: string; price?: number },
   candidate: { name?: string; price?: number },
   proof: MatchProof,
   rules: PairingRules = DEFAULT_PAIRING_RULES,
 ): boolean {
-  // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
-  if (keyIsBarcode(proof)) return false
-  const sourceName = source.name ?? ''
-  return (rules.familyVeto && familiesConflict(sourceName, candidate.name, rules.extraFamilies))
-    || priceAbyss(source.price, candidate.price, rules.priceAbyssRatio)
-    // Le libellé doit CONFIRMER quand la clé, elle, ne prouve rien : une suite de
-    // chiffres nus n'appartient à personne.
-    || (rules.corroborateNumericKeys
-      && !keyIsDistinctive(proof) && !corroborated(sourceName, candidate.name, rules))
+  return vetoReason(source, candidate, proof, rules) !== null
 }
 
 /**
@@ -240,6 +265,7 @@ export function matchProduct(
   if (keys.length === 0) return { productId: product.id, siteId, outcome: 'no-key' }
 
   let vetoed = 0
+  const vetoedBy: Partial<Record<VetoReason, number>> = {}
   for (const key of keys) {
     for (const candidate of lookup(key.value) ?? []) {
       const proof = proveMatch([key], {
@@ -258,14 +284,16 @@ export function matchProduct(
       // donc être CORROBORÉ par le libellé, au lieu d'être présumé bon jusqu'à
       // contradiction. Seul le code-barres échappe à cette exigence.
       // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
-      if (vetoedPair(product, candidate, proof, rules)) {
+      const veto = vetoReason(product, candidate, proof, rules)
+      if (veto) {
         vetoed++
+        vetoedBy[veto] = (vetoedBy[veto] ?? 0) + 1
         continue
       }
       return { productId: product.id, siteId, outcome: 'matched', listing: candidate, proof }
     }
   }
-  return { productId: product.id, siteId, outcome: 'not-found', vetoed }
+  return { productId: product.id, siteId, outcome: 'not-found', vetoed, vetoedBy }
 }
 
 /**

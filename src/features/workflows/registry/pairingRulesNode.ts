@@ -19,6 +19,7 @@ import {
   configToRules, DEFAULT_RULES_CONFIG, type PairingRulesConfig,
 } from '@/features/priceWatch/pairingRulesConfig'
 import { MATCH_EVIDENCES, rulesDifferFromDefault, summarizeRules } from '@/features/priceWatch/catalog/pairingRules'
+import { PairingRulesConfigPanel } from './pairingRulesConfig'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
@@ -26,9 +27,10 @@ import { t } from '@/lib/i18n'
 interface RulesInputs { sites?: unknown }
 type RulesOutputs = { rules: { watchId: string } }
 
-/** Libellés des preuves — mêmes valeurs que `MATCH_EVIDENCES`, dans le même ordre. Une
- *  preuve ajoutée au moteur sans l'être ici deviendrait invisible dans le node, donc
- *  impossible à couper : le test de ce module vérifie que les deux listes coïncident. */
+/** Libellés COURTS des preuves, pour le résumé de carte et la palette. L'arbre, lui, tire
+ *  les siens du catalogue i18n. Conservé comme garde-fou : une preuve ajoutée au moteur
+ *  sans l'être ici serait invisible dans la brique, donc impossible à couper — le test de
+ *  ce module vérifie que les deux listes coïncident. */
 export const EVIDENCE_LABELS: Record<string, string> = {
   gtin13: 'Code-barres déclaré (toujours actif)',
   'ean-in-url': 'Code-barres dans l’adresse',
@@ -50,30 +52,9 @@ const pairingRulesNode: NodeSpec<PairingRulesConfig, RulesInputs, RulesOutputs> 
   // régler du tout, et c'est invisible — mieux vaut hériter que retaper.
   inputs: [{ name: 'sites', type: 'sites' }],
   outputs: [{ name: 'rules', type: 'rules' }],
-  configSchema: [
-    {
-      name: 'watchId', kind: 'text', labelKey: 'node.pairing-rules.watchId.label',
-      helpKey: 'node.pairing-rules.watchId.help',
-      disabledWhen: (_c, wired) => wired('sites'),
-      disabledNoteKey: 'node.pairing-rules.f1',
-    },
-    {
-      name: 'evidence', kind: 'multiSelect',
-      labelKey: 'node.pairing-rules.evidence.label', helpKey: 'node.pairing-rules.evidence.help',
-      options: MATCH_EVIDENCES.map((e) => ({ value: e, label: EVIDENCE_LABELS[e] })),
-    },
-    { name: 'useOriginRefs', kind: 'checkbox', labelKey: 'node.pairing-rules.useOriginRefs.label', helpKey: 'node.pairing-rules.useOriginRefs.help' },
-    { name: 'minRefLen', kind: 'number', labelKey: 'node.pairing-rules.minRefLen.label', helpKey: 'node.pairing-rules.minRefLen.help' },
-    { name: 'weakRefLen', kind: 'number', labelKey: 'node.pairing-rules.weakRefLen.label', helpKey: 'node.pairing-rules.weakRefLen.help' },
-    { name: 'familyVeto', kind: 'checkbox', labelKey: 'node.pairing-rules.familyVeto.label', helpKey: 'node.pairing-rules.familyVeto.help' },
-    { name: 'extraFamilies', kind: 'textarea', labelKey: 'node.pairing-rules.extraFamilies.label', helpKey: 'node.pairing-rules.extraFamilies.help' },
-    { name: 'priceAbyssRatio', kind: 'number', labelKey: 'node.pairing-rules.priceAbyssRatio.label', helpKey: 'node.pairing-rules.priceAbyssRatio.help' },
-    { name: 'corroborateNumericKeys', kind: 'checkbox', labelKey: 'node.pairing-rules.corroborate.label', helpKey: 'node.pairing-rules.corroborate.help' },
-    { name: 'unifyDirectedVetoes', kind: 'checkbox', labelKey: 'node.pairing-rules.unify.label', helpKey: 'node.pairing-rules.unify.help' },
-    { name: 'alignedPct', kind: 'number', labelKey: 'node.pairing-rules.alignedPct.label', helpKey: 'node.pairing-rules.alignedPct.help' },
-    { name: 'minPriceEur', kind: 'number', labelKey: 'node.pairing-rules.minPriceEur.label', helpKey: 'node.pairing-rules.minPriceEur.help' },
-    { name: 'maxDropPct', kind: 'number', labelKey: 'node.pairing-rules.maxDropPct.label', helpKey: 'node.pairing-rules.maxDropPct.help' },
-  ],
+  // Tout est rendu par le ConfigComponent : l'arbre de décision, ses poids réels et
+  // l'aperçu. Un schéma non vide empilerait la liste générique par-dessus.
+  configSchema: [],
   defaultConfig: DEFAULT_RULES_CONFIG,
   cardSummary: (c) => {
     const rules = configToRules(c)
@@ -87,6 +68,7 @@ const pairingRulesNode: NodeSpec<PairingRulesConfig, RulesInputs, RulesOutputs> 
     if (extra > 0) parts.push(t('node.pairing-rules.summaryExtraFamilies', { count: extra }))
     return parts.length > 0 ? parts.join(' · ') : t('node.pairing-rules.summaryTuned')
   },
+  ConfigComponent: PairingRulesConfigPanel,
   runtime: 'client',
   run: async (ctx, config, inputs) => {
     const uid = getWorkspaceUid()

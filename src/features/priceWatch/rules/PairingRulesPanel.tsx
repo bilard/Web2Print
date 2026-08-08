@@ -4,10 +4,8 @@
 import { useEffect, useState } from 'react'
 import { RotateCcw, Save } from 'lucide-react'
 import { usePairingRules } from '../usePairingRules'
-import { useCompetitorMeta } from '../useCatalogReport'
 import { DEFAULT_PAIRING_RULES, rulesDifferFromDefault, type PairingRules } from '../catalog/pairingRules'
-import { RulesFields } from './RulesFields'
-import { RulesPreview } from './RulesPreview'
+import { RulesWorkbench } from './RulesWorkbench'
 import { useTranslation } from '@/lib/i18n'
 import { toast } from 'sonner'
 
@@ -16,9 +14,7 @@ const btnCls = 'text-xs rounded px-3 py-1.5 border transition-colors disabled:op
 export function PairingRulesPanel({ watchId }: { watchId: string | null }) {
   const { t } = useTranslation()
   const stored = usePairingRules(watchId)
-  const meta = useCompetitorMeta(watchId)
   const [draft, setDraft] = useState<PairingRules>(DEFAULT_PAIRING_RULES)
-  const [site, setSite] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   // Le brouillon suit ce qui est ENREGISTRÉ tant qu'on n'a rien touché : un run qui
@@ -38,13 +34,6 @@ export function PairingRulesPanel({ watchId }: { watchId: string | null }) {
       setSaving(false)
     }
   }
-
-  // `useCompetitorMeta` écarte déjà le doc curseur ; il reste à trier pour que la liste
-  // ne se réordonne pas à chaque snapshot.
-  const sites = [...meta.entries()]
-    .map(([siteId, m]) => ({ siteId, domain: m.domain ?? '' }))
-    .filter((s) => s.domain !== '')
-    .sort((a, b) => a.domain.localeCompare(b.domain))
 
   return (
     <section data-pw-section="rules" className="space-y-4">
@@ -88,30 +77,10 @@ export function PairingRulesPanel({ watchId }: { watchId: string | null }) {
         </p>
       )}
 
-      <RulesFields rules={draft} onChange={setDraft} />
+      {/* Clé partagée avec l'éditeur de workflow : même situation, même phrase. */}
+      {dirty && <p className="text-xs text-amber-400">{t('wfe.unsaved')}</p>}
 
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-white/40">
-            {t('pw.rules.preview.title')}
-          </h3>
-          <select
-            value={site ?? ''} onChange={(e) => setSite(e.target.value || null)}
-            className="bg-well text-white/80 text-xs rounded px-2 py-1.5 border border-white/10 focus:outline-none focus:border-white/25"
-          >
-            <option value="">{t('pw.rules.preview.pickSiteOption')}</option>
-            {sites.map((s) => (
-              <option key={s.siteId} value={s.siteId}>{s.domain}</option>
-            ))}
-          </select>
-          {/* Clé partagée avec l'éditeur de workflow : même situation, même phrase. */}
-          {dirty && <span className="text-xs text-amber-400">{t('wfe.unsaved')}</span>}
-        </div>
-        {/* La demi-vérité est ANNONCÉE : un aperçu qui laisserait croire qu'il couvre tout
-            le suivi serait pire qu'aucun aperçu. */}
-        <p className="text-xs text-white/40">{t('pw.rules.preview.scope')}</p>
-        <RulesPreview watchId={watchId} siteId={site} current={stored.rules} proposed={draft} />
-      </div>
+      <RulesWorkbench watchId={watchId} rules={draft} onChange={setDraft} baseline={stored.rules} />
     </section>
   )
 }

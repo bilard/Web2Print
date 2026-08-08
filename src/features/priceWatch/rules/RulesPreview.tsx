@@ -6,32 +6,36 @@
 // plus jamais terminé. Un site suffit à trancher un réglage — les proportions se
 // transposent, et le run complet donnera le chiffre exact.
 import { useMemo } from 'react'
-import { useSourceCatalog, useSiteListings } from '../explorer/useSiteExplorer'
 import { previewPairing } from '../pairingPreview'
+import type { SourceProduct } from '../catalog/match'
+import type { CompetitorListing } from '../catalog/prestashop'
 import type { PairingRules } from '../catalog/pairingRules'
 import { useTranslation } from '@/lib/i18n'
 
 const cardCls = 'bg-surface rounded-lg p-4'
 
+/** ⚠ Produits et fiches sont reçus en PROPS, jamais rechargés ici : l'atelier les lit
+ *  déjà pour mesurer l'arbre, et deux hooks sur les mêmes documents doublaient la lecture
+ *  d'un index de plusieurs dizaines de milliers de fiches. */
 export function RulesPreview(
-  { watchId, siteId, current, proposed }:
-  { watchId: string | null; siteId: string | null; current: PairingRules; proposed: PairingRules },
+  { products, listings, current, proposed }:
+  {
+    products: SourceProduct[]
+    listings: CompetitorListing[]
+    current: PairingRules
+    proposed: PairingRules
+  },
 ) {
   const { t } = useTranslation()
-  const source = useSourceCatalog(watchId)
-  const { listings, loading } = useSiteListings(watchId, siteId)
 
   const preview = useMemo(
-    () => (source.products.length === 0 || listings.length === 0
+    () => (products.length === 0 || listings.length === 0
       ? null
-      : previewPairing(source.products, listings, current, proposed)),
-    [source.products, listings, current, proposed],
+      : previewPairing(products, listings, current, proposed)),
+    [products, listings, current, proposed],
   )
 
-  if (!siteId) return <p className="text-xs text-white/40">{t('pw.rules.preview.pickSite')}</p>
-  // Même attente que l'écran « Concurrents », même phrase — c'est la même lecture.
-  if (loading || source.loading) return <p className="text-xs text-white/40">{t('pwx.lectureDesFichesCollectees')}</p>
-  if (!preview) return <p className="text-xs text-white/40">{t('pw.rules.preview.noData')}</p>
+  if (!preview) return <p className="text-xs text-white/40">{t('pw.rules.preview.pickSite')}</p>
 
   const delta = preview.after - preview.before
   const unchanged = preview.lostTotal === 0 && preview.gainedTotal === 0
