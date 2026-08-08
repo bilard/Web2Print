@@ -242,8 +242,12 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           {searching && <span className="text-amber-300/80">{t('pwte.searchOverrides')}</span>}
           <label className="flex items-center gap-1.5">
             {t('pwte.limit')}
-            <input type="number" min={1} step={100} value={limit}
-              onChange={(e) => setLimit(Math.max(1, Number(e.target.value) || 1))}
+            {/* ⚠ `step={100}` avec un plancher à 1 déposait sur 1 : depuis 200, un clic de
+                trop passait par 0, ramené à 1 — et remonter redonnait 101, jamais 200.
+                Le pas et le plancher sont désormais accordés : 200 → 150 → 100 → 50 → 10,
+                sans jamais traverser 0. */}
+            <input type="number" min={10} step={50} value={limit}
+              onChange={(e) => setLimit(Math.max(10, Number(e.target.value) || 10))}
               className="h-7 w-20 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent" />
           </label>
           <button type="button" onClick={() => void run()} disabled={running || todo.length === 0}
