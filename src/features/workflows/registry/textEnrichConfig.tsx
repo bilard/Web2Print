@@ -99,12 +99,12 @@ export function TextEnrichConfigPanel({
   }, [fromSheet])
 
   const setPlan = (i: number, patch: Partial<PlanConfig>) => {
-    onChange({ ...config, plans: config.plans.map((p, j) => (j === i ? { ...p, ...patch } : p)) })
+    onChange({ ...config, plans: (config.plans ?? []).map((p, j) => (j === i ? { ...p, ...patch } : p)) })
   }
   const move = (i: number, delta: number) => {
     const to = i + delta
-    if (to < 0 || to >= config.plans.length) return
-    const next = [...config.plans]
+    if (to < 0 || to >= (config.plans ?? []).length) return
+    const next = [...(config.plans ?? [])]
     ;[next[i], next[to]] = [next[to], next[i]]
     onChange({ ...config, plans: next })
   }
@@ -121,7 +121,7 @@ export function TextEnrichConfigPanel({
         </span>
         {projects.length > 0 ? (
           <select
-            value={config.projectId} onChange={(e) => onChange({ ...config, projectId: e.target.value })}
+            value={config.projectId ?? ''} onChange={(e) => onChange({ ...config, projectId: e.target.value })}
             className={`${INPUT} w-full`}
           >
             <option value="">{t('node.text-enrich.pickProject')}</option>
@@ -129,7 +129,7 @@ export function TextEnrichConfigPanel({
           </select>
         ) : (
           <input
-            value={config.projectId} onChange={(e) => onChange({ ...config, projectId: e.target.value })}
+            value={config.projectId ?? ''} onChange={(e) => onChange({ ...config, projectId: e.target.value })}
             className={`${INPUT} w-full`}
           />
         )}
@@ -139,7 +139,7 @@ export function TextEnrichConfigPanel({
         <label className="space-y-1 text-[11px] text-muted-foreground">
           <span className="block">{t('node.text-enrich.capUsd')}</span>
           <input
-            type="number" min={0} step={1} value={config.capUsd}
+            type="number" min={0} step={1} value={config.capUsd ?? 0}
             onChange={(e) => onChange({ ...config, capUsd: Number(e.target.value) || 0 })}
             className={`${INPUT} w-full`}
           />
@@ -147,7 +147,7 @@ export function TextEnrichConfigPanel({
         <label className="space-y-1 text-[11px] text-muted-foreground">
           <span className="block">{t('node.text-enrich.maxUnits')}</span>
           <input
-            type="number" min={1} step={100} value={config.maxUnits}
+            type="number" min={1} step={100} value={config.maxUnits ?? 500}
             onChange={(e) => onChange({ ...config, maxUnits: Number(e.target.value) || 1 })}
             className={`${INPUT} w-full`}
           />
@@ -179,7 +179,7 @@ export function TextEnrichConfigPanel({
           className="flex items-center gap-1 rounded px-1.5 py-1 text-[11px] text-muted-foreground hover:bg-surface-2 hover:text-white"
           onClick={() => onChange({
             ...config,
-            plans: [...config.plans, {
+            plans: [...(config.plans ?? []), {
               enabled: true, key: '', kind: 'improve', minLength: 28, prompt: '', promptVersion: 'v1',
             }],
           })}
@@ -193,7 +193,7 @@ export function TextEnrichConfigPanel({
           plus porter deux plans dans un passage : l'ordre ne décide plus rien. */}
       <p className="text-[11px] leading-snug text-muted-foreground">{t('node.text-enrich.orderHint')}</p>
 
-      {config.plans.map((plan, i) => (
+      {(config.plans ?? []).map((plan, i) => (
         <div
           key={i}
           // La ligne en cause se DÉSIGNE, elle ne se décrit pas : sur quatre lignes
@@ -209,7 +209,7 @@ export function TextEnrichConfigPanel({
               className="h-3.5 w-3.5 accent-accent"
             />
             <ColumnField
-              value={plan.key} onPick={(v) => setPlan(i, { key: v })} cols={cols}
+              value={plan.key ?? ''} onPick={(v) => setPlan(i, { key: v })} cols={cols}
               placeholder={t('node.text-enrich.fieldKey')} className="min-w-0 flex-1"
             />
             <select
@@ -230,20 +230,20 @@ export function TextEnrichConfigPanel({
             </button>
             <button
               type="button" className="rounded p-1 text-muted-foreground hover:bg-well hover:text-red-400"
-              onClick={() => onChange({ ...config, plans: config.plans.filter((_, j) => j !== i) })}
+              onClick={() => onChange({ ...config, plans: (config.plans ?? []).filter((_, j) => j !== i) })}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
 
           <textarea
-            value={plan.prompt} onChange={(e) => setPlan(i, { prompt: e.target.value })}
+            value={plan.prompt ?? ''} onChange={(e) => setPlan(i, { prompt: e.target.value })}
             placeholder={plan.kind === 'translate'
               ? t('node.text-enrich.promptOptional')
               : t('node.text-enrich.promptPlaceholder')}
             rows={3}
             className={`w-full rounded border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent ${
-              plan.enabled && plan.kind !== 'translate' && plan.prompt.trim() === ''
+              plan.enabled && plan.kind !== 'translate' && !(plan.prompt ?? '').trim()
                 ? 'border-amber-500/60' : 'border-border'
             }`}
           />
@@ -254,7 +254,7 @@ export function TextEnrichConfigPanel({
               {/* Le seuil ne veut rien dire pour une traduction : c'est la langue qui
                   décide, pas la longueur. Le champ reste visible mais inerte. */}
               <input
-                type="number" value={plan.minLength} disabled={plan.kind === 'translate'}
+                type="number" value={plan.minLength ?? 0} disabled={plan.kind === 'translate'}
                 onChange={(e) => setPlan(i, { minLength: Number(e.target.value) || 0 })}
                 className={`${INPUT} w-14 disabled:opacity-40`}
               />
@@ -262,7 +262,7 @@ export function TextEnrichConfigPanel({
             <label className="flex items-center gap-1">
               {t('node.text-enrich.promptVersion')}
               <input
-                value={plan.promptVersion} onChange={(e) => setPlan(i, { promptVersion: e.target.value })}
+                value={plan.promptVersion ?? 'v1'} onChange={(e) => setPlan(i, { promptVersion: e.target.value })}
                 className={`${INPUT} w-14`}
               />
             </label>
@@ -297,7 +297,7 @@ export function TextEnrichConfigPanel({
             // rendu, et sans ce délai le bouton n'aurait jamais l'occasion d'afficher
             // qu'il travaille — on croirait au clic perdu.
             setTimeout(() => {
-              const keys = [...new Set(config.plans.filter((p) => p.key.trim()).map((p) => p.key.trim()))]
+              const keys = [...new Set((config.plans ?? []).map((p) => (p.key ?? '').trim()).filter(Boolean))]
               setStats(languageStats(rows, keys))
               setCounting(false)
             }, 0)
@@ -338,7 +338,7 @@ export function TextEnrichConfigPanel({
         {(['brandField', 'refField', 'ref2Field', 'eanField'] as const).map((f) => (
           <label key={f} className="space-y-1 text-[11px] text-muted-foreground">
             <span className="block">{t(`node.text-enrich.${f}` as 'node.text-enrich.brandField')}</span>
-            <ColumnField value={config[f]} onPick={(v) => onChange({ ...config, [f]: v })}
+            <ColumnField value={config[f] ?? ''} onPick={(v) => onChange({ ...config, [f]: v })}
               cols={cols} className="w-full" />
           </label>
         ))}

@@ -51,6 +51,19 @@ export interface TextEnrichConfig {
 }
 
 /**
+ * Lecture TOLÉRANTE d'un réglage texte.
+ *
+ * ⚠ La config d'un node est PERSISTÉE dans le workflow : une carte posée hier ne connaît
+ * aucun champ ajouté depuis. Lire `config.ref2Field.trim()` sur une carte antérieure à ce
+ * champ plante le run — après le chiffrage, donc après avoir fait espérer. Tout réglage
+ * texte se lit donc à travers cette fonction, sans exception, et un nouveau champ ne
+ * casse jamais les workflows déjà enregistrés.
+ */
+function str(v: unknown): string {
+  return typeof v === 'string' ? v : ''
+}
+
+/**
  * Le réglage de départ.
  *
  * Les deux entrées « étoffer » sont présentes mais DÉSACTIVÉES : elles montrent le chemin
@@ -93,14 +106,16 @@ export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
 
 /** Traduit la config en plans consommables. Les entrées désactivées disparaissent. */
 export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
-  return config.plans
-    .filter((p) => p.enabled && p.key.trim() !== '')
+  // Même prudence sur le tableau : une config abîmée ou tronquée ne doit pas faire
+  // tomber le run sur `.filter of undefined`.
+  return (Array.isArray(config.plans) ? config.plans : [])
+    .filter((p) => p.enabled && str(p.key).trim() !== '')
     .map((p) => ({
-      key: p.key.trim(),
+      key: str(p.key).trim(),
       kind: p.kind,
       minLength: p.minLength,
-      prompt: p.prompt,
-      promptVersion: p.promptVersion,
+      prompt: str(p.prompt),
+      promptVersion: str(p.promptVersion) || 'v1',
       ...(p.useTemplate
         ? {
             template: defaultNameTemplate({
@@ -129,7 +144,7 @@ export function configProblem(
    *  inutile. Sans ce drapeau, la carte exigerait un projet PIM à qui n'en a pas. */
   hasSheet = false,
 ): ConfigProblem | null {
-  if (!hasSheet && config.projectId.trim() === '') return { code: 'no-project' }
+  if (!hasSheet && str(config.projectId).trim() === '') return { code: 'no-project' }
   const plans = configToPlans(config)
   if (plans.length === 0) return { code: 'no-plan' }
   // La consigne EST la demande de l'utilisateur : sans elle, le modèle n'aurait que la
@@ -140,7 +155,7 @@ export function configProblem(
   // répète « traduis en français » n'est qu'une friction. Pour « étoffer » et
   // « structurer », en revanche, rien ne dirait au modèle quel texte produire — il
   // inventerait un style, et l'écrirait dans les fiches.
-  const promptless = plans.find((p) => p.kind !== 'translate' && p.prompt.trim() === '')
+  const promptless = plans.find((p) => p.kind !== 'translate' && str(p.prompt).trim() === '')
   if (promptless) return { code: 'no-prompt', key: promptless.key }
   // ⚠ DEUX PLANS SUR LA MÊME COLONNE, C'EST UNE COLLISION, pas un enchaînement.
   // Les unités d'un lot sont identifiées par `produit::champ` — le plan n'entre pas dans
@@ -172,9 +187,9 @@ export function protectedFieldsOf(
     return v == null || v === '' ? [] : [String(v)]
   }
   return {
-    refs: [...read(config.refField), ...read(config.ref2Field)],
-    eans: read(config.eanField),
-    brands: read(config.brandField),
+    refs: [...read(str(config.refField)), ...read(str(config.ref2Field))],
+    eans: read(str(config.eanField)),
+    brands: read(str(config.brandField)),
   }
 }
 
@@ -195,5 +210,6 @@ export function missingProtectedColumns(
   const present = new Set<string>()
   for (const row of rows) for (const k of Object.keys(row)) present.add(k)
   return [config.brandField, config.refField, config.ref2Field, config.eanField]
+    .map(str)
     .filter((k) => k.trim() !== '' && !present.has(k))
 }

@@ -164,3 +164,34 @@ describe('colonnes protégées absentes', () => {
     expect(missingProtectedColumns(cfg({ eanField: '' }), [{ marque: 'S', reference: 'X' }])).toEqual([])
   })
 })
+
+describe('⚠ config d’une carte ANTÉRIEURE à un champ', () => {
+  // La config d'un node est persistée dans le workflow : une carte posée hier ne connaît
+  // aucun champ ajouté depuis. Vécu en production — `ref2Field` ajouté le matin, et le
+  // run d'une carte de la veille tombait sur « Cannot read properties of undefined
+  // (reading 'trim') », APRÈS le chiffrage, donc après avoir fait espérer.
+  const legacy = {
+    projectId: 'p', brandField: 'marque', refField: 'reference', eanField: 'ean',
+    withNote: true, capUsd: 5, maxUnits: 500, dryRun: false,
+    plans: [{ enabled: true, key: 'nom', kind: 'translate', minLength: 28, prompt: '', promptVersion: 'v1' }],
+  } as unknown as TextEnrichConfig
+
+  it('ne lève pas sur un champ absent', () => {
+    expect(() => configProblem(legacy)).not.toThrow()
+    expect(configProblem(legacy)).toBeNull()
+  })
+
+  it('protège ce qu’elle connaît, sans la colonne manquante', () => {
+    expect(protectedFieldsOf(legacy, { reference: 'A1', marque: 'STIGA' }))
+      .toEqual({ refs: ['A1'], eans: [], brands: ['STIGA'] })
+  })
+
+  it('n’exige pas une colonne que la config ne porte pas', () => {
+    expect(missingProtectedColumns(legacy, [{ marque: 'S', reference: 'A1', ean: '1' }])).toEqual([])
+  })
+
+  it('survit à une liste de plans absente', () => {
+    const broken = { ...legacy, plans: undefined } as unknown as TextEnrichConfig
+    expect(configProblem(broken)).toEqual({ code: 'no-plan' })
+  })
+})
