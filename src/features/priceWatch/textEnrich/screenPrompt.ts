@@ -55,7 +55,36 @@ export interface PromptProduct {
  *
  * `instruction` est la consigne libre de l'utilisateur, recopiée telle quelle en tête.
  */
-export function buildScreenPrompt(products: PromptProduct[], instruction: string): string {
+export interface ScreenModes {
+  /** Rendre en français ce qui ne l'est pas. */
+  translate: boolean
+  /** Réécrire pour vendre : phrases lisibles, bénéfices, sans inventer de caractéristique. */
+  improve: boolean
+}
+
+/** La tâche demandée au modèle, selon les cases cochées. Aucune n'est cochée = on ne
+ *  lance pas (l'écran désactive le bouton), donc ce cas ne se rend jamais. */
+function taskLines(modes: ScreenModes): string[] {
+  if (modes.translate && modes.improve) {
+    return [
+      'Pour chaque produit ci-dessous : traduis en français ce qui ne l’est pas, PUIS réécris le texte de vente pour qu’il se lise et qu’il vende.',
+      'Améliorer veut dire : des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Cela ne veut JAMAIS dire ajouter une caractéristique que le texte d’origine ne porte pas.',
+    ]
+  }
+  if (modes.improve) {
+    return [
+      'Réécris le texte de vente de chaque produit ci-dessous pour qu’il se lise et qu’il vende, en français.',
+      'Des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. N’ajoute JAMAIS une caractéristique que le texte d’origine ne porte pas.',
+    ]
+  }
+  return ['Traduis en français le nom et le texte de vente de chaque produit ci-dessous, sans rien réécrire d’autre.']
+}
+
+export function buildScreenPrompt(
+  products: PromptProduct[],
+  instruction: string,
+  modes: ScreenModes = { translate: true, improve: false },
+): string {
   const items = products.map((p) => [
     `--- id=${JSON.stringify(p.id)}`,
     p.lang ? `langue détectée : ${p.lang}` : '',
@@ -68,7 +97,7 @@ export function buildScreenPrompt(products: PromptProduct[], instruction: string
   return [
     instruction.trim(),
     instruction.trim() ? '' : undefined,
-    'Traduis en français le nom et la description de chaque produit ci-dessous.',
+    ...taskLines(modes),
     'Rends TOUJOURS les deux champs : « name » et « description ». Si le produit a une description, elle doit ressortir traduite — ne la fusionne pas dans le nom et ne la laisse pas vide. S’il n’en a pas, laisse « description » vide plutôt que d’en inventer une.',
     '',
     'Contraintes de forme :',

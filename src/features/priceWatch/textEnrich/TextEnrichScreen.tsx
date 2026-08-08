@@ -8,12 +8,13 @@
 // Les textes réécrits vivent À CÔTÉ du catalogue, jamais dedans : « Comparer catalogue »
 // réécrit le catalogue en bloc et les effacerait sans un mot.
 import { useEffect, useMemo, useState } from 'react'
-import { Languages, Loader2, RotateCcw, Play } from 'lucide-react'
+import { Languages, Loader2, RotateCcw } from 'lucide-react'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { generateJson } from '@/features/ai/llmRouter'
 import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
+import { TextEnrichFilters } from './TextEnrichFilters'
 import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
 import { langBreakdown } from './langBreakdown'
@@ -49,6 +50,12 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   /** Langue isolée par un clic sur sa pastille. `undefined` = pas de filtre par langue ;
    *  `null` = les fiches dont la langue n'a pas été tranchée. */
   const [pickedLang, setPickedLang] = useState<string | null | undefined>(undefined)
+  /** Ce qu'on demande au modèle. Traduire seul ne suffisait pas : l'écran s'appelle
+   *  « Traduire ET améliorer », et rien ne permettait d'améliorer. */
+  const [modes, setModes] = useState({ translate: true, improve: false })
+  /** Filtre sur le TEXTE DE VENTE : ce champ est le sujet de l'écran, or une fiche qui
+   *  n'en a pas ne peut pas être traduite — elle encombre la liste sans rien à traiter. */
+  const [saleText, setSaleText] = useState<'all' | 'with' | 'without'>('all')
   const [prompt, setPrompt] = useState('')
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(0)
@@ -90,9 +97,16 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
     }
     // Une langue choisie l'emporte sur « seulement les textes non français » : on vient
     // de cliquer « DE 1 240 », on veut ces 1 240 fiches, pas leur intersection avec autre chose.
-    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang)
-    return lines.filter((l) => !(onlyForeign && (l.lang === 'fr' || l.lang == null)))
-  }, [lines, products, onlyForeign, query, searching, pickedLang])
+    const bySale = (l: Line) => {
+      // « Vide » couvre aussi le texte qui RECOPIE le nom : ce n'est pas un argumentaire,
+      // c'est le libellé une deuxième fois, et le traduire ne produit rien de neuf.
+      const has = !!l.product.description
+        && l.product.description.trim().toLowerCase() !== l.product.name.trim().toLowerCase()
+      return saleText === 'all' || (saleText === 'with' ? has : !has)
+    }
+    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l))
+    return lines.filter((l) => !(onlyForeign && (l.lang === 'fr' || l.lang == null)) && bySale(l))
+  }, [lines, products, onlyForeign, query, searching, pickedLang, saleText])
 
   // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
@@ -119,7 +133,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
             id: l.product.id, name: l.product.name,
             ...(l.product.description ? { description: l.product.description } : {}),
             lang: l.lang,
-          })), prompt),
+          })), prompt, modes),
           schema: ScreenBatchSchema,
           schemaForLLM: screenSchemaForLLM,
           version: 'text-enrich-screen/v2',
@@ -201,56 +215,16 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           className="w-full rounded border border-border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent"
         />
 
-        {/* Ce qu'il y a dans le catalogue, langue par langue. Un clic isole un lot. */}
-        {tallies.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setPickedLang(undefined)}
-              className={`rounded border px-1.5 py-0.5 text-[10px] transition-colors ${
-                pickedLang === undefined
-                  ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200'
-                  : 'border-white/10 text-white/40 hover:text-white/70'}`}>
-              {t('pwte.lang.all')}
-            </button>
-            {tallies.map((x) => (
-              <button key={x.lang ?? '?'} type="button"
-                onClick={() => setPickedLang(pickedLang === x.lang ? undefined : x.lang)}
-                className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition-colors ${
-                  pickedLang === x.lang
-                    ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200'
-                    : x.lang && x.lang !== 'fr'
-                      ? 'border-amber-400/25 text-amber-200/70 hover:text-amber-100'
-                      : 'border-white/10 text-white/40 hover:text-white/70'}`}>
-                <span className="uppercase">{x.lang ?? t('pwte.lang.undecided')}</span>
-                <span className="tabular-nums opacity-70">{n(x.count)}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/50">
-          <label className={`flex items-center gap-1.5 ${searching || pickedLang !== undefined ? 'opacity-40' : ''}`}>
-            <input type="checkbox" checked={onlyForeign} disabled={searching || pickedLang !== undefined}
-              onChange={(e) => setOnlyForeign(e.target.checked)}
-              className="h-3.5 w-3.5 accent-accent" />
-            {t('pwte.onlyForeign')}
-          </label>
-          {searching && <span className="text-amber-300/80">{t('pwte.searchOverrides')}</span>}
-          <label className="flex items-center gap-1.5">
-            {t('pwte.limit')}
-            {/* Les flèches donnent des valeurs rondes (200 → 150 → 100 → 50 → 0 = tout) ;
-                au clavier, rien n'est corrigé sous les doigts. */}
-            <input type="number" min={0} step={50} value={limitText}
-              onChange={(e) => setLimitText(e.target.value)}
-              className="h-7 w-20 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent" />
-          </label>
-          <button type="button" onClick={() => void run()} disabled={running || todo.length === 0}
-            className="ml-auto flex items-center gap-1.5 rounded bg-indigo-500/90 px-3 py-1.5 text-[11px] font-medium text-[#fff] hover:bg-indigo-500 disabled:opacity-40">
-            {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            {running
-              ? t('pwte.running', { done: n(done), total: n(Math.min(limit, todo.length)) })
-              : t('pwte.run', { count: n(Math.min(limit, todo.length)) })}
-          </button>
-        </div>
+        <TextEnrichFilters
+          tallies={tallies} pickedLang={pickedLang} onPickLang={setPickedLang}
+          onlyForeign={onlyForeign} onOnlyForeign={setOnlyForeign} searching={searching}
+          saleText={saleText} onSaleText={setSaleText}
+          modes={modes} onModes={setModes}
+          limitText={limitText} onLimitText={setLimitText}
+          running={running} done={done} count={Math.min(limit, todo.length)}
+          canRun={!running && todo.length > 0 && (modes.translate || modes.improve)}
+          onRun={() => void run()}
+        />
       </div>
 
       {loading ? (
@@ -280,19 +254,26 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
               <div className="mt-1 grid gap-3 sm:grid-cols-2">
                 <div className="min-w-0">
                   <p className="text-[9px] uppercase tracking-wide text-white/25">{t('pwte.before')}</p>
+                  {/* Les deux champs sont NOMMÉS : sans étiquette, deux lignes de texte se
+                      lisent comme un titre et son sous-titre, alors que la seconde est le
+                      texte de vente — le champ que l'écran est censé traiter. */}
+                  <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
                   <p className="text-[12px] text-white/70 break-words">{l.product.name}</p>
-                  {l.product.description && (
-                    <p className="text-[11px] text-white/35 break-words line-clamp-3">{l.product.description}</p>
-                  )}
+                  <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
+                  {l.product.description
+                    ? <p className="text-[11px] text-white/35 break-words line-clamp-3">{l.product.description}</p>
+                    : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] uppercase tracking-wide text-emerald-300/40">{t('pwte.after')}</p>
                   {l.revision ? (
                     <>
+                      <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
                       <p className="text-[12px] text-emerald-100/90 break-words">{l.revision.name}</p>
-                      {l.revision.description && (
-                        <p className="text-[11px] text-emerald-200/50 break-words line-clamp-3">{l.revision.description}</p>
-                      )}
+                      <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
+                      {l.revision.description
+                        ? <p className="text-[11px] text-emerald-200/50 break-words line-clamp-3">{l.revision.description}</p>
+                        : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
                       {l.revision.note && (
                         <p className="mt-0.5 text-[10px] italic text-white/30 break-words">{l.revision.note}</p>
                       )}
