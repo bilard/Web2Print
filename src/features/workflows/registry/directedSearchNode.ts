@@ -65,7 +65,10 @@ const directedSearchNode: NodeSpec<DirectedConfig, DirectedInputs, DirectedOutpu
   connectors: ['jina'],
   // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la textarea
   // ci-dessous ET l'identifiant de suivi (même liste que Moisson/Comparer, garanti).
-  inputs: [{ name: 'products', type: 'sheet' }, { name: 'sites', type: 'sites' }],
+  // `rules` : entrée d'ORDONNANCEMENT (facultative). La recherche dirigée applique les
+  // mêmes règles d'appariement que le comparatif ; les brancher garantit qu'elles sont
+  // écrites avant qu'elle ne les relise. La donnée elle-même est ignorée.
+  inputs: [{ name: 'products', type: 'sheet' }, { name: 'sites', type: 'sites' }, { name: 'rules', type: 'rules' }],
   outputs: [{ name: 'results', type: 'sheet' }],
   configSchema: [
     {

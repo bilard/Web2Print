@@ -85,6 +85,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     // Port `sites` (facultatif) : brancher un node « Sites sources » remplace la
     // textarea sites ET l'identifiant de suivi (même liste que la moisson, garanti).
     { name: 'sites', type: 'sites' },
+    // Entrée d'ORDONNANCEMENT (facultative), comme `harvest` : brancher « Règles
+    // d'appariement » ici force l'écriture des règles AVANT que la comparaison ne les
+    // relise. La donnée est ignorée — les règles sont lues en Firestore, pas sur l'edge —
+    // mais sans ce lien, rien ne garantit l'ordre des deux nodes dans un même run, et le
+    // comparatif appliquerait les règles de la veille.
+    { name: 'rules', type: 'rules' },
   ],
   outputs: [{ name: 'matrix', type: 'sheet' }],
   configSchema: [
