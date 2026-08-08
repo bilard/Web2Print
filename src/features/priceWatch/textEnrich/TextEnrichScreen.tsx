@@ -8,13 +8,14 @@
 // Les textes réécrits vivent À CÔTÉ du catalogue, jamais dedans : « Comparer catalogue »
 // réécrit le catalogue en bloc et les effacerait sans un mot.
 import { useEffect, useMemo, useState } from 'react'
-import { Languages, Loader2, RotateCcw } from 'lucide-react'
+import { Languages, Loader2, RotateCcw, ExternalLink } from 'lucide-react'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { generateJson } from '@/features/ai/llmRouter'
 import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
 import { TextEnrichFilters } from './TextEnrichFilters'
+import { rejectionParts, type RejectionPart } from './violationSummary'
 import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
 import { langBreakdown } from './langBreakdown'
@@ -56,6 +57,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   /** Filtre sur le TEXTE DE VENTE : ce champ est le sujet de l'écran, or une fiche qui
    *  n'en a pas ne peut pas être traduite — elle encombre la liste sans rien à traiter. */
   const [saleText, setSaleText] = useState<'all' | 'with' | 'without'>('all')
+  /** Pourquoi une fiche n'a rien donné, par produit. Vide tant qu'on n'a rien lancé —
+   *  ces refus étaient invisibles, et « pas encore traduit » ne disait pas s'il fallait
+   *  relancer ou si la réponse avait été rejetée. */
+  const [rejected, setRejected] = useState<Map<string, RejectionPart[]>>(new Map())
   const [prompt, setPrompt] = useState('')
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(0)
@@ -123,7 +128,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
     if (batchList.length === 0) return
     setRunning(true)
     setDone(0)
-    const written: TextRevision[] = []
+    let kept = 0
+    let refused = 0
+    let silent = 0
+    const reasons = new Map<string, RejectionPart[]>()
     try {
       for (let i = 0; i < batchList.length; i += BATCH) {
         const chunk = batchList.slice(i, i + BATCH)
@@ -139,12 +147,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           version: 'text-enrich-screen/v2',
         })
 
+        const written: TextRevision[] = []
         const byId = new Map(chunk.map((l) => [l.product.id, l]))
+        const answered = new Set<string>()
         for (const r of raw.results) {
           const line = byId.get(r.id)
           // Un identifiant inconnu trahit une liste décalée : on écarte plutôt que de
           // ranger un texte sur le mauvais produit.
           if (!line) continue
+          answered.add(line.product.id)
           const name = String(r.name ?? '').trim()
           const description = String(r.description ?? '').trim()
           if (!name) continue
@@ -157,7 +168,14 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
             refs: [line.product.ref, line.product.ref2],
             eans: [line.product.ean],
           })
-          if (violations.length > 0) continue
+          if (violations.length > 0) {
+            // Refus MOTIVÉ : la garde protège les références et les cotes, mais son
+            // verdict doit se lire sur la fiche — sinon le module a simplement l'air
+            // de ne pas marcher.
+            reasons.set(line.product.id, rejectionParts(violations))
+            refused++
+            continue
+          }
 
           written.push({
             productId: line.product.id,
@@ -170,18 +188,28 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
             at: Date.now(),
           })
         }
+
+        // Le modèle a ignoré ces fiches : ni écrites, ni refusées. Sans ce décompte,
+        // elles se confondent avec les refus et on cherche une cause qui n'existe pas.
+        silent += chunk.length - answered.size
+
+        // ⚠ Sauvegarde À CHAQUE LOT, pas à la fin : une erreur au dixième lot jetait les
+        // neuf premiers, déjà payés au modèle.
+        if (written.length > 0) {
+          await saveTextRevisions(uid, watchId, written)
+          kept += written.length
+          setRevisions((prev) => {
+            const next = new Map(prev)
+            for (const r of written) next.set(r.productId, r)
+            return next
+          })
+        }
+        setRejected((prev) => new Map([...prev, ...reasons]))
         setDone(Math.min(i + BATCH, batchList.length))
       }
-
-      if (written.length > 0) {
-        await saveTextRevisions(uid, watchId, written)
-        setRevisions((prev) => {
-          const next = new Map(prev)
-          for (const r of written) next.set(r.productId, r)
-          return next
-        })
-      }
-      toast.success(t('pwte.doneToast', { count: n(written.length), asked: n(batchList.length) }))
+      toast.success(t('pwte.doneToast', {
+        count: n(kept), asked: n(batchList.length), refused: n(refused), silent: n(silent),
+      }))
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e))
     } finally {
@@ -242,6 +270,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
                 {l.lang && (
                   <span className="rounded border border-white/15 px-1 uppercase">{l.lang}</span>
                 )}
+                {l.product.url && (
+                  <a href={l.product.url} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-1 text-white/35 hover:text-indigo-300"
+                    title={t('pwte.openProduct')}>
+                    <ExternalLink className="w-3 h-3" />{t('pwte.openProduct')}
+                  </a>
+                )}
                 {l.revision && (
                   <button type="button" onClick={() => void revert(l.product.id)}
                     className="ml-auto flex items-center gap-1 text-white/35 hover:text-rose-300">
@@ -278,6 +313,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
                         <p className="mt-0.5 text-[10px] italic text-white/30 break-words">{l.revision.note}</p>
                       )}
                     </>
+                  ) : rejected.get(l.product.id)?.length ? (
+                    <div className="space-y-0.5">
+                      <p className="text-[11px] text-amber-300/80">{t('pwte.rejected')}</p>
+                      {rejected.get(l.product.id)?.map((r, i) => (
+                        <p key={i} className="text-[10px] text-amber-200/50 break-words">
+                          {t(r.key, { token: r.token })}
+                        </p>
+                      ))}
+                    </div>
                   ) : (
                     <p className="text-[11px] text-white/20">{t('pwte.pending')}</p>
                   )}
