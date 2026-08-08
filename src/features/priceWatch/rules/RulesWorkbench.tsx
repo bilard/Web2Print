@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from '../explorer/useSiteExplorer'
 import { measurePairing } from '../pairingWeights'
+import { isCursorDomain } from '../radar/scrapeState'
 import { RulesTree } from './RulesTree'
 import { RulesPreview } from './RulesPreview'
 import type { PairingRules } from '../catalog/pairingRules'
@@ -33,7 +34,10 @@ export function RulesWorkbench(
   const sites = useMemo(
     () => [...meta.entries()]
       .map(([siteId, m]) => ({ siteId, domain: m.domain ?? '' }))
-      .filter((s) => s.domain !== '')
+      // ⚠ Les docs de curseur de la recherche dirigée portent un `domain` et se
+      // présentaient donc comme des concurrents. `directed-auth-cursor` apparaissait dans
+      // la liste, mesurable, et n'aurait donné que des zéros.
+      .filter((s) => s.domain !== '' && !isCursorDomain(s.domain))
       .sort((a, b) => a.domain.localeCompare(b.domain)),
     [meta],
   )
