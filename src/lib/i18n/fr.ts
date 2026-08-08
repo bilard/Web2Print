@@ -1939,6 +1939,7 @@ export const fr = {
   'node.pairing-rules.openWorkbench': 'Ouvrir les règles d’appariement',
   'node.pairing-rules.currentSummary': 'Réglage actuel de ce node : {summary}.',
   'node.pairing-rules.dialogNote': 'Ces réglages appartiennent au node. Ils seront écrits pour le suivi « {watchId} » au prochain passage du flux.',
+  'node.pairing-rules.resetToDefault': 'Revenir aux règles par défaut',
   'node.compare-catalog.label': 'Comparer catalogue',
   'node.compare-prices.label': 'Comparer les prix',
   'node.pw-report.prompt.label': 'Consigne (compose le mail)',

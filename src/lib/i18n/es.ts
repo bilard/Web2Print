@@ -1860,6 +1860,7 @@ export const es: Record<TranslationKey, string> = {
   'node.pairing-rules.openWorkbench': 'Abrir las reglas de emparejamiento',
   'node.pairing-rules.currentSummary': 'Ajuste actual de este nodo: {summary}.',
   'node.pairing-rules.dialogNote': 'Estos ajustes pertenecen al nodo. Se escribirán para el seguimiento «{watchId}» en la próxima ejecución del flujo.',
+  'node.pairing-rules.resetToDefault': 'Volver a las reglas por defecto',
   'node.compare-catalog.label': 'Comparar catálogo',
   'node.compare-prices.label': 'Comparar precios',
   'node.pw-report.prompt.label': 'Consigna (compone el correo)',

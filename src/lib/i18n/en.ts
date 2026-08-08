@@ -1861,6 +1861,7 @@ export const en: Record<TranslationKey, string> = {
   'node.pairing-rules.openWorkbench': 'Open the matching rules',
   'node.pairing-rules.currentSummary': 'This node\'s current setting: {summary}.',
   'node.pairing-rules.dialogNote': 'These settings belong to the node. They will be written for watch “{watchId}” the next time the flow runs.',
+  'node.pairing-rules.resetToDefault': 'Back to the default rules',
   'node.compare-catalog.label': 'Compare catalogue',
   'node.compare-prices.label': 'Compare prices',
   'node.pw-report.prompt.label': 'Instruction (composes the email)',

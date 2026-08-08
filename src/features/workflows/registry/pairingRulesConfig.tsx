@@ -13,13 +13,13 @@
 // page : là-bas l'espace existe, ici il n'existe pas.
 import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
 import { usePairingRules } from '@/features/priceWatch/usePairingRules'
 import { RulesWorkbench } from '@/features/priceWatch/rules/RulesWorkbench'
 import { configToRules, rulesToConfig, type PairingRulesConfig as Cfg } from '@/features/priceWatch/pairingRulesConfig'
-import { MATCH_EVIDENCES, rulesDifferFromDefault, type PairingRules } from '@/features/priceWatch/catalog/pairingRules'
+import { DEFAULT_PAIRING_RULES, MATCH_EVIDENCES, rulesDifferFromDefault, type PairingRules } from '@/features/priceWatch/catalog/pairingRules'
 import { t } from '@/lib/i18n'
 
 /** Ce que le réglage change, en une ligne — pour juger sans ouvrir. */
@@ -104,12 +104,27 @@ export function PairingRulesConfigPanel({ config, onChange }: {
                 <h2 className="text-sm font-semibold text-white">{t('pw.rules.title')}</h2>
                 <p className="text-[11px] text-white/45">{t('node.pairing-rules.dialogNote', { watchId })}</p>
               </div>
-              <button
-                type="button" onClick={() => setOpen(false)} title={t('pw.audit.close')}
-                className="p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                {/* La sortie de secours manquait ici : le node pouvait être réglé sans
+                    moyen de revenir à l'état d'origine autrement qu'en remettant chaque
+                    champ à la main. Contrairement à l'écran de la veille, elle applique
+                    DIRECTEMENT — il n'y a pas de brouillon dans un panneau de node. */}
+                <button
+                  type="button" onClick={() => setRules(DEFAULT_PAIRING_RULES)}
+                  disabled={!rulesDifferFromDefault(rules)}
+                  className="text-xs rounded px-3 py-1.5 border border-white/10 text-white/60
+                    hover:text-white hover:border-white/25 transition-colors
+                    disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <RotateCcw className="w-3 h-3 inline mr-1" />{t('node.pairing-rules.resetToDefault')}
+                </button>
+                <button
+                  type="button" onClick={() => setOpen(false)} title={t('pw.audit.close')}
+                  className="p-1.5 rounded bg-well border border-white/10 text-white/60 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </header>
             <div className="p-5">
               <RulesWorkbench watchId={watchId} rules={rules} onChange={setRules} baseline={stored.rules} />
