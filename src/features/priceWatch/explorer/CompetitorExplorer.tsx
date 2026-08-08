@@ -417,7 +417,8 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
         {/* Mon catalogue REMPLACE la vue par paires : il n'y a pas de concurrent en face,
             et garder une colonne vide à droite laisserait croire à un appariement raté. */}
         {enrichMode ? (
-          <TextEnrichScreen uid={uid ?? ''} watchId={watchId} products={source.products} loading={source.loading} />
+          <TextEnrichScreen uid={uid ?? ''} watchId={watchId} products={source.products}
+            loading={source.loading} query={filter.q} />
         ) : catalogMode ? (
           <ExplorerCatalog products={source.products} query={filter.q} imagePrefix={src.imagePrefix} />
         ) : (

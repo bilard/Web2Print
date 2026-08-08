@@ -30,6 +30,7 @@ import type { WorkflowEdge, WorkflowNode } from '../types'
 import { t } from '@/lib/i18n'
 
 const nodeTypes = { base: BaseNode }
+import { EdgeLegend } from './EdgeLegend'
 const edgeTypes = { flow: FlowEdge }
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
@@ -357,6 +358,7 @@ export function WorkflowEditor() {
         proOptions={{ hideAttribution: true }}
       >
         <Background color={isLight ? '#d4d4d8' : '#1f1f1f'} gap={24} size={1} />
+        <EdgeLegend />
         <Controls
           className="!bg-surface !border-white/15 [&>button]:!bg-surface [&>button]:!border-white/15 [&>button]:!text-neutral-400 [&>button:hover]:!bg-surface"
           showInteractive={false}

@@ -15,6 +15,7 @@ import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { generateJson } from '@/features/ai/llmRouter'
 import { EnrichBatchSchema, schemaForLLM } from '@/features/textEnrich/prompt'
 import { findViolations } from '@/features/textEnrich/protected'
+import { searchCatalog } from '../explorer/catalogList'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -30,11 +31,14 @@ interface Line {
   revision?: TextRevision
 }
 
-export function TextEnrichScreen({ uid, watchId, products, loading }: {
+export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   uid: string
   watchId: string
   products: SourceProduct[]
   loading: boolean
+  /** La saisie du bandeau. ⚠ UNE seule recherche à l'écran : un champ propre à ce
+   *  panneau laissait taper une référence en haut sans rien voir changer ici. */
+  query: string
 }) {
   const { t, locale } = useTranslation()
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
@@ -45,7 +49,6 @@ export function TextEnrichScreen({ uid, watchId, products, loading }: {
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(0)
   const [limit, setLimit] = useState(200)
-  const [query, setQuery] = useState('')
 
   useEffect(() => {
     if (!uid || !watchId) return
@@ -64,14 +67,17 @@ export function TextEnrichScreen({ uid, watchId, products, loading }: {
     revision: revisions.get(p.id),
   })), [products, revisions])
 
+  const searching = query.trim() !== ''
   const shown = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return lines.filter((l) => {
-      if (onlyForeign && (l.lang === 'fr' || l.lang == null)) return false
-      if (!q) return true
-      return `${l.product.name} ${l.product.ref ?? ''} ${l.product.ean ?? ''}`.toLowerCase().includes(q)
-    })
-  }, [lines, onlyForeign, query])
+    // ⚠ Une recherche EXPLICITE l'emporte sur le filtre de langue. Chercher une référence
+    // et ne rien voir parce que la fiche est déjà en français se lit comme « ce produit
+    // n'existe pas » — alors qu'on vient précisément vérifier son état.
+    if (searching) {
+      const found = new Set(searchCatalog(products, query).map((p) => p.id))
+      return lines.filter((l) => found.has(l.product.id))
+    }
+    return lines.filter((l) => !(onlyForeign && (l.lang === 'fr' || l.lang == null)))
+  }, [lines, products, onlyForeign, query, searching])
 
   // Ce qui reste à faire : les fiches déjà réécrites n'y sont plus. Relancer ne repaie
   // donc jamais deux fois le même texte — c'est ce que le chemin par feuille ne savait
@@ -190,13 +196,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading }: {
         />
 
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/50">
-          <label className="flex items-center gap-1.5">
-            <input type="checkbox" checked={onlyForeign} onChange={(e) => setOnlyForeign(e.target.checked)}
+          <label className={`flex items-center gap-1.5 ${searching ? 'opacity-40' : ''}`}>
+            <input type="checkbox" checked={onlyForeign} disabled={searching}
+              onChange={(e) => setOnlyForeign(e.target.checked)}
               className="h-3.5 w-3.5 accent-accent" />
             {t('pwte.onlyForeign')}
           </label>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('pwte.search')}
-            className="h-7 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent" />
+          {searching && <span className="text-amber-300/80">{t('pwte.searchOverrides')}</span>}
           <label className="flex items-center gap-1.5">
             {t('pwte.limit')}
             <input type="number" min={1} step={100} value={limit}

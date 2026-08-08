@@ -5955,7 +5955,7 @@ export const fr = {
   'pwte.counts': '{todo} à traiter · {done} déjà faits · {total} au catalogue',
   'pwte.promptPlaceholder': 'Votre consigne (facultative) : style, longueur, ce qu’il faut garder…',
   'pwte.onlyForeign': 'Seulement les textes non français',
-  'pwte.search': 'Référence, nom…',
+  'pwte.searchOverrides': 'Recherche en cours — le filtre de langue est suspendu',
   'pwte.limit': 'Traiter au plus',
   'pwte.run': 'Traduire {count} fiches',
   'pwte.running': 'Traduction… {done} / {total}',

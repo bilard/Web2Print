@@ -123,6 +123,24 @@ export function registerBuiltinPorts(): void {
       Previewer: NoopPreviewer,
     },
     {
+      // Règles d'appariement écrites par le node « Règles d'appariement ». Le lien sert
+      // d'ORDONNANCEMENT : la donnée réelle vit en Firestore, pas sur le fil.
+      type: 'rules',
+      label: 'Règles',
+      color: '#f43f5e',
+      validator: (v) => typeof v === 'object' && v !== null,
+      Previewer: NoopPreviewer,
+    },
+    {
+      // Texte simple (une consigne, une URL, un identifiant).
+      type: 'string',
+      label: 'Texte',
+      color: '#94a3b8',
+      validator: (v) => typeof v === 'string',
+      Previewer: NoopPreviewer,
+      converter: (value) => String(value ?? ''),
+    },
+    {
       type: 'any',
       label: 'Any',
       color: '#6366f1',
