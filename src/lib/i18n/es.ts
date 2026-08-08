@@ -2417,6 +2417,7 @@ export const es: Record<TranslationKey, string> = {
   'wfv.noActiveSite': 'Ningún sitio activo en el gestor — añadir o activar al menos un sitio.',
   'wfv.unknownType': 'Tipo de nodo desconocido («{type}»).',
   'wfv.serverUnsupported': 'Esta tarjeta no se ejecuta en el servidor: la ejecución programada se detendrá en ella y se omitirán todas las tarjetas posteriores.',
+  'wfv.serverIgnored': 'La ejecución programada no hará este trabajo: esta tarjeta no se ejecuta en el servidor. Los datos pasan sin tratar.',
   'wfc.dropNode': 'Quitar la tarjeta y volver a conectar el flujo',
   'wfc.dropped': '«{label}» eliminada, el flujo se ha vuelto a conectar.',
   'wfv.inputNotWired': 'Entrada «{port}» no conectada (origen faltante).',

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL, breaksServerRun } from './serverCapability'
+import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL, SERVER_PASS_THROUGH, breaksServerRun, ignoredOnServer } from './serverCapability'
 
 // PARITÉ CLIENT ↔ SERVEUR. `functions/` est un paquet hermétique : le module ne peut pas
 // être partagé, seulement recopié. Ce test lit le fichier serveur comme du TEXTE et
@@ -26,6 +26,10 @@ describe('capacité serveur — parité avec le registre des Cloud Functions', (
   it('SERVER_SKIP_VISUAL est identique des deux côtés', () => {
     expect([...SERVER_SKIP_VISUAL].sort()).toEqual([...serverSet('SERVER_SKIP_VISUAL')].sort())
   })
+
+  it('SERVER_PASS_THROUGH est identique des deux côtés', () => {
+    expect([...SERVER_PASS_THROUGH].sort()).toEqual([...serverSet('SERVER_PASS_THROUGH')].sort())
+  })
 })
 
 describe('breaksServerRun', () => {
@@ -33,8 +37,14 @@ describe('breaksServerRun', () => {
     expect(breaksServerRun('chart')).toBe(false)
   })
 
-  it("l'enrichissement de textes casse le run — c'est la panne à annoncer", () => {
-    expect(breaksServerRun('text-enrich')).toBe(true)
+  it("l'enrichissement de textes ne casse PLUS le run, mais reste annoncé", () => {
+    // Il faisait sauter tout l'aval d'une chaîne de veille qui ne le concernait pas.
+    expect(breaksServerRun('text-enrich')).toBe(false)
+    expect(ignoredOnServer('text-enrich')).toBe(true)
+  })
+
+  it('un export PDF, lui, casse toujours le run — sa sortie EST le travail', () => {
+    expect(breaksServerRun('export-pdf')).toBe(true)
   })
 
   it('un node avec jumeau serveur ne déclenche rien', () => {

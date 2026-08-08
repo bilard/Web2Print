@@ -2515,6 +2515,7 @@ export const fr = {
   'wfv.noActiveSite': 'Aucun site actif dans le gestionnaire — ajoute ou active au moins un site.',
   'wfv.unknownType': 'Type de node inconnu (« {type} »).',
   'wfv.serverUnsupported': "Cette carte ne s'exécute pas côté serveur : le run planifié s'arrêtera dessus et toutes les cartes en aval seront sautées.",
+  'wfv.serverIgnored': 'Le run planifié ne fera pas ce travail : cette carte n’est pas exécutée côté serveur. La donnée passe sans être traitée.',
   'wfc.dropNode': 'Retirer la carte et recoudre le flux',
   'wfc.dropped': '« {label} » retirée, le flux a été recousu.',
   'wfv.inputNotWired': 'Entrée « {port} » non connectée (source manquante).',

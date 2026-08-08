@@ -25,6 +25,14 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'text-enrich',
 ])
 
+/** Non exécutables ici, mais qui LAISSENT PASSER leur entrée vers l'aval : le run
+ *  continue, avec un avertissement au journal. Cf. la note du registre serveur — casser
+ *  une chaîne de veille entière pour une carte accessoire coûtait plus cher que le risque
+ *  qu'on voulait couvrir. */
+export const SERVER_PASS_THROUGH = new Set<string>([
+  'text-enrich',
+])
+
 /** Sous-ensemble purement VISUEL : côté serveur ces cartes sont ignorées proprement
  *  (no-op + avertissement) au lieu d'être marquées en erreur. Leur absence ne casse donc
  *  pas le run, et il n'y a rien à signaler à la conception. */
@@ -34,5 +42,17 @@ export const SERVER_SKIP_VISUAL = new Set<string>([
 
 /** Vrai si ce type ARRÊTE un run serveur (marqué en erreur, aval sauté). */
 export function breaksServerRun(type: string): boolean {
-  return SERVER_UNSUPPORTED.has(type) && !SERVER_SKIP_VISUAL.has(type)
+  return SERVER_UNSUPPORTED.has(type)
+    && !SERVER_SKIP_VISUAL.has(type)
+    && !SERVER_PASS_THROUGH.has(type)
+}
+
+/** Vrai si le serveur laisse PASSER la donnée sans faire le travail de la carte. À dire :
+ *  un run planifié qui « passe » n'a pas enrichi les textes pour autant.
+ *
+ *  ⚠ Ne couvre PAS les cartes visuelles (`chart`) : leur sortie n'a aucune valeur de
+ *  donnée côté serveur, et le signaler à chaque planification serait du bruit — décision
+ *  antérieure, inchangée ici. */
+export function ignoredOnServer(type: string): boolean {
+  return SERVER_PASS_THROUGH.has(type)
 }

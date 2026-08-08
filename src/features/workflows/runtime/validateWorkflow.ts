@@ -13,7 +13,7 @@
 // PUR : le resolver de spec est injecté (testable sans registre).
 import type { Workflow, NodeSpec } from '../types'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
-import { breaksServerRun } from './serverCapability'
+import { breaksServerRun, ignoredOnServer } from './serverCapability'
 import { t } from '@/lib/i18n'
 
 export interface WorkflowIssue {
@@ -199,6 +199,13 @@ export function validateWorkflow(
       issues.push({
         nodeId: node.id, nodeLabel: label, severity: 'error',
         message: t('wfv.serverUnsupported'), fix: 'drop-node',
+      })
+    } else if (scheduled && ignoredOnServer(node.type)) {
+      // Le run ne casse plus, mais il ne fait pas ce travail non plus : le dire, sinon un
+      // run planifié « réussi » laisse croire que les textes ont été traités.
+      issues.push({
+        nodeId: node.id, nodeLabel: label, severity: 'warning',
+        message: t('wfv.serverIgnored'), fix: 'drop-node',
       })
     }
   }

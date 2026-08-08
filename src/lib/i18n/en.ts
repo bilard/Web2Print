@@ -2418,6 +2418,7 @@ export const en: Record<TranslationKey, string> = {
   'wfv.noActiveSite': 'No active site in the manager — add or enable at least one site.',
   'wfv.unknownType': 'Unknown node type ("{type}").',
   'wfv.serverUnsupported': 'This card does not run on the server: the scheduled run will stop on it and every downstream card will be skipped.',
+  'wfv.serverIgnored': 'The scheduled run will not do this work: this card is not executed on the server. The data passes through untouched.',
   'wfc.dropNode': 'Remove the card and reconnect the flow',
   'wfc.dropped': '"{label}" removed, the flow has been reconnected.',
   'wfv.inputNotWired': 'Input "{port}" not wired (missing source).',

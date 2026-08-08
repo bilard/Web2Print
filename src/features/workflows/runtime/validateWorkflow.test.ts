@@ -202,14 +202,26 @@ describe('carte qui ne tourne pas côté serveur', () => {
     edges: [],
   })
 
-  it('workflow PLANIFIÉ : la carte client-only est une erreur, corrigeable en un clic', () => {
+  it('workflow PLANIFIÉ : une carte qui CASSE le run est une erreur, corrigeable en un clic', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'k', type: 'cron', config: { enabled: true } },
+      { id: 'p', type: 'export-pdf' },
+    ]), getSpec)
+    const err = issues.find((i) => i.nodeId === 'p')
+    expect(err?.severity).toBe('error')
+    expect(err?.fix).toBe('drop-node')
+  })
+
+  it('une carte TRANSPARENTE est un avertissement : le run passe, le travail n’est pas fait', () => {
+    // L'enrichissement de textes laisse passer la donnée — il ne casse plus l'aval, mais
+    // un run planifié « réussi » ne doit pas laisser croire que les textes sont traités.
     const issues = validateWorkflow(wf([
       { id: 'k', type: 'cron', config: { enabled: true } },
       { id: 'e', type: 'text-enrich' },
     ]), getSpec)
-    const err = issues.find((i) => i.nodeId === 'e')
-    expect(err?.severity).toBe('error')
-    expect(err?.fix).toBe('drop-node')
+    const warn = issues.find((i) => i.nodeId === 'e')
+    expect(warn?.severity).toBe('warning')
+    expect(warn?.fix).toBe('drop-node')
   })
 
   it('sans planification : rien à signaler — le navigateur sait l’exécuter', () => {

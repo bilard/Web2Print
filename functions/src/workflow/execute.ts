@@ -3,7 +3,7 @@ import type { ServerWorkflow, ServerNode, ServerEdge, RunLog } from './types'
 import { topoSort } from './topo'
 import { interpolate, buildInterpolationContext } from './interpolate'
 import { getServerNode } from './registry'
-import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL } from './nodes/index'
+import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL, SERVER_PASS_THROUGH } from './nodes/index'
 import { mergeInputValue } from './mergeInputs'
 import { getUserLocale, t } from '../i18n'
 
@@ -209,6 +209,28 @@ export async function executeWorkflowHeadless(
       if (SERVER_SKIP_VISUAL.has(node.type)) {
         outputs.set(node.id, {}); nodeOutputs[node.id] = {}; nodeCount++
         log('warn', `Node « ${node.type} » ignoré côté serveur (rendu navigateur uniquement).`, node.id)
+        return
+      }
+      // Node non exécutable ici mais qui laisse PASSER la donnée : son entrée ressort
+      // telle quelle sur les ports branchés, et le run continue.
+      //
+      // ⚠ Revirement assumé. Ces types étaient marqués EN ERREUR pour qu'un run planifié
+      // ne « réussisse » pas sans avoir enrichi. En pratique, une carte accessoire posée au
+      // milieu d'une chaîne de veille faisait sauter TOUT l'aval — comparatif vide, mail
+      // non parti — pour une réécriture de textes qui, elle, se fait maintenant dans
+      // l'écran « Traduire (IA) », hors workflow. Casser la chaîne coûtait plus cher que
+      // le risque qu'on voulait couvrir. L'avertissement, lui, reste dans le journal.
+      if (SERVER_PASS_THROUGH.has(node.type)) {
+        const passed: Record<string, unknown> = {}
+        // Ce qui arrive, quel que soit le port d'entrée.
+        const incoming = upstream
+          .map((e) => outputs.get(e.source)?.[e.sourceHandle])
+          .find((v) => v !== undefined)
+        // Reposé sur CHAQUE port de sortie branché : l'aval réclame un nom de port précis,
+        // et publier sur le mauvais revient à ne rien publier.
+        for (const e of wf.edges.filter((x) => x.source === node.id)) passed[e.sourceHandle] = incoming
+        outputs.set(node.id, passed); nodeOutputs[node.id] = passed; nodeCount++
+        log('warn', `Node « ${node.type} » non exécutable côté serveur : la donnée passe sans être traitée.`, node.id)
         return
       }
       errored.add(node.id); log('error', `Node « ${node.type} » non exécutable côté serveur.`, node.id); return
