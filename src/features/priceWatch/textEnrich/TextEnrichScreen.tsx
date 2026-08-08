@@ -16,6 +16,7 @@ import { generateJson } from '@/features/ai/llmRouter'
 import { EnrichBatchSchema, schemaForLLM } from '@/features/textEnrich/prompt'
 import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
+import { langBreakdown } from './langBreakdown'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -45,6 +46,9 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
 
   const [revisions, setRevisions] = useState<Map<string, TextRevision>>(new Map())
   const [onlyForeign, setOnlyForeign] = useState(true)
+  /** Langue isolée par un clic sur sa pastille. `undefined` = pas de filtre par langue ;
+   *  `null` = les fiches dont la langue n'a pas été tranchée. */
+  const [pickedLang, setPickedLang] = useState<string | null | undefined>(undefined)
   const [prompt, setPrompt] = useState('')
   const [running, setRunning] = useState(false)
   const [done, setDone] = useState(0)
@@ -76,8 +80,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
       const found = new Set(searchCatalog(products, query).map((p) => p.id))
       return lines.filter((l) => found.has(l.product.id))
     }
+    // Une langue choisie l'emporte sur « seulement les textes non français » : on vient
+    // de cliquer « DE 1 240 », on veut ces 1 240 fiches, pas leur intersection avec autre chose.
+    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang)
     return lines.filter((l) => !(onlyForeign && (l.lang === 'fr' || l.lang == null)))
-  }, [lines, products, onlyForeign, query, searching])
+  }, [lines, products, onlyForeign, query, searching, pickedLang])
+
+  // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
+  // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
+  const tallies = useMemo(() => langBreakdown(lines.map((l) => l.lang)), [lines])
 
   // Ce qui reste à faire : les fiches déjà réécrites n'y sont plus. Relancer ne repaie
   // donc jamais deux fois le même texte — c'est ce que le chemin par feuille ne savait
@@ -195,9 +206,35 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           className="w-full rounded border border-border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent"
         />
 
+        {/* Ce qu'il y a dans le catalogue, langue par langue. Un clic isole un lot. */}
+        {tallies.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button type="button" onClick={() => setPickedLang(undefined)}
+              className={`rounded border px-1.5 py-0.5 text-[10px] transition-colors ${
+                pickedLang === undefined
+                  ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200'
+                  : 'border-white/10 text-white/40 hover:text-white/70'}`}>
+              {t('pwte.lang.all')}
+            </button>
+            {tallies.map((x) => (
+              <button key={x.lang ?? '?'} type="button"
+                onClick={() => setPickedLang(pickedLang === x.lang ? undefined : x.lang)}
+                className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition-colors ${
+                  pickedLang === x.lang
+                    ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200'
+                    : x.lang && x.lang !== 'fr'
+                      ? 'border-amber-400/25 text-amber-200/70 hover:text-amber-100'
+                      : 'border-white/10 text-white/40 hover:text-white/70'}`}>
+                <span className="uppercase">{x.lang ?? t('pwte.lang.undecided')}</span>
+                <span className="tabular-nums opacity-70">{n(x.count)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/50">
-          <label className={`flex items-center gap-1.5 ${searching ? 'opacity-40' : ''}`}>
-            <input type="checkbox" checked={onlyForeign} disabled={searching}
+          <label className={`flex items-center gap-1.5 ${searching || pickedLang !== undefined ? 'opacity-40' : ''}`}>
+            <input type="checkbox" checked={onlyForeign} disabled={searching || pickedLang !== undefined}
               onChange={(e) => setOnlyForeign(e.target.checked)}
               className="h-3.5 w-3.5 accent-accent" />
             {t('pwte.onlyForeign')}

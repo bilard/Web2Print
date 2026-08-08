@@ -5766,6 +5766,8 @@ export const es: Record<TranslationKey, string> = {
   'pwte.counts': '{todo} por procesar · {done} ya hechos · {total} en el catálogo',
   'pwte.promptPlaceholder': 'Su consigna (opcional): estilo, longitud, qué conservar…',
   'pwte.onlyForeign': 'Solo los textos que no están en francés',
+  'pwte.lang.all': 'Todos los idiomas',
+  'pwte.lang.undecided': 'indeterminado',
   'pwte.searchOverrides': 'Búsqueda activa: el filtro de idioma está suspendido',
   'pwte.limit': 'Procesar como máximo',
   'pwte.run': 'Traducir {count} fichas',

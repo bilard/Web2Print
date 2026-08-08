@@ -5767,6 +5767,8 @@ export const en: Record<TranslationKey, string> = {
   'pwte.counts': '{todo} to process · {done} already done · {total} in the catalogue',
   'pwte.promptPlaceholder': 'Your instruction (optional): style, length, what to keep…',
   'pwte.onlyForeign': 'Only non-French texts',
+  'pwte.lang.all': 'All languages',
+  'pwte.lang.undecided': 'undetermined',
   'pwte.searchOverrides': 'Search active — the language filter is suspended',
   'pwte.limit': 'Process at most',
   'pwte.run': 'Translate {count} listings',
