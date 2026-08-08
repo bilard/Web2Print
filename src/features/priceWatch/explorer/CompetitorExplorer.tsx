@@ -173,6 +173,12 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
     () => (filter.q.trim() ? diagnoseEmptySearch(filter.q, source.products) : null),
     [filter.q, source.products],
   )
+  // Reporté sur le rail, la seule vue d'ensemble des vingt-quatre concurrents : « trouvé
+  // chez 13 » ne disait pas LESQUELS parmi ceux de gauche.
+  const searchHitsBySite = useMemo(
+    () => new Map(globalSearch.hits.map((h) => [h.siteId, h.count])),
+    [globalSearch.hits],
+  )
   // Une nouvelle saisie invalide le balayage précédent : afficher les résultats d'une
   // autre requête serait pire que ne rien afficher.
   useEffect(() => { globalSearch.reset() }, [filter.q, globalSearch.reset])
@@ -343,6 +349,7 @@ export function CompetitorExplorer({ watchId, workflowId }: { watchId: string | 
               onClose={() => { compilation.reset(); setPage(0) }} />
             <div className="flex-1 min-h-0">
               <ExplorerSiteRail items={sites} active={compiling ? null : active} loading={loading}
+                searchHits={searchHitsBySite}
                 onPick={(id) => { compilation.reset(); setSiteId(id) }} />
             </div>
           </div>

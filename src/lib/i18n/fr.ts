@@ -5921,6 +5921,7 @@ export const fr = {
   'pwx.taxo.noJoin': 'La base « {db} » n’a ni référence ni EAN : impossible de relier ses lignes aux fiches relevées.',
   'pwx.taxo.noValues': 'Colonnes {cols} trouvées dans « {db} », mais aucune fiche appariée ne les renseigne.',
   'pwx.taxo.pickDb': 'Choisissez la base source du catalogue dans le bandeau, sous les filtres.',
+  'pwx.rail.searchHitHelp': 'Fiches correspondant à la recherche sur ce site',
   'pwx.rail.paused': 'en pause',
   'pwx.rail.pausedHelp': 'Décoché dans « Sites sources » : plus moissonné, plus interrogé par la recherche dirigée, et retiré du comparatif au prochain « Comparer catalogue ». Ses fiches déjà collectées restent consultables.',
   'pwx.rail.collected': 'Fiches collectées',

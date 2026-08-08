@@ -73,11 +73,19 @@ function dotColor(item: SiteRailItem): string {
   return 'bg-rose-400/80'
 }
 
-export function ExplorerSiteRail({ items, active, loading, onPick }: {
+export function ExplorerSiteRail({ items, active, loading, onPick, searchHits }: {
   items: SiteRailItem[]
   active: string | null
   loading: boolean
   onPick: (siteId: string) => void
+  /**
+   * Fiches trouvées par la recherche transversale, par site.
+   *
+   * ⚠ Le rail est la seule vue d'ensemble des vingt-quatre concurrents. Sans ce report,
+   * la recherche ne s'affichait qu'en liste à droite : on lisait « trouvé chez 13 » sans
+   * jamais voir LESQUELS parmi ceux de gauche, ni pouvoir y aller d'un clic.
+   */
+  searchHits?: Map<string, number>
 }) {
   const { t, locale } = useTranslation()
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
@@ -87,6 +95,11 @@ export function ExplorerSiteRail({ items, active, loading, onPick }: {
       {items.map((item) => {
         const on = item.siteId === active
         const dead = item.collected === 0
+        const hit = searchHits?.get(item.siteId)
+        // Une recherche en cours partage le rail en deux : ce qui répond, et le reste.
+        // Estomper les autres fait ressortir les treize sans les masquer — un site sans
+        // résultat reste une information, et reste cliquable.
+        const dimmed = searchHits != null && searchHits.size > 0 && !hit
         // Un site en pause reste CONSULTABLE : ses fiches d'hier sont toujours là, et
         // c'est souvent pour les revoir qu'on le cherche.
         const paused = !item.enabled
@@ -95,9 +108,11 @@ export function ExplorerSiteRail({ items, active, loading, onPick }: {
             <button type="button" onClick={() => onPick(item.siteId)} disabled={dead}
               title={dead ? t('pwx.aucuneFicheCollecteeSur') : t('pwx.tabTitle', { count: item.collected, pct: item.pctPrice ?? 0 })}
               className={`w-full text-left px-2 py-1.5 flex gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
-                on ? 'bg-well' : 'hover:bg-white/[0.04]'
-              }`}>
-              <span className={`w-[2px] self-stretch rounded shrink-0 ${on ? 'bg-indigo-400' : 'bg-transparent'}`} />
+                on ? 'bg-well' : hit ? 'bg-amber-500/[0.07] hover:bg-amber-500/[0.12]' : 'hover:bg-white/[0.04]'
+              } ${dimmed ? 'opacity-35' : ''}`}>
+              <span className={`w-[2px] self-stretch rounded shrink-0 ${
+                on ? 'bg-indigo-400' : hit ? 'bg-amber-400/70' : 'bg-transparent'
+              }`} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor(item)}`} />
@@ -108,6 +123,12 @@ export function ExplorerSiteRail({ items, active, loading, onPick }: {
                     <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium uppercase tracking-wide text-amber-300/80 bg-amber-500/10 border border-amber-500/25"
                       title={t('pwx.rail.pausedHelp')}>
                       {t('pwx.rail.paused')}
+                    </span>
+                  )}
+                  {hit != null && (
+                    <span className="shrink-0 rounded px-1 py-px text-[9px] font-medium tabular-nums text-amber-200 bg-amber-500/15 border border-amber-500/30"
+                      title={t('pwx.rail.searchHitHelp')}>
+                      {n(hit)}
                     </span>
                   )}
                   {on && loading && <Loader2 className="w-3 h-3 animate-spin text-indigo-300 shrink-0" />}

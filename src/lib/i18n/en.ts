@@ -5729,6 +5729,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.taxo.noJoin': 'Database “{db}” has neither reference nor EAN: its rows cannot be linked to the collected records.',
   'pwx.taxo.noValues': 'Columns {cols} found in “{db}”, but no matched record fills them in.',
   'pwx.taxo.pickDb': 'Choose the catalogue source database in the bar below the filters.',
+  'pwx.rail.searchHitHelp': 'Listings matching the search on this site',
   'pwx.rail.paused': 'paused',
   'pwx.rail.pausedHelp': 'Unticked in “Source sites”: no longer harvested, no longer queried by the directed search, and dropped from the comparison at the next “Compare catalogue”. Its already-collected listings stay readable.',
   'pwx.rail.collected': 'Records collected',
