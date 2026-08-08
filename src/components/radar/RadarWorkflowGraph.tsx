@@ -4,7 +4,9 @@ import { Workflow as WorkflowIcon, AlertTriangle, Maximize2, ZoomIn, ZoomOut } f
 import { db } from '@/lib/firebase/config'
 import { getWorkflow } from '@/features/workflows/persistence/workflowsApi'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
-import { STALE_RUN_MS } from '@/features/priceWatch/radar/scrapeState'
+import { summarizeRun, logsOfNode, STALE_RUN_MS, type RunLiveDoc } from '@/features/priceWatch/radar/runLive'
+import { RadarRunStatus } from './RadarRunStatus'
+import { RadarRunLogs } from './RadarRunLogs'
 import type { Workflow } from '@/features/workflows/types'
 import { graphLayout, NODE_W, NODE_H } from './radarWorkflowLayout'
 import { nodeSkin, statusColor, statusLabel } from './radarWorkflowNodes'
@@ -18,21 +20,23 @@ import { t } from '@/lib/i18n'
  * usage. Zoom et déplacement tiennent en une transformation du `viewBox`.
  */
 
-/** Statuts par node du dernier run serveur (le même doc que l'éditeur). */
-function useNodeStates(workflowId: string | null, uid: string | null): Record<string, string> {
-  const [states, setStates] = useState<Record<string, string>>({})
+/**
+ * Dernier run serveur : le document ENTIER, pas seulement les pastilles.
+ *
+ * ⚠ Il portait déjà le statut global, l'heure de démarrage, le déclencheur et surtout les
+ * MESSAGES ; la vue n'en gardait que `nodeStates` et jetait le reste. Un node rouge sans
+ * message ne se diagnostique pas depuis un téléphone — il fallait ouvrir un ordinateur.
+ * Rien ne coûte de plus : c'est le même abonnement.
+ */
+function useRunLive(workflowId: string | null, uid: string | null): RunLiveDoc | null {
+  const [live, setLive] = useState<RunLiveDoc | null>(null)
   useEffect(() => {
-    if (!workflowId || !uid) { setStates({}); return }
+    if (!workflowId || !uid) { setLive(null); return }
     return onSnapshot(doc(db, 'users', uid, 'workflowRunsLive', workflowId), (snap) => {
-      const d = snap.data() as { status?: string; startedAt?: number; nodeStates?: Record<string, string> } | undefined
-      // ⚠️ Même péremption que l'éditeur : un run interrompu laisse ses nodes
-      // « en cours » à vie. Sur mobile le mensonge est pire — on croit une
-      // collecte active alors que plus rien ne tourne depuis des heures.
-      const stale = d?.status === 'running' && !!d.startedAt && Date.now() - d.startedAt > STALE_RUN_MS
-      setStates(stale ? {} : d?.nodeStates ?? {})
-    }, () => setStates({}))
+      setLive((snap.data() as RunLiveDoc | undefined) ?? null)
+    }, () => setLive(null))
   }, [workflowId, uid])
-  return states
+  return live
 }
 
 export function RadarWorkflowGraph({ workflowId }: { workflowId: string | null }) {
@@ -45,7 +49,13 @@ export function RadarWorkflowGraph({ workflowId }: { workflowId: string | null }
   // ⚠️ Hook et non lecture ponctuelle : la PWA monte souvent AVANT que l'accès
   // soit hydraté. Lu une seule fois, l'uid était null et rien ne se chargeait.
   const uid = useWorkspaceUid()
-  const states = useNodeStates(workflowId, uid)
+  const live = useRunLive(workflowId, uid)
+  const run = useMemo(() => summarizeRun(live, Date.now()), [live])
+  // ⚠ Même péremption que l'éditeur : un run interrompu laisse ses nodes « en cours » à
+  // vie, et sur mobile on décide de ne PAS relancer sur la foi de cet affichage.
+  const stale = live?.status === 'running' && !!live.startedAt && Date.now() - live.startedAt > STALE_RUN_MS
+  const states = stale ? {} : (live?.nodeStates ?? {})
+  const logs = live?.logs ?? []
 
   useEffect(() => {
     if (!workflowId || !uid) { setWf(null); return }
@@ -118,6 +128,8 @@ export function RadarWorkflowGraph({ workflowId }: { workflowId: string | null }
           ))}
         </span>
       </div>
+
+      <div className="mb-3"><RadarRunStatus run={run} /></div>
 
       <div className="w-full overflow-hidden rounded-xl" style={{ background: 'rgba(0,0,0,0.22)' }}>
         <svg viewBox={`${vx} ${vy} ${vw} ${vh}`} className="w-full h-auto block touch-none select-none"
@@ -193,12 +205,31 @@ export function RadarWorkflowGraph({ workflowId }: { workflowId: string | null }
             </span>
           </div>
           <p className="mt-1 font-mono text-[10px]" style={{ color: 'var(--radar-text-3)' }}>{sel.type}</p>
+          {(live?.nodeConnectors?.[sel.id] ?? []).length > 0 && (
+            <p className="mt-1 text-[10px]" style={{ color: 'var(--radar-text-3)' }}>
+              {(live?.nodeConnectors?.[sel.id] ?? []).join(' · ')}
+            </p>
+          )}
+          {/* Les messages de CE node : c'est la réponse à « pourquoi est-il rouge ? »,
+              qu'une pastille seule ne donnera jamais. */}
+          {logsOfNode(logs, sel.id).length > 0 && (
+            <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+              {logsOfNode(logs, sel.id).map((l, i) => (
+                <div key={`${l.ts}-${i}`} className="text-[10px] leading-snug"
+                  style={{ color: l.level === 'error' ? '#fb7185' : l.level === 'warn' ? '#fbbf24' : 'var(--radar-text-3)' }}>
+                  {l.msg}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <p className="mt-2 text-center text-[11px]" style={{ color: 'var(--radar-text-3)' }}>
           {t('rd.wf.hint', { nodes: wf.nodes.length, links: wf.edges.length })}
         </p>
       )}
+
+      <RadarRunLogs logs={logs} />
     </section>
   )
 }
