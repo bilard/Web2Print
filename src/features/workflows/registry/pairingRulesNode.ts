@@ -94,7 +94,19 @@ const pairingRulesNode: NodeSpec<PairingRulesConfig, RulesInputs, RulesOutputs> 
     const { watchId, fromPort } = resolveSitesInput(inputs.sites, {
       sitesText: '', watchIdRaw: config.watchId, workflowId: ctx.workflowId,
     })
-    if (fromPort) ctx.log('info', t('run.pairingRules.watchFromPort', { watchId }))
+    // ⚠ Le port est branché mais son contenu n'est PAS un payload « Sites sources » :
+    // l'amont a échoué ou émis autre chose. On retomberait alors sur un watchId dérivé de
+    // l'identifiant du workflow — un AUTRE suivi que celui de la moisson, où les règles
+    // s'écriraient pour ne s'appliquer nulle part. Et le champ « Identifiant du suivi »
+    // étant grisé dès que le port est câblé, l'utilisateur n'a aucun moyen de le voir.
+    if (inputs.sites != null && !fromPort) {
+      throw new Error(t('run.pairingRules.badPortPayload'))
+    }
+    // Journalisé DANS TOUS LES CAS : des règles écrites sous le mauvais identifiant sont
+    // parfaitement silencieuses — elles ne cassent rien, elles ne servent simplement à rien.
+    ctx.log('info', fromPort
+      ? t('run.pairingRules.watchFromPort', { watchId })
+      : t('run.pairingRules.watchLocal', { watchId }))
 
     const rules = configToRules(config)
     await savePairingRules(uid, watchId, rules, 'node')

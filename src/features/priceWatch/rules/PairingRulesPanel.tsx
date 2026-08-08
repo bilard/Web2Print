@@ -55,13 +55,17 @@ export function PairingRulesPanel({ watchId }: { watchId: string | null }) {
         </div>
         <div className="flex items-center gap-2">
           {/* Le retour aux défauts est un BOUTON et non un discours : c'est la sortie de
-              secours quand un réglage a fait plus de mal que de bien. */}
+              secours quand un réglage a fait plus de mal que de bien.
+              ⚠ Il REMPLIT le formulaire, il n'enregistre pas — d'où la condition sur ce
+              qui est STOCKÉ. La juger sur le brouillon grisait le bouton dès le clic,
+              alors que le document gardait encore les réglages : la remise à zéro avait
+              l'air prise en compte sans l'être. */}
           <button
             type="button" onClick={() => setDraft(DEFAULT_PAIRING_RULES)}
-            disabled={!rulesDifferFromDefault(draft)}
+            disabled={!rulesDifferFromDefault(stored.rules) && !dirty}
             className={`${btnCls} border-white/10 text-white/60 hover:text-white hover:border-white/25`}
           >
-            <RotateCcw className="w-3 h-3 inline mr-1" />{t('pw.rules.reset')}
+            <RotateCcw className="w-3 h-3 inline mr-1" />{t('pw.rules.resetForm')}
           </button>
           <button
             type="button" onClick={save} disabled={!dirty || saving}
