@@ -16,6 +16,7 @@ import './analyticsReport' // jumeau serveur analytics-report (headless, owner-o
 import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton serveur)
 import './higgsfield'   // jumeau serveur higgsfield (génération image/vidéo via SDK)
 import './sourceSites'       // jumeau serveur source-sites (émet la liste des sites sur le port)
+import './pairingRules'      // jumeau serveur pairing-rules (écrit les règles d'appariement du suivi)
 import './harvestCompetitor' // jumeau serveur harvest-competitor (moisson index concurrent, cron)
 import './compareCatalog'    // jumeau serveur compare-catalog (matrice produit × concurrent)
 import './directedSearch'    // jumeau serveur directed-search (recherche dirigée réf/EAN, cron)

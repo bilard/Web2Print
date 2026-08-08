@@ -8,7 +8,7 @@ import { getServerNode } from '../registry'
 // côté serveur ET absents de SERVER_UNSUPPORTED. Cf. execute.ts:197+ (la liste court-
 // circuite getServerNode).
 describe('jumeaux serveur cron', () => {
-  for (const type of ['cost-report', 'gdrive-export', 'analytics-report', 'harvest-competitor', 'compare-catalog', 'source-sites', 'directed-search']) {
+  for (const type of ['cost-report', 'gdrive-export', 'analytics-report', 'harvest-competitor', 'compare-catalog', 'source-sites', 'directed-search', 'pairing-rules']) {
     it(`${type} est enregistré et exécutable côté serveur`, () => {
       expect(getServerNode(type)).toBeDefined()
       expect(SERVER_UNSUPPORTED.has(type)).toBe(false)

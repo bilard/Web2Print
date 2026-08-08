@@ -283,6 +283,22 @@ const MESSAGES = {
     fr: "{count} fiche(s) écartée(s) : la référence correspondait, mais le libellé nommait une autre pièce (filtre \u2194 carburateur\u2026). Un trou vaut mieux qu\u2019un faux prix.",
     en: '{count} listing(s) discarded: the reference matched, but the label named a different part (filter vs carburettor\u2026). A gap beats a false price.',
   },
+  'run.pairingRules.saved': {
+    fr: 'Règles d’appariement enregistrées pour « {watchId} » : {summary}',
+    en: 'Matching rules saved for “{watchId}”: {summary}',
+  },
+  'run.pairingRules.savedDefault': {
+    fr: 'Règles d’appariement par défaut enregistrées pour « {watchId} » — le moteur se comporte comme sans ce node.',
+    en: 'Default matching rules saved for “{watchId}” — the engine behaves as it would without this node.',
+  },
+  'run.pairingRules.asymmetric': {
+    fr: 'La recherche dirigée n’applique pas les mêmes démentis que le comparatif : elle peut enregistrer une fiche qui sera ensuite écartée. Cochez « Mêmes démentis pour la recherche dirigée » pour aligner les trois chemins.',
+    en: 'The directed search does not apply the same contradictions as the comparison: it can record a listing that will later be discarded. Tick “Same contradictions for directed search” to align all three paths.',
+  },
+  'run.pairingRules.badPortPayload': {
+    fr: 'Le port « Sites sources » est branché mais ne porte pas de liste de sites — le node amont a probablement échoué. Écrire les règles maintenant les rangerait sous un autre suivi que celui de la moisson, où elles ne s’appliqueraient jamais.',
+    en: 'The “Source sites” port is wired but carries no site list — the upstream node has probably failed. Writing the rules now would file them under a different watch from the harvest\'s, where they would never apply.',
+  },
   'run.compareCatalog.rules': {
     fr: "R\u00e8gles d\u2019appariement du suivi : {summary}",
     en: 'Watch matching rules: {summary}',

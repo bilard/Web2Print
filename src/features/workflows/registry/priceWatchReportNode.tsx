@@ -17,20 +17,10 @@ import { loadStoredReport, renderPriceWatchReport, DEFAULT_PW_REPORT } from './p
 import { loadPriceEvents } from '@/features/priceWatch/reportStore'
 import { eventsOfLastRun } from '@/features/priceWatch/priceEvents'
 import { composeReportHtml } from './priceWatchComposer'
+import { PriceWatchReportConfig } from './priceWatchReportConfig'
+import type { PwReportConfig } from './priceWatchReportTypes'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
-
-interface PwReportConfig {
-  title: string
-  /** Consigne libre : décrit ce que le mail doit contenir. Vide = rapport standard. */
-  prompt: string
-  /** Identifiant du suivi. Vide = celui du workflow, comme les autres nodes de veille. */
-  watchId: string
-  competitorThresholdPct: number
-  familyThresholdPct: number
-  examples: number
-  fileName: string
-}
 
 interface PwReportOutputs { html: string; file: File }
 
@@ -69,6 +59,9 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
     examples: DEFAULT_PW_REPORT.examples,
     fileName: '',
   },
+  // Panneau dédié : la consigne a besoin de dire SUR QUOI elle peut porter, ce qu'un
+  // simple paragraphe d'aide ne faisait pas. Les autres champs restent rendus par le schéma.
+  ConfigComponent: PriceWatchReportConfig,
   runtime: 'client',
   cardSummary: (c) => `seuils ${c.competitorThresholdPct || 5} % · ${c.familyThresholdPct || 40} %`,
   run: async (ctx, config) => {

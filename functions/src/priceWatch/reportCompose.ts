@@ -28,7 +28,7 @@ import type { PriceEvent } from './priceEvents'
  * ⚠ Les baisses concurrentes d'abord, la plus forte en tête : une hausse chez un
  * concurrent me profite, une baisse me met sous pression.
  */
-function movesFacts(moves: PriceEvent[]): Record<string, unknown> | null {
+export function movesFacts(moves: PriceEvent[]): Record<string, unknown> | null {
   if (moves.length === 0) return null
   const down = moves.filter((m) => m.pctChange < 0)
   const up = moves.filter((m) => m.pctChange > 0)
@@ -73,7 +73,7 @@ function movesFacts(moves: PriceEvent[]): Record<string, unknown> | null {
 }
 
 /** Faits transmis au modèle : bornés, déjà agrégés, sans donnée brute à recalculer. */
-function reportFacts(report: StoredReport): Record<string, unknown> {
+export function reportFacts(report: StoredReport): Record<string, unknown> {
   const k = report.kpis
   const comps = (report.byCompetitor ?? []).filter((c) => c.matched > 0)
   return {
