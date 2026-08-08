@@ -5,6 +5,8 @@
 // Le prix retenu est celui de la CARTE prouvée (proveMatch exact), jamais un € d'ailleurs.
 // Serveur-only.
 import { familiesConflict } from './partFamily'
+import { vetoedPair } from './match'
+import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { DirectedSourceProduct } from './searchDirected'
 import type { CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch } from './keys'
@@ -38,11 +40,15 @@ function searchQueries(p: DirectedSourceProduct): string[] {
   return out
 }
 
-export async function krampAuthPass(products: DirectedSourceProduct[], deps: KrampScrapeDep): Promise<KrampHit[]> {
+export async function krampAuthPass(
+  products: DirectedSourceProduct[],
+  deps: KrampScrapeDep & { rules?: PairingRules },
+): Promise<KrampHit[]> {
+  const rules = deps.rules ?? DEFAULT_PAIRING_RULES
   const hits: KrampHit[] = []
   for (const p of products) {
     if (deps.signal?.aborted) break
-    const keys = candidateKeys(p)
+    const keys = candidateKeys(p, rules)
     if (keys.length === 0) continue
     let hit: KrampHit | null = null
     for (const q of searchQueries(p)) {
@@ -52,12 +58,17 @@ export async function krampAuthPass(products: DirectedSourceProduct[], deps: Kra
       // On PROUVE chaque carte de la page (pas seulement la 1re) et on retient le prix de
       // la carte appariée — corrige le rattachement de prix ET les résultats multiples.
       for (const c of parseKrampSearchCards(md)) {
-        const proof = proveMatch(keys, { sku: c.ref, url: c.url, name: c.name })
+        const proof = proveMatch(keys, { sku: c.ref, url: c.url, name: c.name }, rules)
         // Même veto que les deux autres chemins d'appariement : une carte dont le libellé
         // nomme une pièce incompatible est écartée, même si la référence correspond. Sans
         // lui, le canal Kramp authentifié serait le seul à laisser passer ce que les
         // autres refusent — cf. `matchProduct`.
-        if (proof && proof.evidence !== 'gtin13' && familiesConflict(p.name, c.name)) continue
+        // Réglage « démentis unifiés » : ce canal applique alors EXACTEMENT la règle de
+        // la matrice, au lieu du seul veto des familles.
+        if (proof && (rules.unifyDirectedVetoes
+          ? vetoedPair(p, c, proof, rules)
+          : proof.evidence !== 'gtin13'
+            && rules.familyVeto && familiesConflict(p.name, c.name, rules.extraFamilies))) continue
         if (proof) {
           hit = {
             productId: p.id,

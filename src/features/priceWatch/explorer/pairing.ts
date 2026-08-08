@@ -8,6 +8,7 @@
 // appariement que le dashboard. Reconstruire une correspondance « listing → produit »
 // avec d'autres règles produirait des écarts contredisant le tableau de bord.
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from '../catalog/match'
+import { DEFAULT_PAIRING_RULES, type PairingRules } from '../catalog/pairingRules'
 import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/prestashop'
 import { scorePair, type Confidence } from './confidence'
@@ -73,10 +74,14 @@ export function pairSiteListings(
   opts: {
     vatRate?: number; alignedPct?: number; extras?: SourceExtras
     imagePrefix?: string; productUrl?: string
+    /** Règles d'appariement du suivi. L'écran DOIT apparier comme le rapport, sinon il
+     *  affiche des cellules que le comparatif n'a pas — ou l'inverse. */
+    rules?: PairingRules
   } = {},
 ): PairedRow[] {
   const extras = opts.extras ?? NO_EXTRAS
-  const lookup = buildMemoryIndex(listings)
+  const rules = opts.rules ?? DEFAULT_PAIRING_RULES
+  const lookup = buildMemoryIndex(listings, rules)
 
   // Un listing peut être atteint par plusieurs produits source (variantes partageant une
   // référence dépaddée). Le PREMIER appariement prouvé gagne, comme dans le rapport où
@@ -87,7 +92,7 @@ export function pairSiteListings(
   // se trompe — un défaut qu'aucun autre signal de l'indice ne voit.
   const byListing = new Map<string, { product: SourceProduct; proof: MatchProof; contenders: number }>()
   for (const product of products) {
-    const m = matchProduct(product, siteId, lookup)
+    const m = matchProduct(product, siteId, lookup, rules)
     if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
     const seen = byListing.get(m.listing.url)
     if (seen) { seen.contenders++; continue }
@@ -104,7 +109,7 @@ export function pairSiteListings(
     const description = bestDescription(p?.description, ex?.description, p?.name)
     const images = p?.image ? [absoluteImage(p.image, opts.imagePrefix)] : (ex?.images ?? [])
     const path = p?.taxo?.length ? p.taxo : (ex?.path ?? [])
-    const cmp = comparePrices(p?.price, listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct })
+    const cmp = comparePrices(p?.price, listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct, rules })
     return {
       key: listing.url,
       listing,

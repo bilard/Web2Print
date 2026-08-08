@@ -14,14 +14,25 @@
 // juge. Sur un catalogue de pièces, un trou vaut mieux qu'un faux prix : une fausse
 // correspondance déclenche une alerte de positionnement erronée.
 
+import { DEFAULT_PAIRING_RULES, type PairingRules, type MatchEvidence } from './pairingRules'
+
+/** Nature de la preuve, de la plus concluante à la plus fragile. Déclarée dans
+ *  `pairingRules.ts` — les règles doivent pouvoir nommer les preuves qu'elles autorisent,
+ *  et ce module doit pouvoir lire les règles ; un seul sens d'import évite le cycle.
+ *  Ré-exportée ici, où tout le reste du module la lit. */
+export type { MatchEvidence }
+
 /** Longueur minimale d'une clé de référence exploitable. En dessous, le risque de
- *  collision fortuite dépasse la valeur du match. */
+ *  collision fortuite dépasse la valeur du match.
+ *
+ *  ⚠ Cette constante et la suivante restent la VALEUR DE RÉFÉRENCE : elles sont le défaut
+ *  de `PairingRules` et le repli des appelants qui ne passent pas de règles. */
 export const MIN_REF_LEN = 3
 
 /** En dessous de ce seuil, une référence n'est acceptée que sur un champ d'identité
  *  déclaré (sku/mpn), jamais par présence dans un titre ou une URL : « A35 » se
  *  retrouverait dans « LA35 », « A350 », « CA35B »… */
-export const WEAK_REF_LEN = 5
+const WEAK_REF_LEN = 5
 
 /**
  * Forme canonique d'une référence : majuscules, séparateurs retirés.
@@ -103,7 +114,7 @@ export interface SourceProductKeys {
  * dédupliquées. L'EAN interne du distributeur est écarté ici même : il ne peut pas
  * servir de clé de jointure.
  */
-export function candidateKeys(p: SourceProductKeys): JoinKey[] {
+export function candidateKeys(p: SourceProductKeys, rules: PairingRules = DEFAULT_PAIRING_RULES): JoinKey[] {
   const out: JoinKey[] = []
   const seen = new Set<string>()
   const push = (kind: JoinKeyKind, value: string, origin: boolean, raw: string) => {
@@ -111,7 +122,7 @@ export function candidateKeys(p: SourceProductKeys): JoinKey[] {
     const dedup = `${kind}:${value}`
     if (seen.has(dedup)) return
     seen.add(dedup)
-    out.push({ kind, value, weak: kind !== 'ean' && value.length < WEAK_REF_LEN, origin, raw })
+    out.push({ kind, value, weak: kind !== 'ean' && value.length < rules.weakRefLen, origin, raw })
   }
 
   const ean = normalizeEan(p.ean)
@@ -120,16 +131,16 @@ export function candidateKeys(p: SourceProductKeys): JoinKey[] {
   // Références propres du produit d'abord (origin=false), références d'origine ensuite
   // (origin=true) : un match exact prime toujours sur un match « pièce d'origine ».
   const ownRefs = [p.ref, p.ref2].filter(Boolean) as string[]
-  const originRefs = (p.originRefs ?? [])
+  const originRefs = rules.useOriginRefs ? (p.originRefs ?? []) : []
   for (const [raw, isOrigin] of [
     ...ownRefs.map((r) => [r, false] as const),
     ...originRefs.map((r) => [r, true] as const),
   ]) {
     const ref = normalizeRef(raw)
-    if (ref.length < MIN_REF_LEN) continue
+    if (ref.length < rules.minRefLen) continue
     push('ref', ref, isOrigin, raw)
     const nz = stripLeadingZeros(ref)
-    if (nz !== ref && nz.length >= MIN_REF_LEN) push('ref-nozero', nz, isOrigin, raw)
+    if (nz !== ref && nz.length >= rules.minRefLen) push('ref-nozero', nz, isOrigin, raw)
   }
   return out
 }
@@ -147,8 +158,6 @@ export interface CompetitorIdentity {
   /** Titre : certains sites y préfixent la référence (`5131028856 - Carburateur…`). */
   name?: string
 }
-
-type MatchEvidence = 'gtin13' | 'ean-in-url' | 'ref-in-url' | 'sku' | 'mpn' | 'ref-in-name' | 'ref-in-title'
 
 /**
  * Cote dimensionnelle avec unité (`510MM`, `1000ML`, `12V`) — jamais une référence.
@@ -177,7 +186,7 @@ const DIMENSION_PAIR = /^\d+X\d+$/
  * prouve un appariement que si elle est forte (cf. `proveMatch`), et l'index écarte
  * celles qui désignent plusieurs produits (cf. `buildMemoryIndex`).
  */
-export function refTokensFromText(text: string | null | undefined): string[] {
+export function refTokensFromText(text: string | null | undefined, minLen: number = WEAK_REF_LEN): string[] {
   const out: string[] = []
   const seen = new Set<string>()
   for (const word of String(text ?? '').split(/[\s|]+/)) {
@@ -186,7 +195,7 @@ export function refTokensFromText(text: string | null | undefined): string[] {
     if (!cleaned) continue
     for (const part of [cleaned, ...cleaned.split(/[,/]/)]) {
       const norm = normalizeRef(part)
-      if (norm.length < WEAK_REF_LEN || !/\d/.test(norm)) continue
+      if (norm.length < minLen || !/\d/.test(norm)) continue
       if (DIMENSION_WITH_UNIT.test(norm) || DIMENSION_PAIR.test(norm)) continue
       if (seen.has(norm)) continue
       seen.add(norm)
@@ -220,7 +229,7 @@ export function refTokensFromText(text: string | null | undefined): string[] {
  * raison. `…/173085-lame-510mm-stiga-181004383-0.html` → ['181004383'] (173085 = id
  * retiré, 510MM = cote, stiga = sans chiffre, 0 = trop court).
  */
-export function refTokensFromUrl(url: string | null | undefined): string[] {
+export function refTokensFromUrl(url: string | null | undefined, minLen: number = WEAK_REF_LEN): string[] {
   const path = String(url ?? '').split(/[?#]/)[0]
   const last = path.split('/').filter(Boolean).pop() ?? ''
   const slug = last.replace(/\.html?$/i, '').replace(/^\d+-/, '')
@@ -228,7 +237,7 @@ export function refTokensFromUrl(url: string | null | undefined): string[] {
   const seen = new Set<string>()
   for (const raw of slug.split(/[^A-Za-z0-9]+/)) {
     const tok = raw.toUpperCase()
-    if (tok.length < WEAK_REF_LEN || seen.has(tok)) continue
+    if (tok.length < minLen || seen.has(tok)) continue
     if (!/\d/.test(tok)) continue
     if (DIMENSION_WITH_UNIT.test(tok) || DIMENSION_PAIR.test(tok)) continue
     seen.add(tok)
@@ -257,10 +266,10 @@ function leadingToken(name: string | undefined): string {
  *  Une déclinaison PrestaShop « 181004383/0 » doit prouver « 181004383 » : normaliser
  *  la chaîne entière collerait le suffixe de variante (« 1810043830 ») et l'égalité
  *  exacte raterait — la partie AVANT le premier « / » est donc testée aussi. */
-function refEqualsDeclared(key: JoinKey, id: CompetitorIdentity): MatchEvidence | null {
+function refEqualsDeclared(key: JoinKey, id: CompetitorIdentity, rules: PairingRules): MatchEvidence | null {
   for (const [field, evidence] of [['sku', 'sku'], ['mpn', 'mpn']] as const) {
     const raw = id[field]
-    if (!raw) continue
+    if (!raw || !rules.evidence[evidence]) continue
     for (const cand of [String(raw), String(raw).split('/')[0]]) {
       const norm = normalizeRef(cand)
       if (!norm) continue
@@ -279,38 +288,54 @@ function refEqualsDeclared(key: JoinKey, id: CompetitorIdentity): MatchEvidence 
  * « ROD-PUSH » ou « FILTRE A AIR » désignent des milliers d'articles distincts ;
  * un site testé a renvoyé un produit sur 6 requêtes sur 7 et jamais le bon.
  */
-export function proveMatch(keys: JoinKey[], id: CompetitorIdentity): MatchProof | null {
+export function proveMatch(
+  keys: JoinKey[],
+  id: CompetitorIdentity,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): MatchProof | null {
   const gtin = normalizeEan(id.gtin13)
   const urlDigits = String(id.url ?? '').replace(/\D/g, '')
   const nameRef = leadingToken(id.name)
+  // Une nature de preuve désactivée par le réglage n'est pas seulement dépriorisée : elle
+  // ne peut plus rien prouver du tout. Couper `ref-in-title` (la plus fragile) supprime
+  // du bruit ET des appariements — les deux sont voulus, c'est le sens du réglage.
+  const on = (e: MatchEvidence) => rules.evidence[e]
 
   for (const key of keys) {
     if (key.kind === 'ean') {
       // gtin13 déclaré : concluant, sauf code interne à la boutique.
-      if (gtin && gtin === key.value && !isInternalBarcode(gtin)) return { key, evidence: 'gtin13' }
+      if (on('gtin13') && gtin && gtin === key.value && !isInternalBarcode(gtin)) {
+        return { key, evidence: 'gtin13' }
+      }
       // EAN dans le slug d'URL : 13 chiffres consécutifs ne sont pas fortuits.
-      if (key.value.length === 13 && urlDigits.includes(key.value)) {
+      if (on('ean-in-url') && key.value.length === 13 && urlDigits.includes(key.value)) {
         return { key, evidence: 'ean-in-url' }
       }
       continue
     }
-    const declared = refEqualsDeclared(key, id)
+    const declared = refEqualsDeclared(key, id, rules)
     if (declared) return { key, evidence: declared }
     // Référence en tête de titre : égalité du premier token seulement, et clé assez
     // longue pour ne pas se confondre avec un autre code (`A35` ⊂ `LA35`).
-    if (!key.weak && nameRef && nameRef === key.value) return { key, evidence: 'ref-in-name' }
+    if (on('ref-in-name') && !key.weak && nameRef && nameRef === key.value) {
+      return { key, evidence: 'ref-in-name' }
+    }
     // Référence dans le slug d'URL (autoportee : `…-181004383-0.html`) : token entier
     // du slug (ID PrestaShop retiré), clé forte uniquement. Comme `ref-in-name`, jamais
     // sur clé faible — un code de 5+ caractères délimité n'est pas fortuit.
     if (!key.weak) {
-      for (const r of refTokensFromUrl(id.url)) {
-        if (r === key.value || stripLeadingZeros(r) === key.value) return { key, evidence: 'ref-in-url' }
+      if (on('ref-in-url')) {
+        for (const r of refTokensFromUrl(id.url, rules.weakRefLen)) {
+          if (r === key.value || stripLeadingZeros(r) === key.value) return { key, evidence: 'ref-in-url' }
+        }
       }
       // Référence ailleurs dans le LIBELLÉ (« … VIKING 6151-704-2110 ») : égalité exacte
       // sur un mot entier du titre, jamais une inclusion — `12345` ne prouve pas
       // `123456`. Preuve la plus faible du jeu, donc testée en dernier.
-      for (const t of refTokensFromText(id.name)) {
-        if (t === key.value || stripLeadingZeros(t) === key.value) return { key, evidence: 'ref-in-title' }
+      if (on('ref-in-title')) {
+        for (const t of refTokensFromText(id.name, rules.weakRefLen)) {
+          if (t === key.value || stripLeadingZeros(t) === key.value) return { key, evidence: 'ref-in-title' }
+        }
       }
     }
   }

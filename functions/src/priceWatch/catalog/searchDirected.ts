@@ -13,6 +13,8 @@
 import { parseListingPage, type CompetitorListing } from './prestashop'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
 import { familiesConflict } from './partFamily'
+import { vetoedPair } from './match'
+import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import { mapWithConcurrency } from '../concurrency'
 import { t, DEFAULT_LOCALE, type Locale } from '../../i18nMessages'
 
@@ -31,6 +33,10 @@ export interface SearchDeps {
    *  pas dépasser le budget de run et faire tuer la Function. */
   signal?: { aborted: boolean }
   log?: (msg: string) => void
+  /** Règles d'appariement du suivi. Injectées ici plutôt qu'en paramètre de chaque
+   *  fonction : c'est déjà le canal par lequel ce module reçoit tout ce qui vient du
+   *  monde extérieur. Absentes = règles par défaut, soit le comportement historique. */
+  rules?: PairingRules
   /** Langue des messages de run (cf. `HarvestDeps.locale`). Repli FR. */
   locale?: Locale
   /** Progression après CHAQUE produit traité (parité client). Sous parallélisme, le
@@ -72,7 +78,12 @@ export function preferProductUrls(urls: string[]): string[] {
  */
 /** Produit source, clés + LIBELLÉ. Le nom ne prouve jamais un appariement — mais il peut
  *  le DÉMENTIR : cf. `rejectedByName`. */
-export type DirectedProductInput = SourceProductKeys & { name?: string }
+export type DirectedProductInput = SourceProductKeys & {
+  name?: string
+  /** Prix source HT. Sert UNIQUEMENT au démenti par gouffre de prix, et seulement quand
+   *  les démentis sont unifiés — absent, ce test-là ne se déclenche pas. */
+  price?: number
+}
 
 /**
  * La fiche trouvée nomme-t-elle une pièce incompatible avec le produit cherché ?
@@ -88,11 +99,19 @@ export type DirectedProductInput = SourceProductKeys & { name?: string }
 function rejectedByName(
   product: DirectedProductInput,
   listing: CompetitorListing,
-  evidence: MatchProof['evidence'],
+  proof: MatchProof,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
 ): boolean {
-  // Tout sauf le code-barres déclaré : un EAN-13 identifie un article unique, une
-  // référence constructeur est réutilisée d'un fabricant à l'autre (cf. `match.ts`).
-  return evidence !== 'gtin13' && familiesConflict(product.name, listing.name)
+  // Réglage « démentis unifiés » : ce chemin applique EXACTEMENT la règle de la matrice —
+  // gouffre de prix et corroboration compris, et exemption de toute clé EAN plutôt que du
+  // seul `gtin13` déclaré. Sans lui, une fiche acceptée ici peut être refusée plus tard
+  // par « Comparer catalogue », et le compteur de hits ment sur le contenu du rapport.
+  if (rules.unifyDirectedVetoes) return vetoedPair(product, listing, proof, rules)
+  // Comportement HISTORIQUE (défaut) : seul le veto des familles, et seul le code-barres
+  // déclaré en est exempté. Un EAN-13 identifie un article unique, une référence
+  // constructeur est réutilisée d'un fabricant à l'autre (cf. `match.ts`).
+  return proof.evidence !== 'gtin13'
+    && rules.familyVeto && familiesConflict(product.name, listing.name, rules.extraFamilies)
 }
 
 async function searchProductGeneric(
@@ -101,7 +120,8 @@ async function searchProductGeneric(
   deps: SearchDeps,
 ): Promise<DirectedHit | null> {
   if (!deps.searchWeb || !deps.extractProduct) return null
-  const keys = candidateKeys(product)
+  const rules = deps.rules ?? DEFAULT_PAIRING_RULES
+  const keys = candidateKeys(product, rules)
   if (keys.length === 0) return null
   const site = bareDomain(domain)
   const queries = [...new Set(keys.map((k) => k.value))]
@@ -115,8 +135,8 @@ async function searchProductGeneric(
       tried.add(url)
       const listing = await deps.extractProduct(url)
       if (!listing) continue
-      const proof = proveMatch(keys, toIdentity(listing))
-      if (proof && rejectedByName(product, listing, proof.evidence)) continue
+      const proof = proveMatch(keys, toIdentity(listing), rules)
+      if (proof && rejectedByName(product, listing, proof, rules)) continue
       if (proof) {
         deps.log?.(t(deps.locale ?? DEFAULT_LOCALE, 'run.directed.genericHit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
@@ -161,7 +181,8 @@ export async function searchProductOnSite(
   // Site GÉNÉRIQUE (marketplace / non-PrestaShop) : recherche web + Firecrawl, PAS le
   // moteur de recherche PrestaShop (inexistant / bloqué chez ces sites).
   if (opts?.generic) return searchProductGeneric(product, domain, deps)
-  const keys = candidateKeys(product)
+  const rules = deps.rules ?? DEFAULT_PAIRING_RULES
+  const keys = candidateKeys(product, rules)
   if (keys.length === 0) return null
   // Un terme de recherche par valeur de clé distincte (réf, réf sans zéros, EAN).
   const queries = [...new Set(keys.map((k) => k.value))]
@@ -169,8 +190,8 @@ export async function searchProductOnSite(
     const html = await deps.fetchHtml(searchUrl(domain, query))
     if (!html) continue
     for (const listing of parseListingPage(html)) {
-      const proof = proveMatch(keys, toIdentity(listing))
-      if (proof && rejectedByName(product, listing, proof.evidence)) continue
+      const proof = proveMatch(keys, toIdentity(listing), rules)
+      if (proof && rejectedByName(product, listing, proof, rules)) continue
       if (proof) {
         deps.log?.(t(deps.locale ?? DEFAULT_LOCALE, 'run.directed.hit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
@@ -186,6 +207,9 @@ export interface DirectedSourceProduct extends SourceProductKeys {
   id: string
   /** Libellé F1. Ne prouve rien, mais peut DÉMENTIR une fiche trouvée (`rejectedByName`). */
   name?: string
+  /** Prix source HT — utilisé par le démenti de gouffre de prix quand les démentis sont
+   *  unifiés avec ceux de la matrice. */
+  price?: number
 }
 
 export interface DirectedSite {

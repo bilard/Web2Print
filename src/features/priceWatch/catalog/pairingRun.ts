@@ -12,6 +12,7 @@
 // son index est relâché avant de charger le suivant. La matrice et le rapport se
 // construisent ensuite à partir de ces cellules, sans jamais réapparier.
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from './match'
+import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './prestashop'
 
@@ -80,17 +81,18 @@ export interface PairingRun {
 
 export function createPairingRun(
   products: SourceProduct[],
-  opts: { vatRate?: number; alignedPct?: number } = {},
+  opts: { vatRate?: number; alignedPct?: number; rules?: PairingRules } = {},
 ): PairingRun {
+  const rules = opts.rules ?? DEFAULT_PAIRING_RULES
   const cellsByProduct = new Map<number, PairedCell[]>()
   const auditBySite = new Map<string, CompetitorAudit>()
   const totals: PairingTotals = { vetoed: 0, sawKey: new Array(products.length).fill(false) }
 
   const addSite = (site: { siteId: string; domain: string }, listings: CompetitorListing[]) => {
     auditBySite.set(site.siteId, auditListings(listings))
-    const lookup = buildMemoryIndex(listings)
+    const lookup = buildMemoryIndex(listings, rules)
     for (let i = 0; i < products.length; i++) {
-      const m = matchProduct(products[i], site.siteId, lookup)
+      const m = matchProduct(products[i], site.siteId, lookup, rules)
       totals.vetoed += m.vetoed ?? 0
       if (m.outcome !== 'no-key') totals.sawKey[i] = true
       if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
@@ -101,7 +103,7 @@ export function createPairingRun(
         name: m.listing.name,
         url: m.listing.url,
         image: m.listing.image ?? null,
-        cmp: comparePrices(products[i].price, m.listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct }),
+        cmp: comparePrices(products[i].price, m.listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct, rules }),
         proof: m.proof,
       }
       const list = cellsByProduct.get(i)
@@ -120,7 +122,7 @@ export function pairAllSites(
   products: SourceProduct[],
   sites: { siteId: string; domain: string }[],
   indexBySite: Map<string, CompetitorListing[]>,
-  opts: { vatRate?: number; alignedPct?: number } = {},
+  opts: { vatRate?: number; alignedPct?: number; rules?: PairingRules } = {},
 ): PairingRun {
   const run = createPairingRun(products, opts)
   for (const s of sites) run.addSite(s, indexBySite.get(s.siteId) ?? [])

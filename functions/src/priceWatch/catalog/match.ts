@@ -9,11 +9,12 @@
 
 import {
   candidateKeys, proveMatch, normalizeRef, stripLeadingZeros, normalizeEan,
-  isInternalBarcode, refTokensFromUrl, refTokensFromText, MIN_REF_LEN, WEAK_REF_LEN,
+  isInternalBarcode, refTokensFromUrl, refTokensFromText, MIN_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import { familiesConflict, partFamilies } from './partFamily'
 import { nameTokens } from './nameTokens'
+import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { CompetitorListing, Availability } from './prestashop'
 
 /** TVA française de droit commun. Paramétrable : certaines familles en dérogent. */
@@ -27,14 +28,17 @@ export const DEFAULT_VAT_RATE = 0.2
  * c'est un index, la duplication y est normale et permet un lookup en O(1) quelle que
  * soit la clé dont dispose la source.
  */
-export function indexKeysOf(listing: CompetitorListing): string[] {
+export function indexKeysOf(
+  listing: CompetitorListing,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): string[] {
   const out = new Set<string>()
   const addRef = (raw: string) => {
     const ref = normalizeRef(raw)
-    if (ref.length < MIN_REF_LEN) return
+    if (ref.length < rules.minRefLen) return
     out.add(ref)
     const nz = stripLeadingZeros(ref)
-    if (nz.length >= MIN_REF_LEN) out.add(nz)
+    if (nz.length >= rules.minRefLen) out.add(nz)
   }
   const addEan = (raw: string) => {
     const ean = normalizeEan(raw)
@@ -49,7 +53,7 @@ export function indexKeysOf(listing: CompetitorListing): string[] {
   // Réf en tête de titre (emc : « 002748 - Courroie … ») : seulement si assez longue
   // pour discriminer et si elle contient un chiffre (un mot seul n'est pas une réf).
   const lead = String(listing.name ?? '').trim().split(/[\s|/]+/)[0] ?? ''
-  if (lead.length >= WEAK_REF_LEN && /\d/.test(lead)) addRef(lead)
+  if (lead.length >= rules.weakRefLen && /\d/.test(lead)) addRef(lead)
 
   // EAN dans le slug d'URL (emc : « …-3582323305460.html »). Indexer permet le lookup ;
   // la preuve d'appariement reste exigée par proveMatch.
@@ -57,14 +61,14 @@ export function indexKeysOf(listing: CompetitorListing): string[] {
 
   // Réf constructeur dans le slug d'URL (autoportee : « …-181004383-0.html »), l'ID
   // PrestaShop retiré. La preuve reste exigée (proveMatch → 'ref-in-url').
-  for (const r of refTokensFromUrl(listing.url)) addRef(r)
+  for (const r of refTokensFromUrl(listing.url, rules.weakRefLen)) addRef(r)
 
   return [...out]
 }
 
 /** Clés à interroger pour un produit source, dans l'ordre de fiabilité. */
-function lookupKeysOf(p: SourceProductKeys): JoinKey[] {
-  return candidateKeys(p)
+function lookupKeysOf(p: SourceProductKeys, rules: PairingRules): JoinKey[] {
+  return candidateKeys(p, rules)
 }
 
 /** Résout une clé d'index en produits concurrents candidats. */
@@ -135,29 +139,13 @@ function keyIsDistinctive(proof: MatchProof): boolean {
   return !/^\d+$/.test(proof.key.raw.trim())
 }
 
-/**
- * Rapport de prix au-delà duquel deux articles ne peuvent pas être le même, quoi que
- * dise la référence. Filet UNIVERSEL, complémentaire du lexique : il attrape ce qu'aucun
- * mot connu ne dénonce — cas VÉCU « BAGUE DE ROUE » 1,91 € ↔ « Chaussure de travail
- * GRISPORT » 176,32 €, soit +9 131 %.
- *
- * ×21 est volontairement ÉNORME. F1 est grossiste et ces marchands vendent au détail :
- * un facteur 2 ou 3 est le marché normal. Un lot explique davantage — mesuré sur le
- * rapport de production, le pire cas légitime est « COUTEAU » 3,01 € ↔ « Couteaux
- * scarificateurs x16 » 41,49 €, soit ×14. Au-delà de vingt-et-un, plus aucun
- * conditionnement ne rend compte de l'écart. Mesure : 0 cellule sur 1 847 touchée, dans
- * les deux sens.
- *
- * La TVA est ignorée à dessein : mon prix est HT, le sien souvent TTC, et 20 % ne
- * déplacent pas un seuil de 2 100 %.
- */
-const PRICE_ABYSS_RATIO = 21
-
 /** L'un des deux prix est-il sans commune mesure avec l'autre ? Symétrique : une fiche
- *  vingt fois moins chère est aussi suspecte qu'une fiche vingt fois plus chère. */
-function priceAbyss(mine: number | undefined, theirs: number | undefined): boolean {
-  if (!mine || !theirs || mine <= 0 || theirs <= 0) return false
-  return theirs / mine > PRICE_ABYSS_RATIO || mine / theirs > PRICE_ABYSS_RATIO
+ *  vingt fois moins chère est aussi suspecte qu'une fiche vingt fois plus chère.
+ *  `ratio` à 0 désactive le filet — le réglage le dit explicitement, il ne se désarme
+ *  jamais par accident (une valeur illisible retombe sur le défaut, cf. `resolvePairingRules`). */
+function priceAbyss(mine: number | undefined, theirs: number | undefined, ratio: number): boolean {
+  if (!ratio || !mine || !theirs || mine <= 0 || theirs <= 0) return false
+  return theirs / mine > ratio || mine / theirs > ratio
 }
 
 /**
@@ -170,7 +158,11 @@ function priceAbyss(mine: number | undefined, theirs: number | undefined): boole
  */
 const ROOT_LEN = 4
 
-function corroborated(sourceName: string, listingName: string | undefined): boolean {
+function corroborated(
+  sourceName: string,
+  listingName: string | undefined,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): boolean {
   const left = nameTokens(sourceName).filter((t) => !/^\d+$/.test(t))
   const right = nameTokens(listingName).filter((t) => !/^\d+$/.test(t))
   if (left.length === 0 || right.length === 0) return false
@@ -181,10 +173,35 @@ function corroborated(sourceName: string, listingName: string | undefined): bool
       if (n >= ROOT_LEN && a.slice(0, n) === b.slice(0, n)) return true
     }
   }
-  const lf = partFamilies(sourceName)
+  const lf = partFamilies(sourceName, rules.extraFamilies)
   if (lf.size === 0) return false
-  for (const f of partFamilies(listingName)) if (lf.has(f)) return true
+  for (const f of partFamilies(listingName, rules.extraFamilies)) if (lf.has(f)) return true
   return false
+}
+
+/**
+ * Les trois démentis, en UN seul endroit — c'est la règle complète que la matrice
+ * applique. Exportée pour que la recherche dirigée puisse s'y aligner (réglage
+ * `unifyDirectedVetoes`) au lieu d'en tenir une seconde version qui dérive.
+ *
+ * Un prix source absent neutralise le seul test qui en dépend (le gouffre) : c'est une
+ * dégradation propre, pas une exemption — les deux autres démentis restent armés.
+ */
+export function vetoedPair(
+  source: { name?: string; price?: number },
+  candidate: { name?: string; price?: number },
+  proof: MatchProof,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): boolean {
+  // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
+  if (keyIsBarcode(proof)) return false
+  const sourceName = source.name ?? ''
+  return (rules.familyVeto && familiesConflict(sourceName, candidate.name, rules.extraFamilies))
+    || priceAbyss(source.price, candidate.price, rules.priceAbyssRatio)
+    // Le libellé doit CONFIRMER quand la clé, elle, ne prouve rien : une suite de
+    // chiffres nus n'appartient à personne.
+    || (rules.corroborateNumericKeys
+      && !keyIsDistinctive(proof) && !corroborated(sourceName, candidate.name, rules))
 }
 
 /**
@@ -218,8 +235,9 @@ export function matchProduct(
   product: SourceProduct,
   siteId: string,
   lookup: IndexLookup,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
 ): MatchResult {
-  const keys = lookupKeysOf(product)
+  const keys = lookupKeysOf(product, rules)
   if (keys.length === 0) return { productId: product.id, siteId, outcome: 'no-key' }
 
   let vetoed = 0
@@ -230,7 +248,7 @@ export function matchProduct(
         gtin13: candidate.gtin13,
         url: candidate.url,
         name: candidate.name,
-      })
+      }, rules)
       if (!proof) continue
       // Candidat écarté, pas produit rejeté : on continue de chercher — une autre fiche
       // du même site peut porter la bonne pièce sous la même clé.
@@ -241,12 +259,7 @@ export function matchProduct(
       // donc être CORROBORÉ par le libellé, au lieu d'être présumé bon jusqu'à
       // contradiction. Seul le code-barres échappe à cette exigence.
       // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
-      if (!keyIsBarcode(proof)
-        && (familiesConflict(product.name, candidate.name)
-          || priceAbyss(product.price, candidate.price)
-          // Le libellé doit CONFIRMER quand la clé, elle, ne prouve rien : une suite de
-          // chiffres nus n'appartient à personne.
-          || (!keyIsDistinctive(proof) && !corroborated(product.name, candidate.name)))) {
+      if (vetoedPair(product, candidate, proof, rules)) {
         vetoed++
         continue
       }
@@ -265,9 +278,12 @@ export function matchProduct(
  * citer la référence d'un produit VOISIN (compatibilités, déclinaisons). `buildMemoryIndex`
  * écarte donc celles qui désignent plusieurs fiches distinctes.
  */
-export function titleKeysOf(listing: CompetitorListing): string[] {
-  const already = new Set(indexKeysOf(listing))
-  return refTokensFromText(listing.name).filter((k) => !already.has(k))
+export function titleKeysOf(
+  listing: CompetitorListing,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): string[] {
+  const already = new Set(indexKeysOf(listing, rules))
+  return refTokensFromText(listing.name, rules.weakRefLen).filter((k) => !already.has(k))
 }
 
 /**
@@ -301,11 +317,14 @@ export function dedupeListings(listings: CompetitorListing[]): CompetitorListing
  * retirée, et une clé déjà portée par une clé sûre n'est jamais renforcée par un titre.
  * Principe du module : un trou vaut mieux qu'un faux prix.
  */
-export function buildMemoryIndex(listings: CompetitorListing[]): IndexLookup {
+export function buildMemoryIndex(
+  listings: CompetitorListing[],
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): IndexLookup {
   const unique = dedupeListings(listings)
   const map = new Map<string, CompetitorListing[]>()
   for (const l of unique) {
-    for (const key of indexKeysOf(l)) {
+    for (const key of indexKeysOf(l, rules)) {
       const bucket = map.get(key)
       if (bucket) bucket.push(l)
       else map.set(key, [l])
@@ -314,7 +333,7 @@ export function buildMemoryIndex(listings: CompetitorListing[]): IndexLookup {
   // Clés de titre : collectées à part, puis versées seulement si elles restent seules.
   const fromTitle = new Map<string, CompetitorListing[]>()
   for (const l of unique) {
-    for (const key of titleKeysOf(l)) {
+    for (const key of titleKeysOf(l, rules)) {
       if (map.has(key)) continue // une clé déclarée fait foi
       const bucket = fromTitle.get(key)
       if (bucket) bucket.push(l)
@@ -361,10 +380,13 @@ function round2(n: number): number {
 export function comparePrices(
   sourcePriceHt: number | undefined,
   listing: CompetitorListing,
-  opts: { vatRate?: number; alignedPct?: number } = {},
+  opts: { vatRate?: number; alignedPct?: number; rules?: PairingRules } = {},
 ): PriceComparison {
+  const rules = opts.rules ?? DEFAULT_PAIRING_RULES
   const vat = opts.vatRate ?? DEFAULT_VAT_RATE
-  const alignedPct = opts.alignedPct ?? 1
+  // `alignedPct` explicite l'emporte sur le réglage : c'est un paramètre d'appel, et le
+  // réglage n'est là que pour les appelants qui n'en passent pas.
+  const alignedPct = opts.alignedPct ?? rules.alignedPct
   const out: PriceComparison = { availability: listing.availability }
 
   if (listing.price == null) return out
@@ -384,7 +406,9 @@ export function comparePrices(
   const provisionalPct = sourcePriceHt != null && sourcePriceHt > 0
     ? ((priceHt - sourcePriceHt) / sourcePriceHt) * 100
     : 0
-  if (priceHt < 1 || provisionalPct < -60) return out // { availability } seul — prix rejeté
+  if (priceHt < rules.minPriceEur || provisionalPct < -rules.maxDropPct) {
+    return out // { availability } seul — prix rejeté
+  }
 
   out.priceTtc = round2(isHt ? listing.price * (1 + vat) : listing.price)
   out.priceHt = priceHt

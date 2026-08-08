@@ -23,6 +23,7 @@
 // employés en complément (« filtre à huile », « courroie moteur ») ne désignent pas la
 // pièce. Les inclure ferait se croiser des familles sans rapport.
 import { nameTokens } from './nameMatch'
+import type { FamilyLexicon } from './pairingRules'
 
 /**
  * Un identifiant de famille, tous synonymes confondus — français ET anglais dans le même
@@ -114,16 +115,46 @@ for (const [family, words] of Object.entries(FAMILIES)) {
 }
 
 /**
+ * Index enrichi du lexique propre à un suivi. Le vocabulaire d'un catalogue de pièces de
+ * motoculture n'est pas celui d'un catalogue de plomberie : c'est le seul endroit où la
+ * connaissance métier de l'utilisateur apporte ce que le code ne peut pas deviner.
+ *
+ * Mémoïsé PAR RÉFÉRENCE d'objet : `familiesConflict` est appelé une fois par candidat
+ * apparié, soit des centaines de milliers de fois par run — reconstruire l'index à chaque
+ * appel coûterait plus cher que tout le reste de l'appariement. Les règles étant résolues
+ * une fois par run, la même référence revient à chaque appel.
+ */
+const EXTRA_INDEX = new WeakMap<object, Map<string, string>>()
+
+function indexFor(extra?: FamilyLexicon): Map<string, string> {
+  if (!extra) return WORD_TO_FAMILY
+  const cached = EXTRA_INDEX.get(extra)
+  if (cached) return cached
+  const keys = Object.keys(extra)
+  if (keys.length === 0) {
+    EXTRA_INDEX.set(extra, WORD_TO_FAMILY)
+    return WORD_TO_FAMILY
+  }
+  const merged = new Map(WORD_TO_FAMILY)
+  for (const family of keys) {
+    for (const w of extra[family] ?? []) merged.set(w, family)
+  }
+  EXTRA_INDEX.set(extra, merged)
+  return merged
+}
+
+/**
  * Familles de pièce citées dans un libellé. Vide quand aucun mot n'est reconnu — c'est
  * le cas NORMAL et sans conséquence, pas un échec.
  *
  * Les tokens viennent de `nameTokens` : minuscules sans accents, mots vides écartés.
  * « Démarreur KOHLER 4109806S » → `{starter}`, « FILTRE A AIR » → `{filter}`.
  */
-export function partFamilies(name: string | null | undefined): Set<string> {
+export function partFamilies(name: string | null | undefined, extra?: FamilyLexicon): Set<string> {
   const out = new Set<string>()
+  const index = indexFor(extra)
   for (const token of nameTokens(name)) {
-    const f = WORD_TO_FAMILY.get(token)
+    const f = index.get(token)
     if (f) out.add(f)
   }
   return out
@@ -137,10 +168,14 @@ export function partFamilies(name: string | null | undefined): Set<string> {
  * une absence. Une famille commune suffit à disculper — « SWITCH BOX BATTERY » et
  * « Boîtier de commutation » partagent `switch`, le second sens de chacun ne compte pas.
  */
-export function familiesConflict(a: string | null | undefined, b: string | null | undefined): boolean {
-  const left = partFamilies(a)
+export function familiesConflict(
+  a: string | null | undefined,
+  b: string | null | undefined,
+  extra?: FamilyLexicon,
+): boolean {
+  const left = partFamilies(a, extra)
   if (left.size === 0) return false
-  const right = partFamilies(b)
+  const right = partFamilies(b, extra)
   if (right.size === 0) return false
   for (const f of right) if (left.has(f)) return false
   return true

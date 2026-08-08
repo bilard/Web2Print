@@ -14,6 +14,7 @@ import { foldText, keywordsForFamilies } from './categories'
 import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
 import { searchUrl, directedPass, searchProductOnSite } from './searchDirected'
+import { DEFAULT_PAIRING_RULES, resolvePairingRules, rulesDifferFromDefault, summarizeRules } from './pairingRules'
 import { pickDisplayColumns, taxoPathOf, trimDescription } from './displayColumns'
 import { parseListingDomCards } from './genericCards'
 
@@ -245,5 +246,52 @@ describe('refTokensFromUrl (parité serveur)', () => {
     expect(proveMatch(candidateKeys({ ref: '4109806' }), {
       url: 'https://x.fr/p/12345-demarreur-kohler-4109806s.html', name: 'Démarreur KOHLER 4109806S',
     })).toBeNull()
+  })
+})
+
+describe('règles d’appariement (parité serveur)', () => {
+  // ⚠ Ces valeurs sont des LITTÉRAUX recopiés du client. Le cron applique les mêmes
+  // règles que le navigateur ou il ne sert à rien : une dérive ici produirait deux
+  // rapports différents pour un même suivi, sans que rien ne le signale.
+  it('les défauts reproduisent le comportement historique', () => {
+    expect(DEFAULT_PAIRING_RULES).toEqual({
+      useOriginRefs: true,
+      minRefLen: 3,
+      weakRefLen: 5,
+      evidence: {
+        gtin13: true, 'ean-in-url': true, sku: true, mpn: true,
+        'ref-in-name': true, 'ref-in-url': true, 'ref-in-title': true,
+      },
+      familyVeto: true,
+      extraFamilies: {},
+      priceAbyssRatio: 21,
+      corroborateNumericKeys: true,
+      // Défaut HISTORIQUE : la recherche dirigée n'applique que le veto des familles.
+      unifyDirectedVetoes: false,
+      alignedPct: 1,
+      minPriceEur: 1,
+      maxDropPct: 60,
+    })
+  })
+
+  it('un réglage absent ou corrompu retombe sur les défauts, jamais sur zéro', () => {
+    expect(resolvePairingRules()).toEqual(DEFAULT_PAIRING_RULES)
+    expect(resolvePairingRules({ priceAbyssRatio: Number.NaN }).priceAbyssRatio).toBe(21)
+  })
+
+  it('le résumé estampillé dans le rapport nomme les preuves coupées', () => {
+    expect(rulesDifferFromDefault(resolvePairingRules())).toBe(false)
+    const r = resolvePairingRules({ evidence: { 'ref-in-title': false } as never })
+    expect(rulesDifferFromDefault(r)).toBe(true)
+    expect(summarizeRules(r).evidenceOff).toEqual(['ref-in-title'])
+  })
+
+  it('les leviers agissent côté serveur comme côté client', () => {
+    const listings = [{ url: 'https://x.fr/a.html', name: 'Courroie VIKING 6151-704-2110', price: 8.4 }]
+    const product = { id: 'a', name: 'COURROIE', ref: '6151-704-2110' }
+    expect(matchProduct(product, 's', buildMemoryIndex(listings)).outcome).toBe('matched')
+
+    const rules = resolvePairingRules({ evidence: { 'ref-in-title': false } as never })
+    expect(matchProduct(product, 's', buildMemoryIndex(listings, rules), rules).outcome).toBe('not-found')
   })
 })
