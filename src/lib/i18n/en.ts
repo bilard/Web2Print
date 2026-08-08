@@ -1856,6 +1856,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.rules.tree.in.source': 'starts from your catalogue',
   'pw.rules.measure.loadingSource': 'Re-reading the source catalogue — chunk {done} of {total}…',
   'nav.priceWatch.rules': 'Matching rules',
+  'pw.rules.closeDirty': 'Some settings are not saved. Save them, or go back to the original values, before closing.',
   'node.compare-catalog.label': 'Compare catalogue',
   'node.compare-prices.label': 'Compare prices',
   'node.pw-report.prompt.label': 'Instruction (composes the email)',

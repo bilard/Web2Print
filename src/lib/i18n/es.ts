@@ -1855,6 +1855,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.rules.tree.in.source': 'parte de su catálogo',
   'pw.rules.measure.loadingSource': 'Relectura del catálogo fuente — bloque {done} de {total}…',
   'nav.priceWatch.rules': 'Reglas de emparejamiento',
+  'pw.rules.closeDirty': 'Hay ajustes sin guardar. Guárdelos, o vuelva a los valores originales, antes de cerrar.',
   'node.compare-catalog.label': 'Comparar catálogo',
   'node.compare-prices.label': 'Comparar precios',
   'node.pw-report.prompt.label': 'Consigna (compone el correo)',

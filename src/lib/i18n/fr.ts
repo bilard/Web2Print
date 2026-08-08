@@ -1934,6 +1934,7 @@ export const fr = {
   'pw.rules.tree.in.source': 'part de votre catalogue',
   'pw.rules.measure.loadingSource': 'Relecture du catalogue source — tranche {done} sur {total}…',
   'nav.priceWatch.rules': 'Règles d’appariement',
+  'pw.rules.closeDirty': 'Des réglages ne sont pas enregistrés. Enregistrez-les, ou revenez aux valeurs d’origine, avant de fermer.',
   'node.compare-catalog.label': 'Comparer catalogue',
   'node.compare-prices.label': 'Comparer les prix',
   'node.pw-report.prompt.label': 'Consigne (compose le mail)',
