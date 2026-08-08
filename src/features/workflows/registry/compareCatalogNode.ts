@@ -70,6 +70,33 @@ function toSheet(cols: MatrixColumn[], rows: Record<string, unknown>[]): ExcelSh
   return { name: 'Veille tarifaire', columns, rows: rows as ExcelRow[], taxonomy: [], groupHeaderRow: true }
 }
 
+
+/**
+ * Textes d'avant enrichissement portés par les colonnes jumelles.
+ *
+ * ⚠ Un original IDENTIQUE au texte courant n'est pas conservé : la ligne n'a pas été
+ * révisée (ou l'a été à l'identique), et proposer « voir l'original » sur deux textes
+ * égaux ferait douter de l'écran plutôt que de la donnée.
+ */
+function sourceTexts(
+  row: Record<string, unknown>,
+  nameCol?: string,
+  descCol?: string,
+): { nameSource?: string; descriptionSource?: string } {
+  const out: { nameSource?: string; descriptionSource?: string } = {}
+  const read = (colKey?: string): string | undefined => {
+    if (!colKey) return undefined
+    const v = row[`${colKey} (source)`]
+    const s = v == null ? '' : String(v).trim()
+    return s || undefined
+  }
+  const n = read(nameCol)
+  if (n && n !== cell(row, nameCol)) out.nameSource = n
+  const d = read(descCol)
+  if (d && d !== cell(row, descCol)) out.descriptionSource = trimDescription(d)
+  return out
+}
+
 const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs> = {
   type: 'compare-catalog',
   category: 'logic',
@@ -239,6 +266,10 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
         ...((d) => (d ? { description: d } : {}))(trimDescription(disp.description ? row[disp.description] : undefined)),
         ...(disp.image && cell(row, disp.image) ? { image: cell(row, disp.image) } as object : {}),
         ...((p) => (p.length > 0 ? { taxo: p } : {}))(taxoPathOf(row, disp.taxo)),
+        // Mémoire de l'original, si la feuille a traversé « Enrichir les textes ». Repérée
+        // à la seule convention « <colonne> (source) » : un réglage de plus serait un
+        // réglage de plus à oublier, et l'avant/après disparaîtrait sans un mot.
+        ...sourceTexts(row, col.name, disp.description),
       })
     }
 

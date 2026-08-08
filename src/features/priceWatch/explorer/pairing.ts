@@ -30,6 +30,10 @@ interface SourceSide {
   url: string | null
   /** Chemin taxonomique F1 (Famille > Sous-famille > Groupe produit), joint depuis le PIM. */
   path: string[]
+  /** Textes d'AVANT enrichissement, quand la feuille a traversé « Enrichir les textes ».
+   *  Absents sur un catalogue jamais enrichi — l'écran n'affiche alors rien de plus. */
+  nameSource: string | null
+  descriptionSource: string | null
 }
 
 /** Une fiche concurrent, avec son produit F1 quand l'appariement est prouvé. */
@@ -134,6 +138,7 @@ export function pairSiteListings(
             // Adresse de MA fiche : catalogue persisté d'abord, puis la colonne URL de la
             // base jointe, et seulement à défaut le gabarit saisi à la main.
             priceHt: p.price ?? null, url: p.url ?? ex?.url ?? sourceUrl(p, opts.productUrl), path,
+            nameSource: p.nameSource ?? null, descriptionSource: p.descriptionSource ?? null,
           }
         : null,
     }

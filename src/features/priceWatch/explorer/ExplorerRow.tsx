@@ -5,7 +5,7 @@
 // finalité de l'écran (« est-ce bien le même produit ? ») ; les mettre chacun au bord
 // extérieur de sa colonne obligerait à balayer la ligne des yeux pour comparer.
 import { useState, type ReactNode } from 'react'
-import { ImageOff, ChevronDown, Check, X, Image as ImageIcon } from 'lucide-react'
+import { ImageOff, ChevronDown, Check, X, Image as ImageIcon, Languages } from 'lucide-react'
 import type { Verdict } from './verdictStore'
 import type { StoredVisual } from '../visual/visualStore'
 import { highlightKey, proofSpot } from './proofHighlight'
@@ -222,6 +222,9 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  // Bascule AVANT/APRÈS, par ligne : on vérifie une traduction fiche par fiche, pas en
+  // basculant tout l'écran — la comparaison utile est locale.
+  const [showSource, setShowSource] = useState(false)
   const { listing, cmp, source, kind, confidence, proof } = row
   // Où la preuve se lit chez le concurrent, et laquelle de mes deux clés l'a portée.
   const spot = proof ? proofSpot(proof.evidence) : null
@@ -320,29 +323,51 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                   </span>
                 )}
               </div>
+              {/* Avant / après enrichissement. N'apparaît QUE si la feuille porte la
+                  mémoire de l'original — un catalogue jamais enrichi n'a rien à montrer,
+                  et un bouton inerte vaudrait moins que pas de bouton. */}
+              {(source.nameSource || source.descriptionSource) && (
+                <button type="button" onClick={() => setShowSource((v) => !v)}
+                  className={`mt-1 inline-flex items-center gap-1 rounded px-1 py-px text-[9px] font-medium uppercase tracking-wide border transition-colors ${
+                    showSource
+                      ? 'text-amber-200 bg-amber-500/15 border-amber-500/35'
+                      : 'text-white/40 border-white/15 hover:text-white/70 hover:border-white/30'
+                  }`}
+                  title={t('pwx.original.help')}>
+                  <Languages className="w-2.5 h-2.5" />
+                  {showSource ? t('pwx.original.showing') : t('pwx.original.show')}
+                </button>
+              )}
               {source.url ? (
                 <a href={source.url} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
                   className="block text-xs text-white/90 leading-snug mt-0.5 break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
-                  {source.name}
+                  {showSource && source.nameSource ? source.nameSource : source.name}
                 </a>
               ) : (
-                <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">{source.name}</div>
+                <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">
+                  {showSource && source.nameSource ? source.nameSource : source.name}
+                </div>
               )}
               {/* La description est LUE, pas dépliée : elle sert à trancher « est-ce bien
                   la même pièce ? » et l'obliger à un clic sur chaque ligne annulait
                   l'intérêt de la vue en regard. Le chevron ne subsiste que pour les
                   descriptions assez longues pour noyer la ligne. */}
-              {source.description && (
-                source.description.length <= LONG_DESCRIPTION ? (
-                  <div className="mt-1 text-[11px] text-white/45 leading-snug break-words">{source.description}</div>
+              {(() => {
+                const desc = showSource && source.descriptionSource
+                  ? source.descriptionSource
+                  : source.description
+                if (!desc) return null
+                const cls = showSource ? 'text-amber-200/60' : 'text-white/45'
+                return desc.length <= LONG_DESCRIPTION ? (
+                  <div className={`mt-1 text-[11px] leading-snug break-words ${cls}`}>{desc}</div>
                 ) : (
                   <button type="button" onClick={() => setOpen((o) => !o)}
-                    className="mt-1 text-left text-[11px] text-white/45 hover:text-white/70 flex items-start gap-1">
+                    className={`mt-1 text-left text-[11px] hover:text-white/70 flex items-start gap-1 ${cls}`}>
                     <ChevronDown className={`w-3 h-3 mt-0.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-                    <span className={open ? '' : 'line-clamp-2'}>{source.description}</span>
+                    <span className={open ? '' : 'line-clamp-2'}>{desc}</span>
                   </button>
                 )
-              )}
+              })()}
               <div className="mt-1 text-[11px] tabular-nums text-white/70">
                 {t('pwx.monPrixHt')} <span className="text-white/90 font-medium">{eur(source.priceHt)}</span>
               </div>

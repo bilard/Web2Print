@@ -5,7 +5,7 @@
 // inaccessibles. C'est pourtant le catalogue de référence — celui qu'on interroge pour
 // savoir ce qu'on vend, avant de regarder qui d'autre le vend.
 import { useMemo, useState } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Languages } from 'lucide-react'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import { searchCatalog, catalogFacts } from './catalogList'
 import type { SourceProduct } from '../catalog/match'
@@ -23,6 +23,14 @@ export function ExplorerCatalog({ products, query, imagePrefix }: {
   const { t, locale } = useTranslation()
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
   const [shown, setShown] = useState(PAGE)
+  // Bascule AVANT/APRÈS, par produit : on vérifie une traduction fiche par fiche.
+  const [showSource, setShowSource] = useState<Set<string>>(new Set())
+  const toggleSource = (id: string) => setShowSource((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
 
   const found = useMemo(() => searchCatalog(products, query), [products, query])
   const facts = useMemo(() => catalogFacts(products, found), [products, found])
@@ -77,7 +85,37 @@ export function ExplorerCatalog({ products, query, imagePrefix }: {
                         </span>
                       )}
                     </div>
-                    <p className="truncate text-[12px] text-white/80">{p.name || '—'}</p>
+                    {(() => {
+                      const back = showSource.has(p.id)
+                      const name = back && p.nameSource ? p.nameSource : p.name
+                      const desc = back && p.descriptionSource ? p.descriptionSource : p.description
+                      return (
+                        <>
+                          <p className={`truncate text-[12px] ${back ? 'text-amber-200/80' : 'text-white/80'}`}>
+                            {name || '—'}
+                          </p>
+                          {desc && (
+                            <p className={`line-clamp-2 text-[11px] ${back ? 'text-amber-200/50' : 'text-white/40'}`}>
+                              {desc}
+                            </p>
+                          )}
+                          {/* N'apparaît que si la feuille porte la mémoire de l'original :
+                              un catalogue jamais enrichi n'a rien à montrer. */}
+                          {(p.nameSource || p.descriptionSource) && (
+                            <button type="button" onClick={() => toggleSource(p.id)}
+                              className={`mt-0.5 inline-flex items-center gap-1 rounded px-1 py-px text-[9px] font-medium uppercase tracking-wide border transition-colors ${
+                                back
+                                  ? 'text-amber-200 bg-amber-500/15 border-amber-500/35'
+                                  : 'text-white/40 border-white/15 hover:text-white/70 hover:border-white/30'
+                              }`}
+                              title={t('pwx.original.help')}>
+                              <Languages className="w-2.5 h-2.5" />
+                              {back ? t('pwx.original.showing') : t('pwx.original.show')}
+                            </button>
+                          )}
+                        </>
+                      )
+                    })()}
                     {p.taxo && p.taxo.length > 0 && (
                       <p className="truncate text-[10px] text-white/25">{p.taxo.join(' › ')}</p>
                     )}

@@ -88,6 +88,17 @@ export interface SourceProduct extends SourceProductKeys {
   image?: string
   /** Chemin taxonomique (Famille › Sous-famille › Groupe produit). Affichage seul. */
   taxo?: string[]
+  /**
+   * Textes AVANT enrichissement, quand la feuille les porte.
+   *
+   * ⚠ Renseignés par la seule convention de nommage « <colonne> (source) », posée par la
+   * carte « Enrichir les textes ». Aucun réglage ne les déclare : un réglage de plus
+   * serait un réglage de plus à oublier, et la mémoire de l'original disparaîtrait
+   * silencieusement — or c'est précisément ce qui permet de vérifier qu'une traduction
+   * n'a pas dénaturé la fiche. Affichage seul, aucun effet sur l'appariement.
+   */
+  nameSource?: string
+  descriptionSource?: string
 }
 
 export interface MatchResult {

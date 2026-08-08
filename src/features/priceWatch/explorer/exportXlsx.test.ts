@@ -12,7 +12,7 @@ const row = (over: Partial<PairedRow> = {}): PairedRow => ({
   cmp: { priceHt: 90, priceTtc: 108, listPriceTtc: undefined, deltaPct: -10 },
   source: {
     id: 'p1', ref: 'AB-12X', ean: '4049582395377', name: 'COURROIE', description: null,
-    images: [], priceHt: 100, url: null, path: [],
+    images: [], priceHt: 100, url: null, path: [], nameSource: null, descriptionSource: null,
   },
   kind: 'exact-ref',
   proof: { evidence: 'ref-in-title', keyValue: 'AB12X', isEan: false },
