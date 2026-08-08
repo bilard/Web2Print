@@ -1855,6 +1855,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.rules.tree.flow.toPrice': '③ hands it the pairs it kept',
   'pw.rules.tree.in.source': 'starts from your catalogue',
   'pw.rules.measure.loadingSource': 'Re-reading the source catalogue — chunk {done} of {total}…',
+  'nav.priceWatch.rules': 'Matching rules',
   'node.compare-catalog.label': 'Compare catalogue',
   'node.compare-prices.label': 'Compare prices',
   'node.pw-report.prompt.label': 'Instruction (composes the email)',

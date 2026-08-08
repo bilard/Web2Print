@@ -1933,6 +1933,7 @@ export const fr = {
   'pw.rules.tree.flow.toPrice': '③ lui passe les paires retenues',
   'pw.rules.tree.in.source': 'part de votre catalogue',
   'pw.rules.measure.loadingSource': 'Relecture du catalogue source — tranche {done} sur {total}…',
+  'nav.priceWatch.rules': 'Règles d’appariement',
   'node.compare-catalog.label': 'Comparer catalogue',
   'node.compare-prices.label': 'Comparer les prix',
   'node.pw-report.prompt.label': 'Consigne (compose le mail)',

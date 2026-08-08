@@ -30,9 +30,33 @@ export function PriceWatchPanel() {
   useModuleIntent('price-watch', (action) => {
     if (!action.startsWith('section:')) return
     const key = action.slice('section:'.length)
-    document
-      .querySelector<HTMLElement>(`[data-pw-section="${key}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    // ⚠ Défilement INSTANTANÉ, jamais `behavior: 'smooth'`. Mesuré sur cette page :
+    // le défilement fluide ne part même pas — `scrollTop` reste à 0 sur toute la durée,
+    // alors que le même appel en `auto` atteint 5 619 px. Ce tableau de bord se repeint
+    // en continu (métas concurrents en onSnapshot, rapport live) et chaque re-layout
+    // annule l'animation en cours. L'entrée de menu ne faisait donc RIEN, « Comparatif »
+    // comprise, depuis qu'elle existe.
+    // ⚠ La cible n'existe pas forcément ENCORE. Venant d'un autre module, l'intent est
+    // consommé au montage du panneau, alors que le tableau de bord est sous Suspense et
+    // que ses sections n'ont pas été rendues : abandonner au premier essai ne faisait
+    // rien du tout, ce qui est exactement ce qu'on observait.
+    //
+    // On réessaie donc, et on RECALE après coup : les blocs au-dessus de la cible
+    // grandissent quand leurs données arrivent (jauges, listes) et la déplacent de
+    // plusieurs centaines de pixels.
+    //
+    // Les minuteurs ne sont pas annulés au démontage — `useModuleIntent` ne relaie aucune
+    // fonction de nettoyage, et en rendre une ici n'en donnerait que l'illusion. Sans
+    // conséquence : la requête ne trouve alors plus rien et l'appel s'évanouit.
+    const goTo = () => {
+      const el = document.querySelector<HTMLElement>(`[data-pw-section="${key}"]`)
+      el?.scrollIntoView({ block: 'start' })
+      return !!el
+    }
+    if (!goTo()) {
+      for (const delay of [120, 350, 700, 1200]) window.setTimeout(goTo, delay)
+    }
+    window.setTimeout(goTo, 1600)
   })
 
   return (

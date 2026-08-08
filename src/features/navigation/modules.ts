@@ -158,6 +158,9 @@ export const MODULE_ITEMS: ModuleItem[] = [
   { id: 'price-watch', group: 'web', icon: TrendingUpDown, labelKey: 'nav.priceWatch', accent: 'text-orange-400', activeBg: 'bg-orange-500/[0.1]', activeText: 'text-orange-300',
     children: [
       { id: 'section:comparison', labelKey: 'nav.priceWatch.comparison', intent: 'price-watch:section:comparison' },
+      // L'ancre `data-pw-section="rules"` existe déjà sur le panneau : l'entrée n'a qu'à
+      // émettre l'intent, le défilement est câblé dans `PriceWatchPanel`.
+      { id: 'section:rules', labelKey: 'nav.priceWatch.rules', intent: 'price-watch:section:rules' },
     ],
   },
   // ── Publication ──
