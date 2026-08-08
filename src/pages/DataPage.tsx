@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Upload, Download, Search, ArrowLeft,
   Table2, Tag, Plus, Save, Cloud, CloudOff,
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
-  MoreVertical, ExternalLink, Store,
+  MoreVertical, ExternalLink, Store, Languages,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
   Wand2, FolderUp, Link2, ImagePlus, X, Factory,
@@ -91,6 +91,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   // L'explorateur vit dans le PIM et porte donc sa propre permission PIM ; il lit en plus
   // les relevés de veille tarifaire, d'où la double garde (les deux sont requises).
   // (deux appels séparés : `useCan(a) && useCan(b)` court-circuiterait le second hook)
+  const canEditTexts = useCan('pim.edit')
   const canPimCompetitors = useCan('pim.competitors')
   const canPriceWatch = useCan('priceWatch.view')
   const canCompetitors = canPimCompetitors && canPriceWatch
@@ -138,6 +139,20 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       return !open
     })
   }, [])
+  /** Ouvre l'explorateur SUR une vue précise. `openCompetitors` seul est un bascule :
+   *  appelé alors que l'explorateur est déjà ouvert sur un concurrent, il le refermait —
+   *  le bouton « Traduire » aurait donc fait disparaître l'écran une fois sur deux. */
+  const openExplorerOn = useCallback((mode: ExplorerMode) => {
+    setExplorerMode(mode)
+    setCompetitorsOpen((open) => {
+      if (open) return true
+      setShowBdd(false)
+      setShowNav(false)
+      setShowRight(false)
+      window.dispatchEvent(new CustomEvent('dashboard:collapse-sidebar'))
+      return true
+    })
+  }, [])
   const [showBdd, setShowBdd] = useState(true)
   const [showNav, setShowNav] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -166,7 +181,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       // Ouvert depuis la Veille tarifaire : le contrôle des appariements douteux vit ici.
       case 'action:competitors': setCompetitorsOpen(true); break
       // Même écran, ouvert directement sur la vue « Traduire et améliorer les textes ».
-      case 'action:enrich-texts': setExplorerMode('enrich'); openCompetitors(); break
+      case 'action:enrich-texts': openExplorerOn('enrich'); break
     }
   })
 
@@ -744,7 +759,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 jamais montée et l'entrée serait introuvable. */}
             {canCompetitors && (
             <button
-              onClick={openCompetitors}
+              onClick={() => { setExplorerMode(null); openCompetitors() }}
               className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
                 competitorsOpen
                   ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
@@ -754,6 +769,25 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
             >
               <Store className="w-4 h-4" />
               {t('pwx.competitors')}
+            </button>
+            )}
+            {/* Traduction / réécriture des textes produit. Même raison que le bouton
+                voisin d'être ici : c'est l'écran où l'on regarde ses textes, donc l'endroit
+                où l'on cherche de quoi les corriger. L'entrée du menu latéral existe aussi,
+                mais elle demande de déplier « Données » — un geste qu'on ne fait pas quand
+                on ne sait pas que la fonction existe. */}
+            {canEditTexts && (
+            <button
+              onClick={() => openExplorerOn('enrich')}
+              className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
+                competitorsOpen && explorerMode === 'enrich'
+                  ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'
+              }`}
+              title={t('pwte.title')}
+            >
+              <Languages className="w-4 h-4" />
+              {t('pwte.title')}
             </button>
             )}
           </div>
@@ -768,7 +802,7 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
           {competitorsOpen ? (
             <div className="flex-1 flex overflow-hidden">
               <Suspense fallback={<div className="flex-1 flex items-center justify-center text-white/30 text-sm">{t('dam.loading')}</div>}>
-                <CompetitorExplorerPanel initialMode={explorerMode} onClose={() => setCompetitorsOpen(false)} />
+                <CompetitorExplorerPanel key={explorerMode ?? 'sites'} initialMode={explorerMode} onClose={() => setCompetitorsOpen(false)} />
               </Suspense>
             </div>
           ) : hasSelectedDb && hasData ? (
