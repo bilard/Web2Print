@@ -4,7 +4,7 @@
 // plan est ce que le moteur consomme. Les séparer évite de figer la forme stockée sur les
 // besoins du moteur — un plan gagnera des options que d'anciens workflows n'auront pas.
 import type { EnrichKind } from './revision'
-import { DEFAULT_MIN_LENGTH, isPlanOrdered, type FieldPlan } from './fieldPlan'
+import { DEFAULT_MIN_LENGTH, type FieldPlan } from './fieldPlan'
 import { defaultNameTemplate } from './template'
 
 /** Un champ à traiter, tel qu'il est réglé dans la carte. */
@@ -42,6 +42,14 @@ export interface TextEnrichConfig {
   dryRun: boolean
 }
 
+/**
+ * Le réglage de départ.
+ *
+ * Les deux entrées « étoffer » sont présentes mais DÉSACTIVÉES : elles montrent le chemin
+ * — traduire d'abord, étoffer ensuite — sans rendre la config invalide, puisqu'un même
+ * champ ne peut porter deux plans dans un seul passage. Une fois la traduction faite, on
+ * décoche les deux premières et on coche les deux autres.
+ */
 export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
   projectId: '',
   plans: [
@@ -50,15 +58,15 @@ export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
       prompt: '', promptVersion: 'v1',
     },
     {
-      enabled: true, key: 'nom', kind: 'improve', minLength: DEFAULT_MIN_LENGTH.name,
-      prompt: '', promptVersion: 'v1',
-    },
-    {
       enabled: true, key: 'description', kind: 'translate', minLength: DEFAULT_MIN_LENGTH.description,
       prompt: '', promptVersion: 'v1',
     },
     {
-      enabled: true, key: 'description', kind: 'improve', minLength: DEFAULT_MIN_LENGTH.description,
+      enabled: false, key: 'nom', kind: 'improve', minLength: DEFAULT_MIN_LENGTH.name,
+      prompt: '', promptVersion: 'v1',
+    },
+    {
+      enabled: false, key: 'description', kind: 'improve', minLength: DEFAULT_MIN_LENGTH.description,
       prompt: '', promptVersion: 'v1',
     },
   ],
@@ -74,8 +82,7 @@ export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
   dryRun: false,
 }
 
-/** Traduit la config en plans consommables. Les entrées désactivées disparaissent, et
- *  l'ordre de la liste est CONSERVÉ — c'est lui qui garantit traduire-avant-enrichir. */
+/** Traduit la config en plans consommables. Les entrées désactivées disparaissent. */
 export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
   return config.plans
     .filter((p) => p.enabled && p.key.trim() !== '')
@@ -100,7 +107,7 @@ export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
 
 /** Ce qui empêche le passage de partir. Vérifié AVANT le premier appel : découvrir une
  *  consigne vide après trois cents fiches coûte de l'argent et une révision à annuler. */
-export function configProblem(config: TextEnrichConfig): 'no-project' | 'no-plan' | 'no-prompt' | 'unordered' | null {
+export function configProblem(config: TextEnrichConfig): 'no-project' | 'no-plan' | 'no-prompt' | 'duplicate-key' | null {
   if (config.projectId.trim() === '') return 'no-project'
   const plans = configToPlans(config)
   if (plans.length === 0) return 'no-plan'
@@ -108,8 +115,23 @@ export function configProblem(config: TextEnrichConfig): 'no-project' | 'no-plan
   // ligne générique de la nature du travail, et produirait du texte de catalogue générique
   // — exactement ce qu'il ne faut pas écrire dans des fiches.
   if (plans.some((p) => p.prompt.trim() === '')) return 'no-prompt'
-  // Enrichir avant de traduire revient à payer pour un texte qu'on va remplacer.
-  if (!isPlanOrdered(plans)) return 'unordered'
+  // ⚠ DEUX PLANS SUR LA MÊME COLONNE, C'EST UNE COLLISION, pas un enchaînement.
+  // Les unités d'un lot sont identifiées par `produit::champ` — le plan n'entre pas dans
+  // la clé. Deux plans sur `nom` produisent donc deux unités indiscernables : le prompt
+  // porte deux fois le même identifiant, la réponse du modèle en écrase une, et les deux
+  // écritures visent la même cellule dans le même lot Firestore. On paie deux fois pour
+  // un seul résultat, tiré du texte d'origine dans les deux cas — le second plan ne voit
+  // JAMAIS le travail du premier, puisque les unités sont toutes calculées d'avance.
+  //
+  // Traduire PUIS étoffer un même champ se fait donc en deux passages, ce que le marqueur
+  // d'idempotence rend naturel : après la traduction le champ porte `translate:fr:v1`, un
+  // plan `improve` le retrouve éligible. C'est cette règle qui remplace l'ancienne
+  // vérification d'ordre, laquelle croyait l'enchaînement possible en un passage.
+  const seen = new Set<string>()
+  for (const p of plans) {
+    if (seen.has(p.key)) return 'duplicate-key'
+    seen.add(p.key)
+  }
   return null
 }
 
@@ -123,4 +145,24 @@ export function protectedFieldsOf(
     return v == null || v === '' ? [] : [String(v)]
   }
   return { refs: read(config.refField), eans: read(config.eanField), brands: read(config.brandField) }
+}
+
+/**
+ * Colonnes protégées introuvables dans les fiches chargées.
+ *
+ * ⚠ Le défaut (`marque`, `reference`, `ean`) n'est qu'une SUPPOSITION. Si le projet nomme
+ * ses colonnes « Référence » ou « EAN13 », `protectedFieldsOf` rend des listes vides, et
+ * la vérification perd d'un coup ses trois contrôles les plus utiles : référence altérée,
+ * code-barres perdu, marque inventée. Il ne reste que les valeurs chiffrées. Rien ne
+ * signalerait la perte — le passage se déroulerait normalement, en écrivant des textes
+ * que plus personne ne relit. D'où cet avertissement, émis avant le premier appel.
+ */
+export function missingProtectedColumns(
+  config: TextEnrichConfig,
+  rows: Record<string, unknown>[],
+): string[] {
+  const present = new Set<string>()
+  for (const row of rows) for (const k of Object.keys(row)) present.add(k)
+  return [config.brandField, config.refField, config.eanField]
+    .filter((k) => k.trim() !== '' && !present.has(k))
 }

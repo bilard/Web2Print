@@ -40,19 +40,6 @@ export const DEFAULT_MIN_LENGTH: Record<'name' | 'label' | 'description', number
   description: 100,
 }
 
-/** Un plan complet ne traite un champ qu'une fois par nature de travail : traduire PUIS
- *  enrichir le même champ demande deux entrées, dans cet ordre — traduire d'abord, sinon
- *  on enrichit un texte qu'on va remplacer. */
-export function isPlanOrdered(plans: FieldPlan[]): boolean {
-  const seen = new Map<string, EnrichKind>()
-  for (const p of plans) {
-    const prev = seen.get(p.key)
-    // Enrichir avant de traduire gaspille l'enrichissement : la traduction le remplacera.
-    if (prev && prev !== 'translate' && p.kind === 'translate') return false
-    seen.set(p.key, p.kind)
-  }
-  return true
-}
 
 /** Les champs distincts touchés par un plan — c'est ce que la synthèse du passage
  *  annonce, et ce que l'écran de comparaison propose en filtre. */

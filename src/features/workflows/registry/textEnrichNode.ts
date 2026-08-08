@@ -22,14 +22,26 @@ import { planPass, runPass, type EnrichUnit } from '@/features/textEnrich/pass'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
 import {
-  DEFAULT_TEXT_ENRICH_CONFIG, configToPlans, configProblem, protectedFieldsOf,
-  type TextEnrichConfig,
+  DEFAULT_TEXT_ENRICH_CONFIG, configToPlans, configProblem, missingProtectedColumns,
+  protectedFieldsOf, type TextEnrichConfig,
 } from '@/features/textEnrich/nodeConfig'
 import { TextEnrichConfigPanel } from './textEnrichConfig'
 // `run()` n'est pas un composant : helper `t()` de module (lit la locale courante).
 import { t } from '@/lib/i18n'
 
-type EnrichOutputs = { enriched: { projectId: string; passId: string; revised: number } }
+/** Le port rend une FEUILLE, une ligne par révision — pas un accusé de réception.
+ *  Un port typé `sheet` qui rendrait `{projectId, passId}` mentirait à tout ce qu'on y
+ *  branche, à commencer par l'export vers un tableur : c'est exactement le travers déjà
+ *  rencontré avec un port sans consommateur possible. */
+interface RevisionRow {
+  _id: string
+  produit: string
+  champ: string
+  avant: string
+  apres: string
+  justification: string
+}
+type EnrichOutputs = { enriched: { rows: RevisionRow[] } }
 
 const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOutputs> = {
   type: 'text-enrich',
@@ -39,6 +51,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
   icon: Languages,
   inputs: [],
   outputs: [{ name: 'enriched', type: 'sheet' }],
+  outputColumns: ['produit', 'champ', 'avant', 'apres', 'justification'],
   // Les plans de champs sont une liste d'objets : le schéma générique ne sait pas les
   // rendre. Le panneau dédié s'en charge, le schéma garde les réglages scalaires.
   configSchema: [
@@ -76,13 +89,20 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
       considered: counts.considered,
       done: counts.skipped['already-done'],
     }))
+    // ⚠ Émis AVANT le mode simulation, donc visible sans dépenser un dollar : c'est
+    // précisément le réglage qu'une simulation doit permettre de vérifier.
+    const missing = missingProtectedColumns(config, targets.map((tg) => tg.row ?? {}))
+    if (missing.length > 0) {
+      ctx.log('warn', t('run.textEnrich.missingProtected', { columns: missing.join(', ') }))
+    }
+
     if (config.dryRun) {
       ctx.log('info', t('run.textEnrich.dryRun'))
-      return { enriched: { projectId: config.projectId, passId: '', revised: 0 } }
+      return { enriched: { rows: [] } }
     }
     if (units.length === 0) {
       ctx.log('info', t('run.textEnrich.nothingToDo'))
-      return { enriched: { projectId: config.projectId, passId: '', revised: 0 } }
+      return { enriched: { rows: [] } }
     }
 
     // ⚠ La borne s'applique APRÈS le chiffrage, pour que le journal annonce le total réel
@@ -181,7 +201,20 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, Record<string, never>, EnrichOu
       revised: result.counts.revised, rejected: result.counts.rejected, passId,
     }))
 
-    return { enriched: { projectId: config.projectId, passId, revised: result.counts.revised } }
+    return {
+      enriched: {
+        rows: revisions.map((r) => ({
+          _id: `${r.productId}::${r.field}`,
+          produit: r.productId,
+          champ: r.field,
+          // L'original vient du calque de révision, pas de la fiche relue : après
+          // l'écriture, la fiche porte déjà le texte proposé.
+          avant: r.value.enrich?.original == null ? '' : String(r.value.enrich.original),
+          apres: r.value.value == null ? '' : String(r.value.value),
+          justification: notes[`${r.productId}::${r.field}`] ?? '',
+        })),
+      },
+    }
   },
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  DEFAULT_TEXT_ENRICH_CONFIG, configToPlans, configProblem, protectedFieldsOf,
+  DEFAULT_TEXT_ENRICH_CONFIG, configToPlans, configProblem, missingProtectedColumns, protectedFieldsOf,
   type TextEnrichConfig, type PlanConfig,
 } from './nodeConfig'
 
@@ -65,17 +65,47 @@ describe('ce qui empêche de partir', () => {
     expect(configProblem(cfg({ plans: [plan({ prompt: '   ' })] }))).toBe('no-prompt')
   })
 
-  it('refuse d’enrichir avant de traduire sur un même champ', () => {
-    // Enrichir puis traduire, c'est payer deux fois pour le second texte seulement.
+  it('⚠ refuse DEUX plans sur la même colonne', () => {
+    // C'est une collision, pas un enchaînement : les unités sont identifiées par
+    // `produit::champ`, sans le plan. Le prompt porterait deux fois le même identifiant,
+    // la réponse en écraserait une, et les deux écritures viseraient la même cellule dans
+    // le même lot. On paierait deux fois pour un seul résultat — tiré du texte d'origine
+    // dans les deux cas, puisque les unités sont toutes calculées avant le premier appel.
     expect(configProblem(cfg({
-      plans: [plan({ kind: 'improve' }), plan({ kind: 'translate' })],
-    }))).toBe('unordered')
+      plans: [plan({ kind: 'translate' }), plan({ kind: 'improve' })],
+    }))).toBe('duplicate-key')
+  })
+
+  it('accepte les mêmes natures sur des colonnes différentes', () => {
+    expect(configProblem(cfg({
+      plans: [plan({ key: 'nom' }), plan({ key: 'description' })],
+    }))).toBeNull()
+  })
+
+  it('un plan désactivé ne compte pas comme un doublon', () => {
+    // C'est ce qui rend le réglage par défaut valide : il porte les quatre entrées, mais
+    // n'en active que deux.
+    expect(configProblem(cfg({
+      plans: [plan({ kind: 'translate' }), plan({ kind: 'improve', enabled: false })],
+    }))).toBeNull()
   })
 
   it('la config par défaut est incomplète, à dessein', () => {
     // Ni projet ni consigne : la carte ne doit pas pouvoir tourner à la pose, sinon un
     // clic distrait lance un passage payant sur un catalogue entier.
     expect(configProblem(DEFAULT_TEXT_ENRICH_CONFIG)).toBe('no-project')
+  })
+
+  it('⚠ le réglage par défaut n’active jamais deux plans sur la même colonne', () => {
+    // Il en porte quatre, dont deux sur `nom` et deux sur `description`. Si les quatre
+    // étaient actifs, la carte livrée collisionnerait dès la pose — et le symptôme
+    // (facture double, texte écrasé) est invisible dans la console du run.
+    const filled = {
+      ...DEFAULT_TEXT_ENRICH_CONFIG,
+      projectId: 'p',
+      plans: DEFAULT_TEXT_ENRICH_CONFIG.plans.map((p) => ({ ...p, prompt: 'x' })),
+    }
+    expect(configProblem(filled)).toBeNull()
   })
 })
 
@@ -89,5 +119,25 @@ describe('éléments intouchables', () => {
     // Une chaîne vide « présente dans l'original » serait introuvable dans la proposition,
     // et ferait échouer la vérification sur toutes les fiches sans référence.
     expect(protectedFieldsOf(cfg(), { marque: '', reference: null })).toEqual({ brands: [], refs: [], eans: [] })
+  })
+})
+
+describe('colonnes protégées absentes', () => {
+  it('les nomme quand aucune fiche ne les porte', () => {
+    // Le symptôme, sinon, est nul : le passage se déroule normalement et n'écrit plus
+    // rien de vérifié. C'est le pire des deux mondes — une facture et aucune garantie.
+    const got = missingProtectedColumns(cfg(), [{ nom: 'Lame', 'Référence': 'X' }])
+    expect(got).toEqual(['marque', 'reference', 'ean'])
+  })
+
+  it('ne signale rien quand une seule fiche sur mille les porte', () => {
+    // Une colonne vide sur la plupart des fiches reste une colonne configurée juste :
+    // c'est son ABSENCE totale du projet qui trahit une erreur de nom.
+    expect(missingProtectedColumns(cfg(), [{ nom: 'Lame' }, { marque: 'STIGA', reference: 'X', ean: '1' }]))
+      .toEqual([])
+  })
+
+  it('ignore une colonne laissée vide dans le réglage', () => {
+    expect(missingProtectedColumns(cfg({ eanField: '' }), [{ marque: 'S', reference: 'X' }])).toEqual([])
   })
 })

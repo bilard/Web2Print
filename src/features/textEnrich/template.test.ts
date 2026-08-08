@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { defaultNameTemplate, renderTemplate, needsAI, aiHints } from './template'
-import { DEFAULT_MIN_LENGTH, isPlanOrdered, planFields, type FieldPlan } from './fieldPlan'
+import { DEFAULT_MIN_LENGTH, planFields, type FieldPlan } from './fieldPlan'
 
 const COLS = { brand: 'marque', supplierRef: 'ref_fournisseur', ean: 'ean' }
 const tpl = defaultNameTemplate(COLS)
@@ -65,23 +65,6 @@ describe('plan par champ', () => {
     expect(DEFAULT_MIN_LENGTH.name).toBeLessThan(DEFAULT_MIN_LENGTH.description)
     expect(DEFAULT_MIN_LENGTH.name).toBeGreaterThanOrEqual(25)
     expect(DEFAULT_MIN_LENGTH.name).toBeLessThanOrEqual(30)
-  })
-
-  it('refuse un plan qui enrichit AVANT de traduire', () => {
-    // La traduction remplacerait le texte enrichi : l'enrichissement serait payé pour rien.
-    const bad: FieldPlan[] = [
-      { key: 'nom', kind: 'improve', minLength: 28, prompt: '', promptVersion: 'v1' },
-      { key: 'nom', kind: 'translate', minLength: 0, prompt: '', promptVersion: 'v1' },
-    ]
-    expect(isPlanOrdered(bad)).toBe(false)
-  })
-
-  it('accepte traduire puis enrichir le même champ', () => {
-    const good: FieldPlan[] = [
-      { key: 'nom', kind: 'translate', minLength: 0, prompt: '', promptVersion: 'v1' },
-      { key: 'nom', kind: 'improve', minLength: 28, prompt: '', promptVersion: 'v1' },
-    ]
-    expect(isPlanOrdered(good)).toBe(true)
   })
 
   it('énumère les champs touchés sans doublon', () => {
