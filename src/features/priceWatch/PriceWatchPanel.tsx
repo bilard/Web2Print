@@ -8,6 +8,7 @@
 // juge chaque paire et sait balayer tous les sites d'un coup.
 import { useEffect, useState } from 'react'
 import { PriceWatchDashboard } from './dashboard/PriceWatchDashboard'
+import { PairingRulesPanel } from './rules/PairingRulesPanel'
 import { WatchSelector } from './dashboard/WatchSelector'
 import { useWatchList } from './useCatalogReport'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
@@ -50,6 +51,9 @@ export function PriceWatchPanel() {
 
       <PriceWatchDashboard watchId={watchId} />
 
+      {/* Les règles vivent SOUS les chiffres qu'elles produisent : on règle en regardant
+          ce qu'on a obtenu, pas dans un écran de configuration séparé. */}
+      <PairingRulesPanel watchId={watchId} />
     </div>
   )
 }
