@@ -47,7 +47,12 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
 
   const [revisions, setRevisions] = useState<Map<string, TextRevision>>(new Map())
-  const [onlyForeign, setOnlyForeign] = useState(true)
+  /** Ce qu'on met dans la file. ⚠ « Seulement les textes non français » écartait AUSSI
+   *  les indéterminés — 81 117 fiches sur 115 814, soit 70 % du catalogue, hors de toute
+   *  file et hors du compteur « à traiter », sans que rien ne le dise. Le détecteur
+   *  s'abstient dès qu'un texte est court, technique ou à l'encodage cassé : son silence
+   *  ne veut pas dire « déjà en français ». Les trois portées sont donc explicites. */
+  const [scope, setScope] = useState<'foreign' | 'foreignPlus' | 'all'>('foreign')
   /** Langue isolée par un clic sur sa pastille. `undefined` = pas de filtre par langue ;
    *  `null` = les fiches dont la langue n'a pas été tranchée. */
   const [pickedLang, setPickedLang] = useState<string | null | undefined>(undefined)
@@ -114,8 +119,12 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
       return saleText === 'all' || (saleText === 'with' ? has : !has)
     }
     if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l))
-    return lines.filter((l) => !(onlyForeign && (l.lang === 'fr' || l.lang == null)) && bySale(l))
-  }, [lines, products, onlyForeign, query, searching, pickedLang, saleText])
+    const inScope = (l: Line) =>
+      scope === 'all' ? true
+        : scope === 'foreignPlus' ? l.lang !== 'fr'
+          : !!l.lang && l.lang !== 'fr'
+    return lines.filter((l) => inScope(l) && bySale(l))
+  }, [lines, products, scope, query, searching, pickedLang, saleText])
 
   // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
@@ -258,7 +267,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
 
         <TextEnrichFilters
           tallies={tallies} pickedLang={pickedLang} onPickLang={setPickedLang}
-          onlyForeign={onlyForeign} onOnlyForeign={setOnlyForeign} searching={searching}
+          scope={scope} onScope={setScope} searching={searching}
           saleText={saleText} onSaleText={setSaleText}
           modes={modes} onModes={setModes}
           limitText={limitText} onLimitText={setLimitText}

@@ -8,10 +8,14 @@ import { Loader2, Play } from 'lucide-react'
 import type { LangTally } from './langBreakdown'
 
 export type SaleTextFilter = 'all' | 'with' | 'without'
+/** Ce qui entre dans la file. `foreign` = langue étrangère RECONNUE ; `foreignPlus` y
+ *  ajoute les indéterminés — le gros du catalogue, que le détecteur n'a pas su trancher
+ *  et qui n'est pas pour autant du français. */
+export type EnrichScope = 'foreign' | 'foreignPlus' | 'all'
 
 export function TextEnrichFilters({
   tallies, pickedLang, onPickLang,
-  onlyForeign, onOnlyForeign, searching,
+  scope, onScope, searching,
   saleText, onSaleText,
   modes, onModes,
   limitText, onLimitText,
@@ -20,8 +24,8 @@ export function TextEnrichFilters({
   tallies: LangTally[]
   pickedLang: string | null | undefined
   onPickLang: (lang: string | null | undefined) => void
-  onlyForeign: boolean
-  onOnlyForeign: (v: boolean) => void
+  scope: EnrichScope
+  onScope: (v: EnrichScope) => void
   searching: boolean
   saleText: SaleTextFilter
   onSaleText: (v: SaleTextFilter) => void
@@ -74,11 +78,16 @@ export function TextEnrichFilters({
             {t(v === 'all' ? 'pwte.sale.all' : v === 'with' ? 'pwte.sale.with' : 'pwte.sale.without')}
           </button>
         ))}
-        <label className={`ml-2 flex items-center gap-1.5 text-[11px] text-white/50 ${langLocked ? 'opacity-40' : ''}`}>
-          <input type="checkbox" checked={onlyForeign} disabled={langLocked}
-            onChange={(e) => onOnlyForeign(e.target.checked)} className="h-3.5 w-3.5 accent-accent" />
-          {t('pwte.onlyForeign')}
-        </label>
+      </div>
+
+      <div className={`flex flex-wrap items-center gap-1.5 ${langLocked ? 'opacity-40' : ''}`}>
+        <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.scope')}</span>
+        {(['foreign', 'foreignPlus', 'all'] as EnrichScope[]).map((v) => (
+          <button key={v} type="button" onClick={() => onScope(v)} disabled={langLocked}
+            className={chip(scope === v)}>
+            {t(v === 'foreign' ? 'pwte.scope.foreign' : v === 'foreignPlus' ? 'pwte.scope.foreignPlus' : 'pwte.scope.all')}
+          </button>
+        ))}
         {searching && <span className="text-[11px] text-amber-300/80">{t('pwte.searchOverrides')}</span>}
       </div>
 
