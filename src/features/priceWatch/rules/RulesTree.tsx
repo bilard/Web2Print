@@ -55,9 +55,13 @@ function Branch(
   return (
     <div className={`flex items-baseline gap-2 pl-3 border-l border-white/10 py-0.5 ${dimmed ? 'opacity-45' : ''}`}>
       {rank && <span className="text-[11px] text-white/30 tabular-nums w-3 shrink-0">{rank}</span>}
-      <span className="flex-1 min-w-0 truncate">
-        <span className="text-[13px] text-white/85">{label}</span>
-        {hint && <span className="text-[11px] text-white/35 ml-2">{hint}</span>}
+      {/* ⚠ L'indication passe SOUS le libellé, sans troncature. En ligne, elle tenait sur
+          toute la largeur d'écran ; en deux colonnes elle se faisait couper au milieu d'un
+          mot (« pas le même articl… »), ce qui vaut moins que rien. Seules quatre branches
+          sur quatorze en portent une : le coût en hauteur est faible. */}
+      <span className="flex-1 min-w-0">
+        <span className="text-[13px] text-white/85 block leading-snug">{label}</span>
+        {hint && <span className="text-[11px] text-white/35 block leading-snug">{hint}</span>}
       </span>
       {control}
       {weight}
@@ -66,33 +70,29 @@ function Branch(
 }
 
 function Stage(
-  { step, title, subtitle, help, children, total }:
+  { step, title, subtitle, help, inbound, children, total }:
   {
     step: string; title: string; subtitle: string; help: string
+    /** Ce que cet étage REÇOIT du précédent. Dit ici, et non par une flèche intercalée :
+     *  en deux colonnes, une flèche posée entre deux blocs désigne le voisin de droite et
+     *  non l'étage suivant — elle mentirait sur la cascade. */
+    inbound: string
     children: React.ReactNode; total?: React.ReactNode
   },
 ) {
   return (
     <section className="bg-surface rounded-lg px-3 py-2.5">
-      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1.5">
+      <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-[11px] font-semibold text-[#6366f1] tabular-nums">{step}</span>
         <h3 className="text-[13px] font-semibold text-white">{title}</h3>
         {total}
-        <span className="text-[11px] text-white/35">· {subtitle}</span>
         <Hint text={help} />
       </header>
+      <p className="text-[11px] text-white/35 mb-1.5 leading-snug">
+        <span className="text-white/25">↳ {inbound}</span> · {subtitle}
+      </p>
       <div>{children}</div>
     </section>
-  )
-}
-
-/** Flèche entre deux étages : ce qui SORT du précédent entre dans le suivant. */
-function Flow({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 pl-3 py-0.5">
-      <span className="text-white/20 text-[11px]">↓</span>
-      <span className="text-[11px] text-white/30">{label}</span>
-    </div>
   )
 }
 
@@ -116,10 +116,11 @@ export function RulesTree(
   const maxVeto = weights ? Math.max(1, ...Object.values(weights.byVeto)) : 0
 
   return (
-    <div className="space-y-1">
+    <div className="grid gap-2 lg:grid-cols-2 items-start">
       {/* ÉTAGE 1 — les clés, dans leur ordre de priorité réel. */}
       <Stage
         step="①" title={t('pw.rules.tree.keys.title')} subtitle={t('pw.rules.tree.keys.subShort')} help={t('pw.rules.tree.keys.sub')}
+        inbound={t('pw.rules.tree.in.source')}
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.keys.emitted', { n: weights.keysEmitted })}</span>}
       >
         {KEY_BRANCHES.map(({ branch, rank }) => (
@@ -159,11 +160,11 @@ export function RulesTree(
         </div>
       </Stage>
 
-      <Flow label={t('pw.rules.tree.flow.toEvidence')} />
 
       {/* ÉTAGE 2 — les preuves, dans l'ordre où proveMatch les teste. */}
       <Stage
         step="②" title={t('pw.rules.tree.evidence.title')} subtitle={t('pw.rules.tree.evidence.subShort')} help={t('pw.rules.tree.evidence.sub')}
+        inbound={t('pw.rules.tree.flow.toEvidence')}
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.evidence.total', { n: weights.matched })}</span>}
       >
         {MATCH_EVIDENCES.map((e: MatchEvidence, i) => (
@@ -184,11 +185,11 @@ export function RulesTree(
         ))}
       </Stage>
 
-      <Flow label={t('pw.rules.tree.flow.toVetoes')} />
 
       {/* ÉTAGE 3 — les démentis, qui ne voient que ce qui a été prouvé. */}
       <Stage
         step="③" title={t('pw.rules.tree.vetoes.title')} subtitle={t('pw.rules.tree.vetoes.subShort')} help={t('pw.rules.tree.vetoes.sub')}
+        inbound={t('pw.rules.tree.flow.toVetoes')}
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.vetoes.total', { n: weights.vetoed })}</span>}
       >
         {VETOES.map((v) => {
@@ -251,11 +252,13 @@ export function RulesTree(
         </div>
       </Stage>
 
-      <Flow label={t('pw.rules.tree.flow.toPrice')} />
 
       {/* ÉTAGE 4 — le prix : hors appariement, mais il décide de ce qui entre dans le
           comparatif, donc il appartient à la même cascade. */}
-      <Stage step="④" title={t('pw.rules.tree.price.title')} subtitle={t('pw.rules.tree.price.subShort')} help={t('pw.rules.tree.price.sub')}>
+      <Stage
+        step="④" title={t('pw.rules.tree.price.title')} subtitle={t('pw.rules.tree.price.subShort')} help={t('pw.rules.tree.price.sub')}
+        inbound={t('pw.rules.tree.flow.toPrice')}
+      >
         <div className="pl-3 border-l border-white/10 flex flex-wrap items-end gap-x-4 gap-y-1 pt-1">
           {([
             ['alignedPct', rules.alignedPct, 'node.pairing-rules.alignedPct.label'],
