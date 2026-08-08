@@ -13,11 +13,12 @@
 // Contrôles en HTML brut, comme le reste du dossier : le panneau latéral fait quatre cents
 // pixels, et les composants de formulaire du design system y sont trop hauts.
 import { useEffect, useState } from 'react'
-import { ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Languages, Loader2, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { listPimProjects, type PimProjectSummary } from '@/features/merge/pimSource'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { configProblem, type PlanConfig, type TextEnrichConfig } from '@/features/textEnrich/nodeConfig'
+import { languageStats, type ColumnLanguageStats } from '@/features/textEnrich/languageStats'
 import type { EnrichKind } from '@/features/textEnrich/revision'
 
 const KINDS: EnrichKind[] = ['translate', 'improve', 'structure']
@@ -60,12 +61,14 @@ function ColumnField({ value, onPick, cols, placeholder, className }: {
 }
 
 export function TextEnrichConfigPanel({
-  config, onChange, availableColumns,
+  config, onChange, availableColumns, upstreamRows,
 }: {
   config: TextEnrichConfig
   onChange: (next: TextEnrichConfig) => void
   /** Colonnes de la feuille branchée en amont. Vide = pas de feuille (mode PIM). */
   availableColumns?: string[]
+  /** Lignes du dernier run amont — la matière de l'analyse des langues. */
+  upstreamRows?: Record<string, unknown>[]
 }) {
   const { t } = useTranslation()
   const problem = configProblem(config, availableColumns != null && availableColumns.length > 0)
@@ -75,6 +78,9 @@ export function TextEnrichConfigPanel({
   // un panneau de config : il ne voit pas le graphe.
   const cols = availableColumns ?? []
   const fromSheet = cols.length > 0
+  const rows = upstreamRows ?? []
+  const [stats, setStats] = useState<ColumnLanguageStats[] | null>(null)
+  const [counting, setCounting] = useState(false)
 
   useEffect(() => {
     // Inutile quand une feuille alimente la carte : le projet PIM ne sert alors à rien,
@@ -274,6 +280,56 @@ export function TextEnrichConfigPanel({
           </div>
         </div>
       ))}
+
+      {/* Mesurer AVANT de dépenser : « 41 000 descriptions en néerlandais, et le nom déjà
+          français partout » ne se devine pas en faisant défiler cent mille lignes. */}
+      <div className="space-y-1.5">
+        <button
+          type="button"
+          disabled={rows.length === 0 || counting}
+          className="flex w-full items-center justify-center gap-1.5 rounded border border-border px-2 py-1.5 text-[11px] text-white hover:bg-surface-2 disabled:opacity-40"
+          onClick={() => {
+            setCounting(true)
+            // Différé d'un tour de boucle : sur cent mille lignes le comptage fige le
+            // rendu, et sans ce délai le bouton n'aurait jamais l'occasion d'afficher
+            // qu'il travaille — on croirait au clic perdu.
+            setTimeout(() => {
+              const keys = [...new Set(config.plans.filter((p) => p.key.trim()).map((p) => p.key.trim()))]
+              setStats(languageStats(rows, keys))
+              setCounting(false)
+            }, 0)
+          }}
+        >
+          {counting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
+          {t('node.text-enrich.langStats')}
+        </button>
+        {/* Aucun run = aucune donnée. On le DIT, au lieu d'afficher des zéros qui se
+            liraient comme une mesure : « 0 texte étranger » ferait renoncer à tort. */}
+        {rows.length === 0 && (
+          <p className="text-[11px] leading-snug text-muted-foreground">{t('node.text-enrich.langStatsNoRun')}</p>
+        )}
+        {stats && stats.length > 0 && (
+          <div className="space-y-1.5 rounded border border-border bg-well p-2">
+            {stats.map((st) => (
+              <div key={st.column} className="text-[11px]">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="truncate font-medium text-white">{st.column}</span>
+                  <span className={st.foreign > 0 ? 'text-amber-400' : 'text-muted-foreground'}>
+                    {t('node.text-enrich.langForeign', { count: st.foreign, total: st.counted })}
+                  </span>
+                </div>
+                <div className="text-muted-foreground">
+                  {st.byLang.length > 0
+                    ? st.byLang.map((b) => `${b.lang} ${b.count}`).join(' · ')
+                    : t('node.text-enrich.langNone')}
+                  {st.undecided > 0 && ` · ${t('node.text-enrich.langUndecided', { count: st.undecided })}`}
+                  {st.empty > 0 && ` · ${t('node.text-enrich.langEmpty', { count: st.empty })}`}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-2">
         {(['brandField', 'refField', 'ref2Field', 'eanField'] as const).map((f) => (

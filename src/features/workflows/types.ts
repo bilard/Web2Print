@@ -109,6 +109,16 @@ export interface NodeSpec<C = unknown, I = unknown, O = unknown> {
      * complétion sur les variables {{...}}.
      */
     availableColumns?: string[]
+    /**
+     * Lignes produites par les nodes amont au DERNIER run.
+     *
+     * Symétrique de `availableColumns`, pour les panneaux qui doivent MESURER la donnée
+     * et pas seulement en connaître les en-têtes (répartition des langues, valeurs
+     * distinctes, taux de remplissage). Vide tant qu'aucun run n'a eu lieu — un panneau
+     * qui s'en sert doit donc le dire plutôt que d'afficher des zéros, qu'on lirait
+     * comme une mesure.
+     */
+    upstreamRows?: Record<string, unknown>[]
   }>
 }
 

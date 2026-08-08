@@ -439,6 +439,23 @@ export function NodeConfigPanel() {
     return cols
   }, [wf, node, runNodeStates])
 
+  // Lignes réellement produites en amont au dernier run — pour les panneaux qui MESURENT
+  // la donnée (répartition des langues…) et pas seulement ses en-têtes. Référence
+  // partagée, jamais copiée : une feuille peut faire cent mille lignes.
+  const upstreamRows = useMemo(() => {
+    if (!wf || !node) return []
+    const rows: Record<string, unknown>[] = []
+    for (const e of wf.edges.filter((edge) => edge.target === node.id)) {
+      const outputs = runNodeStates[e.source]?.outputs
+      if (!outputs) continue
+      for (const v of Object.values(outputs)) {
+        const r = (v as { rows?: unknown } | null)?.rows
+        if (Array.isArray(r)) rows.push(...(r as Record<string, unknown>[]))
+      }
+    }
+    return rows
+  }, [wf, node, runNodeStates])
+
   // Priorité au node sélectionné si les deux le sont (cas peu probable).
   const showEdge = !node && !!selectedEdge
 
@@ -513,6 +530,7 @@ export function NodeConfigPanel() {
                   config={node.config as never}
                   onChange={(c) => upsertNode({ ...node, config: c })}
                   availableColumns={availableColumns}
+                  upstreamRows={upstreamRows}
                 />
               ) : (
                 spec.configSchema.map((f) => {
