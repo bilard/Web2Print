@@ -13,7 +13,7 @@ import { useTranslation, intlLocale } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { generateJson } from '@/features/ai/llmRouter'
-import { EnrichBatchSchema, schemaForLLM } from '@/features/textEnrich/prompt'
+import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
 import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
 import { langBreakdown } from './langBreakdown'
@@ -113,31 +113,16 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
     try {
       for (let i = 0; i < batchList.length; i += BATCH) {
         const chunk = batchList.slice(i, i + BATCH)
-        const items = chunk.map((l) => [
-          `--- id=${JSON.stringify(l.product.id)}`,
-          l.lang ? `langue détectée : ${l.lang}` : '',
-          `nom: ${l.product.name}`,
-          l.product.description ? `description: ${l.product.description}` : '',
-        ].filter(Boolean).join('\n'))
-
         const raw = await generateJson({
           task: 'data.textEnrich',
-          // La consigne de l'utilisateur passe EN TÊTE, verbatim. Le reste n'est que la
-          // tâche et les garde-fous de forme.
-          prompt: [
-            prompt.trim(),
-            prompt.trim() ? '' : undefined,
-            'Traduis en français le nom et la description de chaque produit ci-dessous.',
-            '',
-            'Recopie EXACTEMENT les références, codes article, codes-barres, valeurs chiffrées et unités.',
-            'N’ajoute aucune marque absente, n’invente aucune caractéristique.',
-            'Réponds avec, pour chaque entrée, le même identifiant et le texte au format « nom | description ».',
-            '',
-            items.join('\n\n'),
-          ].filter((x) => x !== undefined).join('\n'),
-          schema: EnrichBatchSchema,
-          schemaForLLM: schemaForLLM(true),
-          version: 'text-enrich-screen/v1',
+          prompt: buildScreenPrompt(chunk.map((l) => ({
+            id: l.product.id, name: l.product.name,
+            ...(l.product.description ? { description: l.product.description } : {}),
+            lang: l.lang,
+          })), prompt),
+          schema: ScreenBatchSchema,
+          schemaForLLM: screenSchemaForLLM,
+          version: 'text-enrich-screen/v2',
         })
 
         const byId = new Map(chunk.map((l) => [l.product.id, l]))
@@ -146,7 +131,8 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
           // Un identifiant inconnu trahit une liste décalée : on écarte plutôt que de
           // ranger un texte sur le mauvais produit.
           if (!line) continue
-          const [name, description] = String(r.text).split('|').map((x) => x.trim())
+          const name = String(r.name ?? '').trim()
+          const description = String(r.description ?? '').trim()
           if (!name) continue
 
           // Même vérification que le moteur : une réécriture qui perd une référence ou

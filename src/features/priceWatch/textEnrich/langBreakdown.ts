@@ -3,16 +3,11 @@
 // « Seulement les textes non français » répond par oui ou non ; ça ne dit pas s'il reste
 // quarante fiches en néerlandais ou douze mille en allemand — donc ni par quoi commencer,
 // ni ce que va coûter la traduction. La ventilation, elle, se lit d'un coup d'œil.
-import type { TranslationKey } from '@/lib/i18n'
-
 export interface LangTally {
   /** Code langue, ou `null` quand le détecteur s'est abstenu. */
   lang: string | null
   count: number
 }
-
-/** Étiquette d'une pastille : le code en capitales, sauf l'abstention qui se nomme. */
-export const UNDECIDED_KEY: TranslationKey = 'pwte.lang.undecided'
 
 /**
  * Compte les fiches par langue, dans l'ordre où on veut les traiter : les langues
