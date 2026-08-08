@@ -13,6 +13,7 @@
 // PUR : le resolver de spec est injecté (testable sans registre).
 import type { Workflow, NodeSpec } from '../types'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
+import { breaksServerRun } from './serverCapability'
 import { t } from '@/lib/i18n'
 
 export interface WorkflowIssue {
@@ -20,6 +21,10 @@ export interface WorkflowIssue {
   nodeLabel: string
   severity: 'error' | 'warning'
   message: string
+  /** Correction applicable en un clic depuis le pré-vol. `drop-node` = retirer la carte
+   *  et recoudre le flux (cf. `dropNodeAndRewire`) : sans elle, « corriger » voulait dire
+   *  supprimer la carte À LA MAIN puis retrouver quel lien rebrancher. */
+  fix?: 'drop-node'
 }
 
 /** Complétude non exprimable via `required` (valeur portée par la ConfigComponent,
@@ -146,6 +151,13 @@ export function validateWorkflow(
   for (const e of wf.edges) { connected.add(e.source); connected.add(e.target) }
   const willRun = (id: string) => wf.edges.length === 0 || connected.has(id)
 
+  // Une planification active change le lieu d'exécution : le run part des Cloud
+  // Functions, pas du navigateur. Détecté ici plutôt que via `findActiveCron`, qui vit
+  // dans la couche de persistance (Firestore) et rendrait ce module impur.
+  const scheduled = wf.nodes.some(
+    (n) => n.type === 'cron' && (n.config as { enabled?: boolean } | undefined)?.enabled === true,
+  )
+
   const issues: WorkflowIssue[] = []
   for (const node of wf.nodes) {
     if (!willRun(node.id)) continue
@@ -176,6 +188,19 @@ export function validateWorkflow(
     const wiredPort = (port: string) => wf.edges.some((e) => e.target === node.id && e.targetHandle === port)
     const sem = SEMANTIC_CHECKS[node.type]?.(config, wiredPort)
     if (sem) issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: sem })
+
+    // 3. Cette carte ne tourne pas côté SERVEUR, et le workflow est planifié.
+    // C'est une panne certaine, connue d'avance, et jusqu'ici invisible : le cron marque
+    // la carte en erreur et SAUTE tout l'aval — un comparatif qui ne compare rien, un
+    // mail qui ne part pas —, et on ne l'apprend qu'en dépliant les logs du run nocturne.
+    // Signalée seulement si une planification est active : lancé depuis le navigateur, le
+    // même workflow s'exécute parfaitement.
+    if (scheduled && breaksServerRun(node.type)) {
+      issues.push({
+        nodeId: node.id, nodeLabel: label, severity: 'error',
+        message: t('wfv.serverUnsupported'), fix: 'drop-node',
+      })
+    }
   }
   issues.push(...crossNodeIssues(wf, getSpec, willRun))
   return issues

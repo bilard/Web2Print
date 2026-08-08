@@ -10,6 +10,7 @@ import { loadLatestRunStates } from '../persistence/runHistoryClient'
 import { useRunContext, stepMiddleware } from '../runtime/runContext'
 import { executeWorkflow } from '../runtime/executor'
 import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflow'
+import { dropNodeAndRewire } from '../runtime/dropNodeAndRewire'
 import { RunPreflightDialog } from './RunPreflightDialog'
 import { PreflightBanner } from './PreflightBanner'
 import { useFocusNode } from './focusNodeStore'
@@ -162,6 +163,15 @@ export function WorkflowEditorPage() {
     await executeNow(stepByStep)
   }
   const stop = () => ac?.abort()
+  // Correction en un clic depuis le pré-vol : la carte part et ses liens sont recousus,
+  // pour ne pas remplacer une panne (« ne tourne pas côté serveur ») par une autre
+  // (« l'aval n'a plus de source »). L'enregistrement automatique fait le reste.
+  const dropNode = (nodeId: string, label: string) => {
+    const next = dropNodeAndRewire(wf, nodeId, (ty) => nodeRegistry.get(ty))
+    useWorkflowStore.getState().patch({ nodes: next.nodes, edges: next.edges })
+    setPreflight(null)
+    notify.success(t('wfc.dropped', { label }), '')
+  }
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
   const saveNow = async () => {
     if (!uid) return
@@ -343,6 +353,7 @@ export function WorkflowEditorPage() {
             onCancel={() => setPreflight(null)}
             onProceed={preflight.inspectOnly ? undefined : () => { const s = preflight.stepByStep; setPreflight(null); void executeNow(s) }}
             onFocus={(nodeId) => { useFocusNode.getState().focus(nodeId); setPreflight(null) }}
+            onDropNode={canSave ? dropNode : undefined}
           />
         )}
     </ReactFlowProvider>

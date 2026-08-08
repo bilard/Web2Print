@@ -187,3 +187,49 @@ describe('cohérence ENTRE nodes (Veille tarifaire)', () => {
     expect(issues.filter((i) => i.severity === 'warning')).toHaveLength(0)
   })
 })
+
+describe('carte qui ne tourne pas côté serveur', () => {
+  const spec = (type: string): NodeSpec => ({
+    type, labelKey: 'node.upload.label', category: 'utility', icon: (() => null) as never,
+    inputs: [], outputs: [], configSchema: [], defaultConfig: {}, runtime: 'client',
+    run: async () => ({}),
+  })
+  const getSpec = (t: string) => spec(t)
+  const wf = (nodes: { id: string; type: string; config?: Record<string, unknown> }[]): Workflow => ({
+    id: 'w', schemaVersion: 1, name: 'w', description: '', ownerId: 'u',
+    createdAt: 0, updatedAt: 0,
+    nodes: nodes.map((n) => ({ ...n, position: { x: 0, y: 0 }, config: n.config ?? {} })) as Workflow['nodes'],
+    edges: [],
+  })
+
+  it('workflow PLANIFIÉ : la carte client-only est une erreur, corrigeable en un clic', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'k', type: 'cron', config: { enabled: true } },
+      { id: 'e', type: 'text-enrich' },
+    ]), getSpec)
+    const err = issues.find((i) => i.nodeId === 'e')
+    expect(err?.severity).toBe('error')
+    expect(err?.fix).toBe('drop-node')
+  })
+
+  it('sans planification : rien à signaler — le navigateur sait l’exécuter', () => {
+    const issues = validateWorkflow(wf([{ id: 'e', type: 'text-enrich' }]), getSpec)
+    expect(issues.filter((i) => i.nodeId === 'e')).toHaveLength(0)
+  })
+
+  it('cron DÉSACTIVÉ : le workflow ne part plus du serveur, rien à signaler', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'k', type: 'cron', config: { enabled: false } },
+      { id: 'e', type: 'text-enrich' },
+    ]), getSpec)
+    expect(issues.filter((i) => i.nodeId === 'e')).toHaveLength(0)
+  })
+
+  it('une carte VISUELLE ne déclenche rien : le serveur l’ignore proprement', () => {
+    const issues = validateWorkflow(wf([
+      { id: 'k', type: 'cron', config: { enabled: true } },
+      { id: 'c', type: 'chart' },
+    ]), getSpec)
+    expect(issues.filter((i) => i.nodeId === 'c')).toHaveLength(0)
+  })
+})
