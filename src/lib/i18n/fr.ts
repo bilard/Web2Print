@@ -1831,6 +1831,7 @@ export const fr = {
   'node.text-enrich.kind.translate': 'Traduire en FR',
   'node.text-enrich.kind.improve': 'Étoffer',
   'node.text-enrich.kind.structure': 'Structurer',
+  'node.text-enrich.promptOptional': 'Facultatif ici : « Traduire en FR » se suffit. Ajoutez une consigne pour cadrer le style.',
   'node.text-enrich.promptPlaceholder': 'Votre consigne, telle quelle — elle part en tête du prompt.',
   'node.text-enrich.minLength': 'Seuil',
   'node.text-enrich.promptVersion': 'Version',

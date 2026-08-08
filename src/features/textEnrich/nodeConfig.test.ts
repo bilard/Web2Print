@@ -69,6 +69,13 @@ describe('ce qui empêche de partir', () => {
       .toEqual({ code: 'no-prompt', key: 'description' })
   })
 
+  it('⚠ n’exige AUCUNE consigne pour une traduction', () => {
+    // « Traduire en FR » se suffit : la nature du travail dit déjà tout. Réclamer en plus
+    // une phrase qui répète « traduis en français » n'est qu'une friction — et c'est le
+    // cas d'usage principal, celui par lequel tout le monde commence.
+    expect(configProblem(cfg({ plans: [plan({ kind: 'translate', prompt: '' })] }))).toBeNull()
+  })
+
   it('⚠ refuse DEUX plans sur la même colonne', () => {
     // C'est une collision, pas un enchaînement : les unités sont identifiées par
     // `produit::champ`, sans le plan. Le prompt porterait deux fois le même identifiant,

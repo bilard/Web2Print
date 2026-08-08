@@ -1753,6 +1753,7 @@ export const en: Record<TranslationKey, string> = {
   'node.text-enrich.kind.translate': 'Translate to FR',
   'node.text-enrich.kind.improve': 'Expand',
   'node.text-enrich.kind.structure': 'Structure',
+  'node.text-enrich.promptOptional': 'Optional here: “Translate to FR” is enough. Add an instruction to steer the style.',
   'node.text-enrich.promptPlaceholder': 'Your instruction, verbatim — it leads the prompt.',
   'node.text-enrich.minLength': 'Threshold',
   'node.text-enrich.promptVersion': 'Version',

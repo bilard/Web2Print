@@ -135,7 +135,12 @@ export function configProblem(
   // La consigne EST la demande de l'utilisateur : sans elle, le modèle n'aurait que la
   // ligne générique de la nature du travail, et produirait du texte de catalogue générique
   // — exactement ce qu'il ne faut pas écrire dans des fiches.
-  const promptless = plans.find((p) => p.prompt.trim() === '')
+  // ⚠ La consigne n'est exigée que là où elle décide de QUELQUE CHOSE. « Traduire en FR »
+  // se suffit : la nature du travail dit déjà tout, et réclamer en plus une phrase qui
+  // répète « traduis en français » n'est qu'une friction. Pour « étoffer » et
+  // « structurer », en revanche, rien ne dirait au modèle quel texte produire — il
+  // inventerait un style, et l'écrirait dans les fiches.
+  const promptless = plans.find((p) => p.kind !== 'translate' && p.prompt.trim() === '')
   if (promptless) return { code: 'no-prompt', key: promptless.key }
   // ⚠ DEUX PLANS SUR LA MÊME COLONNE, C'EST UNE COLLISION, pas un enchaînement.
   // Les unités d'un lot sont identifiées par `produit::champ` — le plan n'entre pas dans

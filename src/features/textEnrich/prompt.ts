@@ -97,8 +97,9 @@ export function buildBatchPrompt(units: EnrichUnit[], opts: PromptOptions = {}):
   })
 
   return [
-    consigne,
-    '',
+    // Une consigne vide est LÉGITIME pour une traduction (la nature du travail dit déjà
+    // tout) : on n'ouvre alors pas le prompt sur deux lignes blanches.
+    ...(consigne ? [consigne, ''] : []),
     KIND_LINE[plan.kind],
     '',
     RULES,

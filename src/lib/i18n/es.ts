@@ -1752,6 +1752,7 @@ export const es: Record<TranslationKey, string> = {
   'node.text-enrich.kind.translate': 'Traducir al FR',
   'node.text-enrich.kind.improve': 'Ampliar',
   'node.text-enrich.kind.structure': 'Estructurar',
+  'node.text-enrich.promptOptional': 'Opcional aquí: «Traducir al FR» basta. Añada una consigna para encuadrar el estilo.',
   'node.text-enrich.promptPlaceholder': 'Su consigna, tal cual: encabeza el prompt.',
   'node.text-enrich.minLength': 'Umbral',
   'node.text-enrich.promptVersion': 'Versión',

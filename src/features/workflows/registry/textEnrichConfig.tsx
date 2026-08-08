@@ -238,10 +238,13 @@ export function TextEnrichConfigPanel({
 
           <textarea
             value={plan.prompt} onChange={(e) => setPlan(i, { prompt: e.target.value })}
-            placeholder={t('node.text-enrich.promptPlaceholder')}
+            placeholder={plan.kind === 'translate'
+              ? t('node.text-enrich.promptOptional')
+              : t('node.text-enrich.promptPlaceholder')}
             rows={3}
             className={`w-full rounded border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent ${
-              plan.enabled && plan.prompt.trim() === '' ? 'border-amber-500/60' : 'border-border'
+              plan.enabled && plan.kind !== 'translate' && plan.prompt.trim() === ''
+                ? 'border-amber-500/60' : 'border-border'
             }`}
           />
 
