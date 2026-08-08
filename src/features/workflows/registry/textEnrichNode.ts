@@ -45,9 +45,29 @@ interface RevisionRow {
   apres: string
   justification: string
 }
+interface RevisionSheet { name: string; columns: SheetColumn[]; rows: RevisionRow[] }
+
 type EnrichOutputs = {
   enriched: { rows: RevisionRow[] } | { name: string; columns: SheetColumn[]; rows: SheetRow[] }
+  /** Le comparatif AVANT/APRÈS, une ligne par texte révisé.
+   *
+   *  ⚠ Il existe pour être REGARDÉ, et c'est pour ça qu'il est séparé : la feuille
+   *  enrichie porte quatorze colonnes où retrouver la paire « DESCRIPTION » /
+   *  « DESCRIPTION (source) » relève de la chasse. L'aperçu de données l'affiche d'office
+   *  quand on sélectionne la carte, et on peut le brancher sur un export pour relire à
+   *  froid. Sans lui, la question « où je vois l'avant/après ? » n'avait pas de réponse. */
+  revisions: RevisionSheet
 }
+
+const REVISION_COLUMNS: SheetColumn[] = [
+  { key: 'produit', label: 'Produit' },
+  { key: 'champ', label: 'Champ' },
+  { key: 'avant', label: 'Avant' },
+  { key: 'apres', label: 'Après' },
+  { key: 'justification', label: 'Ce qui a changé' },
+]
+
+const emptyRevisions = (): RevisionSheet => ({ name: 'revisions', columns: REVISION_COLUMNS, rows: [] })
 
 const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutputs> = {
   type: 'text-enrich',
@@ -58,7 +78,10 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
   // ⚠ Branchée, la feuille L'EMPORTE sur le projet PIM. C'est le chemin normal quand la
   // donnée vient d'un import (Sheets, Excel) et n'a jamais rejoint le PIM.
   inputs: [{ name: 'sheet', type: 'sheet' }],
-  outputs: [{ name: 'enriched', type: 'sheet' }],
+  outputs: [
+    { name: 'enriched', type: 'sheet' },
+    { name: 'revisions', type: 'sheet' },
+  ],
   outputColumns: ['produit', 'champ', 'avant', 'apres', 'justification'],
   // Les plans de champs sont une liste d'objets : le schéma générique ne sait pas les
   // rendre. Le panneau dédié s'en charge, le schéma garde les réglages scalaires.
@@ -138,11 +161,11 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
       ctx.log('info', t('run.textEnrich.dryRun'))
       // La feuille repart INCHANGÉE plutôt que vide : une simulation ne doit pas assécher
       // l'aval du graphe, sinon on ne peut simuler qu'en bout de chaîne.
-      return { enriched: fromSheet ? passthrough() : { rows: [] } }
+      return { enriched: fromSheet ? passthrough() : { rows: [] }, revisions: emptyRevisions() }
     }
     if (units.length === 0) {
       ctx.log('info', t('run.textEnrich.nothingToDo'))
-      return { enriched: fromSheet ? passthrough() : { rows: [] } }
+      return { enriched: fromSheet ? passthrough() : { rows: [] }, revisions: emptyRevisions() }
     }
 
     // ⚠ La borne s'applique APRÈS le chiffrage, pour que le journal annonce le total réel
@@ -252,12 +275,24 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
       revised: result.counts.revised, rejected: result.counts.rejected, passId,
     }))
 
+    // Le comparatif est construit une seule fois : les deux modes le rendent, seule la
+    // sortie de travail diffère. C'est LUI qu'on regarde après un passage.
+    const revisionRows: RevisionRow[] = revisions.map((r) => ({
+      _id: `${r.productId}::${r.field}`,
+      produit: r.productId,
+      champ: r.field,
+      // L'original vient du calque de révision, pas de la donnée relue : après écriture,
+      // le champ porte déjà le texte proposé.
+      avant: r.value.enrich?.original == null ? '' : String(r.value.enrich.original),
+      apres: r.value.value == null ? '' : String(r.value.value),
+      justification: notes[`${r.productId}::${r.field}`] ?? '',
+    }))
+    const revisionSheet: RevisionSheet = { name: 'revisions', columns: REVISION_COLUMNS, rows: revisionRows }
+
     if (fromSheet) {
       const applied = applySheetRevisions(sheetRows, revisions.map((r) => ({
         productId: r.productId,
         field: r.field,
-        // L'original vient du calque de révision : la valeur du champ porte déjà le
-        // texte retenu.
         before: r.value.enrich?.original ?? null,
         after: r.value.value,
       })))
@@ -267,23 +302,11 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
           columns: sheetColumnsWithSources(sheet?.columns ?? [], planKeys),
           rows: applied,
         },
+        revisions: revisionSheet,
       }
     }
 
-    return {
-      enriched: {
-        rows: revisions.map((r) => ({
-          _id: `${r.productId}::${r.field}`,
-          produit: r.productId,
-          champ: r.field,
-          // L'original vient du calque de révision, pas de la fiche relue : après
-          // l'écriture, la fiche porte déjà le texte proposé.
-          avant: r.value.enrich?.original == null ? '' : String(r.value.enrich.original),
-          apres: r.value.value == null ? '' : String(r.value.value),
-          justification: notes[`${r.productId}::${r.field}`] ?? '',
-        })),
-      },
-    }
+    return { enriched: { rows: revisionRows }, revisions: revisionSheet }
   },
 }
 

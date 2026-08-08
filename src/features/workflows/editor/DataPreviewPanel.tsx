@@ -94,7 +94,10 @@ export interface ExportLike {
 
 // `summary` (sheet) avant `file` : un node qui sort à la fois un fichier binaire et une
 // sheet (ex. « Rapport de coûts IA ») doit prévisualiser la sheet, pas le File (→ `{}`).
-const PREVIEW_PORT_PRIORITY = ['chart', 'sheet', 'summary', 'products', 'result', 'assets', 'file']
+// ⚠ `revisions` passe AVANT tout le reste : c'est le port qui existe pour être REGARDÉ.
+// Une carte qui rend à la fois la donnée de travail et son comparatif avant/après doit
+// montrer le comparatif — l'autre sortie sert à alimenter l'aval, pas l'œil.
+const PREVIEW_PORT_PRIORITY = ['revisions', 'chart', 'sheet', 'summary', 'products', 'result', 'assets', 'file']
 const MAX_ASSETS = 16
 // `label` absent = libellé TRADUIT au rendu (`wfd.pageAll`). Une constante de
 // module ne peut pas appeler `t()` : elle porte la clé, jamais le texte.
