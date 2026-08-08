@@ -3222,6 +3222,8 @@ export const en: Record<TranslationKey, string> = {
   'perm.workflows.edit': 'Edit / save a workflow',
   'perm.workflows.delete': 'Delete a workflow',
   'perm.workflows.run': 'Run the workflows',
+  'perm.priceWatch.rules': 'Configure the matching rules',
+  'perm.priceWatch.rules.desc': 'Grants access to the page that decides what matches a product to a competitor listing. These settings apply to the WHOLE watch and change the figures of the comparison, the directed search and the crons — reserve it for people who know what a match must prove.',
   'perm.priceWatch.view': 'View price monitoring',
   'perm.mfrInsights.view': 'View manufacturer insights',
   'perm.demoExpress.view': 'View the express demo',

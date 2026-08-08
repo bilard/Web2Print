@@ -3350,6 +3350,8 @@ export const fr = {
   'perm.workflows.edit': 'Éditer / enregistrer un workflow',
   'perm.workflows.delete': 'Supprimer un workflow',
   'perm.workflows.run': 'Exécuter les workflows',
+  'perm.priceWatch.rules': 'Régler les règles d’appariement',
+  'perm.priceWatch.rules.desc': 'Donne accès à la page qui décide ce qui apparie un produit à une fiche concurrente. Ces réglages valent pour TOUT le suivi et changent les chiffres du comparatif, de la recherche dirigée et des crons — à réserver aux personnes qui savent ce qu’un appariement doit prouver.',
   'perm.priceWatch.view': 'Voir la veille tarifaire',
   'perm.mfrInsights.view': 'Voir les insights fabricant',
   'perm.demoExpress.view': 'Voir la démo express',

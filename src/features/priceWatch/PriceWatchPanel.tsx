@@ -13,6 +13,8 @@ import { PairingRulesPage } from './rules/PairingRulesPage'
 import { WatchSelector } from './dashboard/WatchSelector'
 import { useWatchList } from './useCatalogReport'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { useModuleViewStore } from '@/stores/moduleView.store'
+import { useCan } from '@/features/access/useAccess'
 import { quote, useTranslation } from '@/lib/i18n'
 
 export function PriceWatchPanel() {
@@ -28,6 +30,21 @@ export function PriceWatchPanel() {
   // recouvre. Et une vue interne plutôt qu'une route : le suivi actif, le concurrent
   // mesuré et le brouillon survivent ainsi au va-et-vient.
   const [view, setView] = useState<'dashboard' | 'rules'>('dashboard')
+  // ⚠ La permission est vérifiée ICI aussi, pas seulement sur l'entrée de menu. Masquer un
+  // bouton n'interdit rien : l'intent est déclenchable par URL (`?intent=…`) et par la
+  // palette de commandes. Un écran qui décide des chiffres de tout un suivi ne se protège
+  // pas d'un `display: none`.
+  const canRules = useCan('priceWatch.rules')
+
+  // Publie la vue au menu en arbre, qui allume l'entrée correspondante. Les identifiants
+  // sont ceux des enfants de `modules.ts` — toute autre valeur n'allumerait rien.
+  const publishView = useModuleViewStore((s) => s.set)
+  useEffect(() => {
+    publishView('price-watch', view === 'rules' && canRules ? 'section:rules' : 'section:comparison')
+    // Le module quitté ne doit plus rien afficher comme actif : sinon « Comparatif »
+    // resterait allumé sous une veille fermée.
+    return () => publishView('price-watch', null)
+  }, [view, canRules, publishView])
   useEffect(() => {
     if (watches.length === 0) { setWatchId(null); return }
     if (!watchId || !watches.some((w) => w.watchId === watchId)) setWatchId(watches[0].watchId)
@@ -38,7 +55,11 @@ export function PriceWatchPanel() {
     const key = action.slice('section:'.length)
     // Les règles ne sont plus une section de la page : l'entrée de menu ouvre leur PAGE.
     // Aucun défilement à tenter, donc aucune cible à attendre.
-    if (key === 'rules') { setView('rules'); return }
+    if (key === 'rules') { if (canRules) setView('rules'); return }
+    // ⚠ Toute autre fonction vit dans le TABLEAU DE BORD : y revenir d'abord, sinon la
+    // cible du défilement n'existe pas et « Comparatif » laissait l'utilisateur bloqué
+    // sur la page des règles, sans rien faire.
+    setView('dashboard')
     // ⚠ Défilement INSTANTANÉ, jamais `behavior: 'smooth'`. Mesuré sur cette page : le
     // défilement fluide ne part même pas — `scrollTop` reste à 0 sur toute la durée,
     // alors que le même appel en `auto` atteint 5 619 px. Ce tableau de bord se repeint
@@ -64,7 +85,9 @@ export function PriceWatchPanel() {
     window.setTimeout(goTo, 1600)
   })
 
-  if (view === 'rules') {
+  // Une permission retirée pendant la session referme la page : l'état de vue survivrait
+  // sinon à la perte du droit.
+  if (view === 'rules' && canRules) {
     return <PairingRulesPage watchId={watchId} onBack={() => setView('dashboard')} />
   }
 
@@ -82,14 +105,14 @@ export function PriceWatchPanel() {
         <div className="flex items-center gap-2">
           {/* Accès direct : le menu en arbre ouvre la même fenêtre, mais il faut aussi
               pouvoir y aller depuis l'écran qu'on est en train de lire. */}
-          <button
+          {canRules && <button
             type="button" onClick={() => setView('rules')}
             className="text-xs rounded px-3 py-1.5 border border-white/10 text-white/60
               hover:text-white hover:border-white/25 transition-colors flex items-center gap-1.5"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             {t('pw.rules.title')}
-          </button>
+          </button>}
           <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
         </div>
       </div>

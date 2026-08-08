@@ -104,6 +104,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'workflows.delete', module: 'Workflows', labelKey: 'perm.workflows.delete' },
   { key: 'workflows.run', module: 'Workflows', labelKey: 'perm.workflows.run' },
   { key: 'priceWatch.view', module: 'Veille tarifaire', labelKey: 'perm.priceWatch.view' },
+  { key: 'priceWatch.rules', module: 'Veille tarifaire', labelKey: 'perm.priceWatch.rules',
+    descriptionKey: 'perm.priceWatch.rules.desc' },
   { key: 'mfrInsights.view', module: 'Insights fabricant', labelKey: 'perm.mfrInsights.view' },
   { key: 'demoExpress.view', module: 'Démo express', labelKey: 'perm.demoExpress.view',
     descriptionKey: 'perm.demoExpress.view.desc' },

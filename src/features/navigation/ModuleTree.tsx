@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
+import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useAccessStore } from '@/stores/access.store'
 import { groupModules, type ModuleItem, type ModuleChild, type Section } from './modules'
 import { useTranslation } from '@/lib/i18n'
@@ -39,6 +40,7 @@ interface ModuleTreeProps {
 export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, moduleRowExtras }: ModuleTreeProps) {
   const isAdmin = useIsAdmin()
   const permissions = useAccessStore((s) => s.permissions)
+  const moduleViews = useModuleViewStore((s) => s.views)
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState<Record<string, boolean>>(readExpanded)
 
@@ -62,6 +64,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
     const kids = (m.children ?? []).filter(canChild)
     const isOpen = !!expanded[m.id]
     const isActive = activeSection === m.id
+    const activeChild = moduleViews[m.id] ?? null
     const extras = moduleRowExtras?.(m)
     const { ref: rowRef, className: rowExtraClass, ...rowRest } = extras ?? {}
     return (
@@ -98,17 +101,26 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
         </div>
         {isOpen && kids.length > 0 && (
           <div className="ml-[26px] pl-2 border-l border-white/[0.06]">
-            {kids.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => onOpenChild(m.id, c.intent, c.routeTo)}
-                className="w-full flex items-center gap-2 px-2.5 py-[5px] rounded-md text-[12.5px] text-left
-                  text-white/40 hover:text-white/75 hover:bg-white/[0.04] transition-colors"
-              >
-                <span className="flex-1">{t(c.labelKey)}</span>
-              </button>
-            ))}
+            {kids.map((c) => {
+              // Enfant actif : seulement quand SON module est ouvert. Sinon deux modules
+              // afficheraient chacun une fonction allumée, et le menu dirait deux endroits
+              // à la fois.
+              const childActive = isActive && activeChild === c.id
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => onOpenChild(m.id, c.intent, c.routeTo)}
+                  aria-current={childActive ? 'page' : undefined}
+                  className={`w-full flex items-center gap-2 px-2.5 py-[5px] rounded-md text-[12.5px] text-left
+                    transition-colors ${childActive
+                      ? `bg-white/[0.06] ${m.activeText}`
+                      : 'text-white/40 hover:text-white/75 hover:bg-white/[0.04]'}`}
+                >
+                  <span className="flex-1">{t(c.labelKey)}</span>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

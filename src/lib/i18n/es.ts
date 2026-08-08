@@ -3221,6 +3221,8 @@ export const es: Record<TranslationKey, string> = {
   'perm.workflows.edit': 'Editar / guardar un workflow',
   'perm.workflows.delete': 'Eliminar un workflow',
   'perm.workflows.run': 'Ejecutar los workflows',
+  'perm.priceWatch.rules': 'Ajustar las reglas de emparejamiento',
+  'perm.priceWatch.rules.desc': 'Da acceso a la página que decide qué empareja un producto con una ficha de la competencia. Estos ajustes valen para TODO el seguimiento y cambian las cifras de la comparación, la búsqueda dirigida y los cron: resérvelo a quienes saben qué debe probar un emparejamiento.',
   'perm.priceWatch.view': 'Ver la monitorización de precios',
   'perm.mfrInsights.view': 'Ver los insights de fabricante',
   'perm.demoExpress.view': 'Ver la demo exprés',
