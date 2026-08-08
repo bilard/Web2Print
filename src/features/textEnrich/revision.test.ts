@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildMarker, eligibility, applyRevision, revertRevision, isEnriched,
-  newPassCounts, countOutcome, type EnrichableField,
+  newPassCounts, countOutcome, countConsidered, type EnrichableField,
 } from './revision'
 
 const V1 = { kind: 'translate' as const, targetLang: 'fr', promptVersion: 'v1' }
@@ -120,18 +120,27 @@ describe('compteurs d’un passage', () => {
     })
   })
 
-  it('compte chaque champ vu, quel que soit son sort', () => {
-    // `considered` est le dénominateur : sans lui, « 412 révisés » ne dit pas s'il en
-    // restait 500 ou 200 000.
+  it('enregistre chaque sort sans toucher au dénominateur', () => {
+    // ⚠ `countOutcome` ne compte QUE le sort. Le dénominateur est tenu à part par
+    // `countConsidered` : les deux moitiés du passage ne voient pas les mêmes champs, et
+    // une fonction unique comptait les retenus deux fois.
     let c = newPassCounts()
     c = countOutcome(c, { revised: true })
     c = countOutcome(c, { revised: false, rejected: true })
     c = countOutcome(c, { revised: false, skipped: 'already-done' })
     c = countOutcome(c, { revised: false, skipped: 'already-done' })
-    expect(c.considered).toBe(4)
+    expect(c.considered).toBe(0)
     expect(c.revised).toBe(1)
     expect(c.rejected).toBe(1)
     expect(c.skipped['already-done']).toBe(2)
+  })
+
+  it('le dénominateur se tient à part', () => {
+    // « 412 révisés » ne dit rien sans lui : sur 500 ou sur 231 000 ?
+    let c = newPassCounts()
+    c = countConsidered(c)
+    c = countConsidered(c, 9)
+    expect(c.considered).toBe(10)
   })
 
   it('un champ écarté n’est jamais compté comme refusé', () => {

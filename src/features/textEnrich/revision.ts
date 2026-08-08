@@ -188,18 +188,22 @@ export function newPassCounts(): EnrichPass['counts'] {
   }
 }
 
-/**
- * Enregistre le sort d'UN champ dans les compteurs du passage.
+/** Enregistre qu'un champ a été EXAMINÉ, quel que soit son sort.
  *
- * `considered` est incrémenté à chaque champ vu, quel que soit son sort : c'est le
- * dénominateur, et sans lui « 412 révisés » ne dit pas s'il en restait 500 ou 200 000.
- */
+ * ⚠ Séparé de `countOutcome` à dessein. Les deux moitiés du passage ne voient pas les
+ * mêmes champs : la décision les voit tous, l'exécution ne voit que ceux qu'elle traite.
+ * Une fonction unique incrémentait donc le dénominateur une fois pour les écartés et
+ * deux fois pour les retenus — « 412 traités sur 1 » au lieu de « sur 231 000 ». */
+export function countConsidered(counts: EnrichPass['counts'], n = 1): EnrichPass['counts'] {
+  return { ...counts, skipped: { ...counts.skipped }, considered: counts.considered + n }
+}
+
+/** Enregistre le SORT d'un champ. Ne touche pas au dénominateur — cf. `countConsidered`. */
 export function countOutcome(
   counts: EnrichPass['counts'],
   outcome: { revised: boolean; rejected?: boolean; skipped?: Ineligible | null },
 ): EnrichPass['counts'] {
   const next: EnrichPass['counts'] = { ...counts, skipped: { ...counts.skipped } }
-  next.considered++
   if (outcome.skipped) next.skipped[outcome.skipped]++
   else if (outcome.rejected) next.rejected++
   else if (outcome.revised) next.revised++
