@@ -391,7 +391,12 @@ export default function DashboardPage() {
             le bloc utilisateur (avatar/réglages/déconnexion) hors de l'écran. */}
         <nav
           data-tour="sidebar"
-          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 flex-1 min-h-0 overflow-y-auto overscroll-contain`}
+          // ⚠ PAS de `flex-1` ici : un `<div className="flex-1" />` occupe déjà le reste
+          // sous le menu (et le portail de la barre d'outils Données le remplace en
+          // section « data »). Deux frères en `flex-1` se partagent la hauteur — le menu
+          // se voyait alors coupé après quelques modules, sans que rien ne le laisse
+          // deviner. `min-h-0` suffit : il fait défiler DANS le menu.
+          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 min-h-0 overflow-y-auto overscroll-contain`}
           aria-label={t('dashboard.moduleNav')}
         >
           {sidebarOpen ? (
