@@ -20,6 +20,7 @@ import { rejectionParts, type RejectionPart } from './violationSummary'
 import { chunkByVolume } from './chunkByVolume'
 import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
+import { isUnderPath } from '../explorer/taxonomyTree'
 import { langBreakdown } from './langBreakdown'
 import type { SourceProduct } from '../catalog/match'
 import {
@@ -38,7 +39,7 @@ interface Line {
   revision?: TextRevision
 }
 
-export function TextEnrichScreen({ uid, watchId, products, loading, query, imagePrefix }: {
+export function TextEnrichScreen({ uid, watchId, products, loading, query, path, imagePrefix }: {
   uid: string
   watchId: string
   products: SourceProduct[]
@@ -46,6 +47,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, image
   /** La saisie du bandeau. ⚠ UNE seule recherche à l'écran : un champ propre à ce
    *  panneau laissait taper une référence en haut sans rien voir changer ici. */
   query: string
+  /** Famille choisie dans l'arbre de gauche. ⚠ C'est un PÉRIMÈTRE, pas un filtre de plus :
+   *  il s'applique avant tout le reste, y compris à une recherche explicite — sinon
+   *  l'arbre est un contrôle qui ne pilote rien depuis cet écran. */
+  path: string[]
   /** Préfixe des visuels réglé sur la source : les ERP n'y stockent qu'un nom de fichier. */
   imagePrefix?: string
 }) {
@@ -108,12 +113,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, image
 
   const searching = query.trim() !== ''
   const shown = useMemo(() => {
+    // La famille choisie borne TOUT ce qui suit : traduire « les courroies » veut dire
+    // les courroies, quel que soit le filtre de langue ou la recherche par-dessus.
+    const inPath = (l: Line) => path.length === 0 || isUnderPath(l.product.taxo ?? [], path)
     // ⚠ Une recherche EXPLICITE l'emporte sur le filtre de langue. Chercher une référence
     // et ne rien voir parce que la fiche est déjà en français se lit comme « ce produit
     // n'existe pas » — alors qu'on vient précisément vérifier son état.
     if (searching) {
       const found = new Set(searchCatalog(products, query).map((p) => p.id))
-      return lines.filter((l) => found.has(l.product.id))
+      return lines.filter((l) => found.has(l.product.id) && inPath(l))
     }
     // Une langue choisie l'emporte sur « seulement les textes non français » : on vient
     // de cliquer « DE 1 240 », on veut ces 1 240 fiches, pas leur intersection avec autre chose.
@@ -124,13 +132,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, image
         && l.product.description.trim().toLowerCase() !== l.product.name.trim().toLowerCase()
       return saleText === 'all' || (saleText === 'with' ? has : !has)
     }
-    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l))
+    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l) && inPath(l))
     const inScope = (l: Line) =>
       scope === 'all' ? true
         : scope === 'foreignPlus' ? l.lang !== 'fr'
           : !!l.lang && l.lang !== 'fr'
-    return lines.filter((l) => inScope(l) && bySale(l))
-  }, [lines, products, scope, query, searching, pickedLang, saleText])
+    return lines.filter((l) => inScope(l) && bySale(l) && inPath(l))
+  }, [lines, products, scope, query, searching, pickedLang, saleText, path])
 
   // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.

@@ -223,9 +223,15 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
   // l'arbre lisent CES listes-là. Calculé ici et non dans la vue pour que la barre d'outils
   // et l'arbre disposent des mêmes nombres qu'elle — sinon le pager annonce une page 3 sur
   // une liste qui n'en a qu'une.
+  //
+  // ⚠ L'écran de TRADUCTION en dépend aussi : il travaille sur les mêmes produits, donc
+  // sur le même arbre. Réservée au seul mode catalogue, cette passe laissait la colonne
+  // de gauche proposer les quatre familles du concurrent affiché (1 005 · 131 · 28 · 19)
+  // à qui vient traduire cent quinze mille fiches — et cliquer dedans ne filtrait rien.
+  const catalogScope = catalogMode || enrichMode
   const catalogBeforeTaxo = useMemo(
-    () => (catalogMode ? filterCatalog(source.products, filter.q, []) : []),
-    [catalogMode, source.products, filter.q],
+    () => (catalogScope ? filterCatalog(source.products, filter.q, []) : []),
+    [catalogScope, source.products, filter.q],
   )
   // ⚠ Gardés par `catalogMode`, comme la passe au-dessus : ces filtres traversent les
   // 115 814 produits SUR LE CHEMIN DE RENDU. Les laisser tourner face à un concurrent
@@ -239,13 +245,13 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
     () => catalogFacts(catalogMode ? source.products : [], catalogFound),
     [catalogMode, source.products, catalogFound],
   )
-  // L'arbre classe les CHEMINS de ce qui est affiché : ceux du catalogue quand c'est lui
-  // qu'on parcourt, ceux des fiches appariées face à un concurrent.
+  // L'arbre classe les CHEMINS de ce qui est affiché : ceux de MON catalogue dès qu'on le
+  // parcourt ou qu'on en traduit les textes, ceux des fiches appariées face à un concurrent.
   const taxoPaths = useMemo(
-    () => (catalogMode
+    () => (catalogScope
       ? catalogBeforeTaxo.map((p) => p.taxo ?? [])
       : beforeTaxo.map((r) => r.source?.path ?? [])),
-    [catalogMode, catalogBeforeTaxo, beforeTaxo],
+    [catalogScope, catalogBeforeTaxo, beforeTaxo],
   )
   // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
   // expliquer une liste vidée par le filtre de fiabilité.
@@ -459,7 +465,8 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
             et garder une colonne vide à droite laisserait croire à un appariement raté. */}
         {enrichMode ? (
           <TextEnrichScreen uid={uid ?? ''} watchId={watchId} products={source.products}
-            loading={source.loading} query={filter.q} imagePrefix={src.imagePrefix} />
+            loading={source.loading} query={filter.q} path={effective.path}
+            imagePrefix={src.imagePrefix} />
         ) : catalogMode ? (
           <ExplorerCatalog products={catalogFound} page={safePage} pageSize={pageSize}
             imagePrefix={src.imagePrefix} loading={source.loading} />
