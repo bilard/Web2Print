@@ -15,6 +15,10 @@ export interface HeadlessResult {
   nodeOutputs: Record<string, Record<string, unknown>>
   /** Statut final par node (pour l'affichage live côté client). */
   nodeStates: Record<string, LiveNodeStatus>
+  /** Volume traité par node, tel que les cartes l'ont remonté. */
+  nodeCounts: Record<string, number>
+  /** Nombre de PASSAGES par node — un run segmenté en fait plusieurs. */
+  nodeCycles: Record<string, number>
   /** Connecteurs réellement utilisés par node (jina/brightdata/llm…), pour les badges. */
   nodeConnectors: Record<string, string[]>
   /** Nodes qui ont RÉELLEMENT démarré leur exécution (entrés dans spec.run). Sert au garde
@@ -110,6 +114,17 @@ export async function executeWorkflowHeadless(
   }
   const nodeOutputs: Record<string, Record<string, unknown>> = {}
   const nodeConnectors: Record<string, string[]> = {}
+  /** Volume remonté par chaque node (dernière valeur connue). */
+  const nodeCounts: Record<string, number> = {}
+  /**
+   * Combien de fois chaque node a DÉMARRÉ dans ce run.
+   *
+   * ⚠ Un run long est SEGMENTÉ et repris automatiquement : une moisson de quatorze sites
+   * repasse des dizaines de fois sans jamais « finir » au sens du graphe. Sans ce
+   * compteur, l'écran montre « en cours » pendant des heures sans dire que le travail
+   * avance bel et bien, cycle après cycle.
+   */
+  const nodeCycles: Record<string, number> = {}
   const outputs = new Map<string, Record<string, unknown>>()
   const errored = new Set<string>()
   const skipped = new Set<string>()
@@ -133,7 +148,7 @@ export async function executeWorkflowHeadless(
   try { ordered = topoSort(mainNodes, [...mainEdges, ...synthEdges]) }
   catch (err) {
     log('error', err instanceof Error ? err.message : String(err))
-    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors, startedNodes: [], cycleComplete: false }
+    return { status: 'error', nodeCount: 0, errorCount: 1, logs, nodeOutputs, nodeStates: {}, nodeConnectors, nodeCounts: {}, nodeCycles: {}, startedNodes: [], cycleComplete: false }
   }
 
   const runBody = async (pair: LoopPair, item: unknown, idx: number): Promise<unknown> => {
@@ -251,6 +266,7 @@ export async function executeWorkflowHeadless(
       }
     }
     started.add(node.id) // à partir d'ici, du travail (potentiellement à effet de bord) a pu démarrer
+    nodeCycles[node.id] = (nodeCycles[node.id] ?? 0) + 1
     try {
       const loopPair = loopByEach.get(node.id)
       if (loopPair) {
@@ -283,6 +299,7 @@ export async function executeWorkflowHeadless(
             const arr = (nodeConnectors[node.id] ??= [])
             if (!arr.includes(cid)) arr.push(cid)
           },
+          reportCount: (v) => { if (Number.isFinite(v)) nodeCounts[node.id] = v },
           reportCycleComplete: () => { cycleComplete = true },
           deadlineAt: opts.deadlineAt,
         },
@@ -347,5 +364,5 @@ export async function executeWorkflowHeadless(
   // cette trace reste le seul accès à ce détail. Visible via `firebase functions:log`.
   const trace = logs.map((l) => `  ${l.level} [${l.node ?? '-'}] ${l.msg}`).join('\n')
   console.log(`[wf:${wf.name}] trace:\n${trace}`)
-  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors, startedNodes: [...started], cycleComplete }
+  return { status, nodeCount, errorCount, logs, nodeOutputs, nodeStates, nodeConnectors, nodeCounts, nodeCycles, startedNodes: [...started], cycleComplete }
 }

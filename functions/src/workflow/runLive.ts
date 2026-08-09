@@ -19,6 +19,12 @@ export interface RunLiveDoc {
   nodeOutputs?: Record<string, Record<string, unknown>>
   /** Connecteurs réellement utilisés par node (badges sur les cartes). */
   nodeConnectors?: Record<string, string[]>
+  /** Volume traité par node — sans lui, un run planifié n'affiche que des statuts et la
+   *  progression reste muette sur ce qui avance réellement. */
+  nodeCounts?: Record<string, number>
+  /** Nombre de PASSAGES par node. Un run long est segmenté et repris : une moisson
+   *  repasse des dizaines de fois sans jamais « finir » au sens du graphe. */
+  nodeCycles?: Record<string, number>
 }
 
 /**

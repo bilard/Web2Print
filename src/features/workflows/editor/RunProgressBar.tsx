@@ -62,6 +62,12 @@ function Card({ card, locale }: { card: RunCard; locale: string }) {
       {typeof card.count === 'number' && card.count > 0 && (
         <span className="tabular-nums text-white/45">{card.count.toLocaleString(locale)}</span>
       )}
+      {/* ⚠ Les PASSAGES, pas la progression : sur un run segmenté, une carte repasse des
+          dizaines de fois sans jamais « finir ». « ×7 » dit que ça avance là où un statut
+          « en cours » figé depuis une heure laisse croire à un blocage. */}
+      {(card.cycles ?? 0) > 1 && (
+        <span className="tabular-nums text-indigo-300/70">×{card.cycles}</span>
+      )}
       {card.durationMs != null && card.durationMs > 1000 && (
         <span className="tabular-nums text-white/25">{shortDuration(card.durationMs)}</span>
       )}
@@ -101,37 +107,37 @@ export function RunProgressBar() {
   const rest = p.cards.filter((c) => c.status !== 'success')
 
   return (
-    <div className="border-b border-neutral-800 bg-well">
-      <div className="px-3 py-2 flex items-center gap-4 text-xs">
-        {/* Le CHIFFRE d'abord, en grand : c'est la première chose qu'on vient chercher. */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <span className={`text-sm font-semibold tabular-nums ${p.failed > 0 ? 'text-rose-300' : 'text-indigo-300'}`}>
-            {pct} %
-          </span>
-          <div className="h-2 w-28 shrink-0 overflow-hidden rounded-full bg-white/[0.08]">
-            <div className={`h-full transition-[width] duration-500 ${p.failed > 0 ? 'bg-rose-400/80' : 'bg-indigo-400/80'}`}
-              style={{ width: `${pct}%` }} />
-          </div>
-          <span className="tabular-nums text-white/70 whitespace-nowrap">
-            {t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
-          </span>
+    // ⚠ UNE seule ligne : sur deux, la bande mangeait le haut du canvas et le regard
+    // devait faire l'aller-retour entre le résumé et les cartes qu'il résume.
+    <div className="border-b border-neutral-800 bg-well px-3 py-1.5 flex items-center gap-3 text-[11px] overflow-x-auto">
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={`text-xs font-semibold tabular-nums ${p.failed > 0 ? 'text-rose-300' : 'text-indigo-300'}`}>
+          {pct} %
+        </span>
+        <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-white/[0.08]">
+          <div className={`h-full transition-[width] duration-500 ${p.failed > 0 ? 'bg-rose-400/80' : 'bg-indigo-400/80'}`}
+            style={{ width: `${pct}%` }} />
         </div>
-
-        {/* Les mesures, chacune étiquetée : un nombre nu au milieu d'autres nombres nus ne
-            se lit pas. */}
-        <div className="flex items-center gap-4 shrink-0 text-[11px]">
-          {p.items > 0 && <Stat label={t('wfe.progress.lbl.items')} value={n(p.items)} />}
-          {p.itemsPerMin != null && <Stat label={t('wfe.progress.lbl.rate')} value={t('wfe.progress.perMin', { count: n(p.itemsPerMin) })} />}
-          {p.elapsedMs > 0 && <Stat label={t('wfe.progress.lbl.elapsed')} value={shortDuration(p.elapsedMs)} />}
-          {p.etaMs != null && <Stat label={t('wfe.progress.lbl.eta')} value={shortDuration(p.etaMs)} tone="text-amber-200/80" />}
-          {p.failed > 0 && <Stat label={t('wfe.progress.lbl.failed')} value={n(p.failed)} tone="text-rose-300" />}
-          {p.skipped > 0 && <Stat label={t('wfe.progress.lbl.skipped')} value={n(p.skipped)} tone="text-amber-300/70" />}
-        </div>
+        <span className="tabular-nums text-white/70 whitespace-nowrap">
+          {t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
+        </span>
       </div>
 
-      {/* Ce qui TRAVAILLE et ce qui ATTEND, sur sa propre ligne. Les terminées se résument
-          à leur compte : savoir « 3/11 » ne dit pas ce qui reste — cette ligne, si. */}
-      <div className="px-3 pb-2 flex items-center gap-1.5 text-[11px] overflow-x-auto">
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Les CYCLES d'abord : sur un run segmenté, c'est le seul chiffre qui dit que le
+            travail avance — aucune carte n'atteint jamais 100 % au sens du graphe. */}
+        {p.cyclesDone > 0 && <Stat label={t('wfe.progress.lbl.cycles')} value={n(p.cyclesDone)} tone="text-indigo-200" />}
+        {p.items > 0 && <Stat label={t('wfe.progress.lbl.items')} value={n(p.items)} />}
+        {p.itemsPerMin != null && <Stat label={t('wfe.progress.lbl.rate')} value={t('wfe.progress.perMin', { count: n(p.itemsPerMin) })} />}
+        {p.elapsedMs > 0 && <Stat label={t('wfe.progress.lbl.elapsed')} value={shortDuration(p.elapsedMs)} />}
+        {p.etaMs != null && <Stat label={t('wfe.progress.lbl.eta')} value={shortDuration(p.etaMs)} tone="text-amber-200/80" />}
+        {p.failed > 0 && <Stat label={t('wfe.progress.lbl.failed')} value={n(p.failed)} tone="text-rose-300" />}
+        {p.skipped > 0 && <Stat label={t('wfe.progress.lbl.skipped')} value={n(p.skipped)} tone="text-amber-300/70" />}
+      </div>
+
+      <span className="h-3 w-px bg-white/10 shrink-0" />
+
+      <div className="flex items-center gap-1.5">
         {done.length > 0 && (
           <span className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-emerald-400/70"
             title={done.map((c) => c.label).join(' · ')}>

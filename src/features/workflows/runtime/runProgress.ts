@@ -13,6 +13,8 @@ export interface RunCard {
   status: NodeStatus
   count?: number
   durationMs?: number
+  /** Passages de cette carte dans le run. Un run segmenté en fait plusieurs. */
+  cycles?: number
 }
 
 export interface RunProgress {
@@ -30,6 +32,14 @@ export interface RunProgress {
   items: number
   /** Depuis le démarrage de la première carte, en ms. 0 si rien n'a commencé. */
   elapsedMs: number
+  /**
+   * Cycles COMPLETS : le nombre de fois que toutes les cartes démarrées ont bouclé.
+   *
+   * ⚠ Le chiffre qui manquait. Sur un run segmenté, aucune carte n'atteint jamais 100 % au
+   * sens du graphe — elles repassent. « 3/11 cartes » laissait croire à un blocage alors
+   * que le travail avance, cycle après cycle.
+   */
+  cyclesDone: number
   /** Lignes traitées par minute, sur toute la durée du run. `null` avant la première
    *  minute : un débit calculé sur trois secondes annonce n'importe quoi. */
   itemsPerMin: number | null
@@ -94,6 +104,7 @@ export function runProgress(
       status: st?.status ?? 'pending',
       ...(typeof st?.count === 'number' ? { count: st.count } : {}),
       ...(st?.durationMs != null ? { durationMs: st.durationMs } : {}),
+      ...(st?.cycles != null ? { cycles: st.cycles } : {}),
     }
   }).sort((a, b) => {
     const sa = states[a.id]?.startedAt ?? Infinity
@@ -106,7 +117,13 @@ export function runProgress(
   // laisserait la barre immobile pendant les vingt minutes d'une moisson.
   const ratio = total === 0 ? 0 : Math.min(1, (done + running * 0.5) / total)
   const elapsedMs = firstStart === Infinity ? 0 : Math.max(0, now - firstStart)
+  // Le plus PETIT nombre de passages parmi les cartes démarrées : un cycle n'est complet
+  // que si toutes l'ont bouclé. Prendre le maximum annoncerait des tours que la carte la
+  // plus lente n'a pas faits.
+  const started = cards.filter((c) => (c.cycles ?? 0) > 0)
+  const cyclesDone = started.length === 0 ? 0 : Math.min(...started.map((c) => c.cycles ?? 0))
   return {
+    cyclesDone,
     total, done, running, failed, skipped, ratio, runningLabels, items, cards,
     elapsedMs,
     itemsPerMin: elapsedMs >= 60_000 && items > 0 ? Math.round(items / (elapsedMs / 60_000)) : null,

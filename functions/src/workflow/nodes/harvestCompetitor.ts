@@ -134,6 +134,8 @@ registerServerNode({
       // % de prix de la passe : accumulé au fil des pages sauvées (aucune lecture en plus).
       let passProducts = 0
       let passWithPrice = 0
+      // Cumul du volume moissonné sur ce site, pour la barre de progression.
+      let harvested = 0
       // ⚠ Le canal de lecture suit la CONFIG du site (accès connecté, moteur forcé).
       // Avant, le serveur lisait toujours en direct et anonyme : les sites à prix
       // connectés (progarden, sodipieces) indexaient des milliers de fiches à « prix
@@ -154,14 +156,20 @@ registerServerNode({
         },
         // Progression live (toutes les 15 pages) : jauge Balayage + heartbeat avancent
         // pendant le run cron, sans attendre la fin du site.
-        onProgress: (_p, productsIndexed, cursor) => saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
+        onProgress: (_p, productsIndexed, cursor) => {
+          // Volume remonté à la barre de progression, comme le fait le navigateur : sans
+          // lui, un run planifié affiche « en cours » pendant une heure sans un chiffre.
+          harvested += productsIndexed
+          ctx.reportCount?.(harvested)
+          return saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
           domain: site.domain,
           harvestBeatAt: Date.now(), // battement de MOISSON (le « Comparer » ne l'écrit jamais)
           productCount: (prevMeta?.productCount ?? 0) + productsIndexed, // fait ticker « Fiches collectées »
           harvestProgress: harvestProgress(cursor),
           harvestSweeps: cursor.sweeps,
           cumulHarvestMs: (prevMeta?.cumulHarvestMs ?? 0) + (Date.now() - t0),
-        }),
+          })
+        },
         log: (m) => ctx.log('info', m),
         // Le moteur logue dans le MÊME panneau : il doit parler la langue du run.
         locale: ctx.locale,

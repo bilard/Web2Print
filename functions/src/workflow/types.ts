@@ -30,6 +30,16 @@ export interface ServerRunCtx {
   /** Signale un connecteur réellement utilisé par le node (ex « jina », « brightdata »,
    *  « llm ») — remonté au client pour afficher le bon badge sur la carte. */
   reportConnector?: (connectorId: string) => void
+  /**
+   * Volume traité par ce node, remonté au fil de l'eau (fiches scrapées, lignes écrites…).
+   *
+   * ⚠ Le canal N'EXISTAIT PAS côté serveur : un run planifié n'affichait que des statuts,
+   * et la barre de progression restait muette sur ce qui avançait réellement — « en
+   * cours » pendant une heure, sans un chiffre. C'est le pendant de `reportCount` du
+   * navigateur, et il doit être appelé aux mêmes endroits pour que les deux racontent la
+   * même chose.
+   */
+  reportCount?: (value: number) => void
   /** Signale que le CYCLE de moisson est terminé à 100 % (tous les sites balayés) —
    *  le scheduler bascule alors sur l'échéance calendaire de relance (cf. CycleCalendar)
    *  au lieu d'enchaîner à la cadence rapide. */

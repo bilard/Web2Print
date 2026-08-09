@@ -121,7 +121,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     // à jamais sur les cartes), ni l'`endedAt` du run passé.
     await writeRunLive(uid, wf.id, {
       runId, trigger, startedAt, status: 'running', nodeStates: initial, logs: [],
-      nodeOutputs: {}, nodeConnectors: {},
+      nodeOutputs: {}, nodeConnectors: {}, nodeCounts: {}, nodeCycles: {},
     }, { replace: true })
   }
   // Cohérence ENTRE nodes, AVANT d'exécuter. Le contrôle de l'éditeur ne tourne qu'au
@@ -182,6 +182,8 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
         runId, trigger, startedAt, status: 'running', nodeStates: pausedStates,
         logs: result.logs.slice(-200), nodeOutputs: capOutputsForPreview(result.nodeOutputs),
         nodeConnectors: result.nodeConnectors,
+        nodeCounts: result.nodeCounts,
+        nodeCycles: result.nodeCycles,
       })
       return { ...result, cycleComplete, paused: true, stopped: false }
     }
@@ -197,6 +199,8 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       status: finalStatus, nodeStates: result.nodeStates, logs: result.logs.slice(-200),
       nodeOutputs: capOutputsForPreview(result.nodeOutputs),
       nodeConnectors: result.nodeConnectors,
+      nodeCounts: result.nodeCounts,
+      nodeCycles: result.nodeCycles,
     })
     // `status: finalStatus` (et non result.status) : le run interrompu remonte VRAIMENT
     // comme tel jusqu'au planning et au bouton « Lancer » — l'historique le notait déjà,

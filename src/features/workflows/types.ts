@@ -172,6 +172,14 @@ export interface NodeRunState {
   connectors?: string[]
   /** Compteur live (ex. nombre de produits scrapés au fil de l'eau), affiché sur l'edge sortant. */
   count?: number
+  /**
+   * Nombre de PASSAGES de cette carte dans le run.
+   *
+   * ⚠ Un run long est SEGMENTÉ et repris automatiquement : une moisson de quatorze sites
+   * repasse des dizaines de fois sans jamais « finir » au sens du graphe. Sans ce compte,
+   * l'écran affiche « en cours » pendant des heures sans dire que le travail avance.
+   */
+  cycles?: number
 }
 
 export interface RunContextApi {

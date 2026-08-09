@@ -28,7 +28,7 @@ interface RunContextState {
   setNodeOutputs: (id: string, outputs: Record<string, unknown>) => void
   /** Applique l'état d'un run SERVEUR (statut + logs + sorties par node) reçu via
    *  Firestore. Ignoré si un run CLIENT est en cours (le local reste prioritaire). */
-  hydrateServerRun: (states: Record<string, { status: NodeStatus; logs?: NodeRunState['logs']; outputs?: Record<string, unknown>; connectors?: string[] }>, opts?: { reset?: boolean }) => void
+  hydrateServerRun: (states: Record<string, { status: NodeStatus; logs?: NodeRunState['logs']; outputs?: Record<string, unknown>; connectors?: string[]; count?: number; cycles?: number }>, opts?: { reset?: boolean }) => void
   clearNodes: (ids: string[]) => void
   /** Bloque jusqu'au clic « Étape suivante » (ou abort du run). */
   waitForStep: (nodeId: string) => Promise<void>
@@ -68,7 +68,11 @@ export const useRunContext = create<RunContextState>((set, get) => ({
       nodeStates: {
         // connectors remis à zéro : le live reflète CE run.
         ...s.nodeStates,
-        [id]: { ...(s.nodeStates[id] ?? blankNode()), status: 'running', startedAt: Date.now(), connectors: [], count: undefined },
+        [id]: {
+          ...(s.nodeStates[id] ?? blankNode()), status: 'running', startedAt: Date.now(),
+          connectors: [], count: undefined,
+          cycles: (s.nodeStates[id]?.cycles ?? 0) + 1,
+        },
       },
     })),
   endNode: (id, status, error) =>
@@ -132,6 +136,11 @@ export const useRunContext = create<RunContextState>((set, get) => ({
           logs: v.logs ?? next[id]?.logs ?? [],
           outputs: v.outputs ?? next[id]?.outputs,
           connectors: v.connectors ?? next[id]?.connectors,
+          // ⚠ Sans ces deux-là, un run planifié n'affichait que des statuts : la barre de
+          // progression restait muette sur les volumes et sur les cycles, c'est-à-dire sur
+          // tout ce qui bouge pendant une moisson d'une heure.
+          count: v.count ?? next[id]?.count,
+          cycles: v.cycles ?? next[id]?.cycles,
         }
       }
       return { nodeStates: next }

@@ -111,3 +111,29 @@ describe('débit et temps restant', () => {
     expect(p.etaMs).toBeNull()
   })
 })
+
+describe('cycles', () => {
+  it('⚠ un cycle n’est COMPLET que si toutes les cartes démarrées l’ont bouclé', () => {
+    // Prendre le maximum annoncerait des tours que la carte la plus lente n'a pas faits.
+    const w = wf(['a', 'b'], [['a', 'b']])
+    const p = runProgress(w, {
+      a: st({ status: 'running', cycles: 7 }), b: st({ status: 'running', cycles: 3 }),
+    }, label)
+    expect(p.cyclesDone).toBe(3)
+  })
+
+  it('les cartes jamais démarrées ne comptent pas dans le minimum', () => {
+    const w = wf(['a', 'b'], [['a', 'b']])
+    const p = runProgress(w, { a: st({ status: 'running', cycles: 5 }) }, label)
+    expect(p.cyclesDone).toBe(5)
+  })
+
+  it('rien démarré : aucun cycle', () => {
+    expect(runProgress(wf(['a']), {}, label).cyclesDone).toBe(0)
+  })
+
+  it('chaque carte porte son propre compte de passages', () => {
+    const p = runProgress(wf(['a']), { a: st({ status: 'running', cycles: 12 }) }, label)
+    expect(p.cards[0].cycles).toBe(12)
+  })
+})

@@ -1331,6 +1331,7 @@ export const fr = {
   'wfe.notFound': 'Workflow introuvable',
   'wfe.unknownNode': 'Type inconnu : {type}',
   'wfe.progress.cards': '{done}/{total} cartes',
+  'wfe.progress.lbl.cycles': 'cycles',
   'wfe.progress.lbl.items': 'lignes',
   'wfe.progress.lbl.rate': 'débit',
   'wfe.progress.lbl.elapsed': 'écoulé',

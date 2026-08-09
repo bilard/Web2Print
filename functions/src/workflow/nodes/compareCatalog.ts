@@ -195,6 +195,8 @@ registerServerNode({
       }))
     }
     const m = matrixFromPairing(sourceProducts, siteRefs, pairing, { labels, siteFields })
+    // Volume remonté à la barre de progression, comme le fait le navigateur.
+    ctx.reportCount?.(m.matched)
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.matchedBreakdown', {
       matched: m.matched, exact: m.matchedExact, originOnly: m.matchedOriginOnly,
       unmatched: m.unmatched, noKey: m.noKey,
