@@ -23,6 +23,7 @@ import { searchCatalog } from '../explorer/catalogList'
 import { isUnderPath } from '../explorer/taxonomyTree'
 import { langBreakdown } from './langBreakdown'
 import { revisionKeyOf } from './revisionLookup'
+import { originTextOf } from './originText'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -120,14 +121,21 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     // article. Dans le cas normal les deux coïncident ; le repli couvre les catalogues
     // dont l'identité retombe sur le code-barres.
     const key = revisionKeyOf(revisions, p)
+    const revision = key ? revisions.get(key) : undefined
     return {
       product: p,
-      lang: detectLanguage(p.description || p.name).lang,
-      ...(key ? { revisionId: key, revision: revisions.get(key) } : {}),
+      // ⚠ Sur le texte D'ORIGINE, jamais sur le texte courant : une fois traduite, la fiche
+      // porte du français et le détecteur répondrait « fr ». Elle sortirait alors de sa
+      // propre pastille et de la portée « langue étrangère » — c'est ce qui faisait
+      // afficher « Rien à traiter » sous le filtre « Traduits ».
+      lang: detectLanguage(originTextOf(p, revision)).lang,
+      ...(key ? { revisionId: key, revision } : {}),
     }
   }), [products, revisions])
 
   const searching = query.trim() !== ''
+  /** On RELIT du travail fait, on ne compose pas une file. */
+  const reviewing = doneFilter === 'translated' || doneFilter === 'improved'
   const shown = useMemo(() => {
     // La famille choisie borne TOUT ce qui suit : traduire « les courroies » veut dire
     // les courroies, quel que soit le filtre de langue ou la recherche par-dessus.
@@ -157,12 +165,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
       return saleText === 'all' || (saleText === 'with' ? has : !has)
     }
     if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l) && inPath(l) && byDone(l))
+    // ⚠ La portée compose la FILE — ce qui reste à faire. Demander « les traduits », c'est
+    // demander une RELECTURE : la borner à « langue étrangère reconnue » n'a aucun sens et
+    // rendait l'écran vide sur un catalogue pourtant traduit à 30 %.
     const inScope = (l: Line) =>
-      scope === 'all' ? true
+      scope === 'all' || reviewing ? true
         : scope === 'foreignPlus' ? l.lang !== 'fr'
           : !!l.lang && l.lang !== 'fr'
     return lines.filter((l) => inScope(l) && bySale(l) && inPath(l) && byDone(l))
-  }, [lines, products, scope, query, searching, pickedLang, saleText, path, doneFilter])
+  }, [lines, products, scope, query, searching, pickedLang, saleText, path, doneFilter, reviewing])
 
   // Fiches dont le texte de vente a été COUPÉ à l'écriture du catalogue. Compté sur ce
   // qui est affiché : c'est là qu'on le constate, et c'est ce nombre qui dit si l'action
@@ -334,7 +345,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
 
         <TextEnrichFilters
           tallies={tallies} pickedLang={pickedLang} onPickLang={setPickedLang}
-          scope={scope} onScope={setScope} searching={searching}
+          scope={scope} onScope={setScope} searching={searching} reviewing={reviewing}
           saleText={saleText} onSaleText={setSaleText}
           doneFilter={doneFilter} onDoneFilter={setDoneFilter}
           modes={modes} onModes={setModes}

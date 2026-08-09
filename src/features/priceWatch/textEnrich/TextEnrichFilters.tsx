@@ -41,7 +41,7 @@ function Group({ label, children, dim = false }: { label: string; children: Reac
 
 export function TextEnrichFilters({
   tallies, pickedLang, onPickLang,
-  scope, onScope, searching,
+  scope, onScope, searching, reviewing,
   saleText, onSaleText,
   doneFilter, onDoneFilter,
   modes, onModes,
@@ -54,6 +54,8 @@ export function TextEnrichFilters({
   scope: EnrichScope
   onScope: (v: EnrichScope) => void
   searching: boolean
+  /** On relit du travail fait : la portée ne compose plus la file, elle ne décide de rien. */
+  reviewing: boolean
   saleText: SaleTextFilter
   onSaleText: (v: SaleTextFilter) => void
   /** Ce qui a DÉJÀ été fait — pour relire séparément traductions et réécritures. */
@@ -73,6 +75,9 @@ export function TextEnrichFilters({
   const { t, locale } = useTranslation()
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
   const langLocked = searching || pickedLang !== undefined
+  // Grisée quand elle ne décide de rien : un bouton actif qui n'a aucun effet est pire
+  // qu'un bouton absent — on le clique et on cherche pourquoi rien ne bouge.
+  const scopeOff = langLocked || reviewing
 
   const chip = (active: boolean, accent = false) =>
     `rounded px-2 py-1 text-[11px] font-medium transition-colors ${
@@ -120,9 +125,9 @@ export function TextEnrichFilters({
           ))}
         </Group>
 
-        <Group label={t('pwte.filter.scope')} dim={langLocked}>
+        <Group label={t('pwte.filter.scope')} dim={scopeOff}>
           {(['foreign', 'foreignPlus', 'all'] as EnrichScope[]).map((v) => (
-            <button key={v} type="button" onClick={() => onScope(v)} disabled={langLocked} className={chip(scope === v)}>
+            <button key={v} type="button" onClick={() => onScope(v)} disabled={scopeOff} className={chip(scope === v)}>
               {t(v === 'foreign' ? 'pwte.scope.foreign' : v === 'foreignPlus' ? 'pwte.scope.foreignPlus' : 'pwte.scope.all')}
             </button>
           ))}

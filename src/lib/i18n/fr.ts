@@ -6007,7 +6007,7 @@ export const fr = {
   'pwte.badge.translated': 'Traduit',
   'pwte.badge.improved': 'Amélioré',
   'pwte.badge.done': 'Traité',
-  'pwte.truncatedSource.banner': '{count} fiches affichées ont leur texte de vente COUPÉ — le catalogue a été écrit avec un plafond de 300 caractères. Relancez « Comparer catalogue » une fois : le plafond est passé à 2 000, et la traduction portera alors sur le texte entier.',
+  'pwte.truncatedSource.banner': '{count} fiches affichées ont leur texte de vente COUPÉ — le catalogue les a enregistrées ainsi. Relancez « Comparer catalogue » une fois : le plafond a été levé, et la traduction portera alors sur le texte entier.',
   'pwte.filter.action': 'Traitement',
   'pwte.filter.scope': 'À traiter',
   'pwte.scope.foreign': 'Langue étrangère reconnue',

@@ -5814,7 +5814,7 @@ export const es: Record<TranslationKey, string> = {
   'pwte.badge.translated': 'Traducido',
   'pwte.badge.improved': 'Mejorado',
   'pwte.badge.done': 'Tratado',
-  'pwte.truncatedSource.banner': '{count} fichas mostradas tienen el texto de venta CORTADO: el catálogo se escribió con un tope de 300 caracteres. Lance «Comparar catálogo» una vez: el tope ya es 2000 y la traducción cubrirá entonces todo el texto.',
+  'pwte.truncatedSource.banner': '{count} fichas mostradas tienen el texto de venta CORTADO: así se guardó en el catálogo. Ejecute «Comparar catálogo» una vez: se ha levantado el límite y la traducción se aplicará al texto completo.',
   'pwte.filter.action': 'Tratamiento',
   'pwte.filter.scope': 'Por tratar',
   'pwte.scope.foreign': 'Idioma extranjero reconocido',

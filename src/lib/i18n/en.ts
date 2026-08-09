@@ -5815,7 +5815,7 @@ export const en: Record<TranslationKey, string> = {
   'pwte.badge.translated': 'Translated',
   'pwte.badge.improved': 'Improved',
   'pwte.badge.done': 'Handled',
-  'pwte.truncatedSource.banner': '{count} displayed listings have their sales copy CUT — the catalogue was written with a 300-character ceiling. Run “Compare catalogue” once: the ceiling is now 2,000, and translation will then cover the whole text.',
+  'pwte.truncatedSource.banner': '{count} listed products have a CUT sale text — the catalogue was written that way. Run “Compare catalogue” once: the cap has been lifted, and translation will then work on the whole text.',
   'pwte.filter.action': 'Processing',
   'pwte.filter.scope': 'To process',
   'pwte.scope.foreign': 'Recognised foreign language',

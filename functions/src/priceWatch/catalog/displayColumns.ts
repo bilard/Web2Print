@@ -214,13 +214,18 @@ export function taxoPathOf(row: Record<string, unknown>, keys: string[]): string
  * (900 ko par tranche) ; des descriptions ILLIMITÉES sur cent mille produits feraient
  * exploser le nombre de tranches, donc le temps de lecture de l'écran.
  *
- * ⚠ Relevé à 2 000 le 2026-08-09 : à 300, le texte de vente arrivait coupé PARTOUT — dans
- * la liste, mais surtout dans l'invite envoyée au modèle par « Traduire et améliorer les
- * textes », qui réécrivait donc un argumentaire amputé sans que rien ne le signale. Un
- * texte de vente d'ERP dépasse rarement quelques centaines de caractères : ce plafond est
- * un garde-fou contre une cellule aberrante, pas une politique d'affichage.
+ * ⚠ 300 → 2 000 → 20 000 (2026-08-09). À 300, le texte de vente arrivait coupé PARTOUT —
+ * dans la liste, mais surtout dans l'invite envoyée au modèle par « Traduire et améliorer
+ * les textes », qui réécrivait donc un argumentaire amputé sans que rien ne le signale. À
+ * 2 000, il en restait. Le plafond n'est plus qu'un garde-fou contre une cellule aberrante
+ * (une fiche HTML entière collée dans une colonne), jamais une politique d'affichage : un
+ * argumentaire d'ERP tient très largement dedans.
+ *
+ * ⚠ Sans effet sur ce qui est DÉJÀ en base : le catalogue garde le texte tel qu'il a été
+ * écrit. Il faut un passage de « Comparer catalogue » pour que les textes entiers y
+ * arrivent — c'est ce que dit le bandeau de l'écran de traduction.
  */
-export const DESCRIPTION_MAX = 2000
+export const DESCRIPTION_MAX = 20_000
 
 export function trimDescription(v: unknown): string | undefined {
   const s = v == null ? '' : String(v).trim()
