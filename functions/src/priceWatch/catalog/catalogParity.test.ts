@@ -15,7 +15,7 @@ import { MAX_PAGES_PER_CATEGORY, initCursor, advance } from './harvest'
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
 import { searchUrl, directedPass, searchProductOnSite } from './searchDirected'
 import { DEFAULT_PAIRING_RULES, resolvePairingRules, rulesDifferFromDefault, summarizeRules } from './pairingRules'
-import { pickDisplayColumns, taxoPathOf, trimDescription } from './displayColumns'
+import { pickDisplayColumns, taxoPathOf, trimDescription, DESCRIPTION_MAX } from './displayColumns'
 import { parseListingDomCards } from './genericCards'
 
 describe('prestashop (parité serveur)', () => {
@@ -188,7 +188,7 @@ describe('displayColumns (parité serveur)', () => {
   })
   it('coupe le chemin au premier niveau vide et tronque la description', () => {
     expect(taxoPathOf({ A: 'Motoculture', B: '', C: 'X' }, ['A', 'B', 'C'])).toEqual(['Motoculture'])
-    expect(trimDescription('x'.repeat(400))?.endsWith('…')).toBe(true)
+    expect(trimDescription('x'.repeat(DESCRIPTION_MAX + 100))?.endsWith('…')).toBe(true)
   })
   it('range UNIVERS au-dessus de FAMILLE, comme la copie client', () => {
     expect(pickDisplayColumns([

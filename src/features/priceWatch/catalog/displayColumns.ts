@@ -209,10 +209,18 @@ export function taxoPathOf(row: Record<string, unknown>, keys: string[]): string
   return out
 }
 
-/** Description PERSISTÉE : tronquée. Le catalogue source est chunké en documents
- *  Firestore ; des descriptions entières sur 75 000 produits feraient exploser le
- *  nombre de tranches, donc le temps de lecture de l'écran. */
-export const DESCRIPTION_MAX = 300
+/**
+ * Description PERSISTÉE : tronquée. Le catalogue source est chunké en documents Firestore
+ * (900 ko par tranche) ; des descriptions ILLIMITÉES sur cent mille produits feraient
+ * exploser le nombre de tranches, donc le temps de lecture de l'écran.
+ *
+ * ⚠ Relevé à 2 000 le 2026-08-09 : à 300, le texte de vente arrivait coupé PARTOUT — dans
+ * la liste, mais surtout dans l'invite envoyée au modèle par « Traduire et améliorer les
+ * textes », qui réécrivait donc un argumentaire amputé sans que rien ne le signale. Un
+ * texte de vente d'ERP dépasse rarement quelques centaines de caractères : ce plafond est
+ * un garde-fou contre une cellule aberrante, pas une politique d'affichage.
+ */
+export const DESCRIPTION_MAX = 2000
 
 export function trimDescription(v: unknown): string | undefined {
   const s = v == null ? '' : String(v).trim()

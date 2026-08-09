@@ -20,6 +20,10 @@ export interface SourceCatalogFacts {
   /** Produits dont le catalogue persisté porte l'adresse de MA fiche. 0 = la colonne
    *  d'URL n'a pas été mappée au dernier « Comparer catalogue ». */
   withUrl: number
+  /** Une adresse RÉELLE tirée du fichier source, pour vérifier d'un clic ce que la colonne
+   *  contient. Un compteur dit combien de lignes en portent une, jamais si elle est bonne :
+   *  une colonne mal mappée affiche « 115 814 avec lien produit » et ouvre des pages mortes. */
+  sampleUrl?: string
   workflowId?: string
   /** Des tranches du catalogue manquent : les appariés affichés sont SOUS-COMPTÉS. */
   partial: boolean
@@ -174,14 +178,29 @@ export function ExplorerSourceLink({ facts, databases, dbId, onPickDb, loading, 
           className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
       </label>
 
-      {/* Fiche produit sur MON site. Le catalogue source ne porte pas d'URL : sans ce
-          gabarit, la colonne de gauche est la seule des deux à ne pas être cliquable. */}
+      {/* Fiche produit sur MON site. Le gabarit ne sert que de DERNIER recours : quand le
+          fichier source porte sa propre colonne d'adresse, c'est elle qui gagne. */}
       <label className="flex items-center gap-1 text-white/30">
         <ExternalLink className="w-3 h-3 shrink-0" />
         <input value={productUrl} onChange={(e) => onProductUrl(e.target.value)}
           placeholder={t('pwx.productUrl.placeholder')} title={t('pwx.productUrl.help')}
           className="bg-well text-white/70 text-[11px] rounded px-1.5 py-0.5 border border-white/10 focus:outline-none focus:border-white/25 w-[240px] placeholder:text-white/20" />
       </label>
+
+      {/* L'adresse telle qu'elle est DANS le fichier source, ouvrable. « 115 814 avec lien
+          produit » ne dit pas si la colonne mappée est la bonne : une adresse de fiche
+          fournisseur et une adresse de fiche interne se comptent pareil, et seule
+          l'ouverture tranche. */}
+      {facts.sampleUrl && (
+        <a href={facts.sampleUrl} target="_blank" rel="noreferrer"
+          title={t('pwx.src.sampleUrl.help', { url: facts.sampleUrl })}
+          className="flex items-center gap-1 max-w-[280px] text-white/30 hover:text-indigo-300">
+          <ExternalLink className="w-3 h-3 shrink-0" />
+          <span className="truncate underline decoration-dotted underline-offset-2">
+            {t('pwx.src.sampleUrl')}
+          </span>
+        </a>
+      )}
     </div>
   )
 }

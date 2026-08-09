@@ -5944,6 +5944,8 @@ export const fr = {
   'pwx.src.catalog': 'Catalogue source du workflow : {count} produits',
   'pwx.src.filled': '· {img} avec visuel · {taxo} avec taxonomie · {desc} avec description',
   'pwx.src.withUrl': ' · {count} avec lien produit',
+  'pwx.src.sampleUrl': 'Exemple du fichier source',
+  'pwx.src.sampleUrl.help': 'Ouvre la fiche du premier produit qui porte une adresse dans le fichier source, pour vérifier que la colonne mappée est la bonne :\n{url}',
   'pwx.src.noUrlCol': 'Aucun lien produit dans le catalogue : mappez la colonne d’URL dans le node « Comparer catalogue », puis relancez-le.',
   'pwx.src.rerun': '— sans visuel ni taxonomie : relancez « Comparer catalogue »',
   'pwx.src.openWorkflow': 'ouvrir le workflow',

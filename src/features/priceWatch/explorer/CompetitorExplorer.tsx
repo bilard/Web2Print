@@ -253,6 +253,9 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
 
   const facts = useMemo(() => ({
     ...countSourceFacts(source.products),
+    // La PREMIÈRE adresse réellement présente, pas un gabarit reconstruit : c'est elle
+    // qu'on veut ouvrir pour savoir si la colonne mappée est la bonne.
+    sampleUrl: source.products.find((p) => p.url)?.url,
     workflowId,
     partial: source.partial,
     expected: source.expected,

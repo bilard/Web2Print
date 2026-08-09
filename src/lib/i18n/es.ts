@@ -5751,6 +5751,8 @@ export const es: Record<TranslationKey, string> = {
   'pwx.src.catalog': 'Catálogo de origen del flujo: {count} productos',
   'pwx.src.filled': '· {img} con imagen · {taxo} con taxonomía · {desc} con descripción',
   'pwx.src.withUrl': ' · {count} con enlace de producto',
+  'pwx.src.sampleUrl': 'Ejemplo del archivo de origen',
+  'pwx.src.sampleUrl.help': 'Abre la ficha del primer producto que lleva una dirección en el archivo de origen, para comprobar que la columna asignada es la correcta:\n{url}',
   'pwx.src.noUrlCol': 'Ningún enlace de producto en el catálogo: asigne la columna de URL en el nodo «Comparar catálogo» y vuelva a ejecutarlo.',
   'pwx.src.rerun': '— sin imagen ni taxonomía: vuelva a ejecutar «Comparar catálogo»',
   'pwx.src.openWorkflow': 'abrir el flujo',

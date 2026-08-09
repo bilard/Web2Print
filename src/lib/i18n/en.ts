@@ -5752,6 +5752,8 @@ export const en: Record<TranslationKey, string> = {
   'pwx.src.catalog': 'Workflow source catalogue: {count} products',
   'pwx.src.filled': '· {img} with an image · {taxo} with a taxonomy · {desc} with a description',
   'pwx.src.withUrl': ' · {count} with a product link',
+  'pwx.src.sampleUrl': 'Sample from the source file',
+  'pwx.src.sampleUrl.help': 'Opens the listing of the first product carrying an address in the source file, to check that the mapped column is the right one:\n{url}',
   'pwx.src.noUrlCol': 'No product link in the catalogue: map the URL column in the “Compare catalogue” node, then run it again.',
   'pwx.src.rerun': '— no image or taxonomy: run “Compare catalogue” again',
   'pwx.src.openWorkflow': 'open the workflow',

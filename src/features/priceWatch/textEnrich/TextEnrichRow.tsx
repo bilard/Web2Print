@@ -7,7 +7,7 @@
 // dénature une fiche est précisément celui qui tombe hors du cadre.
 //
 // Extraite de `TextEnrichScreen`, qui portait déjà toute la mécanique du run.
-import { RotateCcw, ExternalLink } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { ExplorerThumb } from '../explorer/ExplorerThumb'
 import { absoluteImage } from '../explorer/pairing'
@@ -43,13 +43,6 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
             </span>
           )}
           {lang && <span className="rounded border border-white/15 px-1 uppercase">{lang}</span>}
-          {p.url && (
-            <a href={p.url} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1 text-white/35 hover:text-indigo-300"
-              title={t('pwte.openProduct')}>
-              <ExternalLink className="w-3 h-3" />{t('pwte.openProduct')}
-            </a>
-          )}
           {/* Le prix situe l'enjeu : on ne relit pas de la même façon l'argumentaire d'une
               pièce à 4 € et celui d'une machine à 900 €. */}
           {typeof p.price === 'number' && (
@@ -74,7 +67,17 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
                 lisent comme un titre et son sous-titre, alors que la seconde est le
                 texte de vente — le champ que l'écran est censé traiter. */}
             <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
-            <p className="text-[12px] text-white/70 break-words">{p.name}</p>
+            {/* La fiche s'ouvre depuis le NOM lui-même. Un picto « Voir la fiche » de plus
+                dans l'en-tête doublait ce que le libellé désigne déjà, et c'est sur le
+                libellé qu'on clique quand on veut vérifier de quel article on parle. */}
+            {p.url ? (
+              <a href={p.url} target="_blank" rel="noreferrer" title={t('pwte.openProduct')}
+                className="text-[12px] text-white/70 break-words hover:text-indigo-300 hover:underline decoration-dotted underline-offset-2">
+                {p.name}
+              </a>
+            ) : (
+              <p className="text-[12px] text-white/70 break-words">{p.name}</p>
+            )}
             <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
             {p.description
               ? <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{p.description}</p>
