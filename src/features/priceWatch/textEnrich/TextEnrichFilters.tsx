@@ -109,7 +109,7 @@ export function TextEnrichFilters({
         {searching && <span className="text-[11px] text-amber-300/80">{t('pwte.searchOverrides')}</span>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/50">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-white/50 min-w-0">
         <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.action')}</span>
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={modes.translate} className="h-3.5 w-3.5 accent-accent"
@@ -130,7 +130,7 @@ export function TextEnrichFilters({
             className="h-7 w-20 rounded border border-border bg-well px-2 text-xs text-white outline-none focus:border-accent" />
         </label>
         <button type="button" onClick={onRun} disabled={!canRun}
-          className="ml-auto flex items-center gap-1.5 rounded bg-indigo-500/90 px-3 py-1.5 text-[11px] font-medium text-[#fff] hover:bg-indigo-500 disabled:opacity-40">
+          className="ml-auto shrink-0 flex items-center gap-1.5 rounded bg-indigo-500/90 px-3 py-1.5 text-[11px] font-medium text-[#fff] hover:bg-indigo-500 disabled:opacity-40">
           {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
           {running ? t('pwte.running', { done: n(done), total: n(count) }) : t('pwte.run', { count: n(count) })}
         </button>

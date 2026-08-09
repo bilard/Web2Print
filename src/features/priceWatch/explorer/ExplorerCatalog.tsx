@@ -40,7 +40,7 @@ export function ExplorerCatalog({ products, page, pageSize, imagePrefix, loading
 
   if (loading && products.length === 0) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center gap-2 text-[12px] text-white/40">
+      <div className="flex-1 min-w-0 min-h-0 flex items-center justify-center gap-2 text-[12px] text-white/40">
         <Loader2 className="w-4 h-4 animate-spin" />{t('pwx.source.pending')}
       </div>
     )
@@ -48,14 +48,14 @@ export function ExplorerCatalog({ products, page, pageSize, imagePrefix, loading
 
   if (products.length === 0) {
     return (
-      <div className="flex-1 min-h-0 flex items-start justify-center">
+      <div className="flex-1 min-w-0 min-h-0 flex items-start justify-center">
         <p className="p-6 text-center text-[12px] text-white/35">{t('pwx.catalog.none')}</p>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-auto">
+    <div className="flex-1 min-w-0 min-h-0 overflow-auto">
       <ul>
         {visible.map((p) => (
           <ExplorerCatalogRow key={p.id} product={p} imagePrefix={imagePrefix}

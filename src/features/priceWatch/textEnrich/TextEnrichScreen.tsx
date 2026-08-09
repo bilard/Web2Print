@@ -287,9 +287,9 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col">
+    <div className="flex-1 min-w-0 min-h-0 flex flex-col">
       <div className="px-4 py-3 border-b border-white/10 space-y-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
           <Languages className="w-4 h-4 text-indigo-300" />
           <h2 className="text-sm font-medium text-white">{t('pwte.title')}</h2>
           <span className="text-[11px] text-white/40 tabular-nums">
