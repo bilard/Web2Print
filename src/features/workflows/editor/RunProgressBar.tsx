@@ -82,12 +82,19 @@ export function RunProgressBar() {
   const isRunning = useRunContext((s) => s.isRunning)
   // Le temps écoulé n'est pas un état : il avance tout seul. Sans ce tic, le compteur
   // reste figé entre deux changements de carte — c'est-à-dire pendant l'essentiel du run.
+  //
+  // ⚠ `isRunning` ne suffit PAS : il désigne un run lancé DEPUIS CE NAVIGATEUR. Un run
+  // planifié n'y touche jamais (`hydrateServerRun` laisse la main à un éventuel run
+  // client), donc aucun tic ne partait et « écoulé », « débit » et « restant » restaient
+  // figés entre deux échos Firestore — c'est-à-dire des minutes entières. C'est ce qui
+  // faisait dire que la barre n'est jamais à jour.
+  const live = isRunning || Object.values(nodeStates).some((st) => st.status === 'running')
   const [, tick] = useState(0)
   useEffect(() => {
-    if (!isRunning) return
+    if (!live) return
     const id = setInterval(() => tick((n) => n + 1), 1000)
     return () => clearInterval(id)
-  }, [isRunning])
+  }, [live])
 
   if (!wf) return null
   const p = runProgress(wf, nodeStates, (id) => {
@@ -118,8 +125,14 @@ export function RunProgressBar() {
           <div className={`h-full transition-[width] duration-500 ${p.failed > 0 ? 'bg-rose-400/80' : 'bg-indigo-400/80'}`}
             style={{ width: `${pct}%` }} />
         </div>
+        {/* ⚠ Les cartes EN COURS sont dites. « 50 % » à côté de « 3/11 cartes » se lisait
+            comme une contradiction — 3 sur 11 font 27 % — alors que les deux sont justes :
+            une carte en cours compte pour une demie. Le compteur montre donc les trois
+            nombres qui expliquent le pourcentage. */}
         <span className="tabular-nums text-white/70 whitespace-nowrap">
-          {t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
+          {p.running > 0
+            ? t('wfe.progress.cardsRunning', { done: n(p.done), running: n(p.running), total: n(p.total) })
+            : t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
         </span>
       </div>
 

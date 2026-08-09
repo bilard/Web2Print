@@ -1267,6 +1267,7 @@ export const es: Record<TranslationKey, string> = {
   'wfe.notFound': 'Workflow no encontrado',
   'wfe.unknownNode': 'Tipo desconocido: {type}',
   'wfe.progress.cards': '{done}/{total} tarjetas',
+  'wfe.progress.cardsRunning': '{done} hechas · {running} en curso · {total} tarjetas',
   'wfe.progress.lbl.cycles': 'ciclos',
   'wfe.progress.lbl.items': 'líneas',
   'wfe.progress.lbl.rate': 'ritmo',
