@@ -5,7 +5,7 @@
 // finalité de l'écran (« est-ce bien le même produit ? ») ; les mettre chacun au bord
 // extérieur de sa colonne obligerait à balayer la ligne des yeux pour comparer.
 import { useState, type ReactNode } from 'react'
-import { ImageOff, ChevronDown, Check, X, Image as ImageIcon, Languages } from 'lucide-react'
+import { ChevronDown, Check, X, Image as ImageIcon, Languages } from 'lucide-react'
 import type { Verdict } from './verdictStore'
 import type { StoredVisual } from '../visual/visualStore'
 import { highlightKey, proofSpot } from './proofHighlight'
@@ -14,6 +14,7 @@ import type { ConfidenceBand, DoubtReason, SupportReason } from './confidence'
 import type { CompetitorListing } from '../catalog/prestashop'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
+import { ExplorerThumb } from './ExplorerThumb'
 import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 // ⚠ Clés de traduction, pas libellés : un t() en constante de module fige la langue à
@@ -94,32 +95,6 @@ const STOCK_LABEL: Record<string, { key: TranslationKey; cls: string }> = {
   'in-stock': { key: 'pwx.inStock', cls: 'text-emerald-300' },
   'out-of-stock': { key: 'pwx.outOfStock', cls: 'text-rose-300' },
   'on-order': { key: 'pwx.onOrder', cls: 'text-amber-300' },
-}
-
-function Thumb({ src, alt, size = 'h-16 w-16' }: { src: string | null; alt: string; size?: string }) {
-  // Une URL morte laissait l'icône de fichier cassé du navigateur, indiscernable d'un
-  // visuel réel tant qu'on ne zoomait pas. On retombe sur un placeholder — mais il DIT
-  // lequel des deux cas s'applique : « aucune adresse relevée » se corrige en relançant
-  // la collecte ou en réglant le préfixe, « adresse injoignable » désigne le site
-  // distant. Confondre les deux, c'est chercher la panne du mauvais côté.
-  const { t } = useTranslation()
-  const [broken, setBroken] = useState(false)
-  if (!src || broken) {
-    return (
-      <div title={broken ? t('pwx.thumb.broken', { url: src ?? '' }) : t('pwx.thumb.none')}
-        className={`${size} shrink-0 rounded bg-well border flex items-center justify-center cursor-help ${
-          broken ? 'border-amber-400/25' : 'border-white/10'
-        }`}>
-        <ImageOff className={`w-4 h-4 ${broken ? 'text-amber-400/40' : 'text-white/20'}`} />
-      </div>
-    )
-  }
-  return (
-    // `no-referrer` : beaucoup de marchands bloquent le hotlink en lisant le Referer. Sans
-    // en-tête, le CDN sert l'image comme à un accès direct.
-    <img src={src} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)}
-      className={`${size} shrink-0 rounded object-contain bg-[#fff] border border-white/10`} />
-  )
 }
 
 /**
@@ -375,8 +350,8 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
             {/* Visuels F1, collés au séparateur central. */}
             <div className="flex gap-1 shrink-0">
               {source.images.length === 0
-                ? <Thumb src={null} alt="" />
-                : source.images.slice(0, 2).map((u) => <Thumb key={u} src={u} alt={source.name} />)}
+                ? <ExplorerThumb src={null} alt="" />
+                : source.images.slice(0, 2).map((u) => <ExplorerThumb key={u} src={u} alt={source.name} />)}
             </div>
           </>
         ) : (
@@ -388,7 +363,7 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
 
       {/* ── Fiche du concurrent ──────────────────────────────────────────── */}
       <div className="flex items-start gap-3 p-2.5 pl-3 border-l border-white/10 min-w-0">
-        <Thumb src={listingImage(listing)} alt={listing.name} />
+        <ExplorerThumb src={listingImage(listing)} alt={listing.name} />
         <div className="min-w-0 flex-1">
           {/* En compilation, l'en-tête ne peut plus nommer le marchand : chaque ligne vient
               d'un site différent, et valider un appariement sans savoir chez QUI n'a

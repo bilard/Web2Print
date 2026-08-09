@@ -202,9 +202,16 @@ function sourceUrl(p: SourceProduct, tpl?: string): string | null {
   return key ? base.replace(/\/+$/, '') + '/' + key : null
 }
 
-/** Visuel du catalogue source : les ERP n'y stockent souvent qu'un nom de fichier, que
- *  l'utilisateur complète par un préfixe. Une valeur déjà absolue est laissée telle quelle. */
-function absoluteImage(v: string, prefix?: string): string {
+/**
+ * Visuel du catalogue source : les ERP n'y stockent souvent qu'un nom de fichier, que
+ * l'utilisateur complète par un préfixe. Une valeur déjà absolue est laissée telle quelle.
+ *
+ * ⚠ Rend une chaîne VIDE quand le nom est relatif et qu'aucun préfixe n'est réglé : une
+ * adresse relative partirait chercher le fichier sur le domaine de l'application, où il
+ * n'a jamais été, et le visuel se signalerait comme introuvable alors qu'il manque
+ * seulement un réglage.
+ */
+export function absoluteImage(v: string, prefix?: string): string {
   if (/^https?:\/\//.test(v)) return v
   return prefix ? prefix.replace(/\/+$/, '') + '/' + v.replace(/^\/+/, '') : ''
 }

@@ -5,6 +5,8 @@
 // bascule vers les textes d'ORIGINE quand la feuille en garde la mémoire.
 import { ExternalLink, Languages } from 'lucide-react'
 import { intlLocale, useTranslation } from '@/lib/i18n'
+import { ExplorerThumb } from './ExplorerThumb'
+import { absoluteImage } from './pairing'
 import type { SourceProduct } from '../catalog/match'
 
 export function ExplorerCatalogRow({ product, imagePrefix, showSource, onToggleSource }: {
@@ -16,15 +18,16 @@ export function ExplorerCatalogRow({ product, imagePrefix, showSource, onToggleS
 }) {
   const { t, locale } = useTranslation()
   const p = product
-  const img = !p.image ? null : /^https?:/i.test(p.image) ? p.image : `${imagePrefix ?? ''}${p.image}`
+  // Même règle que la vue appariée : sans préfixe réglé, un nom de fichier relatif ne
+  // donne AUCUNE adresse — surtout pas une adresse relative à l'application, qui se
+  // signalerait comme visuel introuvable pour un réglage manquant.
+  const img = (p.image ? absoluteImage(p.image, imagePrefix) : '') || null
   const name = showSource && p.nameSource ? p.nameSource : p.name
   const desc = showSource && p.descriptionSource ? p.descriptionSource : p.description
 
   return (
     <li className="flex gap-3 px-3 py-2 border-b border-white/[0.04] hover:bg-white/[0.02]">
-      <div className="w-10 h-10 shrink-0 rounded bg-white/[0.04] overflow-hidden">
-        {img && <img src={img} alt="" className="w-full h-full object-contain" loading="lazy" />}
-      </div>
+      <ExplorerThumb src={img} size="w-10 h-10" />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           {p.ref && <span className="text-[10px] tabular-nums text-white/35 shrink-0">{p.ref}</span>}
