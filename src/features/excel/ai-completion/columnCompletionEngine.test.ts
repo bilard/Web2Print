@@ -89,7 +89,7 @@ describe('uniqueColumnKey', () => {
 // indépendants — les attendre l'un après l'autre ne protégeait de rien.
 describe('lots en parallèle', () => {
   const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ _id: `r${i}`, a: `v${i}` }))
-  const cols = [{ key: 'a', label: 'A' }]
+  const cols = [col('a', 'A')]
 
   it('envoie `concurrency` lots simultanément', async () => {
     let inFlight = 0
