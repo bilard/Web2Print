@@ -255,6 +255,10 @@ const MESSAGES = {
     fr: 'Reprise incrémentale : {taken} lignes sur {total} — {fresh} nouvelles, {changed} modifiées à la source, {unknown} sans référence reconnaissable.',
     en: 'Incremental pick-up: {taken} rows out of {total} — {fresh} new, {changed} changed at source, {unknown} with no recognisable reference.',
   },
+  'run.textEnrich.provider': {
+    fr: 'Textes produits par {provider} ({model}).',
+    en: 'Texts produced by {provider} ({model}).',
+  },
   'run.textEnrich.remembered': {
     fr: 'Mémorisé : {done} lignes réellement traitées sur {queued} en file — les autres repartiront au passage suivant.',
     en: 'Remembered: {done} rows actually processed out of {queued} queued — the rest will come back on the next pass.',

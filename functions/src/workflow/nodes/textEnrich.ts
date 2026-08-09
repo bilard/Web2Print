@@ -94,6 +94,8 @@ registerServerNode({
     /** Ce qu'on PUBLIE pour l'écran de relecture — jumeau du navigateur. Sans lui, le cron
      *  traduisait des dizaines de milliers de fiches sans que rien ne le montre nulle part. */
     const events: RevisionEvent[] = []
+    /** Fournisseur réellement retenu — journalisé une fois, au premier lot. */
+    let provider: string | undefined
 
     const callBatch = makeCallBatch({
       withNote: cfg.withNote,
@@ -102,9 +104,18 @@ registerServerNode({
         // ⚠ DeepSeek d'abord : à 200 000 champs, le choix du fournisseur pèse plus lourd
         // que tout le reste — quelques dollars contre plusieurs centaines. Il rend en plus
         // du JSON natif. La cascade de l'utilisateur prend le relais s'il n'a pas de clé.
-        const { text } = await callLlm(ctx.uid, args.prompt + JSON_INSTRUCTION, {
+        const res = await callLlm(ctx.uid, args.prompt + JSON_INSTRUCTION, {
           maxTokens: MAX_OUTPUT_TOKENS, preferProviders: ['deepseek'],
         })
+        // ⚠ DIT, et au PREMIER lot : `preferProviders` est une préférence, pas une
+        // garantie — sans clé DeepSeek, la cascade retombe sur le fournisseur suivant, qui
+        // peut coûter cinquante fois plus cher. Sur 200 000 champs, découvrir ça sur la
+        // facture plutôt que dans le journal se chiffre en centaines de dollars.
+        if (!provider) ctx.log('info', t(ctx.locale, 'run.textEnrich.provider', {
+          provider: res.provider, model: res.model,
+        }))
+        provider = res.provider
+        const { text } = res
         const parsed = parseLlmJson<unknown>(text)
         // Un lot illisible doit se voir : rendre un objet vide le confondrait avec « le
         // modèle n'a rien trouvé à changer ».
