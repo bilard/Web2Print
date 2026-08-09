@@ -71,6 +71,14 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
               {p.price.toLocaleString(intlLocale(locale), { style: 'currency', currency: 'EUR' })}
             </span>
           )}
+          {/* QUAND la fiche a été traitée : sans date, on ne sait pas si l'« après » date
+              de ce matin ou d'un passage d'il y a trois semaines — donc s'il tient compte
+              du texte source actuel. */}
+          {revision?.at != null && (
+            <span className="tabular-nums text-white/30" title={new Date(revision.at).toLocaleString(intlLocale(locale))}>
+              {new Date(revision.at).toLocaleDateString(intlLocale(locale), { day: '2-digit', month: 'short', year: '2-digit' })}
+            </span>
+          )}
           {revision && (
             <button type="button" onClick={onRevert}
               className="ml-auto flex items-center gap-1 text-white/35 hover:text-rose-300">
