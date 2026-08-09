@@ -152,6 +152,14 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     return lines.filter((l) => inScope(l) && bySale(l) && inPath(l) && byDone(l))
   }, [lines, products, scope, query, searching, pickedLang, saleText, path, doneFilter])
 
+  // Fiches dont le texte de vente a été COUPÉ à l'écriture du catalogue. Compté sur ce
+  // qui est affiché : c'est là qu'on le constate, et c'est ce nombre qui dit si l'action
+  // corrective vaut la peine.
+  const truncated = useMemo(
+    () => shown.filter((l) => (l.product.description ?? '').trimEnd().endsWith('…')).length,
+    [shown],
+  )
+
   // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
   const tallies = useMemo(() => langBreakdown(lines.map((l) => l.lang)), [lines])
@@ -302,6 +310,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
           placeholder={t('pwte.promptPlaceholder')} rows={2}
           className="w-full rounded border border-border bg-well px-2 py-1.5 text-xs text-white outline-none focus:border-accent"
         />
+
+        {/* ⚠ UN bandeau, pas un avertissement par fiche : répété sur trois cents lignes,
+            il devenait du bruit qu'on cesse de lire — alors qu'il désigne la seule action
+            qui règle le problème. */}
+        {truncated > 0 && (
+          <p className="rounded border border-amber-500/25 bg-amber-500/[0.07] px-2.5 py-1.5 text-[11px] leading-snug text-amber-200/90">
+            {t('pwte.truncatedSource.banner', { count: n(truncated) })}
+          </p>
+        )}
 
         <TextEnrichFilters
           tallies={tallies} pickedLang={pickedLang} onPickLang={setPickedLang}

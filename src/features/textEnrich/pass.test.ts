@@ -158,7 +158,10 @@ describe('plafond de dépense', () => {
 })
 
 describe('progression', () => {
-  it('rapporte l’avancement lot par lot', async () => {
+  // ⚠ En CHAMPS, jamais en lots. Le journal disait « 97 / 5 789 champs » alors qu'il
+  // remontait un numéro de LOT : à vingt champs par lot, on affichait le vingtième du
+  // travail fait et le passage paraissait à l'arrêt.
+  it('rapporte l’avancement en champs traités, pas en numéro de lot', async () => {
     const many = Array.from({ length: 4 }, (_, i) => target(`p${i}`, { nom: { value: `LAME ${i}` } }))
     const { units, counts } = planPass(many, [improve()])
     const seen: [number, number][] = []
@@ -169,7 +172,7 @@ describe('progression', () => {
       onRevision: () => {},
       onChunkDone: (done, total) => seen.push([done, total]),
     })
-    expect(seen).toEqual([[1, 2], [2, 2]])
+    expect(seen).toEqual([[2, 4], [4, 4]])
   })
 })
 

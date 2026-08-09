@@ -112,13 +112,6 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
               ? (
                 <>
                   <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{p.description}</p>
-                  {/* ⚠ Ce « … » ne vient PAS de l'affichage : le catalogue est écrit avec un
-                      plafond par description, et le texte a été coupé À L'ÉCRITURE. Sans
-                      cette ligne, on cherche un bug de rendu qui n'existe pas — trois fois
-                      de suite, en l'occurrence. */}
-                  {p.description.trimEnd().endsWith('…') && (
-                    <p className="mt-0.5 text-[10px] text-amber-300/70">{t('pwte.truncatedSource')}</p>
-                  )}
                 </>
               )
               : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}

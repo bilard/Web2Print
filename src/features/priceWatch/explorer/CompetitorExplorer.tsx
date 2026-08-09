@@ -102,7 +102,11 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
   // ⚠ La cible du portail n'existe qu'APRÈS le premier rendu du panneau parent : la
   // chercher pendant le rendu rendrait `null` pour toujours.
   const [searchSlot, setSearchSlot] = useState<HTMLElement | null>(null)
-  useEffect(() => { setSearchSlot(document.getElementById('explorer-search-portal')) }, [])
+  const [settingsSlot, setSettingsSlot] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setSearchSlot(document.getElementById('explorer-search-portal'))
+    setSettingsSlot(document.getElementById('explorer-settings-portal'))
+  }, [])
   const [railOpen, setRailOpen] = useState(true)
   const patch = (p: Partial<ExplorerFilter>) => { setFilter((f) => ({ ...f, ...p })); setPage(0) }
 
@@ -402,11 +406,14 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
               <FileSpreadsheet className="w-3.5 h-3.5" />
             </button>
             </>)}
-            <ExplorerSourceSettings facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
-              loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
-              onPickSheet={src.setSheetIndex} extras={extras} absent={source.absent}
-              imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix}
-              productUrl={src.productUrl} onProductUrl={src.setProductUrl} />
+            {settingsSlot && createPortal(
+              <ExplorerSourceSettings facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
+                loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
+                onPickSheet={src.setSheetIndex} extras={extras} absent={source.absent}
+                imagePrefix={src.imagePrefix} onImagePrefix={src.setImagePrefix}
+                productUrl={src.productUrl} onProductUrl={src.setProductUrl} />,
+              settingsSlot,
+            )}
           </div>
         </div>
         {!catalogMode && !enrichMode && <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />}

@@ -47,6 +47,9 @@ export function CompetitorExplorerPanel({ onClose, initialMode = null }: {
             dans `CompetitorExplorer` (qui a les lignes et l'index de suggestions) mais
             s'affiche ici, où le regard la cherche. */}
         <div id="explorer-search-portal" className="flex-1 min-w-0 max-w-md ml-3" />
+        {/* Les réglages de la jointure viennent ici aussi : seuls sur leur ligne, ils
+            occupaient une bande entière pour un bouton. */}
+        <div id="explorer-settings-portal" className="shrink-0" />
         <div className="ml-auto flex items-center gap-2">
           {watches.length > 0 && (
             <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />

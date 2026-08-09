@@ -3,6 +3,7 @@
 //
 // Sorti de l'écran parce que celui-ci portait la liste ET tous ses réglages, et qu'aucun
 // des deux ne se relisait.
+import type { ReactNode } from 'react'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { Loader2, Play } from 'lucide-react'
 import type { LangTally } from './langBreakdown'
@@ -16,6 +17,27 @@ export type EnrichScope = 'foreign' | 'foreignPlus' | 'all'
  *  colonne APRÈS montrait de la même façon alors qu'on ne les relit pas pareil : une
  *  traduction se vérifie, une réécriture se juge. */
 export type DoneFilter = 'all' | 'todo' | 'translated' | 'improved'
+
+/**
+ * Un GROUPE de filtres : son nom au-dessus, ses choix dans un cadre.
+ *
+ * ⚠ Sans cadre ni titre, quinze boutons identiques s'alignaient sans qu'on sache lesquels
+ * vont ensemble — ni ce que chacun décide.
+ *
+ * ⚠ Défini À CE NIVEAU, pas dans le corps du composant : déclaré dedans, c'est un type de
+ * composant NEUF à chaque rendu, donc trois sous-arbres démontés et remontés à chaque
+ * frappe dans la recherche.
+ */
+function Group({ label, children, dim = false }: { label: string; children: ReactNode; dim?: boolean }) {
+  return (
+    <div className={`flex flex-col gap-1 ${dim ? 'opacity-40' : ''}`}>
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-white/30">{label}</span>
+      <div className="flex flex-wrap items-center gap-0.5 rounded-md border border-white/[0.07] bg-black/20 p-0.5">
+        {children}
+      </div>
+    </div>
+  )
+}
 
 export function TextEnrichFilters({
   tallies, pickedLang, onPickLang,
@@ -53,18 +75,18 @@ export function TextEnrichFilters({
   const langLocked = searching || pickedLang !== undefined
 
   const chip = (active: boolean, accent = false) =>
-    `rounded border px-1.5 py-0.5 text-[10px] transition-colors ${
+    `rounded px-2 py-1 text-[11px] font-medium transition-colors ${
       active
-        ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200'
+        ? 'bg-indigo-500/20 text-indigo-100 ring-1 ring-indigo-400/40'
         : accent
-          ? 'border-amber-400/25 text-amber-200/70 hover:text-amber-100'
-          : 'border-white/10 text-white/40 hover:text-white/70'}`
+          ? 'text-amber-200/70 hover:bg-white/[0.06] hover:text-amber-100'
+          : 'text-white/45 hover:bg-white/[0.06] hover:text-white/80'}`
 
   return (
     <>
       {tallies.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.lang')}</span>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-white/30">{t('pwte.filter.lang')}</span>
           <button type="button" onClick={() => onPickLang(undefined)} className={chip(pickedLang === undefined)}>
             {t('pwte.lang.all')}
           </button>
@@ -79,38 +101,37 @@ export function TextEnrichFilters({
         </div>
       )}
 
-      {/* ⚠ Trois familles de filtres sur UNE ligne, séparées par un trait. Empilées, elles
-          poussaient la liste — le sujet de l'écran — sous la ligne de flottaison, et il
-          fallait défiler pour voir la première fiche. */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.saleText')}</span>
-        {(['all', 'with', 'without'] as SaleTextFilter[]).map((v) => (
-          <button key={v} type="button" onClick={() => onSaleText(v)} className={chip(saleText === v)}>
-            {t(v === 'all' ? 'pwte.sale.all' : v === 'with' ? 'pwte.sale.with' : 'pwte.sale.without')}
-          </button>
-        ))}
+      {/* Trois familles de filtres, chacune dans son cadre nommé. Empilées sans
+          structure, elles se lisaient comme une seule rangée de quinze boutons. */}
+      <div className="flex flex-wrap items-end gap-3">
+        <Group label={t('pwte.filter.saleText')}>
+          {(['all', 'with', 'without'] as SaleTextFilter[]).map((v) => (
+            <button key={v} type="button" onClick={() => onSaleText(v)} className={chip(saleText === v)}>
+              {t(v === 'all' ? 'pwte.sale.all' : v === 'with' ? 'pwte.sale.with' : 'pwte.sale.without')}
+            </button>
+          ))}
+        </Group>
 
-        <span className="mx-1 h-3 w-px bg-white/10" />
-        <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.done')}</span>
-        {(['all', 'todo', 'translated', 'improved'] as DoneFilter[]).map((v) => (
-          <button key={v} type="button" onClick={() => onDoneFilter(v)} className={chip(doneFilter === v)}>
-            {t(v === 'all' ? 'pwte.done.all' : v === 'todo' ? 'pwte.done.todo' : v === 'translated' ? 'pwte.done.translated' : 'pwte.done.improved')}
-          </button>
-        ))}
+        <Group label={t('pwte.filter.done')}>
+          {(['all', 'todo', 'translated', 'improved'] as DoneFilter[]).map((v) => (
+            <button key={v} type="button" onClick={() => onDoneFilter(v)} className={chip(doneFilter === v)}>
+              {t(v === 'all' ? 'pwte.done.all' : v === 'todo' ? 'pwte.done.todo' : v === 'translated' ? 'pwte.done.translated' : 'pwte.done.improved')}
+            </button>
+          ))}
+        </Group>
 
-        <span className={`mx-1 h-3 w-px bg-white/10 ${langLocked ? 'opacity-40' : ''}`} />
-        <span className={`text-[10px] uppercase tracking-wide text-white/25 ${langLocked ? 'opacity-40' : ''}`}>{t('pwte.filter.scope')}</span>
-        {(['foreign', 'foreignPlus', 'all'] as EnrichScope[]).map((v) => (
-          <button key={v} type="button" onClick={() => onScope(v)} disabled={langLocked}
-            className={`${chip(scope === v)} ${langLocked ? 'opacity-40' : ''}`}>
-            {t(v === 'foreign' ? 'pwte.scope.foreign' : v === 'foreignPlus' ? 'pwte.scope.foreignPlus' : 'pwte.scope.all')}
-          </button>
-        ))}
-        {searching && <span className="text-[11px] text-amber-300/80">{t('pwte.searchOverrides')}</span>}
+        <Group label={t('pwte.filter.scope')} dim={langLocked}>
+          {(['foreign', 'foreignPlus', 'all'] as EnrichScope[]).map((v) => (
+            <button key={v} type="button" onClick={() => onScope(v)} disabled={langLocked} className={chip(scope === v)}>
+              {t(v === 'foreign' ? 'pwte.scope.foreign' : v === 'foreignPlus' ? 'pwte.scope.foreignPlus' : 'pwte.scope.all')}
+            </button>
+          ))}
+        </Group>
+        {searching && <span className="self-end pb-1 text-[11px] text-amber-300/80">{t('pwte.searchOverrides')}</span>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-white/50 min-w-0">
-        <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.action')}</span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md border border-white/[0.07] bg-black/20 px-2.5 py-2 text-[11px] text-white/60 min-w-0">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-white/30">{t('pwte.filter.action')}</span>
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={modes.translate} className="h-3.5 w-3.5 accent-accent"
             onChange={(e) => onModes({ ...modes, translate: e.target.checked })} />
