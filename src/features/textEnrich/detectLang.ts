@@ -45,7 +45,15 @@ const SIGNS: { lang: Lang; re: RegExp; weight: number }[] = [
   { lang: 'de', re: /ß/g, weight: 3 },
   { lang: 'de', re: /\b\w*(?:ä|ö|ü)\w*\b/gi, weight: 1 },
   { lang: 'nl', re: /\bij\w|\w{2,}ij\b/gi, weight: 1 },
-  { lang: 'es', re: /[ñ¿¡]/g, weight: 3 },
+  { lang: 'es', re: /ñ/g, weight: 3 },
+  // ⚠⚠ La ponctuation ouvrante espagnole ne compte que si elle est REFERMÉE. Relevé en
+  // production : « GOUPILLE ¡ RESSORT », « LEVIER DE FREIN, ¡ DROITE »,
+  // « RESSORT ¡ PRESSION .150 X .675 » — des libellés parfaitement français, rangés en
+  // ESPAGNOL parce qu'un « ¡ » isolé pesait à lui seul plus que le seuil de décision. Ce
+  // caractère n'est pas de l'espagnol : c'est un accident d'encodage (latin-1 / CP850 mal
+  // converti), et il est fréquent sur les exports d'ERP. En espagnol réel, « ¡ » ouvre
+  // toujours une exclamation qu'un « ! » referme.
+  { lang: 'es', re: /¿[^?]{0,120}\?|¡[^!]{0,120}!/g, weight: 3 },
   { lang: 'fr', re: /[àâçéèêëîïôùûœ]/gi, weight: 1 },
   { lang: 'it', re: /\w+(?:zione|zioni)\b/gi, weight: 2 },
 ]

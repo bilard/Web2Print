@@ -70,3 +70,27 @@ describe('pièges du domaine', () => {
     expect(lang('Réservoir à carburant avec bouchon et joint')).toBe('fr')
   })
 })
+
+// ⚠⚠ Relevé en production : des libellés FRANÇAIS classés espagnol à cause d'un « ¡ »
+// isolé — un accident d'encodage courant sur les exports d'ERP, pas de l'espagnol. Le
+// signe pesait à lui seul plus que le seuil de décision.
+describe('ponctuation espagnole : ouvrante seule = encodage cassé', () => {
+  for (const label of [
+    'GOUPILLE ¡ RESSORT',
+    'LEVIER DE FREIN, ¡ DROITE',
+    'INTERRUPTEUR ¡ RESSORT',
+    'RESSORT ¡ PRESSION .150 X .675',
+  ]) {
+    it(`« ${label} » n’est pas de l’espagnol`, () => {
+      expect(detectLanguage(label).lang).not.toBe('es')
+    })
+  }
+
+  it('une exclamation RÉELLEMENT espagnole compte toujours', () => {
+    expect(detectLanguage('¡Oferta especial para todos los modelos!').lang).toBe('es')
+  })
+
+  it('le ñ reste un indice fort à lui seul', () => {
+    expect(detectLanguage('Muelle de compresión para la caña').lang).toBe('es')
+  })
+})
