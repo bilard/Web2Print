@@ -391,12 +391,12 @@ export default function DashboardPage() {
             le bloc utilisateur (avatar/réglages/déconnexion) hors de l'écran. */}
         <nav
           data-tour="sidebar"
-          // ⚠ PAS de `flex-1` ici : un `<div className="flex-1" />` occupe déjà le reste
-          // sous le menu (et le portail de la barre d'outils Données le remplace en
-          // section « data »). Deux frères en `flex-1` se partagent la hauteur — le menu
-          // se voyait alors coupé après quelques modules, sans que rien ne le laisse
-          // deviner. `min-h-0` suffit : il fait défiler DANS le menu.
-          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 min-h-0 overflow-y-auto overscroll-contain`}
+          // ⚠ `flex-1 min-h-0` et RIEN d'autre en `flex-1` parmi ses frères. Le menu prend
+          // la hauteur qui reste et défile dedans ; le bloc utilisateur (avatar, langue,
+          // thème, déconnexion) tient le bas. Sans `flex-1`, le menu pousse ce bloc hors
+          // de l'écran ; avec un second `flex-1` à côté, les deux se partagent la hauteur
+          // et le menu se coupe après quelques modules. Les deux ont été vécus.
+          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 flex-1 min-h-0 overflow-y-auto overscroll-contain`}
           aria-label={t('dashboard.moduleNav')}
         >
           {sidebarOpen ? (
@@ -454,15 +454,13 @@ export default function DashboardPage() {
 
         {/* Data toolbar portal target */}
         {activeSection === 'data' && sidebarOpen && (
-          <div className="flex-1 overflow-y-auto px-2 border-t border-white/[0.06] pt-2">
+          <div className="shrink-0 max-h-[45%] overflow-y-auto px-2 border-t border-white/[0.06] pt-2">
             <div id="data-toolbar-portal" />
           </div>
         )}
 
-        {(activeSection !== 'data' || !sidebarOpen) && <div className="flex-1" />}
-
         {/* User + Settings */}
-        <div data-tour="user-menu" className={`${sidebarOpen ? 'px-2' : 'px-1.5'} py-3 border-t border-white/[0.06]`}>
+        <div data-tour="user-menu" className={`${sidebarOpen ? 'px-2' : 'px-1.5'} py-3 border-t border-white/[0.06] shrink-0`}>
           {sidebarOpen ? (
             <div className="flex items-center gap-2.5 px-2">
               {user?.photoURL ? (

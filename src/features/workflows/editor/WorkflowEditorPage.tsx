@@ -234,7 +234,7 @@ export function WorkflowEditorPage() {
 
   return (
     <ReactFlowProvider>
-      <div className="h-screen bg-background text-white flex flex-col">
+      <div className="h-screen bg-background text-white flex flex-col overflow-hidden">
         <PreflightBanner
           issues={liveIssues}
           errors={liveErrors}
