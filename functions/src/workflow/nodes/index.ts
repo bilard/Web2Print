@@ -11,6 +11,7 @@ import './webScraping'
 import './webhookPost'
 import './costReport'   // jumeau serveur cost-report (headless, lit Firestore)
 import './priceWatchReport' // jumeau serveur price-watch-report (mail du matin, cron)
+import './catalogTextRevise' // jumeau serveur catalog-text-revise (traduction du catalogue, cron)
 import './sendWindow'      // jumeau serveur send-window (cadence des envois)
 import './analyticsReport' // jumeau serveur analytics-report (headless, owner-only)
 import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton serveur)

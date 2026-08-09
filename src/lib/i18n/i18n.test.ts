@@ -86,6 +86,9 @@ describe('jumeaux de catalogue', () => {
     ['xl.scraped.itemCount', 'st.itemCount'],
     ['sc.compareManufacturer', 'sc.compareManufacturerFull'],
     ['rd.install.hint', 'pu.installHint'],
+    // La carte de workflow et l'écran offrent la MÊME portée sur les mêmes fiches :
+    // deux libellés différents pour un choix identique se liraient comme deux réglages.
+    ['node.catalog-text-revise.scope.foreign', 'pwte.scope.foreign'],
   ]
 
   it('ne contient pas deux clés au texte français identique', () => {

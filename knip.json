@@ -29,7 +29,10 @@
       "ignoreBinaries": [
         "firebase"
       ],
-      "ignoreExportsUsedInFile": true
+      "ignoreExportsUsedInFile": true,
+      "ignore": [
+        "src/textEnrich/**"
+      ]
     }
   }
 }

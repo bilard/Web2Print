@@ -223,6 +223,34 @@ const MESSAGES = {
     fr: 'Déjà envoyé pour cette période ({key}).',
     en: 'Already sent for this period ({key}).',
   },
+  'run.catalogTextRevise.noMode': {
+    fr: 'Rien à faire : cochez « Traduire en français » ou « Étoffer le texte de vente ».',
+    en: 'Nothing to do: tick “Translate into French” or “Expand the sales copy”.',
+  },
+  'run.catalogTextRevise.noCatalog': {
+    fr: 'Aucun catalogue source pour le suivi « {watchId} » — lancez « Comparer catalogue » d’abord.',
+    en: 'No source catalogue for tracking “{watchId}” — run “Compare catalogue” first.',
+  },
+  'run.catalogTextRevise.queue': {
+    fr: '{total} fiches à reprendre ({fresh} nouvelles, {stale} modifiées à la source) — {taken} traitées ce passage.',
+    en: '{total} listings to pick up ({fresh} new, {stale} changed at source) — {taken} handled this pass.',
+  },
+  'run.catalogTextRevise.done': {
+    fr: '{kept} fiches réécrites, {refused} refusées par la garde, sur {asked} demandées.',
+    en: '{kept} listings rewritten, {refused} refused by the guard, out of {asked} requested.',
+  },
+  'run.catalogTextRevise.reason.new': {
+    fr: 'nouvelle',
+    en: 'new',
+  },
+  'run.catalogTextRevise.reason.stale': {
+    fr: 'modifiée à la source',
+    en: 'changed at source',
+  },
+  'run.catalogTextRevise.badJson': {
+    fr: 'Réponse illisible du modèle sur un lot de {count} fiches — elles reviendront au passage suivant.',
+    en: 'Unreadable model response on a batch of {count} listings — they will come back on the next pass.',
+  },
   'run.pwReport.noReport': {
     fr: "Aucun rapport pour le suivi « {watchId} » : lance « Comparer catalogue » avant d'envoyer le mail.",
     en: 'No report for monitoring "{watchId}": run "Compare catalogue" before sending the email.',
