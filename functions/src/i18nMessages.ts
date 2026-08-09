@@ -224,8 +224,8 @@ const MESSAGES = {
     en: 'Already sent for this period ({key}).',
   },
   'run.catalogTextRevise.noMode': {
-    fr: 'Rien à faire : cochez « Traduire en français » ou « Étoffer le texte de vente ».',
-    en: 'Nothing to do: tick “Translate into French” or “Expand the sales copy”.',
+    fr: 'Rien à faire : cochez « Traduire en français » ou « Améliorer le texte de vente ».',
+    en: 'Nothing to do: tick “Translate into French” or “Improve the sales copy”.',
   },
   'run.catalogTextRevise.noCatalog': {
     fr: 'Aucun catalogue source pour le suivi « {watchId} » — lancez « Comparer catalogue » d’abord.',

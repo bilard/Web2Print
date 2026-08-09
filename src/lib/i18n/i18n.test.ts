@@ -89,6 +89,7 @@ describe('jumeaux de catalogue', () => {
     // La carte de workflow et l'écran offrent la MÊME portée sur les mêmes fiches :
     // deux libellés différents pour un choix identique se liraient comme deux réglages.
     ['node.catalog-text-revise.scope.foreign', 'pwte.scope.foreign'],
+    ['node.catalog-text-revise.improve', 'pwte.mode.improve'],
   ]
 
   it('ne contient pas deux clés au texte français identique', () => {
