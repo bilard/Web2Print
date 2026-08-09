@@ -1266,6 +1266,8 @@ export const en: Record<TranslationKey, string> = {
   // — Workflows : éditeur de graphe ————————————————————————————————————
   'wfe.loading': 'Loading…',
   'wfe.notFound': 'Workflow not found',
+  'wfe.unknownNode': 'Unknown type: {type}',
+  'wfe.unknownNode.remove': 'Remove this card from the flow — its type no longer exists in the application.',
   'wfe.saved': 'Workflow saved',
   'wfe.back': 'Back to the workflows',
   'wfe.back.esc': 'Back to the workflows (Esc)',

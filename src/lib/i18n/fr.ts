@@ -1329,6 +1329,8 @@ export const fr = {
   // — Workflows : éditeur de graphe ————————————————————————————————————
   'wfe.loading': 'Chargement…',
   'wfe.notFound': 'Workflow introuvable',
+  'wfe.unknownNode': 'Type inconnu : {type}',
+  'wfe.unknownNode.remove': 'Retirer cette carte du flux — son type n’existe plus dans l’application.',
   'wfe.saved': 'Workflow enregistré',
   'wfe.back': 'Retour aux workflows',
   'wfe.back.esc': 'Retour aux workflows (Esc)',

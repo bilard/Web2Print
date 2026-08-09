@@ -11,7 +11,7 @@ import { executeWorkflow } from '../../runtime/executor'
 import { notifyRunOutcome } from '../../runtime/notifyRunOutcome'
 import { useWorkflowStore } from '../../persistence/workflow.store'
 import { useCan } from '@/features/access/useAccess'
-import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play, Square } from 'lucide-react'
+import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Download, Play, Square, Trash2 } from 'lucide-react'
 import type { NodeSpec, Port } from '../../types'
 import { useTranslation } from '@/lib/i18n'
 
@@ -199,9 +199,19 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const drag = { fromType: dragFromType, fromKind: dragFromKind }
 
   if (!spec) {
+    // ⚠ Une carte de type INCONNU doit pouvoir partir d'ici. Elle n'a ni panneau de
+    // configuration (rien à configurer) ni suppression au clavier : elle restait donc
+    // dans le graphe pour toujours, à faire crier le pré-vol à chaque ouverture. Le cas
+    // n'a rien d'exotique — il suffit qu'une carte disparaisse d'une version à l'autre,
+    // ou qu'un workflow arrive d'un autre poste.
     return (
-      <div className="bg-red-950 border border-red-700 text-red-300 text-[11px] px-2 py-1 rounded">
-        Unknown: {nodeType ?? 'no-type'}
+      <div className="bg-red-950 border border-red-700 text-red-300 text-[11px] px-2 py-1 rounded flex items-center gap-2">
+        <span>{t('wfe.unknownNode', { type: nodeType ?? '?' })}</span>
+        <button type="button" title={t('wfe.unknownNode.remove')}
+          onClick={() => useWorkflowStore.getState().removeNode(id)}
+          className="rounded p-0.5 text-red-300/70 hover:bg-red-900 hover:text-red-100">
+          <Trash2 className="w-3 h-3" />
+        </button>
       </div>
     )
   }
