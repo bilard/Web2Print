@@ -22,15 +22,15 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart',
-  'text-enrich',
 ])
 
 /** Non exécutables ici, mais qui LAISSENT PASSER leur entrée vers l'aval : le run
- *  continue, avec un avertissement au journal. Cf. la note du registre serveur — casser
- *  une chaîne de veille entière pour une carte accessoire coûtait plus cher que le risque
- *  qu'on voulait couvrir. */
+ *  continue, avec un avertissement au journal.
+ *
+ *  ⚠ VIDE depuis que « Enrichir les textes » a son jumeau serveur. L'y laisser ferait
+ *  annoncer au pré-vol « la donnée passe sans être traitée » sur une carte qui traduit
+ *  bel et bien pendant le run planifié. */
 export const SERVER_PASS_THROUGH = new Set<string>([
-  'text-enrich',
 ])
 
 /** Sous-ensemble purement VISUEL : côté serveur ces cartes sont ignorées proprement

@@ -38,8 +38,3 @@ export const PRICE_STATE_BYTES = 900_000
 export const pairingRulesDoc = (uid: string, watchId: string) =>
   `${watchDoc(uid, watchId)}/settings/pairing`
 
-/** Textes réécrits du suivi — jumeau du chemin client. Le cron DOIT écrire dans la MÊME
- *  collection que l'écran « Traduire et améliorer les textes » : sinon la traduction
- *  nocturne serait invisible au matin, et le passage suivant la referait à ses frais. */
-export const textRevisionsCol = (uid: string, watchId: string) =>
-  `${watchDoc(uid, watchId)}/textRevisions`

@@ -11,7 +11,7 @@ import './webScraping'
 import './webhookPost'
 import './costReport'   // jumeau serveur cost-report (headless, lit Firestore)
 import './priceWatchReport' // jumeau serveur price-watch-report (mail du matin, cron)
-import './catalogTextRevise' // jumeau serveur catalog-text-revise (traduction du catalogue, cron)
+import './textEnrich' // jumeau serveur text-enrich (traduction/enrichissement au cron)
 import './sendWindow'      // jumeau serveur send-window (cadence des envois)
 import './analyticsReport' // jumeau serveur analytics-report (headless, owner-only)
 import './gdriveExport' // jumeau serveur gdrive-export (upload Drive via jeton serveur)
@@ -29,11 +29,6 @@ export const SERVER_UNSUPPORTED = new Set<string>([
   'import-idml', 'import-svg', 'import-pptx', 'import-image',
   'import-csv', 'upload', 'export-excel', 'export-pptx', 'generate-image',
   'chart', // rendu PNG via <canvas> (client) ; le graphe en cron passe par l'option Sheets natif
-  // ⚠ `text-enrich` n'est PAS ici pour une raison technique de navigateur : il pourrait
-  // parfaitement tourner côté serveur. Son moteur n'est simplement pas encore porté (il
-  // s'appuie sur le lotisseur de complétion de colonne, côté client). Il figure aussi
-  // dans SERVER_PASS_THROUGH ci-dessous : non exécutable, mais transparent pour l'aval.
-  'text-enrich',
 ])
 
 /** Sous-ensemble de SERVER_UNSUPPORTED purement VISUEL/aperçu (sortie sans valeur de
@@ -42,14 +37,10 @@ export const SERVER_UNSUPPORTED = new Set<string>([
  *  faire passer tout le run en « partial » alors que les sorties utiles (Sheet, mail) sont OK. */
 /** Non exécutables ici, mais qui LAISSENT PASSER leur entrée vers l'aval.
  *
- *  ⚠ `text-enrich` était marqué en erreur pour qu'un run planifié ne réussisse pas sans
- *  avoir enrichi. Le remède était pire : posée au milieu d'une chaîne de veille, la carte
- *  faisait sauter tout l'aval — « Recherche dirigée : aucune donnée produit en entrée » —
- *  et la veille entière restait muette. La réécriture des textes se fait désormais dans
- *  l'écran « Traduire (IA) », hors workflow ; la carte n'a plus à décider du sort d'une
- *  chaîne qui ne la concerne pas. L'avertissement reste au journal. */
+ *  ⚠ VIDE depuis que `text-enrich` a son jumeau serveur : elle traduit maintenant DANS le
+ *  run planifié au lieu d'être traversée. Le laisser ici ferait mentir le pré-vol, qui
+ *  annoncerait « la donnée passe sans être traitée » sur une carte qui travaille. */
 export const SERVER_PASS_THROUGH = new Set<string>([
-  'text-enrich',
 ])
 
 export const SERVER_SKIP_VISUAL = new Set<string>([

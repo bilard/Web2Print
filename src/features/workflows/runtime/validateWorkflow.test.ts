@@ -249,16 +249,14 @@ describe('carte qui ne tourne pas côté serveur', () => {
     expect(err?.fix).toEqual({ kind: 'drop-node' })
   })
 
-  it('une carte TRANSPARENTE est un avertissement : le run passe, le travail n’est pas fait', () => {
-    // L'enrichissement de textes laisse passer la donnée — il ne casse plus l'aval, mais
-    // un run planifié « réussi » ne doit pas laisser croire que les textes sont traités.
+  it('une carte qui a son jumeau serveur ne déclenche RIEN, planifiée ou non', () => {
+    // « Enrichir les textes » traduit maintenant dans le run planifié. L'avertir de
+    // l'inverse enverrait retirer une carte qui fait son travail.
     const issues = validateWorkflow(wf([
       { id: 'k', type: 'cron', config: { enabled: true } },
       { id: 'e', type: 'text-enrich', config: { projectId: 'p1' } },
     ]), getSpec)
-    const warn = issues.find((i) => i.nodeId === 'e')
-    expect(warn?.severity).toBe('warning')
-    expect(warn?.fix).toEqual({ kind: 'drop-node' })
+    expect(issues.filter((i) => i.nodeId === 'e')).toHaveLength(0)
   })
 
   it('sans planification : rien à signaler — le navigateur sait l’exécuter', () => {

@@ -37,10 +37,12 @@ describe('breaksServerRun', () => {
     expect(breaksServerRun('chart')).toBe(false)
   })
 
-  it("l'enrichissement de textes ne casse PLUS le run, mais reste annoncé", () => {
-    // Il faisait sauter tout l'aval d'une chaîne de veille qui ne le concernait pas.
+  it('l’enrichissement de textes tourne côté serveur : plus rien à annoncer', () => {
+    // Il a désormais son jumeau (`functions/src/workflow/nodes/textEnrich.ts`) : le cron
+    // traduit au lieu de laisser passer. Le signaler ferait annoncer au pré-vol un travail
+    // non fait sur une carte qui travaille.
     expect(breaksServerRun('text-enrich')).toBe(false)
-    expect(ignoredOnServer('text-enrich')).toBe(true)
+    expect(ignoredOnServer('text-enrich')).toBe(false)
   })
 
   it('un export PDF, lui, casse toujours le run — sa sortie EST le travail', () => {

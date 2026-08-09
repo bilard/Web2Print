@@ -223,33 +223,33 @@ const MESSAGES = {
     fr: 'Déjà envoyé pour cette période ({key}).',
     en: 'Already sent for this period ({key}).',
   },
-  'run.catalogTextRevise.noMode': {
-    fr: 'Rien à faire : cochez « Traduire en français » ou « Améliorer le texte de vente ».',
-    en: 'Nothing to do: tick “Translate into French” or “Improve the sales copy”.',
+  'run.textEnrich.planned': {
+    fr: '{units} champs à traiter sur {considered} examinés ({done} déjà faits).',
+    en: '{units} fields to process out of {considered} examined ({done} already done).',
   },
-  'run.catalogTextRevise.noCatalog': {
-    fr: 'Aucun catalogue source pour le suivi « {watchId} » — lancez « Comparer catalogue » d’abord.',
-    en: 'No source catalogue for tracking “{watchId}” — run “Compare catalogue” first.',
+  'run.textEnrich.rejected': {
+    fr: 'Proposition refusée pour {product} / {field} : {kinds}.',
+    en: 'Proposal refused for {product} / {field}: {kinds}.',
   },
-  'run.catalogTextRevise.queue': {
-    fr: '{total} fiches à reprendre ({fresh} nouvelles, {stale} modifiées à la source) — {taken} traitées ce passage.',
-    en: '{total} listings to pick up ({fresh} new, {stale} changed at source) — {taken} handled this pass.',
+  'run.textEnrich.progress': {
+    fr: '{done} / {total} champs traités.',
+    en: '{done} / {total} fields processed.',
   },
-  'run.catalogTextRevise.done': {
-    fr: '{kept} fiches réécrites, {refused} refusées par la garde, sur {asked} demandées.',
-    en: '{kept} listings rewritten, {refused} refused by the guard, out of {asked} requested.',
+  'run.textEnrich.done': {
+    fr: '{revised} champs révisés, {rejected} refusés. Passage « {passId} ».',
+    en: '{revised} fields revised, {rejected} refused. Pass “{passId}”.',
   },
-  'run.catalogTextRevise.reason.new': {
-    fr: 'nouvelle',
-    en: 'new',
+  'run.textEnrich.serverSheetOnly': {
+    fr: "Le run planifié ne sait traiter que le mode FEUILLE : branchez une feuille sur l'entrée de la carte, ou lancez-la depuis le navigateur pour travailler sur un projet PIM.",
+    en: 'The scheduled run can only handle SHEET mode: wire a sheet into the card, or launch it from the browser to work on a PIM project.',
   },
-  'run.catalogTextRevise.reason.stale': {
-    fr: 'modifiée à la source',
-    en: 'changed at source',
+  'run.textEnrich.serverConfig': {
+    fr: 'Configuration incomplète ({code}) : corrigez-la avant de planifier le run.',
+    en: 'Incomplete configuration ({code}): fix it before scheduling the run.',
   },
-  'run.catalogTextRevise.badJson': {
-    fr: 'Réponse illisible du modèle sur un lot de {count} fiches — elles reviendront au passage suivant.',
-    en: 'Unreadable model response on a batch of {count} listings — they will come back on the next pass.',
+  'run.textEnrich.serverBadJson': {
+    fr: 'Réponse illisible du modèle sur un lot — les textes concernés reviendront au passage suivant.',
+    en: 'Unreadable model response on a batch — the texts involved will come back on the next pass.',
   },
   'run.pwReport.noReport': {
     fr: "Aucun rapport pour le suivi « {watchId} » : lance « Comparer catalogue » avant d'envoyer le mail.",
