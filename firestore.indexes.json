@@ -4,8 +4,14 @@
       "collectionGroup": "workflowRuns",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "workflowId", "order": "ASCENDING" },
-        { "fieldPath": "endedAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "workflowId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "endedAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
@@ -111,5 +117,11 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "textEnrich",
+      "fieldPath": "data",
+      "indexes": []
+    }
+  ]
 }

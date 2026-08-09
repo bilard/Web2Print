@@ -12,8 +12,46 @@ import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { EnrichMemory } from './sheetMemory'
 
-/** Budget d'octets par tranche. Même valeur que le catalogue source, même raison. */
-const CHUNK_BYTES = 900_000
+/**
+ * Une tranche, telle qu'elle est ÉCRITE : la mémoire sérialisée dans UN champ.
+ *
+ * ⚠⚠ Écrite à plat (une entrée par référence), Firestore indexe CHAQUE clé et chaque
+ * sous-champ : à quinze mille références par tranche, on dépasse la limite dure de 40 000
+ * entrées d'index par document et l'écriture est refusée —
+ * « INVALID_ARGUMENT: too many index entries for entity ». En production, la mémoire du
+ * passage était alors PERDUE, et la nuit suivante retraitait — et refacturait — tout ce
+ * qui venait d'être fait.
+ *
+ * Un champ unique, c'est une seule entrée d'index quel que soit le nombre de références.
+ * Il est en plus exempté d'indexation (`firestore.indexes.json`), une chaîne de 900 ko
+ * n'ayant rien à faire dans un index.
+ */
+interface MemoryChunkDoc { data?: string }
+
+/** Relit une tranche, quel que soit son format. ⚠ Les tranches écrites AVANT ce
+ *  changement sont à plat : les lire encore évite de repartir de zéro — donc de
+ *  retraiter cent mille fiches déjà payées. */
+function readChunk(raw: unknown): EnrichMemory {
+  const d = (raw ?? {}) as MemoryChunkDoc
+  if (typeof d.data !== 'string') return raw as EnrichMemory
+  try {
+    return JSON.parse(d.data) as EnrichMemory
+  } catch {
+    // Tranche illisible : mieux vaut retraiter sa part que faire tomber tout le passage.
+    return {}
+  }
+}
+
+/**
+ * Budget d'octets par tranche. Jamais un cap par NOMBRE d'entrées : au compte, un lot
+ * dépasse la limite dure de 1 Mo par document et l'écriture est REFUSÉE.
+ *
+ * ⚠ 700 ko et non 900 : la tranche est écrite SÉRIALISÉE, et l'échappement des guillemets
+ * gonfle la chaîne d'environ 15 % par rapport à la taille mesurée ici. À 900 ko, une
+ * tranche bien remplie frôlait le mégaoctet — la marge coûte une tranche de plus, l'échec
+ * coûte la mémoire du passage.
+ */
+const CHUNK_BYTES = 700_000
 
 const memoryCol = (uid: string, workflowId: string) =>
   `users/${uid}/workflowMemory/${workflowId}/textEnrich`
@@ -24,7 +62,7 @@ export async function loadEnrichMemory(uid: string, workflowId: string): Promise
   const out: EnrichMemory = {}
   for (const d of snap.docs) {
     if (d.id === '_meta') continue
-    Object.assign(out, d.data() as EnrichMemory)
+    Object.assign(out, readChunk(d.data()))
   }
   return out
 }
@@ -65,7 +103,7 @@ export async function saveEnrichMemory(
   for (let i = 0; i < chunks.length; i += 400) {
     const batch = writeBatch(db)
     for (let j = i; j < Math.min(i + 400, chunks.length); j++) {
-      batch.set(doc(db, col, `c${j}`), chunks[j])
+      batch.set(doc(db, col, `c${j}`), { data: JSON.stringify(chunks[j]) } satisfies MemoryChunkDoc)
     }
     await batch.commit()
   }
