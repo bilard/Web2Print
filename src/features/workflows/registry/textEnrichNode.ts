@@ -309,7 +309,13 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
         })),
         spentUsd: () => spentUsd,
         capUsd: config.capUsd > 0 ? config.capUsd : undefined,
-        onChunkDone: (done, total) => ctx.log('info', t('run.textEnrich.progress', { done, total })),
+        // ⚠ Une ligne tous les 500 champs, pas à chaque lot. Le journal ne garde que
+        // 200 entrées : à raison d'une par lot de dix, la progression évinçait les seuls
+        // messages qui comptent — « mémorisé », « temps écoulé », « publiées ». On ne
+        // voyait plus la fin du passage, seulement son milieu.
+        onChunkDone: (done, total) => {
+          if (done % 500 < 10 || done >= total) ctx.log('info', t('run.textEnrich.progress', { done, total }))
+        },
         now: () => at,
       }), { limit: Number(config.maxUnits) > 0 ? Number(config.maxUnits) : undefined })
     } finally {

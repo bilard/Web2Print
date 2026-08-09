@@ -157,7 +157,15 @@ registerServerNode({
         // dans une fenêtre de vingt-huit minutes : la fonction était tuée, la mémoire
         // jamais écrite, et tout l'aval du graphe jamais atteint.
         deadlineAt: ctx.deadlineAt,
-        onChunkDone: (done, total) => ctx.log('info', t(ctx.locale, 'run.textEnrich.progress', { done, total })),
+        // ⚠ Une ligne tous les 500 champs, pas à chaque lot. Le journal ne garde que
+        // 200 entrées : à raison d'une par lot de dix, la progression évinçait les seuls
+        // messages qui comptent — « mémorisé », « temps écoulé », « publiées ». On ne
+        // voyait plus la fin du passage, seulement son milieu.
+        onChunkDone: (done, total) => {
+          if (done % 500 < 10 || done >= total) {
+            ctx.log('info', t(ctx.locale, 'run.textEnrich.progress', { done, total }))
+          }
+        },
       }),
       { limit: Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : undefined })
 
