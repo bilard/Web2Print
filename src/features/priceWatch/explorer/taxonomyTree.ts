@@ -1,9 +1,10 @@
-// Arbre de taxonomie F1 construit sur les fiches DU CONCURRENT affiché. PUR.
+// Arbre de taxonomie F1 construit sur une liste de CHEMINS. PUR.
 //
-// C'est tout l'intérêt : l'arbre ne montre pas votre catalogue entier mais la part
-// que ce concurrent référence — une famille qu'il ne vend pas n'a pas à occuper une
-// ligne, et le compteur de chaque nœud dit combien de fiches il lui oppose.
-import type { PairedRow } from './pairing'
+// ⚠ L'arbre ne connaît pas ce qu'il classe : face à un concurrent il reçoit les chemins
+// des fiches appariées (une famille qu'il ne vend pas n'a pas à occuper une ligne), en
+// vue « Mon catalogue » ceux des produits source. Lui passer des `PairedRow` l'aurait
+// enfermé sur le premier usage, et la vue catalogue héritait d'un arbre qui parlait du
+// concurrent — un contrôle qui ne pilotait rien.
 
 export interface TaxoNode {
   /** Chemin complet depuis la racine (sert de clé et de valeur de filtre). */
@@ -24,12 +25,11 @@ export interface TaxoTree {
 
 interface Mutable { label: string; count: number; children: Map<string, Mutable> }
 
-export function buildTaxoTree(rows: PairedRow[]): TaxoTree {
+export function buildTaxoTree(paths: string[][]): TaxoTree {
   const roots = new Map<string, Mutable>()
   let unclassified = 0
 
-  for (const row of rows) {
-    const path = row.source?.path ?? []
+  for (const path of paths) {
     if (path.length === 0) { unclassified++; continue }
     let level = roots
     for (const label of path) {
@@ -50,7 +50,7 @@ export function buildTaxoTree(rows: PairedRow[]): TaxoTree {
         return { path, label: n.label, count: n.count, children: toNodes(n.children, path) }
       })
 
-  return { roots: toNodes(roots, []), unclassified, total: rows.length }
+  return { roots: toNodes(roots, []), unclassified, total: paths.length }
 }
 
 /** true si `path` est le chemin sélectionné ou l'un de ses descendants. */

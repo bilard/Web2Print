@@ -37,6 +37,8 @@ import { useCompilation } from './useCompilation'
 import { useAllVerdicts } from './useAllVerdicts'
 import { ExplorerCompileBar } from './ExplorerCompileBar'
 import { ExplorerCatalog } from './ExplorerCatalog'
+import { ExplorerCatalogStats } from './ExplorerCatalogStats'
+import { filterCatalog, catalogFacts } from './catalogList'
 import { ExplorerRailModes, type ExplorerMode } from './ExplorerRailModes'
 import { TextEnrichScreen } from '../textEnrich/TextEnrichScreen'
 import { useSourceSheet } from './useSourceSheet'
@@ -216,6 +218,31 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
     [rows, effective, beforeTaxo, verdictOf, visualOf],
   )
   const stats = useMemo(() => computeStats(filtered, visualOf), [filtered, visualOf])
+  // ── Vue « Mon catalogue » : le même appareil de contrôle, branché sur MES produits ──
+  // Recherche et famille s'y appliquent comme chez un concurrent ; le pager, la mesure et
+  // l'arbre lisent CES listes-là. Calculé ici et non dans la vue pour que la barre d'outils
+  // et l'arbre disposent des mêmes nombres qu'elle — sinon le pager annonce une page 3 sur
+  // une liste qui n'en a qu'une.
+  const catalogBeforeTaxo = useMemo(
+    () => (catalogMode ? filterCatalog(source.products, filter.q, []) : []),
+    [catalogMode, source.products, filter.q],
+  )
+  const catalogFound = useMemo(
+    () => (filter.path.length === 0 ? catalogBeforeTaxo : filterCatalog(source.products, filter.q, filter.path)),
+    [catalogBeforeTaxo, filter.path, source.products, filter.q],
+  )
+  const catFacts = useMemo(
+    () => catalogFacts(source.products, catalogFound),
+    [source.products, catalogFound],
+  )
+  // L'arbre classe les CHEMINS de ce qui est affiché : ceux du catalogue quand c'est lui
+  // qu'on parcourt, ceux des fiches appariées face à un concurrent.
+  const taxoPaths = useMemo(
+    () => (catalogMode
+      ? catalogBeforeTaxo.map((p) => p.taxo ?? [])
+      : beforeTaxo.map((r) => r.source?.path ?? [])),
+    [catalogMode, catalogBeforeTaxo, beforeTaxo],
+  )
   // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
   // expliquer une liste vidée par le filtre de fiabilité.
   const bands = useMemo(() => countBands(rows), [rows])
@@ -231,9 +258,16 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
   }), [source.products, source.partial, source.expected, source.sourceRows, source.bytes, source.ms, workflowId])
 
   // Le nombre de pages rétrécit avec les filtres : rester sur la page 7 d'un résultat qui
-  // n'en compte plus que 2 afficherait une liste vide sans rien expliquer.
-  useEffect(() => { setPage(0) }, [active, compiling])
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
+  // n'en compte plus que 2 afficherait une liste vide sans rien expliquer. Le changement
+  // de VUE compte aussi : la page 40 d'un concurrent n'a pas de sens au catalogue.
+  useEffect(() => { setPage(0) }, [active, compiling, mode])
+  // ⚠ Le chemin choisi appartient à l'arbre de la vue qu'on quitte : les familles d'un
+  // concurrent ne sont qu'une part de celles du catalogue. Le conserver vidait la liste
+  // d'arrivée sans qu'aucun contrôle visible n'explique pourquoi.
+  useEffect(() => { setFilter((f) => (f.path.length === 0 ? f : { ...f, path: [] })) }, [mode])
+  // Le pager commande la vue AFFICHÉE, quelle qu'elle soit : concurrent ou catalogue.
+  const pagedTotal = catalogMode ? catalogFound.length : filtered.length
+  const pageCount = Math.max(1, Math.ceil(pagedTotal / pageSize))
   const safePage = Math.min(page, pageCount - 1)
   const visible = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize)
 
@@ -262,6 +296,16 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
   return (
     <div className="h-full flex flex-col min-h-0" data-pw-section="explorer">
       {/* ── Étage 1 · mesure : où j'en suis face à lui ───────────────────────── */}
+      {/* ⚠ La mesure suit la VUE. En « Mon catalogue » elle décrit le catalogue ; l'écran
+          de traduction porte ses propres compteurs et n'en veut aucun ici. Laisser la
+          ligne du concurrent partout affichait « appariées 1 183 / 103 407 » au-dessus de
+          « 115 814 produits » : des chiffres justes au mauvais endroit se lisent faux. */}
+      {enrichMode ? null : catalogMode ? (
+        <div className="flex items-center gap-5 px-3 py-2.5 bg-surface-2/60 border-b border-white/[0.06] flex-wrap">
+          <ExplorerCatalogStats facts={catFacts} loading={source.loading}
+            partial={source.partial} expected={source.expected} />
+        </div>
+      ) : (
       <div className="flex items-center gap-5 px-3 py-2.5 bg-surface-2/60 border-b border-white/[0.06] flex-wrap">
         {/* Tant que le catalogue source n'est pas relu, la position tarifaire n'existe pas :
             afficher un ruban à zéro se lirait comme « aligné partout ». On dit ce qui est
@@ -288,18 +332,25 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
           onToggleSuspects={() => patch({ trust: effective.trust === 'suspect' ? 'all' : 'suspect' })}
           onToggleVisualDiff={() => patch({ visual: effective.visual === 'different' ? 'all' : 'different' })} />
       </div>
+      )}
 
       {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}
       <div className="px-3 py-2 space-y-2 border-b border-white/10">
         <div className="flex items-center gap-2 flex-wrap">
-          <ExplorerSearch rows={rows} tokenIndex={tokenIndex} value={filter.q}
+          {/* Les suggestions (mots, réfs, codes-barres) sortent des lignes du CONCURRENT.
+              Les proposer au catalogue ferait cliquer sur des clés d'un autre périmètre :
+              mieux vaut n'en offrir aucune que d'en offrir de trompeuses. */}
+          <ExplorerSearch rows={catalogMode || enrichMode ? [] : rows}
+            tokenIndex={catalogMode || enrichMode ? [] : tokenIndex} value={filter.q}
             onChange={(q) => patch({ q })}
             onAddToken={(tk) => patch({ tokens: filter.tokens.includes(tk) ? filter.tokens : [...filter.tokens, tk] })} />
-          <ExplorerFilters filter={effective} onChange={patch} />
+          {/* Appariement, promo, rupture, fiabilité, visuel : tout se juge FACE à un
+              concurrent. Hors de cette vue, ces filtres ne pilotent rien. */}
+          {!catalogMode && !enrichMode && <ExplorerFilters filter={effective} onChange={patch} />}
           <div className="ml-auto flex items-center gap-2">
             {/* Avancement de l'audit : le seul chiffre qui mesure le TRAVAIL fait, pas
                 l'état des données. Sa place est près des contrôles qui le produisent. */}
-            {(() => {
+            {!catalogMode && !enrichMode && (() => {
               const counts = compiling ? allVerdicts.counts : verdicts.counts
               return (counts.ok > 0 || counts.ko > 0) && (
                 <span className="text-[10px] text-white/30 tabular-nums whitespace-nowrap">
@@ -307,8 +358,16 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
                 </span>
               )
             })()}
-            <ExplorerPager total={filtered.length} page={safePage} pageSize={pageSize}
-              onPage={setPage} onPageSize={setPageSize} />
+            {/* Le pager sert les DEUX listes. L'écran de traduction, lui, découpe par lots
+                de traitement et non par pages : deux paginations concurrentes s'y
+                contrediraient. */}
+            {!enrichMode && (
+              <ExplorerPager total={pagedTotal} page={safePage} pageSize={pageSize}
+                onPage={setPage} onPageSize={setPageSize} />
+            )}
+            {/* Relecture et exports portent sur les fiches du concurrent : les laisser
+                actifs au catalogue exporterait la liste d'à côté. */}
+            {!catalogMode && !enrichMode && (<>
             <button type="button" onClick={reload} disabled={loading || compiling} className={iconBtn} title={t('pwx.reload')}>
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -321,6 +380,7 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
             <button type="button" onClick={exportXlsx} disabled={filtered.length === 0} className={iconBtn} title={t('pwx.exportXlsx')}>
               <FileSpreadsheet className="w-3.5 h-3.5" />
             </button>
+            </>)}
             <ExplorerSourceSettings facts={facts} databases={src.databases} dbId={src.dbId} onPickDb={src.setDbId}
               loading={src.loading} sheets={src.sheets} sheetIndex={src.sheetIndex}
               onPickSheet={src.setSheetIndex} extras={extras} absent={source.absent}
@@ -328,7 +388,7 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
               productUrl={src.productUrl} onProductUrl={src.setProductUrl} />
           </div>
         </div>
-        <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />
+        {!catalogMode && !enrichMode && <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />}
       </div>
 
       {/* ── Concurrents · taxonomie F1 · liste : seules zones qui défilent ──── */}
@@ -370,7 +430,7 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] uppercase tracking-wider text-white/35 hover:text-white/70 border-b border-white/[0.06]">
               <PanelLeftClose className="w-3.5 h-3.5" />{t('pwx.taxo.title')}
             </button>
-            <ExplorerTaxonomyTree rows={beforeTaxo} selected={effective.path}
+            <ExplorerTaxonomyTree paths={taxoPaths} selected={effective.path}
               onSelect={(path) => patch({ path })} levels={extras.taxoLabels}
               diag={{
                 db: src.databases.find((d) => d.docId === src.dbId)?.label ?? t('pwx.db.open'),
@@ -394,7 +454,8 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
           <TextEnrichScreen uid={uid ?? ''} watchId={watchId} products={source.products}
             loading={source.loading} query={filter.q} />
         ) : catalogMode ? (
-          <ExplorerCatalog products={source.products} query={filter.q} imagePrefix={src.imagePrefix} />
+          <ExplorerCatalog products={catalogFound} page={safePage} pageSize={pageSize}
+            imagePrefix={src.imagePrefix} loading={source.loading} />
         ) : (
         <div className="flex-1 min-w-0 overflow-auto">
           <div className="grid grid-cols-2 text-[10px] uppercase tracking-wider sticky top-0 z-20 bg-surface-2 border-b border-white/10 shadow-[0_1px_0_rgba(255,255,255,0.04)]">

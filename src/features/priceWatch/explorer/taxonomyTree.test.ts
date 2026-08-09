@@ -30,10 +30,12 @@ const rows = pairSiteListings(products, 's1', listings, {
   vatRate: 0.2,
   extras: (p) => ({ description: null, url: null, images: [], path: PATHS[p.id] ?? [] }),
 })
+// L'arbre ne classe que des CHEMINS : c'est l'appelant qui dit d'où ils sortent.
+const pathsOf = (rs: typeof rows) => rs.map((r) => r.source?.path ?? [])
 
 describe('buildTaxoTree', () => {
   it('agrège les compteurs sur toute la branche, pas seulement sur la feuille', () => {
-    const tree = buildTaxoTree(rows)
+    const tree = buildTaxoTree(pathsOf(rows))
     const moto = tree.roots.find((n) => n.label === 'Motoculture')!
     expect(moto.count).toBe(3)
     const tondeuses = moto.children.find((n) => n.label === 'Tondeuses')!
@@ -42,11 +44,11 @@ describe('buildTaxoTree', () => {
   })
 
   it('classe les nœuds par volume, pas alphabétiquement', () => {
-    expect(buildTaxoTree(rows).roots.map((n) => n.label)).toEqual(['Motoculture', 'Jardin'])
+    expect(buildTaxoTree(pathsOf(rows)).roots.map((n) => n.label)).toEqual(['Motoculture', 'Jardin'])
   })
 
   it('compte à part les fiches sans chemin plutôt que de les rattacher', () => {
-    const tree = buildTaxoTree(rows)
+    const tree = buildTaxoTree(pathsOf(rows))
     expect(tree.unclassified).toBe(1)
     expect(tree.total).toBe(5)
   })
@@ -56,7 +58,7 @@ describe('buildTaxoTree', () => {
       // Sous-famille absente : le chemin doit s'arrêter à la famille.
       extras: () => ({ description: null, url: null, images: [], path: ['Motoculture'] }),
     })
-    const tree = buildTaxoTree(partial)
+    const tree = buildTaxoTree(pathsOf(partial))
     expect(tree.roots).toHaveLength(1)
     expect(tree.roots[0].children).toEqual([])
   })

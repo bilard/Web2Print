@@ -5,7 +5,7 @@ import {
   FileSpreadsheet, Upload, Download, Search, ArrowLeft,
   Table2, Tag, Plus, Save, Cloud, CloudOff,
   Loader2, Trash2, Columns3, RefreshCw, FolderTree, Group, List, Globe,
-  MoreVertical, ExternalLink, Store, Languages,
+  MoreVertical, ExternalLink, Store,
   PanelLeftClose, PanelRightClose, ChevronsRight, ChevronsLeft,
   Database, Folder, FolderOpen, Pencil, Check, ChevronRight, GripVertical,
   Wand2, FolderUp, Link2, ImagePlus, X, Factory,
@@ -91,7 +91,6 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   // L'explorateur vit dans le PIM et porte donc sa propre permission PIM ; il lit en plus
   // les relevés de veille tarifaire, d'où la double garde (les deux sont requises).
   // (deux appels séparés : `useCan(a) && useCan(b)` court-circuiterait le second hook)
-  const canEditTexts = useCan('pim.edit')
   const canPimCompetitors = useCan('pim.competitors')
   const canPriceWatch = useCan('priceWatch.view')
   const canCompetitors = canPimCompetitors && canPriceWatch
@@ -771,28 +770,11 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
               {t('pwx.competitors')}
             </button>
             )}
-            {/* Traduction / réécriture des textes produit. Même raison que le bouton
-                voisin d'être ici : c'est l'écran où l'on regarde ses textes, donc l'endroit
-                où l'on cherche de quoi les corriger. L'entrée du menu latéral existe aussi,
-                mais elle demande de déplier « Données » — un geste qu'on ne fait pas quand
-                on ne sait pas que la fonction existe. */}
-            {canEditTexts && (
-            <button
-              onClick={() => openExplorerOn('enrich')}
-              className={`flex items-center gap-2 whitespace-nowrap border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
-                competitorsOpen && explorerMode === 'enrich'
-                  ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
-                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/70'
-              }`}
-              title={t('pwte.title')}
-            >
-              <Languages className="w-4 h-4" />
-              {/* Libellé COURT : le nom complet du module (« Traduire et améliorer les
-                  textes ») repassait sur deux lignes et faisait de ce bouton le seul
-                  large de la rangée. Le titre au survol porte le nom entier. */}
-              {t('pwte.buttonShort')}
-            </button>
-            )}
+            {/* ⚠ Pas de bouton « Traduire (IA) » ici : l'explorateur porte déjà l'entrée
+                « Traduire et améliorer les textes » dans son rail, juste sous « Mon
+                catalogue ». Deux boutons pour la même vue, à deux endroits, avec deux
+                libellés — on cherchait lequel des deux ne faisait pas la même chose.
+                Le menu latéral et `action:enrich-texts` mènent au même écran. */}
           </div>
 
           {/* Alerte plafond démo (persistante tant que la limite PIM est pleine) */}

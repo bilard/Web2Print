@@ -5,6 +5,7 @@
 // consulter les 103 412. Or c'est le catalogue de référence — celui qu'on interroge pour
 // savoir ce qu'on vend, avant même de regarder qui d'autre le vend.
 import { normalizeEan, normalizeRef } from '../catalog/keys'
+import { isUnderPath } from './taxonomyTree'
 import type { SourceProduct } from '../catalog/match'
 
 /**
@@ -38,11 +39,28 @@ export function searchCatalog(products: SourceProduct[], query: string): SourceP
   })
 }
 
+/**
+ * Restriction à une branche de la taxonomie, par PRÉFIXE : choisir « Motoculture » garde
+ * ses sous-familles. Même règle que pour les concurrents (`filterRows`) — deux lectures
+ * différentes du même arbre selon la vue seraient un piège.
+ *
+ * Un produit sans chemin sort dès qu'une famille est choisie : le rattacher d'office
+ * gonflerait toutes les familles de la part non classée du catalogue.
+ */
+export function filterCatalog(products: SourceProduct[], query: string, path: string[]): SourceProduct[] {
+  const found = searchCatalog(products, query)
+  if (path.length === 0) return found
+  return found.filter((p) => isUnderPath(p.taxo ?? [], path))
+}
+
 export interface CatalogFacts {
   total: number
   shown: number
   withPrice: number
   withImage: number
+  withTaxo: number
+  withDescription: number
+  withUrl: number
 }
 
 /** De quoi juger la liste sans la parcourir — et repérer un catalogue mal importé. */
@@ -52,5 +70,8 @@ export function catalogFacts(all: SourceProduct[], shown: SourceProduct[]): Cata
     shown: shown.length,
     withPrice: shown.filter((p) => typeof p.price === 'number').length,
     withImage: shown.filter((p) => p.image).length,
+    withTaxo: shown.filter((p) => p.taxo?.length).length,
+    withDescription: shown.filter((p) => p.description).length,
+    withUrl: shown.filter((p) => p.url).length,
   }
 }
