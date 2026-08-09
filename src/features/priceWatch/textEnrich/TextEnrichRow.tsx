@@ -27,6 +27,11 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
 }) {
   const { t, locale } = useTranslation()
   const p = product
+  // ⚠ Ce que la CARTE de workflow a réécrit, colonne par colonne. Elle travaille sur une
+  // feuille et ne sait pas laquelle de ses colonnes deviendra le nom du produit : on
+  // affiche donc la colonne telle qu'elle s'appelle dans le fichier (« TEXT_VENTE »,
+  // « DESIGNATION »), ce qui se lit très bien et n'invente rien.
+  const cols = Object.entries(revision?.byColumn ?? {})
   const img = (p.image ? absoluteImage(p.image, imagePrefix) : '') || null
 
   return (
@@ -109,23 +114,38 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
             )}
             <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
             {p.description
-              ? (
-                <>
-                  <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{p.description}</p>
-                </>
-              )
+              ? <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{p.description}</p>
               : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
+            {cols.map(([key, v]) => (
+              <div key={key} className="mt-1">
+                <p className="text-[9px] uppercase tracking-wide text-white/20">{key}</p>
+                <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{v.before}</p>
+              </div>
+            ))}
           </div>
           <div className="min-w-0">
             <p className="text-[9px] uppercase tracking-wide text-emerald-300/40">{t('pwte.after')}</p>
             {revision ? (
               <>
-                <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
-                <p className="text-[12px] text-emerald-100/90 break-words">{revision.name}</p>
-                <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
-                {revision.description
-                  ? <p className="text-[11px] text-emerald-200/50 break-words whitespace-pre-line">{revision.description}</p>
-                  : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
+                {/* Réécriture faite DEPUIS CET ÉCRAN : elle range son résultat dans le nom
+                    et le texte de vente, parce qu'ici on sait lequel est lequel. */}
+                {revision.name != null && (
+                  <>
+                    <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
+                    <p className="text-[12px] text-emerald-100/90 break-words">{revision.name}</p>
+                    <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
+                    {revision.description
+                      ? <p className="text-[11px] text-emerald-200/50 break-words whitespace-pre-line">{revision.description}</p>
+                      : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
+                  </>
+                )}
+                {cols.map(([key, v]) => (
+                  <div key={key} className="mt-1">
+                    <p className="text-[9px] uppercase tracking-wide text-white/20">{key}</p>
+                    <p className="text-[11px] text-emerald-200/60 break-words whitespace-pre-line">{v.after}</p>
+                    {v.note && <p className="text-[10px] italic text-white/30 break-words">{v.note}</p>}
+                  </div>
+                ))}
                 {revision.note && (
                   <p className="mt-0.5 text-[10px] italic text-white/30 break-words">{revision.note}</p>
                 )}

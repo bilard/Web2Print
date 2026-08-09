@@ -135,6 +135,20 @@ export function TextEnrichConfigPanel({
         )}
       </label>
 
+      {/* ⚠ Où PUBLIER les textes réécrits. Sans ce réglage, la carte travaillait sans
+          laisser de trace lisible : la feuille traversait le graphe et l'écran de
+          relecture ne montrait que ce qu'on avait fait à la main. Branchée sur
+          « Sites sources », l'entrée « sites » l'emporte et les deux cartes visent
+          forcément le même suivi. */}
+      <label className="block space-y-1 text-[11px] text-muted-foreground">
+        <span className="block">{t('node.text-enrich.watchId')}</span>
+        <input
+          value={config.watchId ?? ''} onChange={(e) => onChange({ ...config, watchId: e.target.value })}
+          className={`${INPUT} w-full`}
+        />
+        <span className="block text-[10px] leading-snug text-white/30">{t('node.text-enrich.watchId.help')}</span>
+      </label>
+
       <div className="grid grid-cols-2 gap-2">
         <label className="space-y-1 text-[11px] text-muted-foreground">
           <span className="block">{t('node.text-enrich.capUsd')}</span>

@@ -23,6 +23,9 @@ import { planWaves, runWaves } from '@/features/textEnrich/planWaves'
 import { sheetQueue, rememberRows, type EnrichMemory } from '@/features/textEnrich/sheetMemory'
 import { loadEnrichMemory, saveEnrichMemory } from '@/features/textEnrich/memoryStore'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
+import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
+import { savePublishedRevisions } from '@/features/priceWatch/textRevisionsStore'
+import { buildPublishedRevisions, type RevisionEvent } from '@/features/textEnrich/publishRevisions'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
 import {
@@ -73,7 +76,7 @@ const REVISION_COLUMNS: SheetColumn[] = [
 
 const emptyRevisions = (): RevisionSheet => ({ name: 'revisions', columns: REVISION_COLUMNS, rows: [] })
 
-const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutputs> = {
+const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unknown }, EnrichOutputs> = {
   type: 'text-enrich',
   category: 'enrichment',
   labelKey: 'node.text-enrich.label',
@@ -81,7 +84,14 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
   icon: Languages,
   // ⚠ Branchée, la feuille L'EMPORTE sur le projet PIM. C'est le chemin normal quand la
   // donnée vient d'un import (Sheets, Excel) et n'a jamais rejoint le PIM.
-  inputs: [{ name: 'sheet', type: 'sheet' }],
+  inputs: [
+    { name: 'sheet', type: 'sheet' },
+    // ⚠ Le MÊME port que « Comparer catalogue », et pour la même raison : c'est lui qui
+    // dit dans quel suivi publier les textes réécrits. Non branché, on retombe sur le
+    // réglage local puis sur l'identifiant du flux — exactement la cascade de l'autre
+    // carte, pour que les deux visent le même suivi sans qu'on ait à y penser.
+    { name: 'sites', type: 'sites' },
+  ],
   outputs: [
     { name: 'enriched', type: 'sheet' },
     { name: 'revisions', type: 'sheet' },
@@ -96,6 +106,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     // exécutable. L'exigence RÉELLE (« l'un ou l'autre ») vit dans `SEMANTIC_CHECKS`,
     // comme pour les sites de « Comparer catalogue ».
     { name: 'projectId', kind: 'text', labelKey: 'node.text-enrich.projectId' },
+    { name: 'watchId', kind: 'text', labelKey: 'node.text-enrich.watchId', helpKey: 'node.text-enrich.watchId.help' },
     { name: 'capUsd', kind: 'number', labelKey: 'node.text-enrich.capUsd', default: 5 },
     { name: 'maxUnits', kind: 'number', labelKey: 'node.text-enrich.maxUnits', default: 500 },
     { name: 'withNote', kind: 'checkbox', labelKey: 'node.text-enrich.withNote', default: true },
@@ -235,6 +246,10 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     let model: string | undefined
     const notes: Record<string, string> = {}
     const revisions: { productId: string; field: string; value: ReturnType<typeof applyRevision> }[] = []
+    /** Ce qu'on PUBLIE pour l'écran de relecture : la ligne source (donc sa référence), la
+     *  colonne, la nature du travail, l'avant et l'après. Collecté au fil des vagues pour
+     *  que l'avant soit bien le texte d'origine et l'après le dernier état. */
+    const events: RevisionEvent[] = []
     const byId = new Map(targets.map((tg) => [tg.id, tg]))
 
     const callBatch = makeCallBatch({
@@ -272,6 +287,10 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(config, byId.get(unit.productId)?.row ?? {}),
         onRevision: (unit, field) => {
           revisions.push({ productId: unit.productId, field: unit.field, value: field })
+          events.push({
+            row: unit.row, field: unit.field, kind: unit.plan.kind,
+            before: unit.text, after: field.value == null ? '' : String(field.value),
+          })
           // ⚠ Le champ du produit est REMPLACÉ en mémoire : sans ça, une seconde vague sur
           // le même champ relirait le texte d'origine et l'amélioration s'appliquerait à
           // l'allemand au lieu de la traduction.
@@ -302,9 +321,34 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
       if (uid2) await saveEnrichMemory(uid2, ctx.workflowId!, rememberRows(memory, decisions, keyCols))
     }
 
-    // ⚠ RIEN N'EST PERSISTÉ en mode feuille, et ce n'est pas un oubli : il n'y a pas de
-    // fiche où poser la révision, et l'original voyage dans la colonne jumelle. L'écran de
-    // comparaison ne couvrira donc que les données du PIM.
+    // ⚠ En mode feuille, le travail était jusqu'ici SANS TRACE LISIBLE : la feuille
+    // traversait le graphe, « Comparer catalogue » réécrivait le catalogue par-dessus, et
+    // l'écran « Traduire et améliorer les textes » ne montrait que ce qu'on avait fait à la
+    // main. Le cron pouvait traduire dix mille fiches sans que rien ne le montre nulle part.
+    // La publication clefe sur la RÉFÉRENCE, c'est-à-dire sur l'identifiant même du
+    // catalogue — aucune table de correspondance n'est nécessaire.
+    if (fromSheet && events.length > 0) {
+      const uid3 = getWorkspaceUid()
+      const watchId = resolveSitesInput(inputs.sites, {
+        sitesText: '', watchIdRaw: config.watchId ?? '', workflowId: ctx.workflowId,
+      }).watchId
+      const published = buildPublishedRevisions(events, keyCols, at)
+      if (uid3 && published.length > 0) {
+        await savePublishedRevisions(uid3, watchId, published)
+        ctx.log('info', t('run.textEnrich.published', { count: published.length, watchId }))
+      }
+      // Une ligne sans référence ni code-barres n'est reconnaissable par personne : elle
+      // reste traduite dans la feuille, mais introuvable à l'écran. À dire, sinon on
+      // cherche une panne dans l'écran.
+      if (published.length < new Set(events.map((e) => e.row)).size) {
+        ctx.log('warn', t('run.textEnrich.publishNoKey', {
+          count: new Set(events.map((e) => e.row)).size - published.length,
+        }))
+      }
+    }
+
+    // ⚠ RIEN N'EST PERSISTÉ dans le PIM en mode feuille, et ce n'est pas un oubli : il n'y
+    // a pas de fiche où poser la révision, et l'original voyage dans la colonne jumelle.
     if (!fromSheet) {
       // Écrites APRÈS le passage, en un bloc : une écriture par lot laisserait, sur une
       // interruption, des fiches révisées sans synthèse — donc invisibles dans l'écran de

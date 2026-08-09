@@ -18,6 +18,9 @@ import { makeCallBatch } from '../../textEnrich/batchCaller'
 import { applySheetRevisions, sheetColumnsWithSources, sheetTargets, type SheetColumn, type SheetRow } from '../../textEnrich/sheetMode'
 import { sheetQueue, rememberRows, type EnrichMemory } from '../../textEnrich/sheetMemory'
 import { loadEnrichMemory, saveEnrichMemory } from '../../textEnrich/memoryStore'
+import { buildPublishedRevisions, type RevisionEvent } from '../../textEnrich/publishRevisions'
+import { savePublishedRevisions } from '../../priceWatch/textRevisionsStore'
+import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import type { CellValue } from '../../excel/types'
 import { callLlm, parseLlmJson } from '../llm'
 import { t } from '../../i18n'
@@ -88,6 +91,9 @@ registerServerNode({
     const capped = units.slice(0, limit)
     const notes: Record<string, string> = {}
     const revisions: { productId: string; field: string; before: CellValue; after: CellValue }[] = []
+    /** Ce qu'on PUBLIE pour l'écran de relecture — jumeau du navigateur. Sans lui, le cron
+     *  traduisait des dizaines de milliers de fiches sans que rien ne le montre nulle part. */
+    const events: RevisionEvent[] = []
 
     const callBatch = makeCallBatch({
       withNote: cfg.withNote,
@@ -112,6 +118,10 @@ registerServerNode({
             productId: unit.productId, field: unit.field,
             before: unit.text, after: field.value as string | number | boolean | null,
           })
+          events.push({
+            row: unit.row, field: unit.field, kind: unit.plan.kind,
+            before: unit.text, after: field.value == null ? '' : String(field.value),
+          })
           // ⚠ Le champ est REMPLACÉ en mémoire : sans ça, une seconde vague sur la même
           // colonne relirait le texte d'origine, et l'amélioration s'appliquerait à
           // l'allemand au lieu de la traduction.
@@ -132,6 +142,25 @@ registerServerNode({
     // ⚠ La mémoire retient ce qui a été SOUMIS, pas ce qui a été retenu : une proposition
     // refusée par la garde ne doit pas repartir chaque nuit pour se faire refuser encore.
     if (memoryOn) await saveEnrichMemory(ctx.uid, ctx.workflowId!, rememberRows(memory, decisions, keyCols))
+
+    // ⚠ PUBLICATION pour l'écran de relecture — jumeau du navigateur, et la seule chose qui
+    // rende le travail du cron visible. Clefée sur la RÉFÉRENCE, c'est-à-dire sur
+    // l'identifiant même que « Comparer catalogue » donne au produit.
+    if (events.length > 0) {
+      const watchId = resolveSitesInput(inputs.sites, {
+        sitesText: '', watchIdRaw: String((config as { watchId?: unknown }).watchId ?? ''),
+        workflowId: ctx.workflowId,
+      }).watchId
+      const published = buildPublishedRevisions(events, keyCols, Date.now())
+      if (published.length > 0) {
+        await savePublishedRevisions(ctx.uid, watchId, published)
+        ctx.log('info', t(ctx.locale, 'run.textEnrich.published', { count: published.length, watchId }))
+      }
+      const rows2 = new Set(events.map((e) => e.row)).size
+      if (published.length < rows2) {
+        ctx.log('warn', t(ctx.locale, 'run.textEnrich.publishNoKey', { count: rows2 - published.length }))
+      }
+    }
 
     // ⚠ TOUTES les lignes repartent vers l'aval, pas seulement la part retraitée : le
     // comparatif attend le catalogue entier.

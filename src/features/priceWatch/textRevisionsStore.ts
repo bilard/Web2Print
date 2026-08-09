@@ -2,6 +2,7 @@
 import { collection, doc, getDocs, writeBatch, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { textRevisionsCol } from './paths'
+import { stableId } from './core'
 
 /** Ce qu'on garde d'une réécriture, pour un produit. */
 export interface TextRevision {
@@ -25,6 +26,16 @@ export interface TextRevision {
    * Les ranger d'office en « traduit » serait une invention.
    */
   ops?: { translate?: boolean; improve?: boolean }
+  /**
+   * Ce que la CARTE de workflow a réécrit, colonne par colonne.
+   *
+   * ⚠ Par COLONNE et non rangé dans `name`/`description` : la carte travaille sur une
+   * feuille dont elle ne sait pas laquelle de ses colonnes deviendra le nom du produit et
+   * laquelle son texte de vente — ce mappage-là vit sur « Comparer catalogue ». Deviner
+   * poserait un jour la traduction du libellé dans la description. L'écran affiche donc la
+   * colonne telle qu'elle s'appelle dans le fichier, ce qui se lit très bien.
+   */
+  byColumn?: Record<string, { before: string; after: string; note?: string }>
   at: number
   lang?: string
 }
@@ -45,6 +56,33 @@ export async function saveTextRevisions(
       // ⚠ `merge` et non un écrasement : une seconde passe sur la description ne doit pas
       // effacer le nom traduit à la première, ni surtout son original.
       batch.set(doc(db, textRevisionsCol(uid, watchId), productId), rest, { merge: true })
+    }
+    await batch.commit()
+  }
+}
+
+/**
+ * Écrit ce qu'une CARTE de workflow a réécrit, clefé comme le catalogue.
+ *
+ * ⚠ `stableId(référence)` reproduit exactement l'identifiant que « Comparer catalogue »
+ * donne au produit (`stableId(ref ?? ean ?? nom)`) : c'est ce qui permet à l'écran de
+ * retrouver le texte sans aucune table de correspondance.
+ */
+export async function savePublishedRevisions(
+  uid: string, watchId: string,
+  revisions: { key: string; byColumn: TextRevision['byColumn']; ops: TextRevision['ops']; at: number }[],
+): Promise<void> {
+  for (let i = 0; i < revisions.length; i += 400) {
+    const batch = writeBatch(db)
+    for (const r of revisions.slice(i, i + 400)) {
+      // ⚠ `merge` : la fiche porte peut-être déjà une réécriture faite à la main, sur un
+      // autre champ. L'écraser ferait disparaître un travail que personne n'a demandé de
+      // refaire.
+      batch.set(
+        doc(db, textRevisionsCol(uid, watchId), stableId(r.key)),
+        { byColumn: r.byColumn, ops: r.ops, at: r.at },
+        { merge: true },
+      )
     }
     await batch.commit()
   }

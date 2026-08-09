@@ -31,6 +31,14 @@ export interface PlanConfig {
 export interface TextEnrichConfig {
   /** Projet PIM dont les fiches sont enrichies. */
   projectId: string
+  /**
+   * Suivi de veille où PUBLIER les textes réécrits, pour qu'ils soient relisibles.
+   *
+   * ⚠ Même valeur que sur « Comparer catalogue », et de préférence branchée depuis
+   * « Sites sources » : les deux cartes doivent viser le MÊME suivi, sinon l'écran de
+   * relecture regarde une collection vide pendant que le cron écrit à côté.
+   */
+  watchId: string
   plans: PlanConfig[]
   /** Colonnes portant les éléments intouchables, pour la vérification d'après-coup. */
   brandField: string
@@ -83,6 +91,7 @@ function str(v: unknown): string {
  */
 export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
   projectId: '',
+  watchId: '',
   plans: [
     {
       enabled: true, key: 'nom', kind: 'translate', minLength: DEFAULT_MIN_LENGTH.name,

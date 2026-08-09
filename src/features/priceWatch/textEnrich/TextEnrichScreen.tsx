@@ -22,6 +22,7 @@ import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
 import { isUnderPath } from '../explorer/taxonomyTree'
 import { langBreakdown } from './langBreakdown'
+import { revisionKeyOf } from './revisionLookup'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -37,6 +38,10 @@ interface Line {
   product: SourceProduct
   lang: string | null
   revision?: TextRevision
+  /** Sous quel identifiant la réécriture est rangée. ⚠ Pas toujours celui du produit :
+   *  la carte de workflow clefe sur la RÉFÉRENCE. Sans lui, « Annuler » supprimerait un
+   *  document qui n'existe pas et la ligne resterait affichée comme traitée. */
+  revisionId?: string
 }
 
 export function TextEnrichScreen({ uid, watchId, products, loading, query, path, imagePrefix }: {
@@ -109,11 +114,18 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
 
   // La langue se détecte sur la DESCRIPTION quand elle existe : un libellé de pièce est
   // souvent trop court et trop technique pour trancher (cf. `detectLanguage`, qui s'abstient).
-  const lines = useMemo<Line[]>(() => products.map((p) => ({
-    product: p,
-    lang: detectLanguage(p.description || p.name).lang,
-    revision: revisions.get(p.id),
-  })), [products, revisions])
+  const lines = useMemo<Line[]>(() => products.map((p) => {
+    // ⚠ Trois clés essayées, pas une : ce qu'on réécrit ICI est rangé sous l'identifiant
+    // du catalogue, ce que la CARTE de workflow réécrit est rangé sous la référence
+    // article. Dans le cas normal les deux coïncident ; le repli couvre les catalogues
+    // dont l'identité retombe sur le code-barres.
+    const key = revisionKeyOf(revisions, p)
+    return {
+      product: p,
+      lang: detectLanguage(p.description || p.name).lang,
+      ...(key ? { revisionId: key, revision: revisions.get(key) } : {}),
+    }
+  }), [products, revisions])
 
   const searching = query.trim() !== ''
   const shown = useMemo(() => {
@@ -363,7 +375,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
           {shown.slice(0, 300).map((l) => (
             <TextEnrichRow key={l.product.id} product={l.product} lang={l.lang}
               revision={l.revision} rejection={rejected.get(l.product.id)}
-              imagePrefix={imagePrefix} onRevert={() => void revert(l.product.id)} />
+              imagePrefix={imagePrefix} onRevert={() => void revert(l.revisionId ?? l.product.id)} />
           ))}
           {shown.length > 300 && (
             <p className="py-3 text-center text-[11px] text-white/30">

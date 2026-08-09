@@ -40,6 +40,7 @@ const TWINS: [string, string][] = [
   ['src/features/textEnrich/sheetMode.ts', 'functions/src/textEnrich/sheetMode.ts'],
   ['src/features/textEnrich/planWaves.ts', 'functions/src/textEnrich/planWaves.ts'],
   ['src/features/textEnrich/sheetMemory.ts', 'functions/src/textEnrich/sheetMemory.ts'],
+  ['src/features/textEnrich/publishRevisions.ts', 'functions/src/textEnrich/publishRevisions.ts'],
   ['src/features/textEnrich/pass.ts', 'functions/src/textEnrich/pass.ts'],
 ]
 

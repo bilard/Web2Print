@@ -255,6 +255,14 @@ const MESSAGES = {
     fr: 'Reprise incrémentale : {taken} lignes sur {total} — {fresh} nouvelles, {changed} modifiées à la source, {unknown} sans référence reconnaissable.',
     en: 'Incremental pick-up: {taken} rows out of {total} — {fresh} new, {changed} changed at source, {unknown} with no recognisable reference.',
   },
+  'run.textEnrich.published': {
+    fr: '{count} fiches publiées dans le suivi « {watchId} » — relisibles dans « Traduire et améliorer les textes ».',
+    en: '{count} products published to watch “{watchId}” — reviewable in “Translate and improve texts”.',
+  },
+  'run.textEnrich.publishNoKey': {
+    fr: '{count} lignes traduites mais SANS référence ni code-barres : elles restent dans la feuille, mais l’écran de relecture ne peut pas les rattacher à un produit.',
+    en: '{count} rows were translated but carry NO reference or barcode: they stay in the sheet, but the review screen cannot attach them to a product.',
+  },
   'run.pwReport.noReport': {
     fr: "Aucun rapport pour le suivi « {watchId} » : lance « Comparer catalogue » avant d'envoyer le mail.",
     en: 'No report for monitoring "{watchId}": run "Compare catalogue" before sending the email.',

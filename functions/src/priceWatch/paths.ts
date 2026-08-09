@@ -33,6 +33,13 @@ export const PRICE_EVENTS_BYTES = 900_000
 /** Budget d'OCTETS par tranche d'état (jamais un cap par nombre — cf. chunkState). */
 export const PRICE_STATE_BYTES = 900_000
 
+/** Textes réécrits, rangés à CÔTÉ du catalogue — jumeau du chemin client. Le cron y écrit
+ *  ce que la carte « Enrichir les textes » a produit ; l'écran « Traduire et améliorer les
+ *  textes » relit ce même document. Un chemin qui diverge et le travail de la nuit reste
+ *  invisible, sans erreur nulle part. */
+export const textRevisionsCol = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/textRevisions`
+
 /** Règles d'appariement du suivi — jumeau du chemin client. Le cron DOIT lire le même
  *  document que le navigateur, sinon un réglage ne s'applique qu'à moitié. */
 export const pairingRulesDoc = (uid: string, watchId: string) =>
