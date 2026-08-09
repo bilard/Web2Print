@@ -158,7 +158,12 @@ export function TextEnrichFilters({
         <button type="button" onClick={onRun} disabled={!canRun}
           className="ml-auto shrink-0 flex items-center gap-1.5 rounded bg-indigo-500/90 px-3 py-1.5 text-[11px] font-medium text-[#fff] hover:bg-indigo-500 disabled:opacity-40">
           {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-          {running ? t('pwte.running', { done: n(done), total: n(count) }) : t('pwte.run', { count: n(count) })}
+          {/* ⚠ Le libellé suit ce qui est COCHÉ. « Traduire 200 fiches » sur un passage
+              d'amélioration annonce le contraire de ce qui va être fait. */}
+          {running
+            ? t(modes.translate ? 'pwte.running' : 'pwte.running.improve', { done: n(done), total: n(count) })
+            : t(modes.translate && modes.improve ? 'pwte.run.both' : modes.improve ? 'pwte.run.improve' : 'pwte.run',
+                { count: n(count) })}
         </button>
       </div>
     </>

@@ -190,16 +190,27 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
   const tallies = useMemo(() => langBreakdown(lines.map((l) => l.lang)), [lines])
 
-  // Ce qui reste à faire : les fiches déjà réécrites n'y sont plus. Relancer ne repaie
-  // donc jamais deux fois le même texte — c'est ce que le chemin par feuille ne savait
-  // pas faire.
+  // Ce qui reste à faire POUR CE QUI EST DEMANDÉ. Relancer ne repaie jamais deux fois le
+  // même travail — c'est ce que le chemin par feuille ne savait pas faire.
+  //
+  // ⚠⚠ « Déjà réécrite » ne veut pas dire « plus rien à faire ». La file écartait toute
+  // fiche portant une révision, quelle que soit l'opération cochée : une fiche traduite
+  // hier ne pouvait donc PLUS être améliorée, et « traduire puis améliorer » en deux temps
+  // était impossible ici — alors que c'est le geste normal, et que la carte de workflow,
+  // elle, le fait en deux vagues. On regarde donc ce qui est demandé et ce qui manque.
+  //
   // ⚠ Les fiches REFUSÉES sortent de la file. Sans ça, chaque relance reprenait les mêmes
   // deux cents en tête de liste, se faisait refuser pour la même raison, et n'avançait
   // jamais d'une ligne — en repayant le modèle à chaque tour. Elles restent affichées avec
   // leur motif ; c'est la file qui les saute, pas l'écran qui les cache.
   const todo = useMemo(
-    () => shown.filter((l) => !l.revision && !rejected.has(l.product.id)),
-    [shown, rejected],
+    () => shown.filter((l) => {
+      if (rejected.has(l.product.id)) return false
+      if (!l.revision) return true
+      const done = opsOf(l.revision, l.lang)
+      return (modes.translate && !done.translate) || (modes.improve && !done.improve)
+    }),
+    [shown, rejected, modes],
   )
   const limit = rawLimit > 0 ? rawLimit : todo.length
 
@@ -214,17 +225,30 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     let silent = 0
     const reasons = new Map<string, RejectionPart[]>()
     // Le poids d'une fiche, tel qu'il part au modèle.
-    const chunks = chunkByVolume(batchList, (l) => l.product.name.length + (l.product.description?.length ?? 0))
+    // ⚠ Le texte SOUMIS est le dernier en date, pas celui du catalogue : améliorer une
+    // fiche déjà traduite doit partir de la traduction, sinon on réécrit l'allemand — et
+    // on écrase la traduction par une reformulation de l'original.
+    const current = (l: Line) => ({
+      name: l.revision?.name ?? l.product.name,
+      description: l.revision?.description ?? l.product.description,
+    })
+    const chunks = chunkByVolume(batchList, (l) => {
+      const c = current(l)
+      return c.name.length + (c.description?.length ?? 0)
+    })
     let processed = 0
     try {
       for (const chunk of chunks) {
         const raw = await generateJson({
           task: 'data.textEnrich',
-          prompt: buildScreenPrompt(chunk.map((l) => ({
-            id: l.product.id, name: l.product.name,
-            ...(l.product.description ? { description: l.product.description } : {}),
-            lang: l.lang,
-          })), prompt, modes),
+          prompt: buildScreenPrompt(chunk.map((l) => {
+            const c = current(l)
+            return {
+              id: l.product.id, name: c.name,
+              ...(c.description ? { description: c.description } : {}),
+              lang: l.lang,
+            }
+          }), prompt, modes),
           schema: ScreenBatchSchema,
           schemaForLLM: screenSchemaForLLM,
           version: 'text-enrich-screen/v2',
@@ -252,7 +276,8 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
 
           // Même vérification que le moteur : une réécriture qui perd une référence ou
           // altère une valeur chiffrée est refusée, pas écrite.
-          const before = `${line.product.name} ${line.product.description ?? ''}`
+          const cur = current(line)
+          const before = `${cur.name} ${cur.description ?? ''}`
           const after = `${name} ${description ?? ''}`
           const violations = findViolations(before, after, {
             refs: [line.product.ref, line.product.ref2],
@@ -271,11 +296,20 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
             productId: line.product.id,
             name,
             ...(description ? { description } : {}),
-            nameSource: line.product.name,
-            ...(line.product.description ? { descriptionSource: line.product.description } : {}),
+            // ⚠ L'original est le PREMIER connu, jamais la passe précédente : une
+            // amélioration posée sur une traduction ne doit pas faire passer la traduction
+            // pour le texte d'origine — c'est vers l'allemand que le retour arrière ramène.
+            nameSource: line.revision?.nameSource ?? line.product.name,
+            ...((d) => (d ? { descriptionSource: d } : {}))(
+              line.revision?.descriptionSource ?? line.product.description,
+            ),
             ...(r.note ? { note: r.note } : {}),
-            // Ce qui a été demandé, pour que l'écran puisse le montrer séparément.
-            ops: { ...(modes.translate ? { translate: true } : {}), ...(modes.improve ? { improve: true } : {}) },
+            // Ce qui a été fait sur cette fiche, CUMULÉ : une amélioration ne doit pas
+            // effacer la trace de la traduction qui l'a précédée.
+            ops: ((was) => ({
+              ...(was.translate || modes.translate ? { translate: true } : {}),
+              ...(was.improve || modes.improve ? { improve: true } : {}),
+            }))(opsOf(line.revision, line.lang)),
             ...(line.lang ? { lang: line.lang } : {}),
             at: Date.now(),
           })
