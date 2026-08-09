@@ -9,6 +9,7 @@
 // d'actions, le résumé se lisait comme un bouton de plus, et les noms de cartes n'avaient
 // nulle part où aller. Une bande pleine largeur laisse la place de tout nommer.
 import { useEffect, useRef, useState } from 'react'
+import { useReactFlow } from '@xyflow/react'
 import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Circle } from 'lucide-react'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -59,16 +60,26 @@ function Stat({ label, value, tone = 'text-white/70' }: { label: string; value: 
   )
 }
 
-function Card({ card, locale, live }: { card: RunCard; locale: string; live: boolean }) {
+function Card({ card, locale, live, onFocus }: {
+  card: RunCard; locale: string; live: boolean
+  /** Amène la carte au centre du canvas et l'ouvre. */
+  onFocus: (id: string) => void
+}) {
+  const { t } = useTranslation()
   const Icon = ICON[card.status]
   // ⚠ « En cours » ne veut dire « en cours » que si un run tourne VRAIMENT. Après un arrêt,
   // le dernier écho garde ses cartes en l'état : elles tournaient à l'écran indéfiniment,
   // ce qui laissait croire à un travail qui n'existait plus.
   const running = card.status === 'running' && live
   return (
-    <span className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 ${
-      running ? 'bg-indigo-500/10 border border-indigo-400/25' : ''
-    }`}>
+    // ⚠ CLIQUABLE. La bande nomme la carte qui travaille ou qui a échoué, puis laissait
+    // la chercher à la main sur un canvas de douze cartes — celle qu'on cherche est
+    // justement celle qu'on ne voit pas.
+    <button type="button" onClick={() => onFocus(card.id)}
+      title={t('wfe.progress.focusCard')}
+      className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 transition-colors hover:bg-white/[0.08] ${
+        running ? 'bg-indigo-500/10 border border-indigo-400/25' : ''
+      }`}>
       <Icon className={`w-3 h-3 shrink-0 ${TINT[card.status]} ${running ? 'animate-spin' : ''}`} />
       <span className={card.status === 'pending' ? 'text-white/30' : 'text-white/70'}>{card.label}</span>
       {/* Ce que la carte a produit : c'est le seul chiffre qui dit si elle avance ou
@@ -85,7 +96,7 @@ function Card({ card, locale, live }: { card: RunCard; locale: string; live: boo
       {card.durationMs != null && card.durationMs > 1000 && (
         <span className="tabular-nums text-white/25">{shortDuration(card.durationMs)}</span>
       )}
-    </span>
+    </button>
   )
 }
 
@@ -104,6 +115,15 @@ export function RunProgressBar() {
   // figés entre deux échos Firestore — c'est-à-dire des minutes entières. C'est ce qui
   // faisait dire que la barre n'est jamais à jour.
   const live = isRunning || serverRunActive
+  const rf = useReactFlow()
+  /** Centre le canvas sur une carte et la sélectionne — ce qui ouvre son panneau. */
+  const focusCard = (id: string) => {
+    rf.setNodes((ns) => ns.map((n) => ({ ...n, selected: n.id === id })))
+    const n = rf.getNode(id)
+    // ⚠ Sans `duration` : une animation de recentrage sur un canvas qui se re-rend en
+    // permanence pendant un run se fait avaler en route.
+    if (n) rf.setCenter(n.position.x + 65, n.position.y + 60, { zoom: rf.getZoom() })
+  }
   const [, tick] = useState(0)
   useEffect(() => {
     if (!live) return
@@ -182,13 +202,14 @@ export function RunProgressBar() {
 
       <div className="flex items-center gap-1.5">
         {done.length > 0 && (
-          <span className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-emerald-400/70"
+          <button type="button" onClick={() => focusCard(done[done.length - 1].id)}
+            className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-emerald-400/70 transition-colors hover:bg-white/[0.08]"
             title={done.map((c) => c.label).join(' · ')}>
             <CheckCircle2 className="w-3 h-3 shrink-0" />
             {t('wfe.progress.doneCards', { count: n(done.length) })}
-          </span>
+          </button>
         )}
-        {rest.map((c) => <Card key={c.id} card={c} locale={intlLocale(locale)} live={live} />)}
+        {rest.map((c) => <Card key={c.id} card={c} locale={intlLocale(locale)} live={live} onFocus={focusCard} />)}
       </div>
     </div>
   )

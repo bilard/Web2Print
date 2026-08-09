@@ -1330,6 +1330,7 @@ export const fr = {
   'wfe.loading': 'Chargement…',
   'wfe.notFound': 'Workflow introuvable',
   'wfe.unknownNode': 'Type inconnu : {type}',
+  'wfe.progress.focusCard': 'Aller à cette carte',
   'wfe.progress.cards': '{done}/{total} cartes',
   'wfe.progress.cardsRunning': '{done} faites · {running} en cours · {total} cartes',
   'wfe.progress.lbl.cycles': 'cycles',
