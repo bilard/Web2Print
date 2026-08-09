@@ -106,6 +106,20 @@ describe('débit et temps restant', () => {
     expect(Math.round((p.etaMs ?? 0) / 1000)).toBe(60)
   })
 
+  // ⚠ La panne signalée en production : cinq cartes démarrées portaient le ratio à 50 %,
+  // et l'estimation — bâtie sur ce ratio — rendait exactement le temps écoulé. « Écoulé
+  // 11 min 31 s · restant ≈ 11 min 31 s » sur une moisson qui en avait pour des heures.
+  it('n’estime QUE sur les cartes terminées, jamais sur les demies en cours', () => {
+    const p = runProgress(wf('abcd'.split(''), []), {
+      a: st({ status: 'success', startedAt: 0 }),
+      b: st({ status: 'running', startedAt: 0 }),
+      c: st({ status: 'running', startedAt: 0 }),
+    }, label, 60_000)
+    expect(p.ratio).toBe(0.5)
+    // 1 carte sur 4 en 60 s → il en reste 3, donc ~180 s. Et surtout : pas 60 s.
+    expect(Math.round((p.etaMs ?? 0) / 1000)).toBe(180)
+  })
+
   it('run terminé : plus rien à estimer', () => {
     const p = runProgress(wf(['a'], []), { a: st({ status: 'success', startedAt: 0 }) }, label, 5000)
     expect(p.etaMs).toBeNull()

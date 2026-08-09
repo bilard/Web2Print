@@ -51,6 +51,12 @@ export interface RunProgress {
    * l'estimation saute à chaque carte franchie. Elle répond à « encore longtemps ? », pas
    * à « à quelle heure exactement ». En dessous de 10 % accomplis, elle ne répond même
    * pas à ça : on ne l'affiche pas.
+   *
+   * ⚠⚠ Fondée sur les cartes TERMINÉES, jamais sur `ratio`. Celui-ci compte une carte en
+   * cours pour une demie — utile pour que la barre bouge, désastreux pour une prévision :
+   * cinq cartes démarrées portaient le ratio à 50 % en trois minutes, et l'écran annonçait
+   * « écoulé 11 min 31 s · restant ≈ 11 min 31 s » — deux fois le même nombre, ce qui est
+   * l'issue arithmétique inévitable à 50 %, sur une moisson qui en avait pour des heures.
    */
   etaMs: number | null
   /**
@@ -116,6 +122,8 @@ export function runProgress(
   // Une carte en cours compte pour une demie : afficher 0 tant qu'elle n'a pas fini
   // laisserait la barre immobile pendant les vingt minutes d'une moisson.
   const ratio = total === 0 ? 0 : Math.min(1, (done + running * 0.5) / total)
+  // Part réellement ACHEVÉE : la seule sur laquelle une durée s'extrapole.
+  const doneRatio = total === 0 ? 0 : done / total
   const elapsedMs = firstStart === Infinity ? 0 : Math.max(0, now - firstStart)
   // Le plus PETIT nombre de passages parmi les cartes démarrées : un cycle n'est complet
   // que si toutes l'ont bouclé. Prendre le maximum annoncerait des tours que la carte la
@@ -127,8 +135,8 @@ export function runProgress(
     total, done, running, failed, skipped, ratio, runningLabels, items, cards,
     elapsedMs,
     itemsPerMin: elapsedMs >= 60_000 && items > 0 ? Math.round(items / (elapsedMs / 60_000)) : null,
-    etaMs: ratio >= 0.1 && ratio < 1 && elapsedMs > 0
-      ? Math.round((elapsedMs / ratio) * (1 - ratio))
+    etaMs: doneRatio >= 0.1 && doneRatio < 1 && elapsedMs > 0
+      ? Math.round((elapsedMs / doneRatio) * (1 - doneRatio))
       : null,
   }
 }
