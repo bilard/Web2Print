@@ -1,0 +1,67 @@
+// Où en est le run, en chiffres. PUR.
+//
+// ⚠ Un run affichait « En cours » et rien d'autre : ni combien de cartes sont passées, ni
+// laquelle travaille, ni combien de lignes ont été traitées. Sur une chaîne de veille qui
+// tourne une heure, on avançait à l'aveugle — et la seule façon de savoir était de
+// déplier la console et de lire les journaux à la main.
+import type { NodeRunState, NodeStatus, Workflow } from '../types'
+
+export interface RunProgress {
+  /** Cartes qui vont travailler dans ce run (les orphelines n'en font pas partie). */
+  total: number
+  done: number
+  running: number
+  failed: number
+  skipped: number
+  /** Part accomplie, 0 → 1. Une carte en cours compte pour une demie : elle a commencé. */
+  ratio: number
+  /** Libellés des cartes en cours, pour dire CE QUI travaille et pas seulement combien. */
+  runningLabels: string[]
+  /** Somme des compteurs live remontés par les cartes (fiches scrapées, lignes écrites…). */
+  items: number
+  /** Depuis le démarrage de la première carte, en ms. 0 si rien n'a commencé. */
+  elapsedMs: number
+}
+
+const COUNTS_AS_DONE: NodeStatus[] = ['success', 'error', 'skipped']
+
+/**
+ * Avancement d'un run à partir de l'état des cartes.
+ *
+ * ⚠ Le dénominateur est le nombre de cartes qui VONT tourner, pas celui du graphe : une
+ * carte orpheline ne s'exécutera jamais, et la compter ferait plafonner la barre à 80 %
+ * pour toujours — le genre de détail qui fait douter de tout l'écran.
+ */
+export function runProgress(
+  wf: Pick<Workflow, 'nodes' | 'edges'>,
+  states: Record<string, NodeRunState>,
+  labelOf: (nodeId: string) => string,
+  now = Date.now(),
+): RunProgress {
+  const connected = new Set<string>()
+  for (const e of wf.edges) { connected.add(e.source); connected.add(e.target) }
+  const willRun = wf.nodes.filter((n) => wf.edges.length === 0 || connected.has(n.id))
+
+  let done = 0, running = 0, failed = 0, skipped = 0, items = 0
+  let firstStart = Infinity
+  const runningLabels: string[] = []
+  for (const node of willRun) {
+    const st = states[node.id]
+    if (!st) continue
+    if (st.startedAt) firstStart = Math.min(firstStart, st.startedAt)
+    if (typeof st.count === 'number') items += st.count
+    if (st.status === 'running') { running++; runningLabels.push(labelOf(node.id)); continue }
+    if (st.status === 'error') { failed++; done++; continue }
+    if (st.status === 'skipped') { skipped++; done++; continue }
+    if (COUNTS_AS_DONE.includes(st.status)) done++
+  }
+
+  const total = willRun.length
+  // Une carte en cours compte pour une demie : afficher 0 tant qu'elle n'a pas fini
+  // laisserait la barre immobile pendant les vingt minutes d'une moisson.
+  const ratio = total === 0 ? 0 : Math.min(1, (done + running * 0.5) / total)
+  return {
+    total, done, running, failed, skipped, ratio, runningLabels, items,
+    elapsedMs: firstStart === Infinity ? 0 : Math.max(0, now - firstStart),
+  }
+}

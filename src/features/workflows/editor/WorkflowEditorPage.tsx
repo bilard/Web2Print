@@ -16,6 +16,7 @@ import { alignWatchIds } from '../runtime/alignWatchIds'
 import { RunPreflightDialog } from './RunPreflightDialog'
 import type { IssueFix } from '../runtime/validateWorkflow'
 import { PreflightBanner } from './PreflightBanner'
+import { RunProgressBar } from './RunProgressBar'
 import { useFocusNode } from './focusNodeStore'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
 import { recordAudit } from '@/lib/auditLog'
@@ -271,6 +272,9 @@ export function WorkflowEditorPage() {
               aria-label={t('wfe.name')}
             />
           </nav>
+          {/* L'avancement du run AVANT l'état de sauvegarde : c'est lui qu'on cherche des
+              yeux pendant qu'un run tourne. */}
+          <RunProgressBar />
           {/* État de sauvegarde CLAIR : en cours / non enregistré (ambre) / enregistré (vert). */}
           {saving ? (
             <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title={t('wfe.saving')}>
