@@ -8,7 +8,7 @@
 // ⚠ Sur sa PROPRE ligne, pas glissé entre les boutons : coincé au milieu de la rangée
 // d'actions, le résumé se lisait comme un bouton de plus, et les noms de cartes n'avaient
 // nulle part où aller. Une bande pleine largeur laisse la place de tout nommer.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, Loader2, AlertCircle, MinusCircle, Circle } from 'lucide-react'
 import { useRunContext } from '../runtime/runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -26,6 +26,17 @@ function shortDuration(ms: number): string {
   if (m < 60) return `${m} min ${String(s % 60).padStart(2, '0')} s`
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`
 }
+
+/**
+ * Silence au-delà duquel on le DIT.
+ *
+ * ⚠ « 50 % » immobile pendant une heure ne distingue pas un run lent d'un run mort — et
+ * sur une chaîne segmentée, une carte en cours ne finit jamais, donc le pourcentage ne
+ * bouge plus par construction. Ce qui manquait n'est pas un meilleur pourcentage : c'est
+ * de savoir si QUELQUE CHOSE a changé récemment. Trois minutes, parce qu'un lot de vingt
+ * textes ou une page de moisson tiennent largement dedans.
+ */
+const STALLED_MS = 3 * 60_000
 
 const ICON: Record<NodeStatus, typeof Circle> = {
   pending: Circle, running: Loader2, success: CheckCircle2, error: AlertCircle, skipped: MinusCircle,
@@ -96,6 +107,10 @@ export function RunProgressBar() {
     return () => clearInterval(id)
   }, [live])
 
+  // Depuis quand plus RIEN ne change — ni les cartes, ni les lignes, ni les cycles.
+  // C'est la seule mesure qui répond à « c'est bloqué ou c'est lent ? ».
+  const lastChange = useRef({ sig: '', at: Date.now() })
+
   if (!wf) return null
   const p = runProgress(wf, nodeStates, (id) => {
     const node = wf.nodes.find((n) => n.id === id)
@@ -107,6 +122,12 @@ export function RunProgressBar() {
 
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
   const pct = Math.round(p.ratio * 100)
+  // ⚠ Le compteur de lignes EN FAIT PARTIE : une moisson qui indexe des fiches avance,
+  // même si aucune carte ne franchit la ligne. Sans lui, on annoncerait un blocage sur un
+  // run parfaitement vivant.
+  const sig = `${p.done}/${p.running}/${p.failed}/${p.skipped}/${p.items}/${p.cyclesDone}`
+  if (lastChange.current.sig !== sig) lastChange.current = { sig, at: Date.now() }
+  const stalledMs = live ? Date.now() - lastChange.current.at : 0
   // ⚠ Les cartes TERMINÉES sont repliées en un compteur. Toutes déployées, la ligne
   // faisait deux mètres de long et ce qui travaille se perdait au milieu de ce qui est
   // fini — or c'est l'inverse qu'on cherche. Le détail reste dans l'onglet « Nodes ».
@@ -144,6 +165,9 @@ export function RunProgressBar() {
         {p.itemsPerMin != null && <Stat label={t('wfe.progress.lbl.rate')} value={t('wfe.progress.perMin', { count: n(p.itemsPerMin) })} />}
         {p.elapsedMs > 0 && <Stat label={t('wfe.progress.lbl.elapsed')} value={shortDuration(p.elapsedMs)} />}
         {p.etaMs != null && <Stat label={t('wfe.progress.lbl.eta')} value={shortDuration(p.etaMs)} tone="text-amber-200/80" />}
+        {stalledMs > STALLED_MS && (
+          <Stat label={t('wfe.progress.lbl.stalled')} value={shortDuration(stalledMs)} tone="text-amber-300" />
+        )}
         {p.failed > 0 && <Stat label={t('wfe.progress.lbl.failed')} value={n(p.failed)} tone="text-rose-300" />}
         {p.skipped > 0 && <Stat label={t('wfe.progress.lbl.skipped')} value={n(p.skipped)} tone="text-amber-300/70" />}
       </div>

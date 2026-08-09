@@ -1272,6 +1272,7 @@ export const en: Record<TranslationKey, string> = {
   'wfe.progress.lbl.cycles': 'cycles',
   'wfe.progress.lbl.items': 'rows',
   'wfe.progress.lbl.rate': 'rate',
+  'wfe.progress.lbl.stalled': 'unchanged for',
   'wfe.progress.lbl.elapsed': 'elapsed',
   'wfe.progress.lbl.eta': 'left ≈',
   'wfe.progress.lbl.failed': 'failed',

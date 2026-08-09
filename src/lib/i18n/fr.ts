@@ -1335,6 +1335,7 @@ export const fr = {
   'wfe.progress.lbl.cycles': 'cycles',
   'wfe.progress.lbl.items': 'lignes',
   'wfe.progress.lbl.rate': 'débit',
+  'wfe.progress.lbl.stalled': 'sans changement',
   'wfe.progress.lbl.elapsed': 'écoulé',
   'wfe.progress.lbl.eta': 'restant ≈',
   'wfe.progress.lbl.failed': 'en erreur',
