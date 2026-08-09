@@ -44,11 +44,15 @@ export function ExplorerCatalogRow({ product, imagePrefix, showSource, onToggleS
             </span>
           )}
         </div>
-        <p className={`truncate text-[12px] ${showSource ? 'text-amber-200/80' : 'text-white/80'}`}>
+        <p className={`break-words text-[12px] ${showSource ? 'text-amber-200/80' : 'text-white/80'}`}>
           {name || '—'}
         </p>
+        {/* ⚠ ENTIER, jamais coupé. Le texte de vente est ce qu'on vient lire ici : jugé sur
+            deux lignes suivies de « … », on juge sur ce qu'on ne voit pas — et le passage
+            qui dénature une fiche est précisément celui qui tombe hors du cadre. Un libellé
+            tronqué au milieu d'une référence a le même défaut. */}
         {desc && (
-          <p className={`line-clamp-2 text-[11px] ${showSource ? 'text-amber-200/50' : 'text-white/40'}`}>
+          <p className={`whitespace-pre-line break-words text-[11px] ${showSource ? 'text-amber-200/50' : 'text-white/40'}`}>
             {desc}
           </p>
         )}
