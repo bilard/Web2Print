@@ -1,10 +1,12 @@
 // Popup de cohérence AVANT lancement : liste les trous détectés (source non connectée,
 // paramètre / export requis manquant) par carte. L'utilisateur corrige, ou force le
 // lancement en connaissance de cause. N'apparaît QUE s'il y a au moins une incohérence.
-import { AlertTriangle, ArrowRight, Scissors, Link2 } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Scissors, Link2, Plug } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
-import type { WorkflowIssue } from '../runtime/validateWorkflow'
+import type { WorkflowIssue, IssueFix } from '../runtime/validateWorkflow'
 import { useTranslation } from '@/lib/i18n'
+
+const fixBtn = 'mt-1.5 flex items-center gap-1.5 px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] text-[11px] text-white/70 hover:text-white/90 transition-colors'
 
 interface Props {
   issues: WorkflowIssue[]
@@ -17,17 +19,19 @@ interface Props {
   onDropNode?: (nodeId: string, label: string) => void
   /** Branche ce node en amont du comparatif (ordonnancement). */
   onOrderNode?: (nodeId: string, label: string) => void
+  /** Câble l'entrée orpheline sur la seule source possible. */
+  onWireInput?: (nodeId: string, fix: Extract<IssueFix, { kind: 'wire-input' }>) => void
 }
 
-export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDropNode, onOrderNode }: Props) {
+export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDropNode, onOrderNode, onWireInput }: Props) {
   const { t } = useTranslation()
-  // Regroupe par carte pour un affichage lisible.
-  const byNode = new Map<string, { label: string; messages: string[]; canDrop: boolean; canOrder: boolean }>()
+  // Regroupe par carte pour un affichage lisible. ⚠ La correction reste attachée à SON
+  // message : sur une carte qui en porte trois, un bouton en pied de bloc ne disait pas
+  // lequel des trois il réparait.
+  const byNode = new Map<string, { label: string; points: { message: string; fix?: IssueFix }[] }>()
   for (const i of issues) {
-    const entry = byNode.get(i.nodeId) ?? { label: i.nodeLabel, messages: [], canDrop: false, canOrder: false }
-    entry.messages.push(i.message)
-    if (i.fix === 'drop-node') entry.canDrop = true
-    if (i.fix === 'order-before-compare') entry.canOrder = true
+    const entry = byNode.get(i.nodeId) ?? { label: i.nodeLabel, points: [] }
+    entry.points.push({ message: i.message, fix: i.fix })
     byNode.set(i.nodeId, entry)
   }
 
@@ -64,34 +68,35 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDro
                 {entry.label}
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
-              <ul className="space-y-1">
-                {entry.messages.map((m, i) => (
+              <ul className="space-y-1.5">
+                {entry.points.map((p, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-white/60">
                     <span className="text-amber-400/70 mt-0.5 shrink-0">•</span>
-                    <span>{m}</span>
+                    <div className="min-w-0">
+                      <span>{p.message}</span>
+                      {p.fix?.kind === 'wire-input' && onWireInput && (
+                        <button type="button" className={fixBtn}
+                          onClick={() => onWireInput(nodeId, p.fix as Extract<IssueFix, { kind: 'wire-input' }>)}>
+                          <Plug className="w-3 h-3" />
+                          {t('wfc.wireInput', { source: p.fix.sourceLabel })}
+                        </button>
+                      )}
+                      {p.fix?.kind === 'order-before-compare' && onOrderNode && (
+                        <button type="button" className={fixBtn} onClick={() => onOrderNode(nodeId, entry.label)}>
+                          <Link2 className="w-3 h-3" />
+                          {t('wfc.orderNode')}
+                        </button>
+                      )}
+                      {p.fix?.kind === 'drop-node' && onDropNode && (
+                        <button type="button" className={fixBtn} onClick={() => onDropNode(nodeId, entry.label)}>
+                          <Scissors className="w-3 h-3" />
+                          {t('wfc.dropNode')}
+                        </button>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
-              {entry.canOrder && onOrderNode && (
-                <button
-                  type="button"
-                  onClick={() => onOrderNode(nodeId, entry.label)}
-                  className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] text-[11px] text-white/70 hover:text-white/90 transition-colors"
-                >
-                  <Link2 className="w-3 h-3" />
-                  {t('wfc.orderNode')}
-                </button>
-              )}
-              {entry.canDrop && onDropNode && (
-                <button
-                  type="button"
-                  onClick={() => onDropNode(nodeId, entry.label)}
-                  className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded bg-white/[0.06] hover:bg-white/[0.12] text-[11px] text-white/70 hover:text-white/90 transition-colors"
-                >
-                  <Scissors className="w-3 h-3" />
-                  {t('wfc.dropNode')}
-                </button>
-              )}
             </li>
           ))}
         </ul>

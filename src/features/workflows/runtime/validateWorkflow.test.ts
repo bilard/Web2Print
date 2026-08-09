@@ -24,6 +24,14 @@ const REG: Record<string, NodeSpec> = {
     configSchema: [{ name: 'sites', kind: 'textarea', label: 'Sites concurrents', required: true }],
   }),
   export: spec({ type: 'export', labelKey: 'node.upload.label', inputs: [{ name: 'sheet', type: 'sheet', required: true }] }),
+  // Producteurs de feuille : de quoi câbler une entrée orpheline — ou refuser de choisir.
+  source: spec({ type: 'source', labelKey: 'node.upload.label', outputs: [{ name: 'sheet', type: 'sheet' }] }),
+  source2: spec({ type: 'source2', labelKey: 'node.upload.label', outputs: [{ name: 'sheet', type: 'sheet' }] }),
+  'text-enrich': spec({
+    type: 'text-enrich', labelKey: 'node.upload.label',
+    inputs: [{ name: 'sheet', type: 'sheet' }],
+    configSchema: [{ name: 'projectId', kind: 'text', label: 'Projet PIM' }],
+  }),
 }
 const getSpec = (t: string) => REG[t]
 
@@ -180,7 +188,7 @@ describe('cohérence ENTRE nodes (Veille tarifaire)', () => {
     // L'avertissement porte sur le COLLECTEUR, pas sur le comparatif : c'est lui qu'il
     // faut rebrancher, et c'est sur sa carte que se trouve la correction en un clic.
     expect(warn[0].nodeId).toBe('h')
-    expect(warn[0].fix).toBe('order-before-compare')
+    expect(warn[0].fix).toEqual({ kind: 'order-before-compare' })
   })
 
   it('⚠ UN alimenteur branché ne couvre pas les AUTRES', () => {
@@ -228,7 +236,7 @@ describe('carte qui ne tourne pas côté serveur', () => {
     ]), getSpec)
     const err = issues.find((i) => i.nodeId === 'p')
     expect(err?.severity).toBe('error')
-    expect(err?.fix).toBe('drop-node')
+    expect(err?.fix).toEqual({ kind: 'drop-node' })
   })
 
   it('une carte TRANSPARENTE est un avertissement : le run passe, le travail n’est pas fait', () => {
@@ -236,22 +244,22 @@ describe('carte qui ne tourne pas côté serveur', () => {
     // un run planifié « réussi » ne doit pas laisser croire que les textes sont traités.
     const issues = validateWorkflow(wf([
       { id: 'k', type: 'cron', config: { enabled: true } },
-      { id: 'e', type: 'text-enrich' },
+      { id: 'e', type: 'text-enrich', config: { projectId: 'p1' } },
     ]), getSpec)
     const warn = issues.find((i) => i.nodeId === 'e')
     expect(warn?.severity).toBe('warning')
-    expect(warn?.fix).toBe('drop-node')
+    expect(warn?.fix).toEqual({ kind: 'drop-node' })
   })
 
   it('sans planification : rien à signaler — le navigateur sait l’exécuter', () => {
-    const issues = validateWorkflow(wf([{ id: 'e', type: 'text-enrich' }]), getSpec)
+    const issues = validateWorkflow(wf([{ id: 'e', type: 'text-enrich', config: { projectId: 'p1' } }]), getSpec)
     expect(issues.filter((i) => i.nodeId === 'e')).toHaveLength(0)
   })
 
   it('cron DÉSACTIVÉ : le workflow ne part plus du serveur, rien à signaler', () => {
     const issues = validateWorkflow(wf([
       { id: 'k', type: 'cron', config: { enabled: false } },
-      { id: 'e', type: 'text-enrich' },
+      { id: 'e', type: 'text-enrich', config: { projectId: 'p1' } },
     ]), getSpec)
     expect(issues.filter((i) => i.nodeId === 'e')).toHaveLength(0)
   })
@@ -262,5 +270,68 @@ describe('carte qui ne tourne pas côté serveur', () => {
       { id: 'c', type: 'chart' },
     ]), getSpec)
     expect(issues.filter((i) => i.nodeId === 'c')).toHaveLength(0)
+  })
+})
+
+describe('correction en un clic : brancher la seule source possible', () => {
+  it('propose la source quand il n’y en a qu’UNE, avec le port à câbler', () => {
+    const w = wf({
+      // 's' est branché sur le port d'ORDONNANCEMENT : la carte tourne donc (elle n'est
+      // pas orpheline), mais son entrée de données reste vide — le cas de la capture.
+      nodes: [node('s', 'source'), node('c', 'compare', { sites: 'x.fr' })],
+      edges: [edge('s', 'sheet', 'c', 'harvest')],
+    })
+    const miss = validateWorkflow(w, getSpec).find((i) => i.nodeId === 'c' && /products/.test(i.message))
+    expect(miss?.fix).toEqual({
+      kind: 'wire-input', sourceId: 's', sourceHandle: 'sheet', targetHandle: 'products',
+      sourceLabel: 'Upload',
+    })
+  })
+
+  it('ne PARIE pas quand deux cartes pourraient alimenter l’entrée', () => {
+    const w = wf({
+      // ⚠ 's2' doit être BRANCHÉ quelque part, sinon il est orphelin : l'exécuteur ne le
+      // lance pas, il ne peut donc alimenter personne et ne compte pas comme candidat.
+      nodes: [
+        node('s', 'source'), node('s2', 'source2'),
+        node('c', 'compare', { sites: 'x.fr' }), node('x', 'export'),
+      ],
+      edges: [edge('s', 'sheet', 'c', 'harvest'), edge('s2', 'sheet', 'x', 'sheet')],
+    })
+    const miss = validateWorkflow(w, getSpec).find((i) => i.nodeId === 'c' && /products/.test(i.message))
+    // Le trou est toujours signalé — c'est la CORRECTION AUTOMATIQUE qui s'abstient.
+    expect(miss).toBeDefined()
+    expect(miss?.fix).toBeUndefined()
+  })
+
+  it('n’offre pas de brancher un node situé en AVAL : ce serait un cycle', () => {
+    const w = wf({
+      nodes: [node('c', 'compare', { sites: 'x.fr' }), node('s', 'source')],
+      edges: [edge('c', 'matrix', 's', 'in')],
+    })
+    const miss = validateWorkflow(w, getSpec).find((i) => i.nodeId === 'c' && /products/.test(i.message))
+    expect(miss?.fix).toBeUndefined()
+  })
+})
+
+describe('« Enrichir les textes » : le projet PIM n’est requis que sans feuille', () => {
+  it('feuille branchée : aucun manque, la feuille fournit les fiches', () => {
+    const w = wf({
+      nodes: [node('s', 'source'), node('e', 'text-enrich', {})],
+      edges: [edge('s', 'sheet', 'e', 'sheet')],
+    })
+    expect(validateWorkflow(w, getSpec).filter((i) => i.nodeId === 'e')).toHaveLength(0)
+  })
+
+  it('ni feuille ni projet : le manque est réel et signalé', () => {
+    const w = wf({ nodes: [node('e', 'text-enrich', {})], edges: [] })
+    const issues = validateWorkflow(w, getSpec).filter((i) => i.nodeId === 'e')
+    expect(issues).toHaveLength(1)
+    expect(issues[0].message).toContain('Projet PIM')
+  })
+
+  it('projet renseigné sans feuille : rien à signaler', () => {
+    const w = wf({ nodes: [node('e', 'text-enrich', { projectId: 'p1' })], edges: [] })
+    expect(validateWorkflow(w, getSpec).filter((i) => i.nodeId === 'e')).toHaveLength(0)
   })
 })

@@ -11,20 +11,38 @@
 //      l'exécution : le rapport sort simplement VIDE, et on cherche ailleurs pendant des
 //      jours.
 // PUR : le resolver de spec est injecté (testable sans registre).
-import type { Workflow, NodeSpec } from '../types'
+import type { Workflow, NodeSpec, PortType } from '../types'
+import { isCompatible } from './ports'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
 import { breaksServerRun, ignoredOnServer } from './serverCapability'
 import { t } from '@/lib/i18n'
+
+/**
+ * Correction applicable EN UN CLIC depuis le pré-vol. Sans elle, « corriger » voulait dire
+ * supprimer la carte à la main puis retrouver quel lien rebrancher.
+ *
+ * ⚠ Un OBJET et non un littéral : `wire-input` doit dire QUOI brancher où. Aplati en
+ * drapeaux, le dialogue perdait aussi l'association message ↔ correction — un bouton en
+ * bas de carte pour l'un des trois messages, sans qu'on sache lequel.
+ */
+export type IssueFix =
+  | { kind: 'drop-node' }
+  | { kind: 'order-before-compare' }
+  | {
+      kind: 'wire-input'
+      sourceId: string
+      sourceHandle: string
+      targetHandle: string
+      /** Nom de la carte à brancher, pour que le bouton dise ce qu'il va faire. */
+      sourceLabel: string
+    }
 
 export interface WorkflowIssue {
   nodeId: string
   nodeLabel: string
   severity: 'error' | 'warning'
   message: string
-  /** Correction applicable en un clic depuis le pré-vol. `drop-node` = retirer la carte
-   *  et recoudre le flux (cf. `dropNodeAndRewire`) : sans elle, « corriger » voulait dire
-   *  supprimer la carte À LA MAIN puis retrouver quel lien rebrancher. */
-  fix?: 'drop-node' | 'order-before-compare'
+  fix?: IssueFix
 }
 
 /** Complétude non exprimable via `required` (valeur portée par la ConfigComponent,
@@ -42,6 +60,13 @@ const SEMANTIC_CHECKS: Record<string, (config: Record<string, unknown>, wired: (
   'source-sites': (c) =>
     Array.isArray(c.sites) && (c.sites as { enabled?: boolean }[]).some((r) => r?.enabled)
       ? null : t('wfv.noActiveSite'),
+  // Le projet PIM n'est requis QUE sans feuille branchée : la feuille l'emporte et fournit
+  // les fiches (cf. `configProblem(config, hasSheet)`, qui porte déjà cette règle côté
+  // exécution). Déclaré `required` dans le schéma, il produisait un « paramètre requis,
+  // non renseigné » sur une carte que le run traite sans broncher.
+  'text-enrich': (c, wired) =>
+    wired('sheet') || !isEmpty(c.projectId)
+      ? null : t('wfv.configRequired', { field: t('node.text-enrich.projectId') }),
 }
 
 function isEmpty(v: unknown): boolean {
@@ -85,6 +110,40 @@ function reaches(wf: Workflow, from: string, to: string): boolean {
     }
   }
   return false
+}
+
+/**
+ * La SEULE façon de câbler une entrée orpheline, quand il n'y en a qu'une.
+ *
+ * ⚠ Rend `undefined` dès qu'il y a zéro ou plusieurs candidats. Zéro : la correction
+ * serait « ajouter une carte source », ce qu'un dialogue de contrôle n'a pas à décider.
+ * Plusieurs : brancher le premier venu serait un pari silencieux sur la donnée traitée —
+ * c'est précisément le genre de choix invisible que ce pré-vol existe pour éviter.
+ *
+ * La compatibilité des types est celle de l'éditeur (`isCompatible`) : une seconde règle
+ * finirait par diverger de ce que la souris autorise. Les candidats en AVAL de la cible
+ * sont écartés — les brancher fabriquerait un cycle.
+ */
+function soleWiring(
+  wf: Workflow,
+  getSpec: (type: string) => NodeSpec | undefined,
+  willRun: (id: string) => boolean,
+  targetId: string,
+  port: { name: string; type: PortType },
+): IssueFix | undefined {
+  const candidates: { sourceId: string; sourceHandle: string; sourceLabel: string }[] = []
+  for (const n of wf.nodes) {
+    if (n.id === targetId || !willRun(n.id)) continue
+    if (reaches(wf, targetId, n.id)) continue
+    const spec = getSpec(n.type)
+    if (!spec) continue
+    for (const out of spec.outputs) {
+      if (!isCompatible(out.type, port.type)) continue
+      candidates.push({ sourceId: n.id, sourceHandle: out.name, sourceLabel: t(spec.labelKey) })
+    }
+  }
+  if (candidates.length !== 1) return undefined
+  return { kind: 'wire-input', ...candidates[0], targetHandle: port.name }
 }
 
 /**
@@ -134,7 +193,7 @@ function crossNodeIssues(
         nodeLabel: labelOf(f.type),
         severity: 'warning',
         message: t('wfv.feederNotOrdered', { compare: labelOf(cmp.type) }),
-        fix: 'order-before-compare',
+        fix: { kind: 'order-before-compare' },
       })
     }
   }
@@ -177,7 +236,11 @@ export function validateWorkflow(
       if (!port.required) continue
       const wired = wf.edges.some((e) => e.target === node.id && e.targetHandle === port.name)
       if (!wired) {
-        issues.push({ nodeId: node.id, nodeLabel: label, severity: 'error', message: t('wfv.inputNotWired', { port: port.name }) })
+        issues.push({
+          nodeId: node.id, nodeLabel: label, severity: 'error',
+          message: t('wfv.inputNotWired', { port: port.name }),
+          fix: soleWiring(wf, getSpec, willRun, node.id, port),
+        })
       }
     }
     // 1b. Config requise manquante (inclut les paramètres d'export requis).
@@ -201,14 +264,14 @@ export function validateWorkflow(
     if (scheduled && breaksServerRun(node.type)) {
       issues.push({
         nodeId: node.id, nodeLabel: label, severity: 'error',
-        message: t('wfv.serverUnsupported'), fix: 'drop-node',
+        message: t('wfv.serverUnsupported'), fix: { kind: 'drop-node' },
       })
     } else if (scheduled && ignoredOnServer(node.type)) {
       // Le run ne casse plus, mais il ne fait pas ce travail non plus : le dire, sinon un
       // run planifié « réussi » laisse croire que les textes ont été traités.
       issues.push({
         nodeId: node.id, nodeLabel: label, severity: 'warning',
-        message: t('wfv.serverIgnored'), fix: 'drop-node',
+        message: t('wfv.serverIgnored'), fix: { kind: 'drop-node' },
       })
     }
   }

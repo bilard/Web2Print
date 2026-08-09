@@ -86,7 +86,12 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
   // Les plans de champs sont une liste d'objets : le schéma générique ne sait pas les
   // rendre. Le panneau dédié s'en charge, le schéma garde les réglages scalaires.
   configSchema: [
-    { name: 'projectId', kind: 'text', labelKey: 'node.text-enrich.projectId', required: true },
+    // ⚠ PAS `required` : une feuille branchée fournit les fiches et rend le projet PIM
+    // inutile — c'est ce que `configProblem(config, hasSheet)` sait déjà. Déclaré requis,
+    // le pré-vol réclamait un projet à qui n'en a pas, sur une carte parfaitement
+    // exécutable. L'exigence RÉELLE (« l'un ou l'autre ») vit dans `SEMANTIC_CHECKS`,
+    // comme pour les sites de « Comparer catalogue ».
+    { name: 'projectId', kind: 'text', labelKey: 'node.text-enrich.projectId' },
     { name: 'capUsd', kind: 'number', labelKey: 'node.text-enrich.capUsd', default: 5 },
     { name: 'maxUnits', kind: 'number', labelKey: 'node.text-enrich.maxUnits', default: 500 },
     { name: 'withNote', kind: 'checkbox', labelKey: 'node.text-enrich.withNote', default: true },

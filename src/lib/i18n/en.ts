@@ -2421,6 +2421,8 @@ export const en: Record<TranslationKey, string> = {
   'wfv.serverIgnored': 'The scheduled run will not do this work: this card is not executed on the server. The data passes through untouched.',
   'wfc.dropNode': 'Remove the card and reconnect the flow',
   'wfc.orderNode': 'Wire upstream of the comparison',
+  'wfc.wireInput': 'Wire “{source}” in',
+  'wfc.wired': '“{source}” now feeds the “{port}” input.',
   'wfc.ordered': '"{label}" now runs before the comparison.',
   'wfc.orderFailed': 'No free ordering port on the comparison — wire it by hand.',
   'wfc.dropped': '"{label}" removed, the flow has been reconnected.',

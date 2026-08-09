@@ -13,6 +13,7 @@ import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflo
 import { dropNodeAndRewire } from '../runtime/dropNodeAndRewire'
 import { orderBeforeCompare } from '../runtime/orderBeforeCompare'
 import { RunPreflightDialog } from './RunPreflightDialog'
+import type { IssueFix } from '../runtime/validateWorkflow'
 import { PreflightBanner } from './PreflightBanner'
 import { useFocusNode } from './focusNodeStore'
 import { notifyRunOutcome } from '../runtime/notifyRunOutcome'
@@ -183,6 +184,24 @@ export function WorkflowEditorPage() {
     useWorkflowStore.getState().patch({ nodes: next.nodes, edges: next.edges })
     setPreflight(null)
     notify.success(t('wfc.ordered', { label }), '')
+  }
+  // Entrée orpheline : le pré-vol a déjà tranché qu'UNE seule source est possible (type
+  // compatible, pas en aval), on n'a plus qu'à poser l'arête. Sans ça, « source manquante »
+  // était le seul des points signalés qu'il fallait aller réparer à la souris.
+  const wireInput = (nodeId: string, fix: Extract<IssueFix, { kind: 'wire-input' }>) => {
+    const already = wf.edges.some(
+      (e) => e.target === nodeId && e.targetHandle === fix.targetHandle,
+    )
+    if (already) { setPreflight(null); return }
+    useWorkflowStore.getState().patch({
+      edges: [...wf.edges, {
+        id: `e-${fix.sourceId}-${fix.sourceHandle}-${nodeId}-${fix.targetHandle}`,
+        source: fix.sourceId, sourceHandle: fix.sourceHandle,
+        target: nodeId, targetHandle: fix.targetHandle,
+      }],
+    })
+    setPreflight(null)
+    notify.success(t('wfc.wired', { source: fix.sourceLabel, port: fix.targetHandle }), '')
   }
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
   const saveNow = async () => {
@@ -367,6 +386,7 @@ export function WorkflowEditorPage() {
             onFocus={(nodeId) => { useFocusNode.getState().focus(nodeId); setPreflight(null) }}
             onDropNode={canSave ? dropNode : undefined}
             onOrderNode={canSave ? orderNode : undefined}
+            onWireInput={canSave ? wireInput : undefined}
           />
         )}
     </ReactFlowProvider>
