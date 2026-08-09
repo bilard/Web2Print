@@ -29,7 +29,7 @@ export function DemoExpressPage() {
   return (
     <div className="h-full overflow-auto bg-background">
       <div className="max-w-screen-2xl mx-auto px-8 py-10">
-        <header className="mb-8">
+        <header className="sticky top-0 z-20 -mx-8 px-8 pt-8 pb-4 mb-4 bg-background border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-lime-500/[0.12] flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-lime-400" aria-hidden="true" />

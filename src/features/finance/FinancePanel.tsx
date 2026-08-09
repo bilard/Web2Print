@@ -48,10 +48,10 @@ export function FinancePanel() {
 
   return (
     <div className="space-y-3">
-      <div>
+      <header className="sticky top-0 z-20 -mx-8 px-8 pt-8 pb-3 -mt-8 mb-1 bg-background border-b border-white/[0.06]">
         <h1 className="text-xl font-semibold text-white">{t('fin.title')}</h1>
         <p className="text-sm text-white/50">{t('fin.lead', { month: monthLabel })}</p>
-      </div>
+      </header>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <Tile label={t('fin.tile.total', { month: monthLabel })} value={eur(totals.totalUsd)} accent="text-white"

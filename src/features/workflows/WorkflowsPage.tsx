@@ -354,7 +354,7 @@ export function WorkflowsPage({ embedded = false }: WorkflowsPageProps) {
 
   const content = (
     <>
-      <header className="flex items-center justify-between mb-8">
+      <header className="sticky top-0 z-20 -mx-8 px-8 pt-8 pb-4 mb-4 bg-background border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {!embedded && (
             <button

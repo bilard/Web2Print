@@ -92,8 +92,8 @@ export function PriceWatchPanel() {
   }
 
   return (
-    <div className="space-y-6 pt-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="space-y-6">
+      <header className="sticky top-0 z-20 -mx-8 px-8 pt-8 pb-4 bg-background border-b border-white/[0.06] flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-white">{t('pw.title')}</h1>
           <p className="text-sm text-white/50">
@@ -115,7 +115,7 @@ export function PriceWatchPanel() {
           </button>}
           <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
         </div>
-      </div>
+      </header>
 
       <PriceWatchDashboard watchId={watchId} />
 

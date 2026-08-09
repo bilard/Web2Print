@@ -22,7 +22,7 @@ export function ScrapingHubPage() {
   })
   return (
     <div className="h-full flex flex-col bg-background">
-      <header className="flex items-center gap-1 px-4 py-2 border-b border-white/10 bg-surface">
+      <header className="sticky top-0 z-20 flex items-center gap-1 px-4 py-2 border-b border-white/10 bg-surface">
         <h1 className="text-sm font-semibold text-white/90 mr-4">Scraping Hub</h1>
         {TABS.map((item) => {
           const Icon = item.icon
