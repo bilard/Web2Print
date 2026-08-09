@@ -88,7 +88,11 @@ function isEmpty(v: unknown): boolean {
 /** Nodes de la Veille tarifaire : tous adressent le MÊME suivi (`watchId`) — la moisson
  *  écrit, le comparatif relit. Un écart d'un seul caractère = deux chemins Firestore
  *  distincts, donc 0 apparié, sans le moindre message. */
-const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track'])
+// ⚠ « Enrichir les textes » en fait partie depuis qu'elle PUBLIE ses réécritures dans le
+// suivi : laissée hors de ce jeu, son réglage vide retombait sur `stableId(id du flux)` —
+// elle écrivait donc à côté, en journalisant fièrement « N fiches publiées », pendant que
+// l'écran de relecture lisait une collection vide.
+const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track', 'text-enrich'])
 /** Nodes qui ALIMENTENT l'index concurrent (le comparatif, lui, le consomme). */
 const INDEX_FEEDERS = new Set(['harvest-competitor', 'directed-search'])
 

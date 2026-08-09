@@ -18,8 +18,10 @@ interface GraphNode { id: string; type: string; config?: unknown }
 interface GraphEdge { source: string; target: string; targetHandle?: string }
 interface Graph { id: string; nodes: GraphNode[]; edges: GraphEdge[] }
 
-/** Nodes de la Veille tarifaire : tous doivent adresser le MÊME suivi. */
-const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track'])
+/** Nodes de la Veille tarifaire : tous doivent adresser le MÊME suivi. ⚠ « Enrichir les
+ *  textes » en fait partie depuis qu'elle y publie ses réécritures — jumeau du pré-vol
+ *  client (src/features/workflows/runtime/validateWorkflow.ts). */
+const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track', 'text-enrich'])
 /** Nodes qui ALIMENTENT l'index concurrent (le comparatif le consomme). */
 const INDEX_FEEDERS = new Set(['harvest-competitor', 'directed-search'])
 
@@ -28,6 +30,7 @@ const LABELS: Record<string, string> = {
   'compare-catalog': 'Comparer catalogue',
   'directed-search': 'Recherche dirigée',
   'price-watch-track': 'Suivi de prix',
+  'text-enrich': 'Enrichir les textes',
   'source-sites': 'Sites sources',
 }
 

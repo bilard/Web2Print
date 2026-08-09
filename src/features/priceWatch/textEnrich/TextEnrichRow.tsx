@@ -32,6 +32,10 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
   // affiche donc la colonne telle qu'elle s'appelle dans le fichier (« TEXT_VENTE »,
   // « DESIGNATION »), ce qui se lit très bien et n'invente rien.
   const cols = Object.entries(revision?.byColumn ?? {})
+  // ⚠ Le NOM D'ORIGINE, quand la feuille l'a gardé dans sa colonne « (source) ». Sans ce
+  // repli, la colonne AVANT affiche le libellé déjà traduit dès que « Comparer catalogue »
+  // est repassé derrière la carte — c'est-à-dire l'après, à gauche comme à droite.
+  const name = p.nameSource ?? p.name
   const img = (p.image ? absoluteImage(p.image, imagePrefix) : '') || null
 
   return (
@@ -107,16 +111,24 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
             {p.url ? (
               <a href={p.url} target="_blank" rel="noreferrer" title={t('pwte.openProduct')}
                 className="text-[12px] text-white/70 break-words hover:text-indigo-300 hover:underline decoration-dotted underline-offset-2">
-                {p.name}
+                {name}
               </a>
             ) : (
-              <p className="text-[12px] text-white/70 break-words">{p.name}</p>
+              <p className="text-[12px] text-white/70 break-words">{name}</p>
             )}
-            <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
-            {p.description
-              ? <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{p.description}</p>
-              : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
-            {cols.map(([key, v]) => (
+            {/* ⚠ Le texte de vente du CATALOGUE n'est l'« avant » que si personne ne l'a
+                déjà réécrit. Dès que la carte de workflow est passée, « Comparer
+                catalogue » a recopié le texte ENRICHI dans le catalogue : l'afficher ici
+                mettrait l'après des deux côtés. Les blocs par colonne, eux, portent
+                l'original — ils remplacent alors ce bloc au lieu de s'y ajouter. */}
+            {cols.length === 0 ? (
+              <>
+                <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
+                {p.description
+                  ? <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{p.description}</p>
+                  : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
+              </>
+            ) : cols.map(([key, v]) => (
               <div key={key} className="mt-1">
                 <p className="text-[9px] uppercase tracking-wide text-white/20">{key}</p>
                 <p className="text-[11px] text-white/35 break-words whitespace-pre-line">{v.before}</p>

@@ -365,6 +365,24 @@ describe('correction en un clic : ramener les cartes sur un seul suivi', () => {
     expect(mismatches(alignWatchIds(w, fix!.nodeIds, fix!.watchId))).toHaveLength(0)
   })
 
+  // ⚠ La carte qui PUBLIE les textes réécrits en fait partie : son réglage laissé vide
+  // retombe sur l'identifiant du flux, donc sur un tout autre suivi que celui du
+  // comparatif — elle écrivait à côté en annonçant « N fiches publiées », et l'écran de
+  // relecture lisait une collection vide.
+  it('ramène « Enrichir les textes » sur le suivi du comparatif', () => {
+    const w = wf({
+      nodes: [
+        node('h', 'harvest-competitor', { watchId: 'f1-veille', sites: 'x.fr' }),
+        node('e', 'text-enrich', { projectId: 'p1' }),
+        node('c', 'compare-catalog', { watchId: 'f1-veille', sites: 'x.fr' }),
+      ],
+      edges: [edge('h', 'out', 'c', 'harvest'), edge('e', 'enriched', 'c', 'products')],
+    })
+    const fix = fixOf(w)
+    expect(fix?.nodeIds).toContain('e')
+    expect(mismatches(alignWatchIds(w, fix!.nodeIds, fix!.watchId))).toHaveLength(0)
+  })
+
   it('« Sites sources » branché fait autorité, même contre les alimenteurs', () => {
     const w = wf({
       nodes: [
