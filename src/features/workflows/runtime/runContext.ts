@@ -3,6 +3,15 @@ import type { NodeRunState, NodeStatus } from '../types'
 
 interface RunContextState {
   isRunning: boolean
+  /**
+   * Un run SERVEUR est en cours (cron ou « Lancer serveur »).
+   *
+   * ⚠ Distinct de `isRunning`, qui ne désigne qu'un run lancé DEPUIS CE NAVIGATEUR. Sans
+   * cette distinction, l'écran ne savait pas si un run planifié vivait encore : les cartes
+   * restées « en cours » dans le dernier écho continuaient de tourner à l'écran des heures
+   * après l'arrêt, et l'estimation de temps restant courait dans le vide.
+   */
+  serverRunActive: boolean
   abortController: AbortController | null
   nodeStates: Record<string, NodeRunState>
   edgesActive: Set<string>
@@ -28,6 +37,7 @@ interface RunContextState {
   setNodeOutputs: (id: string, outputs: Record<string, unknown>) => void
   /** Applique l'état d'un run SERVEUR (statut + logs + sorties par node) reçu via
    *  Firestore. Ignoré si un run CLIENT est en cours (le local reste prioritaire). */
+  setServerRunActive: (active: boolean) => void
   hydrateServerRun: (states: Record<string, { status: NodeStatus; logs?: NodeRunState['logs']; outputs?: Record<string, unknown>; connectors?: string[]; count?: number; cycles?: number; startedAt?: number }>, opts?: { reset?: boolean }) => void
   clearNodes: (ids: string[]) => void
   /** Bloque jusqu'au clic « Étape suivante » (ou abort du run). */
@@ -39,6 +49,7 @@ const blankNode = (): NodeRunState => ({ status: 'pending', logs: [] })
 
 export const useRunContext = create<RunContextState>((set, get) => ({
   isRunning: false,
+  serverRunActive: false,
   abortController: null,
   nodeStates: {},
   edgesActive: new Set(),
@@ -146,6 +157,7 @@ export const useRunContext = create<RunContextState>((set, get) => ({
       }
       return { nodeStates: next }
     }),
+  setServerRunActive: (active) => set((st) => (st.serverRunActive === active ? st : { serverRunActive: active })),
   clearNodes: (ids) =>
     set((s) => {
       if (ids.length === 0) return s

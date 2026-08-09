@@ -59,9 +59,12 @@ function Stat({ label, value, tone = 'text-white/70' }: { label: string; value: 
   )
 }
 
-function Card({ card, locale }: { card: RunCard; locale: string }) {
+function Card({ card, locale, live }: { card: RunCard; locale: string; live: boolean }) {
   const Icon = ICON[card.status]
-  const running = card.status === 'running'
+  // ⚠ « En cours » ne veut dire « en cours » que si un run tourne VRAIMENT. Après un arrêt,
+  // le dernier écho garde ses cartes en l'état : elles tournaient à l'écran indéfiniment,
+  // ce qui laissait croire à un travail qui n'existait plus.
+  const running = card.status === 'running' && live
   return (
     <span className={`flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 ${
       running ? 'bg-indigo-500/10 border border-indigo-400/25' : ''
@@ -91,6 +94,7 @@ export function RunProgressBar() {
   const wf = useWorkflowStore((s) => s.current)
   const nodeStates = useRunContext((s) => s.nodeStates)
   const isRunning = useRunContext((s) => s.isRunning)
+  const serverRunActive = useRunContext((s) => s.serverRunActive)
   // Le temps écoulé n'est pas un état : il avance tout seul. Sans ce tic, le compteur
   // reste figé entre deux changements de carte — c'est-à-dire pendant l'essentiel du run.
   //
@@ -99,7 +103,7 @@ export function RunProgressBar() {
   // client), donc aucun tic ne partait et « écoulé », « débit » et « restant » restaient
   // figés entre deux échos Firestore — c'est-à-dire des minutes entières. C'est ce qui
   // faisait dire que la barre n'est jamais à jour.
-  const live = isRunning || Object.values(nodeStates).some((st) => st.status === 'running')
+  const live = isRunning || serverRunActive
   const [, tick] = useState(0)
   useEffect(() => {
     if (!live) return
@@ -151,7 +155,7 @@ export function RunProgressBar() {
             une carte en cours compte pour une demie. Le compteur montre donc les trois
             nombres qui expliquent le pourcentage. */}
         <span className="tabular-nums text-white/70 whitespace-nowrap">
-          {p.running > 0
+          {p.running > 0 && live
             ? t('wfe.progress.cardsRunning', { done: n(p.done), running: n(p.running), total: n(p.total) })
             : t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
         </span>
@@ -164,7 +168,9 @@ export function RunProgressBar() {
         {p.items > 0 && <Stat label={t('wfe.progress.lbl.items')} value={n(p.items)} />}
         {p.itemsPerMin != null && <Stat label={t('wfe.progress.lbl.rate')} value={t('wfe.progress.perMin', { count: n(p.itemsPerMin) })} />}
         {p.elapsedMs > 0 && <Stat label={t('wfe.progress.lbl.elapsed')} value={shortDuration(p.elapsedMs)} />}
-        {p.etaMs != null && <Stat label={t('wfe.progress.lbl.eta')} value={shortDuration(p.etaMs)} tone="text-amber-200/80" />}
+        {/* ⚠ Pas d'estimation sur un run ARRÊTÉ : « restant ≈ 59 min » sur une chaîne qui
+            ne tourne plus annonce un travail qui n'aura jamais lieu. */}
+        {live && p.etaMs != null && <Stat label={t('wfe.progress.lbl.eta')} value={shortDuration(p.etaMs)} tone="text-amber-200/80" />}
         {stalledMs > STALLED_MS && (
           <Stat label={t('wfe.progress.lbl.stalled')} value={shortDuration(stalledMs)} tone="text-amber-300" />
         )}
@@ -182,7 +188,7 @@ export function RunProgressBar() {
             {t('wfe.progress.doneCards', { count: n(done.length) })}
           </span>
         )}
-        {rest.map((c) => <Card key={c.id} card={c} locale={intlLocale(locale)} />)}
+        {rest.map((c) => <Card key={c.id} card={c} locale={intlLocale(locale)} live={live} />)}
       </div>
     </div>
   )

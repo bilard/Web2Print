@@ -116,6 +116,12 @@ const CATEGORY_STYLES: Record<NodeSpec['category'], CategoryStyle> = {
 
 const STATUS_DOT: Record<string, ReactNode> = {
   pending: null,
+  // Carte laissée « en cours » par un run qui ne tourne plus : la pastille reste, figée.
+  interrupted: (
+    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-background border border-indigo-500/50 flex items-center justify-center">
+      <Loader2 className="w-2.5 h-2.5 text-indigo-400/50" />
+    </div>
+  ),
   running: (
     <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-background border border-indigo-500 flex items-center justify-center">
       <Loader2 className="w-2.5 h-2.5 text-indigo-400 animate-spin" />
@@ -181,6 +187,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const status = useRunContext((s) => s.nodeStates[id]?.status ?? 'pending')
   const runConnectors = useRunContext((s) => s.nodeStates[id]?.connectors)
   const isRunning = useRunContext((s) => s.isRunning)
+  const serverRunActive = useRunContext((s) => s.serverRunActive)
   const canRun = useCan('workflows.run')
   // Config live du node (réactive) — alimente `spec.cardSummary` (ex. planning cron).
   const liveConfig = useWorkflowStore((s) => s.current?.nodes.find((n) => n.id === id)?.config)
@@ -229,6 +236,11 @@ export function BaseNode({ id, data, selected }: NodeProps) {
       cardSummary = null
     }
   }
+  // ⚠ « En cours » ne vaut que si un run tourne VRAIMENT. Après un arrêt, le dernier écho
+  // laisse ses cartes en l'état : elles pulsaient et tournaient à l'écran des heures durant,
+  // pour un travail qui n'existait plus. `status` reste inchangé — c'est bien la trace du
+  // dernier run — seule l'ANIMATION s'éteint.
+  const spinning = status === 'running' && (isRunning || serverRunActive)
   const inputs = spec.inputs ?? []
   const outputs = spec.outputs ?? []
   const portRows = Math.max(inputs.length, outputs.length, 1)
@@ -325,7 +337,7 @@ export function BaseNode({ id, data, selected }: NodeProps) {
         </div>
 
         {/* Status dot */}
-        {STATUS_DOT[status]}
+        {status === 'running' && !spinning ? STATUS_DOT.interrupted : STATUS_DOT[status]}
 
         {/* Bouton RUN par carte — exécute ce node + tout son aval (amont supposé en cache).
             Pendant un run, le bouton devient STOP et interrompt le flux. */}

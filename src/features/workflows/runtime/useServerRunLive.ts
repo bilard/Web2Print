@@ -34,6 +34,10 @@ export function useServerRunLive(workflowId: string | undefined): void {
       doc(db, 'users', uid, 'workflowRunsLive', workflowId),
       (snap) => {
         const d = snap.data() as RunLiveDoc | undefined
+        // ⚠ DIT à l'écran, même quand on n'hydrate pas : sans ce signal, les cartes du
+        // dernier écho restaient « en cours » et tournaient à l'infini des heures après
+        // l'arrêt du run — et le temps restant continuait de s'estimer dans le vide.
+        useRunContext.getState().setServerRunActive(d?.status === 'running')
         if (!d?.nodeStates) { isInitial.current = false; return }
         // Écho INITIAL d'un run serveur DÉJÀ TERMINÉ (au chargement de page) : on ne ré-hydrate
         // PAS. L'aperçu durable (workflowRuns, toutes sources) montre déjà le dernier run ;
@@ -46,6 +50,8 @@ export function useServerRunLive(workflowId: string | undefined): void {
         // seuil ; l'éditeur l'ignorait.
         const stale = d.status === 'running' && !!d.startedAt && Date.now() - d.startedAt > STALE_RUN_MS
         if (stale) {
+          // Un run zombie n'est PAS en cours : ses cartes doivent cesser de tourner.
+          useRunContext.getState().setServerRunActive(false)
           isInitial.current = false
           lastRunId.current = d.runId
           console.warn('[runLive] run serveur périmé (démarré il y a > 31 min, jamais terminé) — état ignoré')
