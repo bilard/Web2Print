@@ -249,7 +249,11 @@ export function TextEnrichConfigPanel({
           />
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground">
-            <label className="flex items-center gap-1">
+            {/* ⚠ Le seuil ÉCARTE : au-delà, le texte est jugé assez long et saute le
+                passage. Lu comme un minimum pour entrer — la lecture spontanée —, « 28 »
+                fait croire qu'on traite tout sauf les bribes, alors qu'on ne traite QUE
+                les bribes. Le titre au survol le dit, faute de place pour l'écrire. */}
+            <label className="flex items-center gap-1" title={t('node.text-enrich.minLength.help')}>
               {t('node.text-enrich.minLength')}
               {/* Le seuil ne veut rien dire pour une traduction : c'est la langue qui
                   décide, pas la longueur. Le champ reste visible mais inerte. */}

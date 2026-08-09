@@ -1862,6 +1862,7 @@ export const fr = {
   'node.text-enrich.promptOptional': 'Facultatif ici : « Traduire en FR » se suffit. Ajoutez une consigne pour cadrer le style.',
   'node.text-enrich.promptPlaceholder': 'Votre consigne, telle quelle — elle part en tête du prompt.',
   'node.text-enrich.minLength': 'Seuil',
+  'node.text-enrich.minLength.help': 'Longueur à partir de laquelle le texte est jugé SUFFISANT — il est alors écarté du passage. « 28 » ne traite donc que les textes de moins de 28 caractères. Mettez-le haut (ex. 400) pour reprendre aussi les textes déjà longs, 0 pour ne rien écarter. Inerte pour une traduction : c’est la langue qui décide, pas la longueur.',
   'node.text-enrich.promptVersion': 'Version',
   'node.text-enrich.useTemplate': 'Gabarit',
   'node.text-enrich.includeEmpty': 'Champs vides',

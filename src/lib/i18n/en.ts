@@ -1784,6 +1784,7 @@ export const en: Record<TranslationKey, string> = {
   'node.text-enrich.promptOptional': 'Optional here: “Translate to FR” is enough. Add an instruction to steer the style.',
   'node.text-enrich.promptPlaceholder': 'Your instruction, verbatim — it leads the prompt.',
   'node.text-enrich.minLength': 'Threshold',
+  'node.text-enrich.minLength.help': 'Length above which the text is deemed GOOD ENOUGH — it is then left out of the pass. So “28” only handles texts shorter than 28 characters. Set it high (e.g. 400) to pick up already long texts too, 0 to leave nothing out. Inert for a translation: language decides, not length.',
   'node.text-enrich.promptVersion': 'Version',
   'node.text-enrich.useTemplate': 'Template',
   'node.text-enrich.includeEmpty': 'Empty fields',

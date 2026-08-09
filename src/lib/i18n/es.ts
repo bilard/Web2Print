@@ -1783,6 +1783,7 @@ export const es: Record<TranslationKey, string> = {
   'node.text-enrich.promptOptional': 'Opcional aquí: «Traducir al FR» basta. Añada una consigna para encuadrar el estilo.',
   'node.text-enrich.promptPlaceholder': 'Su consigna, tal cual: encabeza el prompt.',
   'node.text-enrich.minLength': 'Umbral',
+  'node.text-enrich.minLength.help': 'Longitud a partir de la cual el texto se considera SUFICIENTE: entonces queda fuera de la pasada. Así, «28» solo trata los textos de menos de 28 caracteres. Póngalo alto (p. ej. 400) para retomar también los textos ya largos, 0 para no excluir nada. Inerte en una traducción: decide la lengua, no la longitud.',
   'node.text-enrich.promptVersion': 'Versión',
   'node.text-enrich.useTemplate': 'Plantilla',
   'node.text-enrich.includeEmpty': 'Campos vacíos',
