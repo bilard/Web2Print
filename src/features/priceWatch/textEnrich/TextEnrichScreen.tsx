@@ -24,6 +24,7 @@ import { isUnderPath } from '../explorer/taxonomyTree'
 import { langBreakdown } from './langBreakdown'
 import { revisionKeyOf } from './revisionLookup'
 import { originTextOf } from './originText'
+import { opsOf } from './revisionOps'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -140,13 +141,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     // La famille choisie borne TOUT ce qui suit : traduire « les courroies » veut dire
     // les courroies, quel que soit le filtre de langue ou la recherche par-dessus.
     const inPath = (l: Line) => path.length === 0 || isUnderPath(l.product.taxo ?? [], path)
-    // ⚠ Les fiches d'avant le champ `ops` comptent comme traitées, jamais comme traduites
-    // NI comme améliorées : les ranger d'office dans l'une des deux serait une invention.
+    // ⚠ Les fiches d'avant le champ `ops` se classent par leur LANGUE D'ORIGINE : sans
+    // cela, elles tombaient hors de « Traduits » ET d'« Améliorés », et l'écran répondait
+    // « Rien à traiter » sur des fiches traduites, visibles juste en dessous.
     const byDone = (l: Line) => {
       if (doneFilter === 'all') return true
       if (doneFilter === 'todo') return !l.revision
       if (!l.revision) return false
-      return doneFilter === 'translated' ? !!l.revision.ops?.translate : !!l.revision.ops?.improve
+      const ops = opsOf(l.revision, l.lang)
+      return doneFilter === 'translated' ? ops.translate : ops.improve
     }
     // ⚠ Une recherche EXPLICITE l'emporte sur le filtre de langue. Chercher une référence
     // et ne rien voir parce que la fiche est déjà en français se lit comme « ce produit

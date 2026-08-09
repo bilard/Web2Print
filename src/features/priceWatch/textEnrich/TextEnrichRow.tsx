@@ -14,6 +14,7 @@ import { absoluteImage } from '../explorer/pairing'
 import type { RejectionPart } from './violationSummary'
 import type { SourceProduct } from '../catalog/match'
 import type { TextRevision } from '../textRevisionsStore'
+import { opsOf } from './revisionOps'
 
 export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix, onRevert }: {
   product: SourceProduct
@@ -32,6 +33,9 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
   // affiche donc la colonne telle qu'elle s'appelle dans le fichier (« TEXT_VENTE »,
   // « DESIGNATION »), ce qui se lit très bien et n'invente rien.
   const cols = Object.entries(revision?.byColumn ?? {})
+  // ⚠ Déduit quand la révision est antérieure au champ `ops` : elle affichait « Traité »
+  // alors que sa note dit « Traduction de l'anglais vers le français ».
+  const ops = opsOf(revision, lang)
   // ⚠ Le NOM D'ORIGINE, quand la feuille l'a gardé dans sa colonne « (source) ». Sans ce
   // repli, la colonne AVANT affiche le libellé déjà traduit dès que « Comparer catalogue »
   // est repassé derrière la carte — c'est-à-dire l'après, à gauche comme à droite.
@@ -55,22 +59,22 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
           {/* Ce qui a été FAIT sur cette fiche. Sans ces marques, la colonne APRÈS montrait
               une traduction et une réécriture de la même façon — or on ne les relit pas
               pareil : une traduction se vérifie, une réécriture se juge. */}
-          {revision && (revision.ops?.translate || revision.ops?.improve ? (
+          {revision && (ops.translate || ops.improve ? (
             <>
-              {revision.ops.translate && (
+              {ops.translate && (
                 <span className="rounded border border-sky-400/30 bg-sky-500/10 px-1 text-sky-200/80">
                   {t('pwte.badge.translated')}
                 </span>
               )}
-              {revision.ops.improve && (
+              {ops.improve && (
                 <span className="rounded border border-violet-400/30 bg-violet-500/10 px-1 text-violet-200/80">
                   {t('pwte.badge.improved')}
                 </span>
               )}
             </>
           ) : (
-            // Fiche réécrite avant que l'opération soit mémorisée : on dit « traité », pas
-            // « traduit » — la ranger d'office serait une invention.
+            // Ni l'une ni l'autre : révision antérieure au champ `ops`, sur une fiche dont
+            // la langue d'origine n'a pas été tranchée. On dit « traité », sans plus.
             <span className="rounded border border-white/15 px-1 text-white/40">{t('pwte.badge.done')}</span>
           ))}
           {/* Le prix situe l'enjeu : on ne relit pas de la même façon l'argumentaire d'une
