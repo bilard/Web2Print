@@ -16,6 +16,8 @@ import { planPass, runPass, type EnrichUnit } from '../../textEnrich/pass'
 import { planWaves, runWaves } from '../../textEnrich/planWaves'
 import { makeCallBatch } from '../../textEnrich/batchCaller'
 import { applySheetRevisions, sheetColumnsWithSources, sheetTargets, type SheetColumn, type SheetRow } from '../../textEnrich/sheetMode'
+import { sheetQueue, rememberRows, type EnrichMemory } from '../../textEnrich/sheetMemory'
+import { loadEnrichMemory, saveEnrichMemory } from '../../textEnrich/memoryStore'
 import type { CellValue } from '../../excel/types'
 import { callLlm, parseLlmJson } from '../llm'
 import { t } from '../../i18n'
@@ -48,7 +50,24 @@ registerServerNode({
 
     const plans = configToPlans(cfg)
     const planKeys = [...new Set(plans.map((p) => p.key))]
-    const rows: SheetRow[] = sheet?.rows ?? []
+    const allRows: SheetRow[] = sheet?.rows ?? []
+
+    // ⚠ MÊME mémoire que le navigateur, clefée sur la RÉFÉRENCE ARTICLE. Sans elle, le
+    // cron refaisait chaque nuit le catalogue entier — et le refacturait.
+    const memoryOn = cfg.incremental !== false && !!ctx.workflowId
+    const col = (v: unknown) => (typeof v === 'string' ? v.trim() : '') || undefined
+    const keyCols = { ref: col(cfg.refField), ean: col(cfg.eanField) }
+    const memory: EnrichMemory = memoryOn ? await loadEnrichMemory(ctx.uid, ctx.workflowId!) : {}
+    const decisions = memoryOn ? sheetQueue(allRows, planKeys, memory, keyCols) : []
+    const rows: SheetRow[] = memoryOn ? (decisions.map((d) => d.row) as SheetRow[]) : allRows
+    if (memoryOn) {
+      ctx.log('info', t(ctx.locale, 'run.textEnrich.incremental', {
+        total: allRows.length, taken: rows.length,
+        fresh: decisions.filter((d) => d.reason === 'new').length,
+        changed: decisions.filter((d) => d.reason === 'changed').length,
+        unknown: decisions.filter((d) => d.reason === 'unknown-key').length,
+      }))
+    }
     const targets = sheetTargets(rows, planKeys)
     const byId = new Map(targets.map((tg) => [tg.id, tg]))
 
@@ -62,7 +81,7 @@ registerServerNode({
       units: units.length, considered: counts.considered, done: counts.skipped['already-done'],
     }))
     if (units.length === 0) {
-      return { enriched: { name: sheet?.name ?? 'sheet', columns: sheet?.columns ?? [], rows }, revisions: { name: 'revisions', columns: [], rows: [] } }
+      return { enriched: { name: sheet?.name ?? 'sheet', columns: sheet?.columns ?? [], rows: allRows }, revisions: { name: 'revisions', columns: [], rows: [] } }
     }
 
     const limit = Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : units.length
@@ -110,7 +129,13 @@ registerServerNode({
 
     ctx.log('info', t(ctx.locale, 'run.textEnrich.done', { revised: result.counts.revised, rejected: result.counts.rejected, passId: '' }))
 
-    const applied = applySheetRevisions(rows, revisions.map((r) => ({
+    // ⚠ La mémoire retient ce qui a été SOUMIS, pas ce qui a été retenu : une proposition
+    // refusée par la garde ne doit pas repartir chaque nuit pour se faire refuser encore.
+    if (memoryOn) await saveEnrichMemory(ctx.uid, ctx.workflowId!, rememberRows(memory, decisions, keyCols))
+
+    // ⚠ TOUTES les lignes repartent vers l'aval, pas seulement la part retraitée : le
+    // comparatif attend le catalogue entier.
+    const applied = applySheetRevisions(allRows, revisions.map((r) => ({
       productId: r.productId, field: r.field, before: r.before, after: r.after,
     })))
     return {

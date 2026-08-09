@@ -251,6 +251,10 @@ const MESSAGES = {
     fr: 'Réponse illisible du modèle sur un lot — les textes concernés reviendront au passage suivant.',
     en: 'Unreadable model response on a batch — the texts involved will come back on the next pass.',
   },
+  'run.textEnrich.incremental': {
+    fr: 'Reprise incrémentale : {taken} lignes sur {total} — {fresh} nouvelles, {changed} modifiées à la source, {unknown} sans référence reconnaissable.',
+    en: 'Incremental pick-up: {taken} rows out of {total} — {fresh} new, {changed} changed at source, {unknown} with no recognisable reference.',
+  },
   'run.pwReport.noReport': {
     fr: "Aucun rapport pour le suivi « {watchId} » : lance « Comparer catalogue » avant d'envoyer le mail.",
     en: 'No report for monitoring "{watchId}": run "Compare catalogue" before sending the email.',

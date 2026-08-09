@@ -20,6 +20,9 @@ import { EnrichBatchSchema } from '@/features/textEnrich/prompt'
 import { makeCallBatch } from '@/features/textEnrich/batchCaller'
 import { planPass, runPass, type EnrichUnit } from '@/features/textEnrich/pass'
 import { planWaves, runWaves } from '@/features/textEnrich/planWaves'
+import { sheetQueue, rememberRows, type EnrichMemory } from '@/features/textEnrich/sheetMemory'
+import { loadEnrichMemory, saveEnrichMemory } from '@/features/textEnrich/memoryStore'
+import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
 import {
@@ -97,6 +100,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     { name: 'maxUnits', kind: 'number', labelKey: 'node.text-enrich.maxUnits', default: 500 },
     { name: 'withNote', kind: 'checkbox', labelKey: 'node.text-enrich.withNote', default: true },
     { name: 'dryRun', kind: 'checkbox', labelKey: 'node.text-enrich.dryRun', default: false },
+    { name: 'incremental', kind: 'checkbox', labelKey: 'node.text-enrich.incremental', helpKey: 'node.text-enrich.incremental.help', default: true },
   ],
   defaultConfig: DEFAULT_TEXT_ENRICH_CONFIG,
   cardSummary: (c) => {
@@ -130,7 +134,33 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
 
     const plans = configToPlans(config)
     const planKeys = [...new Set(plans.map((p) => p.key))]
-    const sheetRows: SheetRow[] = fromSheet ? (sheet?.rows ?? []) : []
+    const allRows: SheetRow[] = fromSheet ? (sheet?.rows ?? []) : []
+
+    // ⚠ MÉMOIRE du mode feuille. Sans elle, chaque exécution refaisait — et refacturait —
+    // le catalogue entier : un passage quotidien était impossible. Clefée sur la RÉFÉRENCE
+    // ARTICLE, jamais sur le numéro de ligne, qui se décale dès qu'un produit est inséré.
+    // Le mode PIM, lui, a déjà son marqueur d'idempotence par champ.
+    const memoryOn = fromSheet && config.incremental !== false && !!ctx.workflowId
+    // ⚠ Lecture TOLÉRANTE : la config d'un node est persistée, et une carte posée avant
+    // ces champs ne les connaît pas. Les lire crûment planterait le run — après le
+    // chiffrage, donc après avoir fait espérer.
+    const col = (v: unknown) => (typeof v === 'string' ? v.trim() : '') || undefined
+    const keyCols = { ref: col(config.refField), ean: col(config.eanField) }
+    const memory: EnrichMemory = memoryOn ? await loadEnrichMemory(getWorkspaceUid() ?? '', ctx.workflowId!) : {}
+    const decisions = memoryOn ? sheetQueue(allRows, planKeys, memory, keyCols) : []
+    // Les lignes écartées ne sont pas SUPPRIMÉES de la feuille : elles la traversent
+    // intactes vers l'aval. On ne restreint que ce qu'on soumet au modèle.
+    const sheetRows: SheetRow[] = memoryOn ? (decisions.map((d) => d.row) as SheetRow[]) : allRows
+    if (memoryOn) {
+      ctx.log('info', t('run.textEnrich.incremental', {
+        total: allRows.length,
+        taken: sheetRows.length,
+        fresh: decisions.filter((d) => d.reason === 'new').length,
+        changed: decisions.filter((d) => d.reason === 'changed').length,
+        unknown: decisions.filter((d) => d.reason === 'unknown-key').length,
+      }))
+    }
+
     const targets = fromSheet
       ? sheetTargets(sheetRows, planKeys)
       : await loadTargets(config.projectId)
@@ -140,11 +170,12 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     // traité, donc chaque exécution refait — et refacture — le même travail.
     if (fromSheet) ctx.log('info', t('run.textEnrich.sheetMode', { rows: sheetRows.length }))
 
-    /** La feuille d'entrée, telle quelle. */
+    /** La feuille d'entrée, telle quelle. ⚠ TOUTES les lignes, y compris celles que la
+     *  mémoire a écartées : l'aval attend le catalogue entier, pas la part retraitée. */
     const passthrough = () => ({
       name: sheet?.name ?? 'sheet',
       columns: sheet?.columns ?? [],
-      rows: sheetRows,
+      rows: allRows,
     })
 
     // ⚠ Les plans partent en VAGUES : deux plans sur un même champ ne peuvent pas voyager
@@ -261,6 +292,14 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
       }), { limit: Number(config.maxUnits) > 0 ? Number(config.maxUnits) : undefined })
     } finally {
       popUsage()
+    }
+
+    // ⚠ La mémoire retient ce qui a été SOUMIS, pas ce qui a été retenu : une proposition
+    // refusée par la garde ne doit pas repartir chaque nuit pour se faire refuser encore,
+    // en repayant à chaque tour. Le texte source, lui, n'a pas changé.
+    if (memoryOn) {
+      const uid2 = getWorkspaceUid()
+      if (uid2) await saveEnrichMemory(uid2, ctx.workflowId!, rememberRows(memory, decisions, keyCols))
     }
 
     // ⚠ RIEN N'EST PERSISTÉ en mode feuille, et ce n'est pas un oubli : il n'y a pas de

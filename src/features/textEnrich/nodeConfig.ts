@@ -48,6 +48,12 @@ export interface TextEnrichConfig {
   maxUnits: number
   /** Chiffrer le travail sans rien écrire ni appeler de modèle. */
   dryRun: boolean
+  /** Ne reprendre que les lignes NEUVES ou dont le texte source a changé (mode feuille).
+   *
+   *  ⚠ Décoché, chaque exécution refait — et refacture — le catalogue entier : c'est le
+   *  comportement d'avant, utile pour rejouer un catalogue après un changement de
+   *  consigne, ruineux en passage quotidien. */
+  incremental: boolean
 }
 
 /**
@@ -102,6 +108,7 @@ export const DEFAULT_TEXT_ENRICH_CONFIG: TextEnrichConfig = {
   // sur cinq cents fiches que sur cent mille. C'est un garde-fou, pas un objectif.
   maxUnits: 500,
   dryRun: false,
+  incremental: true,
 }
 
 /** Traduit la config en plans consommables. Les entrées désactivées disparaissent. */
