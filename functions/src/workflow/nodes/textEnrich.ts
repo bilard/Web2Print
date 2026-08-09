@@ -99,7 +99,12 @@ registerServerNode({
       withNote: cfg.withNote,
       onNotes: (n) => Object.assign(notes, n),
       generate: async (args) => {
-        const { text } = await callLlm(ctx.uid, args.prompt + JSON_INSTRUCTION, { maxTokens: MAX_OUTPUT_TOKENS })
+        // ⚠ DeepSeek d'abord : à 200 000 champs, le choix du fournisseur pèse plus lourd
+        // que tout le reste — quelques dollars contre plusieurs centaines. Il rend en plus
+        // du JSON natif. La cascade de l'utilisateur prend le relais s'il n'a pas de clé.
+        const { text } = await callLlm(ctx.uid, args.prompt + JSON_INSTRUCTION, {
+          maxTokens: MAX_OUTPUT_TOKENS, preferProviders: ['deepseek'],
+        })
         const parsed = parseLlmJson<unknown>(text)
         // Un lot illisible doit se voir : rendre un objet vide le confondrait avec « le
         // modèle n'a rien trouvé à changer ».
@@ -111,6 +116,10 @@ registerServerNode({
     const result = await runWaves(waves, targets, capped, counts,
       (batchUnits, batchCounts) => runPass(batchUnits, batchCounts, {
         passId: `${Date.now().toString(36)}-${(ctx.workflowId ?? 'cron').slice(0, 6)}`,
+        // ⚠ DIX et non vingt : la sortie de deepseek-chat plafonne à 8192 tokens. Un lot de
+        // vingt textes de vente longs dépasse ce plafond, la réponse est tronquée EN
+        // SILENCE et le JSON devient invalide — tout le lot est perdu.
+        chunkSize: 10,
         callBatch,
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(cfg, byId.get(unit.productId)?.row ?? {}),
         onRevision: (unit, field) => {

@@ -166,10 +166,19 @@ const TASK_ROUTING: Record<LLMTask, RouteConfig> = {
   // 'telegram.chat'. NE PAS mettre 'claude-opus-4-8' ici, sinon le fallback gemini retombe sur
   // son défaut (souvent gemini-3.5-flash, JSON ~50 % d'échec, cf. mémoire projet).
   'data.columnCompletion': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
-  // Enrichissement des textes produit (traduction, reformulation, gabarit de nom). Même
-  // profil que la complétion de colonne : Claude en primaire pour un JSON fiable, gemini
-  // ÉPINGLÉ en fallback — un gemini-3.5-flash échouerait une fois sur deux sur ce schéma.
-  'data.textEnrich': { primary: 'claude', fallback: 'gemini', model: 'gemini-3.1-pro-preview' },
+  // Enrichissement des textes produit (traduction, reformulation, gabarit de nom).
+  //
+  // ⚠⚠ DeepSeek en PRIMAIRE, et c'est une décision de COÛT, pas de qualité. Ce passage
+  // traite 207 802 champs sur le catalogue F1 : à ce volume, Claude Opus se chiffre en
+  // centaines de dollars là où deepseek-chat tient dans quelques-uns. Et il n'y a pas de
+  // sacrifice sur la fiabilité du JSON — DeepSeek est l'un des deux seuls fournisseurs à
+  // offrir `response_format: json_object`, donc une réponse JSON pure, sans prose ni bloc
+  // markdown à rattraper. Claude reste en repli pour les lots qu'il refuserait.
+  //
+  // ⚠ Sa sortie plafonne à 8192 tokens : les lots partent par DIX et non par vingt (cf.
+  // `chunkSize` des deux cartes), sans quoi un lot de textes longs serait tronqué EN
+  // SILENCE et le JSON deviendrait invalide.
+  'data.textEnrich': { primary: 'deepseek', fallback: 'claude' },
   // Génération de plan de composition retail (Visuels Promo) : placement sémantique de blocs
   // en pourcentages → gemini-3.1-pro-preview (responseSchema fiable sur v1beta) ; Claude fallback.
   'design.promoPlan': { primary: 'gemini', fallback: 'claude', model: 'gemini-3.1-pro-preview' },

@@ -283,6 +283,9 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
     try {
       result = await runWaves(waves, targets, capped, counts, (batchUnits, batchCounts) => runPass(batchUnits, batchCounts, {
         passId,
+        // ⚠ DIX et non vingt : la sortie de deepseek-chat plafonne à 8192 tokens, et un lot
+        // de vingt textes longs la ferait tronquer EN SILENCE.
+        chunkSize: 10,
         callBatch,
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(config, byId.get(unit.productId)?.row ?? {}),
         onRevision: (unit, field) => {
