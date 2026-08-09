@@ -43,6 +43,10 @@ export function CompetitorExplorerPanel({ onClose, initialMode = null }: {
       <div className="h-11 border-b border-white/10 flex items-center gap-2 px-3 shrink-0">
         <Store className="w-4 h-4 text-white/30" />
         <h2 className="text-[13px] font-medium text-white/70">{t('pwx.concurrentsResultatsDuScraping')}</h2>
+        {/* Cible du portail : la RECHERCHE de l'explorateur vient s'y poser. Elle vit
+            dans `CompetitorExplorer` (qui a les lignes et l'index de suggestions) mais
+            s'affiche ici, où le regard la cherche. */}
+        <div id="explorer-search-portal" className="flex-1 min-w-0 max-w-md ml-3" />
         <div className="ml-auto flex items-center gap-2">
           {watches.length > 0 && (
             <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />

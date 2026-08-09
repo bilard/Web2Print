@@ -11,6 +11,7 @@
 // de lignes, perdre « qui est à gauche, qui est à droite » au premier scroll rendait la
 // comparaison illisible.
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { RefreshCw, Loader2, Download, FileSpreadsheet, PanelLeftClose, ChevronsRight } from 'lucide-react'
 import { useCompetitorMeta, useCatalogReport } from '../useCatalogReport'
 import { useSourceCatalog, useSiteListings } from './useSiteExplorer'
@@ -98,6 +99,10 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
   const [taxoOpen, setTaxoOpen] = useState(true)
+  // ⚠ La cible du portail n'existe qu'APRÈS le premier rendu du panneau parent : la
+  // chercher pendant le rendu rendrait `null` pour toujours.
+  const [searchSlot, setSearchSlot] = useState<HTMLElement | null>(null)
+  useEffect(() => { setSearchSlot(document.getElementById('explorer-search-portal')) }, [])
   const [railOpen, setRailOpen] = useState(true)
   const patch = (p: Partial<ExplorerFilter>) => { setFilter((f) => ({ ...f, ...p })); setPage(0) }
 
@@ -350,13 +355,16 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
       {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}
       <div className="px-3 py-2 space-y-2 border-b border-white/10">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Les suggestions (mots, réfs, codes-barres) sortent des lignes du CONCURRENT.
-              Les proposer au catalogue ferait cliquer sur des clés d'un autre périmètre :
-              mieux vaut n'en offrir aucune que d'en offrir de trompeuses. */}
-          <ExplorerSearch rows={catalogMode || enrichMode ? [] : rows}
-            tokenIndex={catalogMode || enrichMode ? [] : tokenIndex} value={filter.q}
-            onChange={(q) => patch({ q })}
-            onAddToken={(tk) => patch({ tokens: filter.tokens.includes(tk) ? filter.tokens : [...filter.tokens, tk] })} />
+          {/* La recherche s'affiche dans la barre de TITRE : elle occupait ici une ligne
+              entière pour elle seule, au-dessus des filtres. Rendue par portail, elle
+              garde son index de suggestions — qui vit dans ce composant. */}
+          {searchSlot && createPortal(
+            <ExplorerSearch rows={catalogMode || enrichMode ? [] : rows}
+              tokenIndex={catalogMode || enrichMode ? [] : tokenIndex} value={filter.q}
+              onChange={(q) => patch({ q })}
+              onAddToken={(tk) => patch({ tokens: filter.tokens.includes(tk) ? filter.tokens : [...filter.tokens, tk] })} />,
+            searchSlot,
+          )}
           {/* Appariement, promo, rupture, fiabilité, visuel : tout se juge FACE à un
               concurrent. Hors de cette vue, ces filtres ne pilotent rien. */}
           {!catalogMode && !enrichMode && <ExplorerFilters filter={effective} onChange={patch} />}
