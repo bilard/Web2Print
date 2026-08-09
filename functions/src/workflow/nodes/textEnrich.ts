@@ -142,15 +142,30 @@ registerServerNode({
           kinds: [...new Set(violations.map((v) => v.kind))].join(', '),
         })),
         spentUsd: () => 0,
+        // ⚠ L'échéance du segment. Sans elle, la carte tentait d'avaler 207 802 champs
+        // dans une fenêtre de vingt-huit minutes : la fonction était tuée, la mémoire
+        // jamais écrite, et tout l'aval du graphe jamais atteint.
+        deadlineAt: ctx.deadlineAt,
         onChunkDone: (done, total) => ctx.log('info', t(ctx.locale, 'run.textEnrich.progress', { done, total })),
       }),
       { limit: Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : undefined })
 
+    if (result.cappedBy === 'deadline') ctx.log('warn', t(ctx.locale, 'run.textEnrich.deadline'))
     ctx.log('info', t(ctx.locale, 'run.textEnrich.done', { revised: result.counts.revised, rejected: result.counts.rejected, passId: '' }))
 
     // ⚠ La mémoire retient ce qui a été SOUMIS, pas ce qui a été retenu : une proposition
     // refusée par la garde ne doit pas repartir chaque nuit pour se faire refuser encore.
-    if (memoryOn) await saveEnrichMemory(ctx.uid, ctx.workflowId!, rememberRows(memory, decisions, keyCols))
+    //
+    // ⚠⚠ ...mais SEULEMENT les lignes réellement atteintes. Mémoriser toute la file
+    // marquait 115 814 lignes comme faites alors que la borne n'en avait laissé passer que
+    // 500 : au passage suivant, la carte ne trouvait plus rien à faire et le catalogue
+    // restait traduit à 0,4 %, pour toujours, sans le moindre message.
+    if (memoryOn) {
+      const reached = new Set(result.productIds)
+      const done = decisions.filter((_, i) => reached.has(targets[i]?.id ?? ''))
+      ctx.log('info', t(ctx.locale, 'run.textEnrich.remembered', { done: done.length, queued: decisions.length }))
+      await saveEnrichMemory(ctx.uid, ctx.workflowId!, rememberRows(memory, done, keyCols))
+    }
 
     // ⚠ PUBLICATION pour l'écran de relecture — jumeau du navigateur, et la seule chose qui
     // rende le travail du cron visible. Clefée sur la RÉFÉRENCE, c'est-à-dire sur

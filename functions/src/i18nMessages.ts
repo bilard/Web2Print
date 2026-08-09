@@ -255,6 +255,14 @@ const MESSAGES = {
     fr: 'Reprise incrémentale : {taken} lignes sur {total} — {fresh} nouvelles, {changed} modifiées à la source, {unknown} sans référence reconnaissable.',
     en: 'Incremental pick-up: {taken} rows out of {total} — {fresh} new, {changed} changed at source, {unknown} with no recognisable reference.',
   },
+  'run.textEnrich.remembered': {
+    fr: 'Mémorisé : {done} lignes réellement traitées sur {queued} en file — les autres repartiront au passage suivant.',
+    en: 'Remembered: {done} rows actually processed out of {queued} queued — the rest will come back on the next pass.',
+  },
+  'run.textEnrich.deadline': {
+    fr: 'Temps du segment écoulé : le passage s\u2019arrête proprement et mémorise ce qui est fait. La suite part au passage suivant.',
+    en: 'Segment time is up: the pass stops cleanly and remembers what is done. The rest goes to the next pass.',
+  },
   'run.textEnrich.published': {
     fr: '{count} fiches publiées dans le suivi « {watchId} » — relisibles dans « Traduire et améliorer les textes ».',
     en: '{count} products published to watch “{watchId}” — reviewable in “Translate and improve texts”.',

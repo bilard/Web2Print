@@ -1797,6 +1797,8 @@ export const es: Record<TranslationKey, string> = {
   'run.textEnrich.missingProtected': '⚠ Columnas no encontradas en las fichas: {columns}. Las referencias, códigos de barras y marcas NO se verificarán.',
   'run.textEnrich.planned': '{units} campos que procesar de {considered} examinados ({done} ya hechos).',
   'run.textEnrich.incremental': 'Retoma incremental: {taken} líneas de {total} — {fresh} nuevas, {changed} modificadas en el origen, {unknown} sin referencia reconocible.',
+  'run.textEnrich.remembered': 'Memorizado: {done} líneas realmente procesadas de {queued} en cola; el resto volverá en la siguiente pasada.',
+  'run.textEnrich.deadline': 'Se acabó el tiempo del segmento: la pasada se detiene limpiamente y memoriza lo hecho. El resto pasa a la siguiente.',
   'run.textEnrich.published': '{count} fichas publicadas en el seguimiento «{watchId}»: se pueden revisar en «Traducir y mejorar los textos».',
   'run.textEnrich.publishNoKey': '{count} líneas traducidas pero SIN referencia ni código de barras: permanecen en la hoja, pero la pantalla de revisión no puede vincularlas a un producto.',
   'run.textEnrich.dryRun': 'Simulación: no se ha escrito ni llamado nada.',

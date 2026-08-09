@@ -111,6 +111,17 @@ export interface RunPassDeps {
   spentUsd?: () => number
   /** Plafond de dépense. Atteint, le passage s'arrête proprement et le dit. */
   capUsd?: number
+  /**
+   * Échéance du segment serveur, en ms epoch. Dépassée, le passage s'arrête ENTRE deux
+   * lots et le dit — comme le plafond de dépense, et pour la même raison.
+   *
+   * ⚠⚠ Sans elle, la carte tentait d'avaler sa file entière : 207 802 champs à
+   * 270/minute, soit treize heures, dans un segment qui en dure vingt-huit. La fonction
+   * était tuée avant la fin, donc AUCUNE mémoire n'était écrite, donc le segment suivant
+   * recommençait au même endroit — et tout l'aval du graphe (comparatif, rapport, mail)
+   * n'était jamais atteint. Une boucle parfaite, sans le moindre message.
+   */
+  deadlineAt?: number
   onChunkDone?: (done: number, total: number) => void
   now?: () => number
   passId: string
@@ -122,7 +133,7 @@ export interface RunPassDeps {
 export interface RunPassResult {
   counts: EnrichPass['counts']
   productIds: string[]
-  cappedBy?: 'spend'
+  cappedBy?: 'spend' | 'deadline'
 }
 
 /** Identifiant d'une unité dans un lot. Doit être stable et unique : deux champs d'un
@@ -148,7 +159,7 @@ export async function runPass(
   const touched = new Set<string>()
   const now = deps.now ?? (() => Date.now())
   const abortRef = { current: false }
-  let capped = false
+  let capped: 'spend' | 'deadline' | undefined
 
   // `runCompletionBatches` raisonne en lignes de tableur : on lui présente chaque unité
   // sous cette forme, sans que le reste du moteur ait à connaître le modèle Excel.
@@ -206,7 +217,15 @@ export async function runPass(
         // Le plafond est consulté ici, entre deux lots : c'est le seul endroit où
         // s'arrêter ne perd rien de déjà payé.
         if (deps.capUsd != null && deps.spentUsd && deps.spentUsd() >= deps.capUsd) {
-          capped = true
+          capped = 'spend'
+          abortRef.current = true
+        }
+        // ⚠ L'échéance se consulte au MÊME endroit, et prime : dépasser le temps du
+        // segment fait tuer la fonction, ce qui perd la mémoire du passage et condamne
+        // tout l'aval. Mieux vaut rendre la main avec 3 000 champs faits et mémorisés
+        // qu'être interrompu avec 207 802 en cours et rien de retenu.
+        if (deps.deadlineAt != null && (deps.now?.() ?? Date.now()) > deps.deadlineAt) {
+          capped = 'deadline'
           abortRef.current = true
         }
       },
@@ -215,5 +234,5 @@ export async function runPass(
     deps.chunkSize ?? 20,
   )
 
-  return { counts, productIds: [...touched], ...(capped ? { cappedBy: 'spend' as const } : {}) }
+  return { counts, productIds: [...touched], ...(capped ? { cappedBy: capped } : {}) }
 }

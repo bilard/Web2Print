@@ -1798,6 +1798,8 @@ export const en: Record<TranslationKey, string> = {
   'run.textEnrich.missingProtected': '⚠ Columns not found in the products: {columns}. References, barcodes and brands will therefore NOT be checked.',
   'run.textEnrich.planned': '{units} fields to process out of {considered} examined ({done} already done).',
   'run.textEnrich.incremental': 'Incremental pick-up: {taken} rows out of {total} — {fresh} new, {changed} changed at source, {unknown} with no recognisable reference.',
+  'run.textEnrich.remembered': 'Remembered: {done} rows actually processed out of {queued} queued — the rest will come back on the next pass.',
+  'run.textEnrich.deadline': 'Segment time is up: the pass stops cleanly and remembers what is done. The rest goes to the next pass.',
   'run.textEnrich.published': '{count} products published to watch “{watchId}” — reviewable in “Translate and improve texts”.',
   'run.textEnrich.publishNoKey': '{count} rows were translated but carry NO reference or barcode: they stay in the sheet, but the review screen cannot attach them to a product.',
   'run.textEnrich.dryRun': 'Dry run: nothing was written or called.',

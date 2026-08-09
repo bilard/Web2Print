@@ -319,9 +319,16 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
     // ⚠ La mémoire retient ce qui a été SOUMIS, pas ce qui a été retenu : une proposition
     // refusée par la garde ne doit pas repartir chaque nuit pour se faire refuser encore,
     // en repayant à chaque tour. Le texte source, lui, n'a pas changé.
+    // ⚠⚠ SEULEMENT les lignes réellement atteintes. Mémoriser toute la file marquait
+    // 115 814 lignes comme faites alors que la borne n'en avait laissé passer que 500 : au
+    // passage suivant, la carte ne trouvait plus rien à faire et le catalogue restait
+    // traduit à 0,4 %, pour toujours, sans le moindre message.
     if (memoryOn) {
       const uid2 = getWorkspaceUid()
-      if (uid2) await saveEnrichMemory(uid2, ctx.workflowId!, rememberRows(memory, decisions, keyCols))
+      const reached = new Set(result.productIds)
+      const doneRows = decisions.filter((_, i) => reached.has(targets[i]?.id ?? ''))
+      ctx.log('info', t('run.textEnrich.remembered', { done: doneRows.length, queued: decisions.length }))
+      if (uid2) await saveEnrichMemory(uid2, ctx.workflowId!, rememberRows(memory, doneRows, keyCols))
     }
 
     // ⚠ En mode feuille, le travail était jusqu'ici SANS TRACE LISIBLE : la feuille
@@ -379,6 +386,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
     if (!fromSheet) await savePass(config.projectId, pass)
 
     if (result.cappedBy === 'spend') ctx.log('warn', t('run.textEnrich.spendCapped', { cap: config.capUsd }))
+    if (result.cappedBy === 'deadline') ctx.log('warn', t('run.textEnrich.deadline'))
     ctx.log('info', t('run.textEnrich.done', {
       revised: result.counts.revised, rejected: result.counts.rejected, passId,
     }))

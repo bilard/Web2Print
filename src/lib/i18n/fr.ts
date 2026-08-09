@@ -1876,6 +1876,8 @@ export const fr = {
   'run.textEnrich.missingProtected': '⚠ Colonnes introuvables dans les fiches : {columns}. Les références, codes-barres et marques ne seront donc PAS vérifiés.',
   'run.textEnrich.planned': '{units} champs à traiter sur {considered} examinés ({done} déjà faits).',
   'run.textEnrich.incremental': 'Reprise incrémentale : {taken} lignes sur {total} — {fresh} nouvelles, {changed} modifiées à la source, {unknown} sans référence reconnaissable.',
+  'run.textEnrich.remembered': 'Mémorisé : {done} lignes réellement traitées sur {queued} en file — les autres repartiront au passage suivant.',
+  'run.textEnrich.deadline': 'Temps du segment écoulé : le passage s’arrête proprement et mémorise ce qui est fait. La suite part au passage suivant.',
   'run.textEnrich.published': '{count} fiches publiées dans le suivi « {watchId} » — relisibles dans « Traduire et améliorer les textes ».',
   'run.textEnrich.publishNoKey': '{count} lignes traduites mais SANS référence ni code-barres : elles restent dans la feuille, mais l’écran de relecture ne peut pas les rattacher à un produit.',
   'run.textEnrich.dryRun': 'Simulation : rien n’a été écrit ni appelé.',
