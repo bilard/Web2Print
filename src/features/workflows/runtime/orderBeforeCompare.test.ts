@@ -37,15 +37,31 @@ describe('orderBeforeCompare', () => {
     expect(out.edges[0]).toMatchObject({ source: 'd', sourceHandle: 'results', target: 'c', targetHandle: 'harvest' })
   })
 
-  it('n’écrase JAMAIS un port déjà câblé — il prend le suivant', () => {
+  it('⚠ PARTAGE le port d’ordonnancement déjà pris par un autre collecteur', () => {
+    // Le cas réel : moisson ET recherche dirigée alimentent le même comparatif, qui n'a
+    // qu'un port d'ordre. Refuser ici rendait la correction inopérante là où elle sert.
+    // Sans risque : la donnée de ce port est ignorée, et l'exécuteur fusionne le fan-in.
     const out = orderBeforeCompare(wf([['x', 'out', 'c', 'harvest']]), 'd', 'c', getSpec)
-    expect(out.edges.find((e) => e.source === 'd')?.targetHandle).toBe('rules')
+    expect(out.edges).toHaveLength(2)
+    expect(out.edges.find((e) => e.source === 'd')).toMatchObject({ targetHandle: 'harvest' })
   })
 
-  it('aucun port libre → workflow INCHANGÉ plutôt qu’un lien inventé', () => {
-    // Brancher sur `products` ferait lire au comparatif autre chose que son catalogue.
-    const base = wf([['x', 'out', 'c', 'harvest'], ['y', 'out', 'c', 'rules']])
+  it('⚠ ne branche JAMAIS sur « rules » : le comparatif y LIT ses règles d’appariement', () => {
+    // Ancien repli quand `harvest` était pris : il aurait fait prendre une feuille de
+    // relevés pour des règles.
+    const out = orderBeforeCompare(wf([['x', 'out', 'c', 'harvest'], ['y', 'out', 'c', 'rules']]), 'd', 'c', getSpec)
+    expect(out.edges.find((e) => e.source === 'd')?.targetHandle).toBe('harvest')
+  })
+
+  it('comparatif SANS port d’ordonnancement → inchangé plutôt qu’un lien inventé', () => {
+    const base = wf()
+    base.nodes[1] = { ...base.nodes[1], type: 'text-input' }
     expect(orderBeforeCompare(base, 'd', 'c', getSpec)).toBe(base)
+  })
+
+  it('la même arête n’est pas posée deux fois', () => {
+    const once = orderBeforeCompare(wf(), 'd', 'c', getSpec)
+    expect(orderBeforeCompare(once, 'd', 'c', getSpec)).toBe(once)
   })
 
   it('collecteur sans sortie → inchangé', () => {
