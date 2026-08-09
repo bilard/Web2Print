@@ -18,8 +18,16 @@
  *  Relevé en prod (2026-07-27) : un tour complet sur ~16 concurrents durait 3 min pour
  *  une fenêtre de moisson de ~18 min (RUN_TIMEOUT 1700 s − RESERVE 600 s). Le débit était
  *  donc bridé par le parallélisme et le budget de pages, pas par le temps disponible.
- *  Porté à 8 : à 4 sites de front, les trois quarts de la fenêtre restaient inutilisés. */
-export const HARVEST_CONCURRENCY = 8
+ *  Porté à 8 : à 4 sites de front, les trois quarts de la fenêtre restaient inutilisés.
+ *
+ *  ⚠ Porté à 12 le 2026-08-09 : le suivi F1 compte 14 sites actifs, donc six d'entre eux
+ *  attendaient qu'un créneau se libère pendant toute la première moitié de la fenêtre —
+ *  et les catalogues les plus gros (autoportee-discount 193 035 fiches, 123courroies
+ *  126 015) sont précisément ceux qu'on ne peut pas se permettre de faire patienter. 12 et
+ *  non 14 : le plafond doit rester un plafond, et une rafale sur tous les sites à la fois
+ *  déclenche les limites de débit des fournisseurs — Bright Data étant facturé à la
+ *  requête, une rafale se paie deux fois, en argent et en 429. */
+export const HARVEST_CONCURRENCY = 12
 
 /**
  * `items.map(fn)` avec au plus `limit` exécutions simultanées. L'ORDRE des résultats
