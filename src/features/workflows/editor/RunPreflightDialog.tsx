@@ -1,7 +1,7 @@
 // Popup de cohérence AVANT lancement : liste les trous détectés (source non connectée,
 // paramètre / export requis manquant) par carte. L'utilisateur corrige, ou force le
 // lancement en connaissance de cause. N'apparaît QUE s'il y a au moins une incohérence.
-import { AlertTriangle, ArrowRight, Scissors, Link2, Plug } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Scissors, Link2, Plug, Merge } from 'lucide-react'
 import { CloseButton } from '@/components/shared/CloseButton'
 import type { WorkflowIssue, IssueFix } from '../runtime/validateWorkflow'
 import { useTranslation } from '@/lib/i18n'
@@ -21,9 +21,11 @@ interface Props {
   onOrderNode?: (nodeId: string, label: string) => void
   /** Câble l'entrée orpheline sur la seule source possible. */
   onWireInput?: (nodeId: string, fix: Extract<IssueFix, { kind: 'wire-input' }>) => void
+  /** Ramène toutes les cartes de veille sur un seul suivi. */
+  onAlignWatch?: (fix: Extract<IssueFix, { kind: 'align-watch-id' }>) => void
 }
 
-export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDropNode, onOrderNode, onWireInput }: Props) {
+export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDropNode, onOrderNode, onWireInput, onAlignWatch }: Props) {
   const { t } = useTranslation()
   // Regroupe par carte pour un affichage lisible. ⚠ La correction reste attachée à SON
   // message : sur une carte qui en porte trois, un bouton en pied de bloc ne disait pas
@@ -79,6 +81,15 @@ export function RunPreflightDialog({ issues, onCancel, onProceed, onFocus, onDro
                           onClick={() => onWireInput(nodeId, p.fix as Extract<IssueFix, { kind: 'wire-input' }>)}>
                           <Plug className="w-3 h-3" />
                           {t('wfc.wireInput', { source: p.fix.sourceLabel })}
+                        </button>
+                      )}
+                      {/* Le geste porte sur PLUSIEURS cartes : le libellé le dit, sinon
+                          on croit ne toucher que celle-ci. */}
+                      {p.fix?.kind === 'align-watch-id' && onAlignWatch && (
+                        <button type="button" className={fixBtn}
+                          onClick={() => onAlignWatch(p.fix as Extract<IssueFix, { kind: 'align-watch-id' }>)}>
+                          <Merge className="w-3 h-3" />
+                          {t('wfc.alignWatch', { count: p.fix.nodeIds.length, watchId: p.fix.watchId })}
                         </button>
                       )}
                       {p.fix?.kind === 'order-before-compare' && onOrderNode && (

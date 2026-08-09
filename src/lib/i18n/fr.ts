@@ -2518,6 +2518,8 @@ export const fr = {
   'wfv.serverIgnored': 'Le run planifié ne fera pas ce travail : cette carte n’est pas exécutée côté serveur. La donnée passe sans être traitée.',
   'wfc.dropNode': 'Retirer la carte et recoudre le flux',
   'wfc.orderNode': 'Brancher en amont du comparatif',
+  'wfc.alignWatch': 'Aligner les {count} cartes sur « {watchId} »',
+  'wfc.aligned': '{count} cartes ramenées sur le suivi « {watchId} ».',
   'wfc.wireInput': 'Brancher « {source} »',
   'wfc.wired': '« {source} » alimente maintenant l’entrée « {port} ».',
   'wfc.ordered': '« {label} » passe désormais avant le comparatif.',

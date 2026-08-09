@@ -12,6 +12,7 @@ import { executeWorkflow } from '../runtime/executor'
 import { validateWorkflow, type WorkflowIssue } from '../runtime/validateWorkflow'
 import { dropNodeAndRewire } from '../runtime/dropNodeAndRewire'
 import { orderBeforeCompare } from '../runtime/orderBeforeCompare'
+import { alignWatchIds } from '../runtime/alignWatchIds'
 import { RunPreflightDialog } from './RunPreflightDialog'
 import type { IssueFix } from '../runtime/validateWorkflow'
 import { PreflightBanner } from './PreflightBanner'
@@ -203,6 +204,16 @@ export function WorkflowEditorPage() {
     setPreflight(null)
     notify.success(t('wfc.wired', { source: fix.sourceLabel, port: fix.targetHandle }), '')
   }
+  // ⚠⚠ Le suivi retenu est celui que le run va ALIMENTER (cf. `alignFix`) : aligner le
+  // comparatif sur un chemin que rien ne repeuple lui ferait relire du vide — un rapport
+  // de 20 980 appariés est déjà retombé à 72 par ce mécanisme. Le pré-vol s'abstient
+  // quand aucune cible n'est défendable ; ici on ne fait qu'appliquer.
+  const alignWatch = (fix: Extract<IssueFix, { kind: 'align-watch-id' }>) => {
+    const next = alignWatchIds(wf, fix.nodeIds, fix.watchId)
+    useWorkflowStore.getState().patch({ nodes: next.nodes })
+    setPreflight(null)
+    notify.success(t('wfc.aligned', { count: fix.nodeIds.length, watchId: fix.watchId }), '')
+  }
   // Sauvegarde manuelle avec confirmation visuelle (succès / erreur).
   const saveNow = async () => {
     if (!uid) return
@@ -387,6 +398,7 @@ export function WorkflowEditorPage() {
             onDropNode={canSave ? dropNode : undefined}
             onOrderNode={canSave ? orderNode : undefined}
             onWireInput={canSave ? wireInput : undefined}
+            onAlignWatch={canSave ? alignWatch : undefined}
           />
         )}
     </ReactFlowProvider>

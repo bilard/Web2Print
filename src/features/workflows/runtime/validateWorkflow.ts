@@ -14,6 +14,7 @@
 import type { Workflow, NodeSpec, PortType } from '../types'
 import { isCompatible } from './ports'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
+import { drivenBySourceSites, watchIdOf } from './alignWatchIds'
 import { breaksServerRun, ignoredOnServer } from './serverCapability'
 import { t } from '@/lib/i18n'
 
@@ -35,6 +36,14 @@ export type IssueFix =
       targetHandle: string
       /** Nom de la carte à brancher, pour que le bouton dise ce qu'il va faire. */
       sourceLabel: string
+    }
+  | {
+      kind: 'align-watch-id'
+      /** Suivi retenu, déjà dérivé (l'écrire en config est idempotent). */
+      watchId: string
+      /** Cartes à réécrire. Jamais celles qu'un « Sites sources » pilote : leur config
+       *  locale est ignorée à l'exécution, y écrire donnerait un alignement fantôme. */
+      nodeIds: string[]
     }
 
 export interface WorkflowIssue {
@@ -82,21 +91,6 @@ function isEmpty(v: unknown): boolean {
 const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track'])
 /** Nodes qui ALIMENTENT l'index concurrent (le comparatif, lui, le consomme). */
 const INDEX_FEEDERS = new Set(['harvest-competitor', 'directed-search'])
-
-/**
- * Suivi RÉELLEMENT adressé par un node : le node « Sites sources » branché GAGNE (il
- * impose son watchId), sinon la config locale, sinon l'identifiant du workflow.
- * Reproduit `resolveSitesInput` — toute divergence ici serait pire qu'aucun contrôle.
- */
-function effectiveWatchId(wf: Workflow, nodeId: string, config: Record<string, unknown>): string {
-  const src = wf.edges.find((e) => e.target === nodeId && e.targetHandle === 'sites')
-  const srcNode = src ? wf.nodes.find((n) => n.id === src.source) : undefined
-  if (srcNode?.type === 'source-sites') {
-    const c = (srcNode.config ?? {}) as Record<string, unknown>
-    return deriveWatchId(String(c.watchId ?? ''), wf.id)
-  }
-  return deriveWatchId(String(config.watchId ?? ''), wf.id)
-}
 
 /** Le node `to` est-il ATTEIGNABLE depuis `from` en suivant les arêtes ? */
 function reaches(wf: Workflow, from: string, to: string): boolean {
@@ -147,6 +141,48 @@ function soleWiring(
 }
 
 /**
+ * Sur quel suivi aligner les cartes qui divergent — ou `undefined` quand aucune cible
+ * n'est défendable.
+ *
+ * ⚠⚠ Ce module est PUR : il ne sait pas sous quel `watchId` l'index existe déjà en base.
+ * Aligner le comparatif sur un chemin que RIEN ne repeuplera lui fait relire du vide —
+ * c'est le scénario où un rapport de 20 980 appariés est retombé à 72. La cible n'est donc
+ * proposée que si le run va l'alimenter :
+ *
+ *  1. un « Sites sources » branché fait autorité — il impose déjà son suivi à l'exécution,
+ *     et c'est la valeur que l'utilisateur voit sur une carte. Deux qui divergent : on
+ *     s'abstient, aucune écriture de config ne les réconcilierait ;
+ *  2. sinon, le suivi UNANIME des cartes qui ÉCRIVENT l'index (moisson, recherche
+ *     dirigée) : elles le repeupleront dans ce run, l'alignement se referme de lui-même ;
+ *  3. aucun alimenteur actif — un recalcul de comparatif seul, par exemple : la cible
+ *     serait un pari sur des données qu'on ne voit pas. Pas de bouton.
+ */
+function alignFix(
+  wf: Workflow,
+  active: Workflow['nodes'],
+  watchers: { n: Workflow['nodes'][number]; watchId: string }[],
+): IssueFix | undefined {
+  const uniqueOf = (ids: string[]) => {
+    const vals = [...new Set(ids)]
+    return vals.length === 1 ? vals[0] : undefined
+  }
+  const sourceSites = active.filter((n) => n.type === 'source-sites')
+  const target = sourceSites.length > 0
+    ? uniqueOf(sourceSites.map((n) => deriveWatchId(String((n.config as { watchId?: unknown } | undefined)?.watchId ?? ''), wf.id)))
+    : uniqueOf(watchers.filter((w) => INDEX_FEEDERS.has(w.n.type)).map((w) => w.watchId))
+  if (!target) return undefined
+
+  const nodeIds = watchers
+    .filter((w) => w.watchId !== target && !drivenBySourceSites(wf, w.n.id))
+    .map((w) => w.n.id)
+  // Une carte divergente que la config ne peut pas atteindre laisserait la panne en place
+  // sous un bouton qui annonce l'avoir réglée. Mieux vaut pas de bouton du tout.
+  const unreachable = watchers.some((w) => w.watchId !== target && drivenBySourceSites(wf, w.n.id))
+  if (nodeIds.length === 0 || unreachable) return undefined
+  return { kind: 'align-watch-id', watchId: target, nodeIds }
+}
+
+/**
  * Contrôles ENTRE nodes — invisibles à l'exécution, coûteux à diagnostiquer.
  * `willRun` reprend la règle de l'exécuteur (un orphelin ne compte pas).
  */
@@ -161,9 +197,10 @@ function crossNodeIssues(
   //    sous le sien : deux valeurs = index introuvable, rapport vide, aucun message.
   const watchers = active
     .filter((n) => WATCH_NODES.has(n.type))
-    .map((n) => ({ n, watchId: effectiveWatchId(wf, n.id, (n.config ?? {}) as Record<string, unknown>) }))
+    .map((n) => ({ n, watchId: watchIdOf(wf, n.id, (n.config ?? {}) as Record<string, unknown>) }))
   const distinct = [...new Set(watchers.map((w) => w.watchId))]
   if (distinct.length > 1) {
+    const fix = alignFix(wf, active, watchers)
     for (const w of watchers) {
       issues.push({
         nodeId: w.n.id,
@@ -174,6 +211,7 @@ function crossNodeIssues(
           others: distinct.length - 1,
           list: distinct.filter((d) => d !== w.watchId).join(', '),
         }),
+        fix,
       })
     }
   }

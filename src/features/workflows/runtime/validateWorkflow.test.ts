@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useLocaleStore } from '@/stores/locale.store'
 import { validateWorkflow } from './validateWorkflow'
+import { alignWatchIds } from './alignWatchIds'
+import type { IssueFix } from './validateWorkflow'
 import type { Workflow, NodeSpec } from '../types'
 
 // Ces tests assertent sur le TEXTE des messages, qui est désormais traduit. La
@@ -24,6 +26,12 @@ const REG: Record<string, NodeSpec> = {
     configSchema: [{ name: 'sites', kind: 'textarea', label: 'Sites concurrents', required: true }],
   }),
   export: spec({ type: 'export', labelKey: 'node.upload.label', inputs: [{ name: 'sheet', type: 'sheet', required: true }] }),
+  // Cartes de Veille tarifaire, avec le port `sites` par lequel « Sites sources » impose
+  // son suivi.
+  'harvest-competitor': spec({ type: 'harvest-competitor', labelKey: 'node.upload.label', inputs: [{ name: 'sites', type: 'any' }] }),
+  'directed-search': spec({ type: 'directed-search', labelKey: 'node.upload.label', inputs: [{ name: 'sites', type: 'any' }] }),
+  'compare-catalog': spec({ type: 'compare-catalog', labelKey: 'node.upload.label', inputs: [{ name: 'sites', type: 'any' }] }),
+  'source-sites': spec({ type: 'source-sites', labelKey: 'node.upload.label', outputs: [{ name: 'sites', type: 'any' }] }),
   // Producteurs de feuille : de quoi câbler une entrée orpheline — ou refuser de choisir.
   source: spec({ type: 'source', labelKey: 'node.upload.label', outputs: [{ name: 'sheet', type: 'sheet' }] }),
   source2: spec({ type: 'source2', labelKey: 'node.upload.label', outputs: [{ name: 'sheet', type: 'sheet' }] }),
@@ -104,7 +112,8 @@ describe('validateWorkflow', () => {
     it('harvest avec port sites branché et textarea vide → OK', () => {
       const w = wf({
         nodes: [node('s', 'source-sites', { sites: [{ domain: 'a.fr', enabled: true }] }), node('h', 'harvest-competitor', { sites: '' })],
-        edges: [edge('s', 'sites', 'h', 'sites')],
+        // 'c' doit être branché, sinon il est orphelin et ne compte pas comme watcher actif.
+      edges: [edge('s', 'sites', 'h', 'sites'), edge('h', 'out', 'c', 'harvest')],
       })
       expect(validateWorkflow(w, getSpec2)).toEqual([])
     })
@@ -112,7 +121,8 @@ describe('validateWorkflow', () => {
     it('source-sites sans aucun site actif → erreur', () => {
       const w = wf({
         nodes: [node('s', 'source-sites', { sites: [{ domain: 'a.fr', enabled: false }] }), node('h', 'harvest-competitor', { sites: 'x.fr' })],
-        edges: [edge('s', 'sites', 'h', 'sites')],
+        // 'c' doit être branché, sinon il est orphelin et ne compte pas comme watcher actif.
+      edges: [edge('s', 'sites', 'h', 'sites'), edge('h', 'out', 'c', 'harvest')],
       })
       expect(validateWorkflow(w, getSpec2).find((i) => i.nodeId === 's')?.message).toMatch(/actif/i)
     })
@@ -333,5 +343,70 @@ describe('« Enrichir les textes » : le projet PIM n’est requis que sans feui
   it('projet renseigné sans feuille : rien à signaler', () => {
     const w = wf({ nodes: [node('e', 'text-enrich', { projectId: 'p1' })], edges: [] })
     expect(validateWorkflow(w, getSpec).filter((i) => i.nodeId === 'e')).toHaveLength(0)
+  })
+})
+
+describe('correction en un clic : ramener les cartes sur un seul suivi', () => {
+  const mismatches = (w: Parameters<typeof validateWorkflow>[0]) =>
+    validateWorkflow(w, getSpec).filter((i) => /suivi/i.test(i.message))
+  const fixOf = (w: Parameters<typeof validateWorkflow>[0]) =>
+    mismatches(w)[0]?.fix as Extract<IssueFix, { kind: 'align-watch-id' }> | undefined
+
+  it('aligne sur le suivi des cartes qui ÉCRIVENT l’index — le run le repeuplera', () => {
+    const w = wf({
+      nodes: [
+        node('h', 'harvest-competitor', { watchId: 'f1-veille', sites: 'x.fr' }),
+        node('c', 'compare-catalog', { watchId: 'F1', sites: 'x.fr' }),
+      ],
+      edges: [edge('h', 'out', 'c', 'harvest')],
+    })
+    const fix = fixOf(w)
+    expect(fix).toEqual({ kind: 'align-watch-id', watchId: 'f1-veille', nodeIds: ['c'] })
+    // ⚠ LA preuve : après application, plus aucune divergence. Vérifier les configs une
+    // par une laisserait passer un alignement fantôme.
+    expect(mismatches(alignWatchIds(w, fix!.nodeIds, fix!.watchId))).toHaveLength(0)
+  })
+
+  it('« Sites sources » branché fait autorité, même contre les alimenteurs', () => {
+    const w = wf({
+      nodes: [
+        node('s', 'source-sites', { watchId: 'impose', sites: [{ enabled: true }] }),
+        node('h', 'harvest-competitor', { watchId: 'autre', sites: 'x.fr' }),
+        node('c', 'compare-catalog', { watchId: 'encore-autre', sites: 'x.fr' }),
+      ],
+      // 'c' doit être branché, sinon il est orphelin et ne compte pas comme watcher actif.
+      edges: [edge('s', 'sites', 'h', 'sites'), edge('h', 'out', 'c', 'harvest')],
+    })
+    const fix = fixOf(w)
+    // 'h' est PILOTÉ par le node « Sites sources » : sa config est ignorée à l'exécution,
+    // il porte déjà la cible et n'a rien à réécrire. Seul 'c' bouge.
+    expect(fix).toEqual({ kind: 'align-watch-id', watchId: 'impose', nodeIds: ['c'] })
+    expect(mismatches(alignWatchIds(w, fix!.nodeIds, fix!.watchId))).toHaveLength(0)
+  })
+
+  it('⚠ SANS alimenteur, aucune cible n’est défendable : pas de bouton', () => {
+    // Un recalcul de comparatif face à un suivi de prix : rien ne réécrira l'index, et
+    // aligner le comparatif ailleurs lui ferait relire du vide.
+    const w = wf({
+      nodes: [
+        node('c', 'compare-catalog', { watchId: 'F1', sites: 'x.fr' }),
+        node('p', 'price-watch-track', { watchId: 'autre' }),
+      ],
+      edges: [edge('c', 'out', 'p', 'in')],
+    })
+    expect(mismatches(w).length).toBeGreaterThan(0)
+    expect(fixOf(w)).toBeUndefined()
+  })
+
+  it('deux alimenteurs qui divergent : on ne choisit pas à la place de l’utilisateur', () => {
+    const w = wf({
+      nodes: [
+        node('h', 'harvest-competitor', { watchId: 'a', sites: 'x.fr' }),
+        node('d', 'directed-search', { watchId: 'b', sites: 'x.fr' }),
+        node('c', 'compare-catalog', { watchId: 'c', sites: 'x.fr' }),
+      ],
+      edges: [edge('h', 'out', 'c', 'harvest'), edge('d', 'out', 'c', 'harvest')],
+    })
+    expect(fixOf(w)).toBeUndefined()
   })
 })

@@ -2420,6 +2420,8 @@ export const es: Record<TranslationKey, string> = {
   'wfv.serverIgnored': 'La ejecución programada no hará este trabajo: esta tarjeta no se ejecuta en el servidor. Los datos pasan sin tratar.',
   'wfc.dropNode': 'Quitar la tarjeta y volver a conectar el flujo',
   'wfc.orderNode': 'Conectar antes de la comparación',
+  'wfc.alignWatch': 'Alinear las {count} tarjetas en «{watchId}»',
+  'wfc.aligned': '{count} tarjetas devueltas al seguimiento «{watchId}».',
   'wfc.wireInput': 'Conectar «{source}»',
   'wfc.wired': '«{source}» ahora alimenta la entrada «{port}».',
   'wfc.ordered': '«{label}» se ejecuta ahora antes de la comparación.',
