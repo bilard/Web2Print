@@ -51,3 +51,29 @@ describe('avancement d’un run', () => {
     expect(runProgress(wf(['a']), {}, label).elapsedMs).toBe(0)
   })
 })
+
+describe('liste des cartes', () => {
+  it('⚠ ordonnées par HEURE DE DÉMARRAGE, pas par ordre du graphe', () => {
+    // L'ordre du graphe ne correspond ni au dessin ni à l'exécution : on y chercherait
+    // « où on en est » dans une liste qui ne raconte rien.
+    const w = wf(['c', 'a', 'b'], [['a', 'b'], ['b', 'c']])
+    const p = runProgress(w, {
+      a: st({ status: 'success', startedAt: 100 }),
+      b: st({ status: 'success', startedAt: 200 }),
+      c: st({ status: 'running', startedAt: 300 }),
+    }, label)
+    expect(p.cards.map((x) => x.id)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('les cartes pas encore démarrées ferment la marche', () => {
+    const w = wf(['a', 'b'], [['a', 'b']])
+    const p = runProgress(w, { b: st({ status: 'running', startedAt: 50 }) }, label)
+    expect(p.cards.map((x) => [x.id, x.status])).toEqual([['b', 'running'], ['a', 'pending']])
+  })
+
+  it('porte le compteur et la durée de chaque carte', () => {
+    const w = wf(['a'], [])
+    const p = runProgress(w, { a: st({ status: 'success', count: 4200, durationMs: 9000 }) }, label)
+    expect(p.cards[0]).toMatchObject({ label: 'carte a', count: 4200, durationMs: 9000 })
+  })
+})

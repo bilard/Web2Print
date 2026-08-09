@@ -6,6 +6,15 @@
 // déplier la console et de lire les journaux à la main.
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
 
+/** Une carte du run, telle qu'on veut la LIRE : son état, ce qu'elle a produit, son temps. */
+export interface RunCard {
+  id: string
+  label: string
+  status: NodeStatus
+  count?: number
+  durationMs?: number
+}
+
 export interface RunProgress {
   /** Cartes qui vont travailler dans ce run (les orphelines n'en font pas partie). */
   total: number
@@ -21,6 +30,14 @@ export interface RunProgress {
   items: number
   /** Depuis le démarrage de la première carte, en ms. 0 si rien n'a commencé. */
   elapsedMs: number
+  /**
+   * Les cartes, dans l'ORDRE OÙ ELLES ONT TOURNÉ.
+   *
+   * ⚠ Pas l'ordre du graphe : sur un flux à douze cartes, il ne correspond ni au dessin
+   * ni à l'exécution, et on cherche « où on en est » dans une liste qui ne raconte rien.
+   * Les démarrées d'abord, par heure de démarrage ; les autres derrière, en attente.
+   */
+  cards: RunCard[]
 }
 
 const COUNTS_AS_DONE: NodeStatus[] = ['success', 'error', 'skipped']
@@ -56,12 +73,27 @@ export function runProgress(
     if (COUNTS_AS_DONE.includes(st.status)) done++
   }
 
+  const cards: RunCard[] = willRun.map((node) => {
+    const st = states[node.id]
+    return {
+      id: node.id,
+      label: labelOf(node.id),
+      status: st?.status ?? 'pending',
+      ...(typeof st?.count === 'number' ? { count: st.count } : {}),
+      ...(st?.durationMs != null ? { durationMs: st.durationMs } : {}),
+    }
+  }).sort((a, b) => {
+    const sa = states[a.id]?.startedAt ?? Infinity
+    const sb = states[b.id]?.startedAt ?? Infinity
+    return sa - sb
+  })
+
   const total = willRun.length
   // Une carte en cours compte pour une demie : afficher 0 tant qu'elle n'a pas fini
   // laisserait la barre immobile pendant les vingt minutes d'une moisson.
   const ratio = total === 0 ? 0 : Math.min(1, (done + running * 0.5) / total)
   return {
-    total, done, running, failed, skipped, ratio, runningLabels, items,
+    total, done, running, failed, skipped, ratio, runningLabels, items, cards,
     elapsedMs: firstStart === Infinity ? 0 : Math.max(0, now - firstStart),
   }
 }

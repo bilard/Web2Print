@@ -272,9 +272,6 @@ export function WorkflowEditorPage() {
               aria-label={t('wfe.name')}
             />
           </nav>
-          {/* L'avancement du run AVANT l'état de sauvegarde : c'est lui qu'on cherche des
-              yeux pendant qu'un run tourne. */}
-          <RunProgressBar />
           {/* État de sauvegarde CLAIR : en cours / non enregistré (ambre) / enregistré (vert). */}
           {saving ? (
             <span className="text-xs text-white/50 shrink-0 flex items-center gap-1.5" title={t('wfe.saving')}>
@@ -378,6 +375,10 @@ export function WorkflowEditorPage() {
             </button>
           )}
         </header>
+        {/* L'avancement du run sur SA ligne, sous les actions : coincé entre les boutons,
+            le résumé se lisait comme un bouton de plus et les noms de cartes n'avaient
+            nulle part où aller. */}
+        <RunProgressBar />
         {/* La console (RunPanel) vit SOUS le canevas, pas en pleine largeur : le panneau
             de droite (liste des concurrents « Sites sources ») garde ainsi toute la
             hauteur et s'affiche en entier — demande utilisateur. */}
