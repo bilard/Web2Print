@@ -28,7 +28,7 @@ interface RunContextState {
   setNodeOutputs: (id: string, outputs: Record<string, unknown>) => void
   /** Applique l'état d'un run SERVEUR (statut + logs + sorties par node) reçu via
    *  Firestore. Ignoré si un run CLIENT est en cours (le local reste prioritaire). */
-  hydrateServerRun: (states: Record<string, { status: NodeStatus; logs?: NodeRunState['logs']; outputs?: Record<string, unknown>; connectors?: string[]; count?: number; cycles?: number }>, opts?: { reset?: boolean }) => void
+  hydrateServerRun: (states: Record<string, { status: NodeStatus; logs?: NodeRunState['logs']; outputs?: Record<string, unknown>; connectors?: string[]; count?: number; cycles?: number; startedAt?: number }>, opts?: { reset?: boolean }) => void
   clearNodes: (ids: string[]) => void
   /** Bloque jusqu'au clic « Étape suivante » (ou abort du run). */
   waitForStep: (nodeId: string) => Promise<void>
@@ -141,6 +141,7 @@ export const useRunContext = create<RunContextState>((set, get) => ({
           // tout ce qui bouge pendant une moisson d'une heure.
           count: v.count ?? next[id]?.count,
           cycles: v.cycles ?? next[id]?.cycles,
+          startedAt: v.startedAt ?? next[id]?.startedAt,
         }
       }
       return { nodeStates: next }

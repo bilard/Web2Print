@@ -196,7 +196,12 @@ export async function runPass(
         counts = countOutcome(counts, { revised: true })
       },
       onChunkDone: (index, total) => {
-        deps.onChunkDone?.(index + 1, total)
+        // ⚠ Le moteur compte des LOTS ; le journal parle de CHAMPS. Remonter l'index de
+        // lot tel quel affichait « 97 / 5 789 champs traités » après deux heures alors
+        // que 1 940 champs étaient faits — de quoi croire à une lenteur d'un facteur
+        // vingt, et arrêter un run qui se portait bien.
+        const perChunk = total > 0 ? Math.ceil(units.length / total) : 1
+        deps.onChunkDone?.(Math.min(units.length, (index + 1) * perChunk), units.length)
         // Le plafond est consulté ici, entre deux lots : c'est le seul endroit où
         // s'arrêter ne perd rien de déjà payé.
         if (deps.capUsd != null && deps.spentUsd && deps.spentUsd() >= deps.capUsd) {
