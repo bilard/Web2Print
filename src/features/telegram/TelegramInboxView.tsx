@@ -73,7 +73,7 @@ export function TelegramInboxView() {
 
   return (
     <div className="h-full bg-background text-white flex flex-col overflow-hidden">
-      <header className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
+      <header className="sticky top-0 z-30 bg-background px-4 py-3 border-b border-white/[0.06] flex items-center gap-2 shrink-0">
         <Inbox className="w-4 h-4 text-blue-400" />
         <h1 className="text-[13px] font-semibold text-white/80">{t('tg.inbox')}</h1>
         <span className="text-[11px] text-neutral-500">{messages.length} message(s)</span>

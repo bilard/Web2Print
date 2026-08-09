@@ -119,9 +119,12 @@ export function PriceWatchDashboard({ watchId }: { watchId: string | null }) {
         </div>
       )}
 
-      {/* KPIs fixés en haut au scroll vertical (demande utilisateur). Fond opaque pour
-          couvrir le contenu qui défile derrière. */}
-      <div className="sticky top-0 z-30 bg-background py-3 -my-1 shadow-lg shadow-background/80">
+      {/* KPIs fixés au scroll (demande utilisateur). ⚠ Collés SOUS l'en-tête du module,
+          pas à `top-0` : deux blocs collés au même endroit se recouvrent, et c'est le
+          titre du module qui disparaissait dessous. `top-[124px]` = la hauteur de cet
+          en-tête ; un z-index INFÉRIEUR au sien pour que le doute soit levé si la mesure
+          dérive. Fond opaque pour couvrir le contenu qui défile derrière. */}
+      <div className="sticky top-[124px] z-20 bg-background py-3 -my-1 shadow-lg shadow-background/80">
         <KpiStrip ck={ck} history={history} />
       </div>
 

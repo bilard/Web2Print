@@ -49,7 +49,7 @@ export function ManufacturerInsightsScreen() {
       {/* Zone droite scrollable : en-tête + statistiques. */}
       <main className="flex-1 min-w-0 overflow-auto p-8">
        <div className="max-w-6xl mx-auto">
-        <header className="sticky top-0 z-20 -mx-8 px-8 pt-8 pb-4 mb-4 bg-background border-b border-white/[0.06] flex items-center gap-3">
+        <header className="sticky top-0 z-30 -mx-8 px-8 pt-8 pb-4 mb-4 bg-background border-b border-white/[0.06] flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
             <Factory className="w-5 h-5 text-indigo-300" />
           </div>
