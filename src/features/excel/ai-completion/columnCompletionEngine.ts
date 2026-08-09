@@ -87,6 +87,16 @@ export interface BatchRunDeps {
   abortRef: { current: boolean }
   rateLimitMs?: number
   sleep?: (ms: number) => Promise<void>
+  /**
+   * Lots envoyés SIMULTANÉMENT. 1 par défaut — le comportement d'origine.
+   *
+   * ⚠ Un lot en vol à la fois plafonne le débit à la latence du modèle : mesuré en
+   * production sur l'enrichissement de textes, 86 champs/minute, soit 57 heures pour
+   * 204 000 champs. Or ces lots sont INDÉPENDANTS — rien ne justifiait de les attendre
+   * l'un après l'autre. Reste borné : une rafale déclencherait les limites de débit du
+   * fournisseur, et un échec massif coûte plus cher qu'une attente.
+   */
+  concurrency?: number
 }
 
 /**
@@ -104,46 +114,57 @@ export async function runCompletionBatches(
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
   const rateLimitMs = deps.rateLimitMs ?? 300
   const chunks = buildChunks(rows, chunkSize)
+  const width = Math.max(1, Math.floor(deps.concurrency ?? 1))
   let consecutiveFailures = 0
+  let doneChunks = 0
 
-  for (let c = 0; c < chunks.length; c++) {
-    if (deps.abortRef.current) {
-      for (let k = c; k < chunks.length; k++) for (const row of chunks[k]) deps.onItem(row._id, 'aborted')
-      return
-    }
-    const chunk = chunks[c]
+  /** Un lot, de bout en bout. Rend `false` si l'appel a échoué. */
+  const runChunk = async (chunk: ExcelRow[]): Promise<boolean> => {
     const toSend: ExcelRow[] = []
     for (const row of chunk) {
       if (isRowEmpty(prompt, row, columns)) deps.onItem(row._id, 'skipped')
       else toSend.push(row)
     }
-
-    if (toSend.length > 0) {
-      try {
-        const results = await deps.callBatch(toSend)
-        let anyDone = false
-        for (const row of toSend) {
-          if (Object.prototype.hasOwnProperty.call(results, row._id)) {
-            deps.onItem(row._id, 'done', results[row._id])
-            anyDone = true
-          } else {
-            deps.onItem(row._id, 'failed', undefined, 'Aucun résultat renvoyé pour cette ligne')
-          }
-        }
-        if (anyDone) consecutiveFailures = 0
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Erreur'
-        for (const row of toSend) deps.onItem(row._id, 'failed', undefined, msg)
-        consecutiveFailures++
-        if (consecutiveFailures >= 3) {
-          for (let k = c + 1; k < chunks.length; k++) for (const row of chunks[k]) deps.onItem(row._id, 'aborted')
-          return
+    if (toSend.length === 0) return true
+    try {
+      const results = await deps.callBatch(toSend)
+      let anyDone = false
+      for (const row of toSend) {
+        if (Object.prototype.hasOwnProperty.call(results, row._id)) {
+          deps.onItem(row._id, 'done', results[row._id])
+          anyDone = true
+        } else {
+          deps.onItem(row._id, 'failed', undefined, 'Aucun résultat renvoyé pour cette ligne')
         }
       }
+      return anyDone
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erreur'
+      for (const row of toSend) deps.onItem(row._id, 'failed', undefined, msg)
+      return false
     }
+  }
 
-    deps.onChunkDone?.(c, chunks.length)
-    if (c < chunks.length - 1 && !deps.abortRef.current) await sleep(rateLimitMs)
+  // ⚠ Par VAGUES, et l'abandon se décide ENTRE deux vagues : couper au milieu perdrait des
+  // réponses déjà payées. À `concurrency: 1` — le défaut — la vague vaut un lot et le
+  // comportement est celui d'avant, y compris l'ordre des rappels.
+  for (let c = 0; c < chunks.length; c += width) {
+    if (deps.abortRef.current) {
+      for (let k = c; k < chunks.length; k++) for (const row of chunks[k]) deps.onItem(row._id, 'aborted')
+      return
+    }
+    const wave = chunks.slice(c, c + width)
+    const outcomes = await Promise.all(wave.map((chunk) => runChunk(chunk)))
+    // ⚠ Trois vagues entièrement perdues d'affilée : le fournisseur est à terre ou la
+    // clé est refusée. Insister coûterait sans rien produire.
+    consecutiveFailures = outcomes.some(Boolean) ? 0 : consecutiveFailures + 1
+    doneChunks += wave.length
+    deps.onChunkDone?.(doneChunks - 1, chunks.length)
+    if (consecutiveFailures >= 3) {
+      for (let k = c + width; k < chunks.length; k++) for (const row of chunks[k]) deps.onItem(row._id, 'aborted')
+      return
+    }
+    if (c + width < chunks.length && !deps.abortRef.current) await sleep(rateLimitMs)
   }
 }
 

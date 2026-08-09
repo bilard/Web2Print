@@ -286,6 +286,12 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
         // ⚠ DIX et non vingt : la sortie de deepseek-chat plafonne à 8192 tokens, et un lot
         // de vingt textes longs la ferait tronquer EN SILENCE.
         chunkSize: 10,
+        // ⚠ QUATRE lots en vol. Un seul plafonnait le débit à la latence du modèle :
+        // 86 champs/minute mesurés en production, soit 57 heures pour 204 000 champs.
+        // Les lots sont indépendants — rien ne justifiait de les attendre l'un après
+        // l'autre. Quatre et pas dix : au-delà, DeepSeek limite le débit, et un refus
+        // massif coûte plus cher qu'une attente.
+        concurrency: 4,
         callBatch,
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(config, byId.get(unit.productId)?.row ?? {}),
         onRevision: (unit, field) => {

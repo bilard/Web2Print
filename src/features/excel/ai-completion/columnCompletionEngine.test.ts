@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildChunks, resolveColumnRefs, isRowEmpty, buildBatchPrompt,
-  mapResults, uniqueColumnKey, CompletionBatchSchema,
+  mapResults, uniqueColumnKey, CompletionBatchSchema, runCompletionBatches,
 } from './columnCompletionEngine'
 import type { ExcelColumn, ExcelRow } from '@/features/excel/types'
 
@@ -81,5 +81,61 @@ describe('uniqueColumnKey', () => {
     const existing = [col('nom_court', 'Nom court')]
     expect(uniqueColumnKey('Nouvelle Col', existing)).toBe('nouvelle_col')
     expect(uniqueColumnKey('Nom court', existing)).toBe('nom_court_2')
+  })
+})
+
+// ⚠⚠ Un lot en vol à la fois plafonnait le débit à la latence du modèle : 86 champs par
+// minute mesurés en production, soit 57 heures pour 204 000 champs. Les lots sont
+// indépendants — les attendre l'un après l'autre ne protégeait de rien.
+describe('lots en parallèle', () => {
+  const rows = (n: number) => Array.from({ length: n }, (_, i) => ({ _id: `r${i}`, a: `v${i}` }))
+  const cols = [{ key: 'a', label: 'A' }]
+
+  it('envoie `concurrency` lots simultanément', async () => {
+    let inFlight = 0
+    let peak = 0
+    await runCompletionBatches(rows(8), 'fais {a}', cols, {
+      callBatch: async (chunk) => {
+        inFlight++
+        peak = Math.max(peak, inFlight)
+        await new Promise((r) => setTimeout(r, 5))
+        inFlight--
+        return Object.fromEntries(chunk.map((r) => [r._id as string, 'ok']))
+      },
+      onItem: () => {},
+      abortRef: { current: false },
+      rateLimitMs: 0,
+      concurrency: 4,
+    }, 1)
+    expect(peak).toBe(4)
+  })
+
+  it('par défaut, un seul lot à la fois — le comportement d’avant', async () => {
+    let peak = 0
+    let inFlight = 0
+    await runCompletionBatches(rows(4), 'fais {a}', cols, {
+      callBatch: async (chunk) => {
+        inFlight++; peak = Math.max(peak, inFlight)
+        await new Promise((r) => setTimeout(r, 5))
+        inFlight--
+        return Object.fromEntries(chunk.map((r) => [r._id as string, 'ok']))
+      },
+      onItem: () => {},
+      abortRef: { current: false },
+      rateLimitMs: 0,
+    }, 1)
+    expect(peak).toBe(1)
+  })
+
+  it('traite TOUTES les lignes, quel que soit le parallélisme', async () => {
+    const seen: string[] = []
+    await runCompletionBatches(rows(10), 'fais {a}', cols, {
+      callBatch: async (chunk) => Object.fromEntries(chunk.map((r) => [r._id as string, 'ok'])),
+      onItem: (id, status) => { if (status === 'done') seen.push(id) },
+      abortRef: { current: false },
+      rateLimitMs: 0,
+      concurrency: 3,
+    }, 2)
+    expect(seen.sort()).toEqual(rows(10).map((r) => r._id).sort())
   })
 })

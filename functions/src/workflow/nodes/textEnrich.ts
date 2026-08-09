@@ -131,6 +131,12 @@ registerServerNode({
         // vingt textes de vente longs dépasse ce plafond, la réponse est tronquée EN
         // SILENCE et le JSON devient invalide — tout le lot est perdu.
         chunkSize: 10,
+        // ⚠ QUATRE lots en vol. Un seul plafonnait le débit à la latence du modèle :
+        // 86 champs/minute mesurés en production, soit 57 heures pour 204 000 champs.
+        // Les lots sont indépendants — rien ne justifiait de les attendre l'un après
+        // l'autre. Quatre et pas dix : au-delà, DeepSeek limite le débit, et un refus
+        // massif coûte plus cher qu'une attente.
+        concurrency: 4,
         callBatch,
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(cfg, byId.get(unit.productId)?.row ?? {}),
         onRevision: (unit, field) => {

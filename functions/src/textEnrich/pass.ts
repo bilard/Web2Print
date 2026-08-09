@@ -111,6 +111,8 @@ export interface RunPassDeps {
   spentUsd?: () => number
   /** Plafond de dépense. Atteint, le passage s'arrête proprement et le dit. */
   capUsd?: number
+  /** Lots envoyés simultanément (cf. `BatchRunDeps.concurrency`). 1 par défaut. */
+  concurrency?: number
   /**
    * Échéance du segment serveur, en ms epoch. Dépassée, le passage s'arrête ENTRE deux
    * lots et le dit — comme le plafond de dépense, et pour la même raison.
@@ -230,6 +232,7 @@ export async function runPass(
         }
       },
       abortRef,
+      concurrency: deps.concurrency,
     },
     deps.chunkSize ?? 20,
   )
