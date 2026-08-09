@@ -1782,6 +1782,8 @@ export const es: Record<TranslationKey, string> = {
   'node.text-enrich.promptVersion': 'Versión',
   'node.text-enrich.useTemplate': 'Plantilla',
   'node.text-enrich.includeEmpty': 'Campos vacíos',
+  'node.text-enrich.includeUndetected': 'Idioma indeterminado',
+  'node.text-enrich.includeUndetected.help': 'Traducir también los textos cuyo idioma el detector no ha podido determinar: alrededor del 70 % de un catálogo de piezas, ya que se abstiene con textos cortos, muy técnicos o mal codificados. Su silencio no significa «ya está en francés». El modelo tiene la consigna de devolver sin cambios un texto que ya esté en francés.',
   'node.text-enrich.brandField': 'Columna marca',
   'node.text-enrich.ref2Field': 'Columna ref. fabricante',
   'node.text-enrich.refField': 'Columna referencia',

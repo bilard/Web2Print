@@ -1783,6 +1783,8 @@ export const en: Record<TranslationKey, string> = {
   'node.text-enrich.promptVersion': 'Version',
   'node.text-enrich.useTemplate': 'Template',
   'node.text-enrich.includeEmpty': 'Empty fields',
+  'node.text-enrich.includeUndetected': 'Undetermined language',
+  'node.text-enrich.includeUndetected.help': 'Also translate texts whose language the detector could not settle — around 70% of a parts catalogue, since it abstains on short, highly technical or badly encoded text. Its silence does not mean “already in French”. The model is instructed to return already-French text unchanged.',
   'node.text-enrich.brandField': 'Brand column',
   'node.text-enrich.ref2Field': 'Manufacturer ref column',
   'node.text-enrich.refField': 'Reference column',

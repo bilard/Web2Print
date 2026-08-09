@@ -1861,6 +1861,8 @@ export const fr = {
   'node.text-enrich.promptVersion': 'Version',
   'node.text-enrich.useTemplate': 'Gabarit',
   'node.text-enrich.includeEmpty': 'Champs vides',
+  'node.text-enrich.includeUndetected': 'Langue indéterminée',
+  'node.text-enrich.includeUndetected.help': 'Traduire aussi les textes dont le détecteur n’a pas su trancher la langue — environ 70 % d’un catalogue de pièces, car il s’abstient sur les textes courts, très techniques ou à l’encodage abîmé. Son silence ne veut pas dire « déjà en français ». Le modèle a pour consigne de rendre tel quel un texte déjà français.',
   'node.text-enrich.brandField': 'Colonne marque',
   'node.text-enrich.ref2Field': 'Colonne réf. constructeur',
   'node.text-enrich.refField': 'Colonne référence',

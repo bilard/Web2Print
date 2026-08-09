@@ -22,6 +22,8 @@ export interface PlanConfig {
   /** Assembler le nom selon le gabarit « libellé - marque - référence - discriminant ». */
   useTemplate?: boolean
   includeEmpty?: boolean
+  /** Traduire aussi les textes dont la langue n'a pas été tranchée — 70 % du catalogue. */
+  includeUndetected?: boolean
 }
 
 export interface TextEnrichConfig {
@@ -142,6 +144,7 @@ export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
           }
         : {}),
       ...(p.includeEmpty ? { includeEmpty: true } : {}),
+      ...(p.includeUndetected ? { includeUndetected: true } : {}),
     }))
 }
 

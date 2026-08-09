@@ -28,6 +28,17 @@ export interface FieldPlan {
   /** Traiter aussi les champs vides — utile quand un gabarit peut les CONSTRUIRE à
    *  partir d'autres colonnes. */
   includeEmpty?: boolean
+  /**
+   * Traduire aussi les textes dont la langue n'a PAS été tranchée.
+   *
+   * ⚠ Le détecteur s'abstient dès qu'un texte est court, très technique ou à l'encodage
+   * abîmé — sur un catalogue de pièces, c'est la majorité : 81 117 fiches sur 115 814,
+   * soit 70 %, hors de toute file sans que rien ne le dise. Son silence ne veut pas dire
+   * « déjà en français ». Coché, ces fiches partent au modèle, à qui il est demandé de
+   * rendre le texte INCHANGÉ s'il est déjà en français — on paie alors une passe pour
+   * rien, mais on ne perd plus 70 % du catalogue.
+   */
+  includeUndetected?: boolean
 }
 
 /**

@@ -75,6 +75,7 @@ export function planPass(targets: EnrichTarget[], plans: FieldPlan[]): PlanResul
         minLength: plan.minLength,
         detectedLang: sourceLang,
         includeEmpty: plan.includeEmpty,
+        includeUndetected: plan.includeUndetected,
       })
       if (refusal) {
         counts = countOutcome(counts, { revised: false, skipped: refusal })

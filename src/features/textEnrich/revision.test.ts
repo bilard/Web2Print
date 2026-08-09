@@ -157,3 +157,28 @@ describe('compteurs d’un passage', () => {
     expect(before.considered).toBe(0)
   })
 })
+
+// ⚠⚠ 81 117 fiches sur 115 814 — 70 % du catalogue — n'entraient dans AUCUNE file : le
+// détecteur s'abstient sur les textes courts, très techniques ou à l'encodage abîmé, et
+// son silence était traité comme « déjà en français ». C'est le gisement principal.
+describe('traduction : langue non tranchée', () => {
+  const opts = { kind: 'translate' as const, targetLang: 'fr', promptVersion: 'v1', minLength: 0 }
+  const field = { value: 'Kit joint carburateur 4T' }
+
+  it('écartée par défaut : on ne paie pas pour deviner', () => {
+    expect(eligibility(field, opts)).toBe('long-enough')
+  })
+
+  it('acceptée quand la carte le demande', () => {
+    expect(eligibility(field, { ...opts, includeUndetected: true })).toBeNull()
+  })
+
+  it('le FRANÇAIS reconnu reste écarté, même avec l’option', () => {
+    expect(eligibility(field, { ...opts, detectedLang: 'fr', includeUndetected: true })).toBe('long-enough')
+  })
+
+  it('une langue étrangère reconnue passe, option ou non', () => {
+    expect(eligibility(field, { ...opts, detectedLang: 'de' })).toBeNull()
+    expect(eligibility(field, { ...opts, detectedLang: 'de', includeUndetected: true })).toBeNull()
+  })
+})

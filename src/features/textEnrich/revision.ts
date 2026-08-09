@@ -74,6 +74,8 @@ export interface EligibilityOptions {
   /** Traiter les champs VIDES ? Un champ vide n'a rien à traduire, mais peut être
    *  construit par gabarit à partir d'autres colonnes. */
   includeEmpty?: boolean
+  /** Traduire aussi ce dont la langue n'a pas été tranchée (cf. `FieldPlan`). */
+  includeUndetected?: boolean
 }
 
 export type Ineligible =
@@ -98,8 +100,14 @@ export function eligibility(field: EnrichableField, opts: EligibilityOptions): I
 
   // Traduction : seule la langue décide. Un texte néerlandais parfaitement rédigé doit
   // passer, un texte français bancal n'a rien à y faire.
+  //
+  // ⚠ La langue NON TRANCHÉE est un cas à part, et le plus nombreux : le détecteur
+  // s'abstient sur les textes courts, techniques ou à l'encodage abîmé — 70 % d'un
+  // catalogue de pièces. Son silence ne dit pas « déjà en français ». Par défaut on les
+  // écarte (on ne paie pas pour deviner) ; `includeUndetected` les fait entrer.
   if (opts.kind === 'translate') {
-    if (!opts.detectedLang || opts.detectedLang === opts.targetLang) return 'long-enough'
+    if (opts.detectedLang === opts.targetLang) return 'long-enough'
+    if (!opts.detectedLang && !opts.includeUndetected) return 'long-enough'
     return null
   }
 

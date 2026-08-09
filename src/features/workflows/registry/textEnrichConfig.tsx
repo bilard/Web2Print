@@ -298,6 +298,18 @@ export function TextEnrichConfigPanel({
               />
               {t('node.text-enrich.includeEmpty')}
             </label>
+            {/* ⚠ N'a de sens que sur une TRADUCTION : c'est la langue détectée qui trie, et
+                elle seule. Sur « Améliorer », la longueur décide et la case ne changerait
+                rien — l'afficher là serait un réglage qui ment. */}
+            {plan.kind === 'translate' && (
+              <label className="flex items-center gap-1" title={t('node.text-enrich.includeUndetected.help')}>
+                <input
+                  type="checkbox" checked={!!plan.includeUndetected} className="h-3.5 w-3.5 accent-accent"
+                  onChange={(e) => setPlan(i, { includeUndetected: e.target.checked })}
+                />
+                {t('node.text-enrich.includeUndetected')}
+              </label>
+            )}
           </div>
         </div>
       ))}

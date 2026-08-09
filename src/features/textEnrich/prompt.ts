@@ -64,7 +64,12 @@ export function schemaForLLM(withNote: boolean): Record<string, unknown> {
 /** Ce que le passage attend, selon la nature du travail. Court : la consigne de
  *  l'utilisateur porte l'essentiel, ceci ne fait que nommer la tâche. */
 const KIND_LINE: Record<EnrichKind, string> = {
-  translate: 'Traduis en français chacun des textes ci-dessous.',
+  // ⚠ « s'il est déjà en français, rends-le tel quel » n'est pas une politesse : depuis
+  // que les textes de langue NON TRANCHÉE peuvent entrer dans la file (70 % d'un
+  // catalogue de pièces, cf. `includeUndetected`), le lot contient forcément du français.
+  // Sans cette consigne, le modèle reformule — et une reformulation non demandée écrase
+  // un texte fournisseur correct.
+  translate: 'Traduis en français chacun des textes ci-dessous. Si un texte est DÉJÀ en français, rends-le tel quel, sans le reformuler.',
   improve: 'Rends chacun des textes ci-dessous plus explicite, à partir de ce qu’il contient déjà.',
   structure: 'Produis, pour chaque entrée, le morceau demandé — rien d’autre.',
 }
