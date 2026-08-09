@@ -33,9 +33,16 @@ const MAX_OUTPUT_TOKENS = 16000
 
 interface Config {
   watchId: string
-  translate: boolean
-  improve: boolean
-  prompt: string
+  /** ⚠ UN traitement et UNE consigne PAR CHAMP. Le nom et le texte de vente n'appellent
+   *  pas la même demande — « Nom - Discriminant - Modèle - REF » pour l'un, « liste les
+   *  adaptables et les origines » pour l'autre. Une consigne unique obligeait à écrire
+   *  l'union des deux, que le modèle appliquait alors aux deux champs. */
+  doName: boolean
+  nameMode: 'translate' | 'improve' | 'both'
+  namePrompt: string
+  doDescription: boolean
+  descriptionMode: 'translate' | 'improve' | 'both'
+  descriptionPrompt: string
   scope: 'foreign' | 'foreignPlus' | 'all'
   /** Reprendre les fiches dont le texte d'origine a changé depuis la réécriture. */
   refreshStale: boolean
@@ -74,9 +81,26 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
   outputColumns: ['produit', 'motif', 'avant', 'apres', 'justification'],
   configSchema: [
     { name: 'watchId', kind: 'text', labelKey: 'node.catalog-text-revise.watchId', helpKey: 'node.catalog-text-revise.watchId.help' },
-    { name: 'translate', kind: 'checkbox', labelKey: 'node.catalog-text-revise.translate', default: true },
-    { name: 'improve', kind: 'checkbox', labelKey: 'node.catalog-text-revise.improve', default: false },
-    { name: 'prompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.prompt', helpKey: 'node.catalog-text-revise.prompt.help' },
+    { name: 'doName', kind: 'checkbox', labelKey: 'node.catalog-text-revise.doName', default: true },
+    {
+      name: 'nameMode', kind: 'select', labelKey: 'node.catalog-text-revise.nameMode', default: 'translate',
+      options: [
+        { value: 'translate', labelKey: 'node.catalog-text-revise.mode.translate' },
+        { value: 'improve', labelKey: 'node.catalog-text-revise.mode.improve' },
+        { value: 'both', labelKey: 'node.catalog-text-revise.mode.both' },
+      ],
+    },
+    { name: 'namePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.namePrompt', helpKey: 'node.catalog-text-revise.namePrompt.help' },
+    { name: 'doDescription', kind: 'checkbox', labelKey: 'node.catalog-text-revise.doDescription', default: true },
+    {
+      name: 'descriptionMode', kind: 'select', labelKey: 'node.catalog-text-revise.descriptionMode', default: 'translate',
+      options: [
+        { value: 'translate', labelKey: 'node.catalog-text-revise.mode.translate' },
+        { value: 'improve', labelKey: 'node.catalog-text-revise.mode.improve' },
+        { value: 'both', labelKey: 'node.catalog-text-revise.mode.both' },
+      ],
+    },
+    { name: 'descriptionPrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.descriptionPrompt', helpKey: 'node.catalog-text-revise.descriptionPrompt.help' },
     {
       name: 'scope', kind: 'select', labelKey: 'node.catalog-text-revise.scope', default: 'foreign',
       options: [
@@ -89,13 +113,20 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
     { name: 'maxUnits', kind: 'number', labelKey: 'node.catalog-text-revise.maxUnits', helpKey: 'node.catalog-text-revise.maxUnits.help', default: 500 },
   ],
   defaultConfig: {
-    watchId: '', translate: true, improve: false, prompt: '',
+    watchId: '',
+    doName: true, nameMode: 'translate', namePrompt: '',
+    doDescription: true, descriptionMode: 'translate', descriptionPrompt: '',
     scope: 'foreign', refreshStale: true, maxUnits: 500,
   },
   cardSummary: (c) => {
-    const modes = [c.translate && t('node.catalog-text-revise.sum.translate'), c.improve && t('node.catalog-text-revise.sum.improve')]
-      .filter(Boolean).join(' + ')
-    return modes ? t('node.catalog-text-revise.sum', { modes, max: c.maxUnits || 0 }) : t('node.catalog-text-revise.sum.nothing')
+    const label = (mode: Config['nameMode']) => t(`node.catalog-text-revise.mode.${mode}` as 'node.catalog-text-revise.mode.translate')
+    const parts = [
+      c.doName && `${t('node.catalog-text-revise.sum.name')} ${label(c.nameMode)}`,
+      c.doDescription && `${t('node.catalog-text-revise.sum.desc')} ${label(c.descriptionMode)}`,
+    ].filter(Boolean)
+    return parts.length > 0
+      ? t('node.catalog-text-revise.sum', { modes: parts.join(' · '), max: c.maxUnits || 0 })
+      : t('node.catalog-text-revise.sum.nothing')
   },
   runtime: 'client',
 
@@ -103,7 +134,11 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
     const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     const watchId = deriveWatchId(config.watchId, ctx.workflowId)
-    if (!config.translate && !config.improve) throw new Error(t('run.catalogTextRevise.noMode'))
+    if (!config.doName && !config.doDescription) throw new Error(t('run.catalogTextRevise.noMode'))
+    const fields = {
+      name: { enabled: config.doName, mode: config.nameMode, prompt: config.namePrompt ?? '' },
+      description: { enabled: config.doDescription, mode: config.descriptionMode, prompt: config.descriptionPrompt ?? '' },
+    }
 
     const src = await loadSourceCatalog(uid, watchId)
     if (!src) throw new Error(t('run.catalogTextRevise.noCatalog', { watchId }))
@@ -143,8 +178,9 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
             ...(q.product.description ? { description: q.product.description } : {}),
             lang: langOf(q.product),
           })),
-          config.prompt,
-          { translate: config.translate, improve: config.improve },
+          '',
+          { translate: true, improve: false },
+          fields,
         ),
         schema: ScreenBatchSchema,
         schemaForLLM: screenSchemaForLLM,
@@ -183,6 +219,9 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
           nameSource: p.name,
           ...(p.description ? { descriptionSource: p.description } : {}),
           ...(r.note ? { note: r.note } : {}),
+          // ⚠ Sans la langue, tout ce que ce passage traduit sort du décompte par langue :
+          // la ventilation ne compterait que le travail fait à l'écran.
+          ...((l) => (l ? { lang: l } : {}))(langOf(p)),
           at: Date.now(),
         })
         rows.push({

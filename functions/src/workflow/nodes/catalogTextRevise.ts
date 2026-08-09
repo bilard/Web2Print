@@ -35,9 +35,25 @@ interface LlmResult { id?: unknown; name?: unknown; description?: unknown; note?
 registerServerNode({
   type: 'catalog-text-revise',
   run: async (ctx, config) => {
-    const translate = config.translate !== false
-    const improve = config.improve === true
-    if (!translate && !improve) throw new Error(t(ctx.locale, 'run.catalogTextRevise.noMode'))
+    // ⚠ UN traitement et UNE consigne PAR CHAMP, comme au navigateur : le nom et le texte
+    // de vente n'appellent pas la même demande.
+    const mode = (v: unknown): 'translate' | 'improve' | 'both' =>
+      v === 'improve' || v === 'both' ? v : 'translate'
+    const fields = {
+      name: {
+        enabled: config.doName !== false,
+        mode: mode(config.nameMode),
+        prompt: String(config.namePrompt ?? ''),
+      },
+      description: {
+        enabled: config.doDescription !== false,
+        mode: mode(config.descriptionMode),
+        prompt: String(config.descriptionPrompt ?? ''),
+      },
+    }
+    if (!fields.name.enabled && !fields.description.enabled) {
+      throw new Error(t(ctx.locale, 'run.catalogTextRevise.noMode'))
+    }
 
     // Même dérivation que les autres cartes de veille : sans saisie, le suivi du workflow.
     const watchId = stableId(String(config.watchId ?? '').trim() || ctx.workflowId || 'default')
@@ -81,8 +97,9 @@ registerServerNode({
             ...(q.product.description ? { description: q.product.description } : {}),
             lang: langOf(q.product),
           })),
-          String(config.prompt ?? ''),
-          { translate, improve },
+          '',
+          { translate: true, improve: false },
+          fields,
         ) + JSON_INSTRUCTION,
         { maxTokens: MAX_OUTPUT_TOKENS },
       )
@@ -115,6 +132,8 @@ registerServerNode({
           nameSource: p.name,
           ...(p.description ? { descriptionSource: p.description } : {}),
           ...(r.note ? { note: String(r.note) } : {}),
+          // ⚠ Sans la langue, tout ce que le cron traduit sort du décompte par langue.
+          ...((l) => (l ? { lang: l } : {}))(langOf(p)),
           at: Date.now(),
         })
         rows.push({
