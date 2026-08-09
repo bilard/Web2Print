@@ -30,6 +30,19 @@ export interface RunProgress {
   items: number
   /** Depuis le démarrage de la première carte, en ms. 0 si rien n'a commencé. */
   elapsedMs: number
+  /** Lignes traitées par minute, sur toute la durée du run. `null` avant la première
+   *  minute : un débit calculé sur trois secondes annonce n'importe quoi. */
+  itemsPerMin: number | null
+  /**
+   * Temps restant estimé, en ms. `null` tant que l'estimation ne vaut rien.
+   *
+   * ⚠ Extrapolation LINÉAIRE sur la part accomplie, et rien de plus. Les cartes n'ont pas
+   * la même durée — une moisson de vingt minutes suit un import de trois secondes — donc
+   * l'estimation saute à chaque carte franchie. Elle répond à « encore longtemps ? », pas
+   * à « à quelle heure exactement ». En dessous de 10 % accomplis, elle ne répond même
+   * pas à ça : on ne l'affiche pas.
+   */
+  etaMs: number | null
   /**
    * Les cartes, dans l'ORDRE OÙ ELLES ONT TOURNÉ.
    *
@@ -65,7 +78,7 @@ export function runProgress(
   for (const node of willRun) {
     const st = states[node.id]
     if (!st) continue
-    if (st.startedAt) firstStart = Math.min(firstStart, st.startedAt)
+    if (st.startedAt != null) firstStart = Math.min(firstStart, st.startedAt)
     if (typeof st.count === 'number') items += st.count
     if (st.status === 'running') { running++; runningLabels.push(labelOf(node.id)); continue }
     if (st.status === 'error') { failed++; done++; continue }
@@ -92,8 +105,13 @@ export function runProgress(
   // Une carte en cours compte pour une demie : afficher 0 tant qu'elle n'a pas fini
   // laisserait la barre immobile pendant les vingt minutes d'une moisson.
   const ratio = total === 0 ? 0 : Math.min(1, (done + running * 0.5) / total)
+  const elapsedMs = firstStart === Infinity ? 0 : Math.max(0, now - firstStart)
   return {
     total, done, running, failed, skipped, ratio, runningLabels, items, cards,
-    elapsedMs: firstStart === Infinity ? 0 : Math.max(0, now - firstStart),
+    elapsedMs,
+    itemsPerMin: elapsedMs >= 60_000 && items > 0 ? Math.round(items / (elapsedMs / 60_000)) : null,
+    etaMs: ratio >= 0.1 && ratio < 1 && elapsedMs > 0
+      ? Math.round((elapsedMs / ratio) * (1 - ratio))
+      : null,
   }
 }

@@ -38,6 +38,16 @@ const TINT: Record<NodeStatus, string> = {
   skipped: 'text-amber-300/70',
 }
 
+/** Une mesure ÉTIQUETÉE : un nombre nu au milieu d'autres nombres nus ne se lit pas. */
+function Stat({ label, value, tone = 'text-white/70' }: { label: string; value: string; tone?: string }) {
+  return (
+    <span className="flex items-baseline gap-1 whitespace-nowrap">
+      <span className="text-[10px] uppercase tracking-wide text-white/30">{label}</span>
+      <span className={`tabular-nums font-medium ${tone}`}>{value}</span>
+    </span>
+  )
+}
+
 function Card({ card, locale }: { card: RunCard; locale: string }) {
   const Icon = ICON[card.status]
   const running = card.status === 'running'
@@ -83,38 +93,53 @@ export function RunProgressBar() {
   if (p.total === 0 || (p.done === 0 && p.running === 0)) return null
 
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
+  const pct = Math.round(p.ratio * 100)
+  // ⚠ Les cartes TERMINÉES sont repliées en un compteur. Toutes déployées, la ligne
+  // faisait deux mètres de long et ce qui travaille se perdait au milieu de ce qui est
+  // fini — or c'est l'inverse qu'on cherche. Le détail reste dans l'onglet « Nodes ».
+  const done = p.cards.filter((c) => c.status === 'success')
+  const rest = p.cards.filter((c) => c.status !== 'success')
+
   return (
-    <div className="border-b border-neutral-800 bg-surface-2/60 px-3 py-1.5 flex items-center gap-3 text-[11px] overflow-x-auto">
-      {/* Le résumé tient à gauche et ne défile pas avec la liste : c'est le chiffre qu'on
-          cherche en premier. */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="h-1.5 w-20 shrink-0 overflow-hidden rounded bg-white/[0.08]">
-          <div className={`h-full transition-[width] duration-500 ${p.failed > 0 ? 'bg-rose-400/80' : 'bg-indigo-400/80'}`}
-            style={{ width: `${Math.round(p.ratio * 100)}%` }} />
+    <div className="border-b border-neutral-800 bg-well">
+      <div className="px-3 py-2 flex items-center gap-4 text-xs">
+        {/* Le CHIFFRE d'abord, en grand : c'est la première chose qu'on vient chercher. */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className={`text-sm font-semibold tabular-nums ${p.failed > 0 ? 'text-rose-300' : 'text-indigo-300'}`}>
+            {pct} %
+          </span>
+          <div className="h-2 w-28 shrink-0 overflow-hidden rounded-full bg-white/[0.08]">
+            <div className={`h-full transition-[width] duration-500 ${p.failed > 0 ? 'bg-rose-400/80' : 'bg-indigo-400/80'}`}
+              style={{ width: `${pct}%` }} />
+          </div>
+          <span className="tabular-nums text-white/70 whitespace-nowrap">
+            {t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
+          </span>
         </div>
-        <span className="tabular-nums text-white/70 whitespace-nowrap">
-          {t('wfe.progress.cards', { done: n(p.done), total: n(p.total) })}
-        </span>
-        {p.items > 0 && (
-          <span className="tabular-nums text-white/45 whitespace-nowrap">{t('wfe.progress.items', { count: n(p.items) })}</span>
-        )}
-        {p.elapsedMs > 0 && (
-          <span className="tabular-nums text-white/35 whitespace-nowrap">{shortDuration(p.elapsedMs)}</span>
-        )}
-        {p.failed > 0 && (
-          <span className="tabular-nums text-rose-300 whitespace-nowrap">{t('wfe.progress.failed', { count: n(p.failed) })}</span>
-        )}
-        {p.skipped > 0 && (
-          <span className="tabular-nums text-amber-300/70 whitespace-nowrap">{t('wfe.progress.skipped', { count: n(p.skipped) })}</span>
-        )}
+
+        {/* Les mesures, chacune étiquetée : un nombre nu au milieu d'autres nombres nus ne
+            se lit pas. */}
+        <div className="flex items-center gap-4 shrink-0 text-[11px]">
+          {p.items > 0 && <Stat label={t('wfe.progress.lbl.items')} value={n(p.items)} />}
+          {p.itemsPerMin != null && <Stat label={t('wfe.progress.lbl.rate')} value={t('wfe.progress.perMin', { count: n(p.itemsPerMin) })} />}
+          {p.elapsedMs > 0 && <Stat label={t('wfe.progress.lbl.elapsed')} value={shortDuration(p.elapsedMs)} />}
+          {p.etaMs != null && <Stat label={t('wfe.progress.lbl.eta')} value={shortDuration(p.etaMs)} tone="text-amber-200/80" />}
+          {p.failed > 0 && <Stat label={t('wfe.progress.lbl.failed')} value={n(p.failed)} tone="text-rose-300" />}
+          {p.skipped > 0 && <Stat label={t('wfe.progress.lbl.skipped')} value={n(p.skipped)} tone="text-amber-300/70" />}
+        </div>
       </div>
 
-      <span className="h-3 w-px bg-white/10 shrink-0" />
-
-      {/* TOUTES les cartes, dans l'ordre où elles ont tourné. Sur douze cartes, savoir
-          « 3/11 » ne dit pas ce qui reste — la liste, si. */}
-      <div className="flex items-center gap-1.5">
-        {p.cards.map((c) => <Card key={c.id} card={c} locale={intlLocale(locale)} />)}
+      {/* Ce qui TRAVAILLE et ce qui ATTEND, sur sa propre ligne. Les terminées se résument
+          à leur compte : savoir « 3/11 » ne dit pas ce qui reste — cette ligne, si. */}
+      <div className="px-3 pb-2 flex items-center gap-1.5 text-[11px] overflow-x-auto">
+        {done.length > 0 && (
+          <span className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-emerald-400/70"
+            title={done.map((c) => c.label).join(' · ')}>
+            <CheckCircle2 className="w-3 h-3 shrink-0" />
+            {t('wfe.progress.doneCards', { count: n(done.length) })}
+          </span>
+        )}
+        {rest.map((c) => <Card key={c.id} card={c} locale={intlLocale(locale)} />)}
       </div>
     </div>
   )

@@ -77,3 +77,37 @@ describe('liste des cartes', () => {
     expect(p.cards[0]).toMatchObject({ label: 'carte a', count: 4200, durationMs: 9000 })
   })
 })
+
+describe('débit et temps restant', () => {
+  const w = wf(['a', 'b', 'c', 'd'], [['a', 'b'], ['b', 'c'], ['c', 'd']])
+
+  it('⚠ pas de débit avant une minute : sur trois secondes, il annonce n’importe quoi', () => {
+    const p = runProgress(w, { a: st({ status: 'success', startedAt: 0, count: 500 }) }, label, 3000)
+    expect(p.itemsPerMin).toBeNull()
+  })
+
+  it('rend le débit en lignes par minute une fois la première minute passée', () => {
+    const p = runProgress(w, { a: st({ status: 'success', startedAt: 0, count: 4000 }) }, label, 120_000)
+    expect(p.itemsPerMin).toBe(2000)
+  })
+
+  it('⚠ aucune estimation sous 10 % : elle ne vaudrait rien et on s’y fierait', () => {
+    // Sans arête, TOUTES les cartes tournent : une seule terminée sur vingt-deux.
+    const p = runProgress(wf('abcdefghijklmnopqrstuv'.split('')),
+      { a: st({ status: 'success', startedAt: 0 }) }, label, 60_000)
+    expect(p.etaMs).toBeNull()
+  })
+
+  it('extrapole le restant sur la part accomplie', () => {
+    // 2 cartes finies sur 4 en 60 s → il reste la moitié, donc ~60 s.
+    const p = runProgress(w, {
+      a: st({ status: 'success', startedAt: 0 }), b: st({ status: 'success', startedAt: 10 }),
+    }, label, 60_000)
+    expect(Math.round((p.etaMs ?? 0) / 1000)).toBe(60)
+  })
+
+  it('run terminé : plus rien à estimer', () => {
+    const p = runProgress(wf(['a'], []), { a: st({ status: 'success', startedAt: 0 }) }, label, 5000)
+    expect(p.etaMs).toBeNull()
+  })
+})
