@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { generateJson } from '@/features/ai/llmRouter'
 import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
-import { TextEnrichFilters } from './TextEnrichFilters'
+import { TextEnrichFilters, type DoneFilter } from './TextEnrichFilters'
 import { TextEnrichRow } from './TextEnrichRow'
 import { rejectionParts, type RejectionPart } from './violationSummary'
 import { chunkByVolume } from './chunkByVolume'
@@ -73,6 +73,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
   /** Filtre sur le TEXTE DE VENTE : ce champ est le sujet de l'écran, or une fiche qui
    *  n'en a pas ne peut pas être traduite — elle encombre la liste sans rien à traiter. */
   const [saleText, setSaleText] = useState<'all' | 'with' | 'without'>('all')
+  /** Ce qu'on veut RELIRE. Traduire et réécrire se lisaient de la même façon dans la
+   *  colonne APRÈS, alors qu'on ne les relit pas pareil : une traduction se vérifie, une
+   *  réécriture se juge. */
+  const [doneFilter, setDoneFilter] = useState<DoneFilter>('all')
   /** Pourquoi une fiche n'a rien donné, par produit. Vide tant qu'on n'a rien lancé —
    *  ces refus étaient invisibles, et « pas encore traduit » ne disait pas s'il fallait
    *  relancer ou si la réponse avait été rejetée. */
@@ -116,12 +120,20 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     // La famille choisie borne TOUT ce qui suit : traduire « les courroies » veut dire
     // les courroies, quel que soit le filtre de langue ou la recherche par-dessus.
     const inPath = (l: Line) => path.length === 0 || isUnderPath(l.product.taxo ?? [], path)
+    // ⚠ Les fiches d'avant le champ `ops` comptent comme traitées, jamais comme traduites
+    // NI comme améliorées : les ranger d'office dans l'une des deux serait une invention.
+    const byDone = (l: Line) => {
+      if (doneFilter === 'all') return true
+      if (doneFilter === 'todo') return !l.revision
+      if (!l.revision) return false
+      return doneFilter === 'translated' ? !!l.revision.ops?.translate : !!l.revision.ops?.improve
+    }
     // ⚠ Une recherche EXPLICITE l'emporte sur le filtre de langue. Chercher une référence
     // et ne rien voir parce que la fiche est déjà en français se lit comme « ce produit
     // n'existe pas » — alors qu'on vient précisément vérifier son état.
     if (searching) {
       const found = new Set(searchCatalog(products, query).map((p) => p.id))
-      return lines.filter((l) => found.has(l.product.id) && inPath(l))
+      return lines.filter((l) => found.has(l.product.id) && inPath(l) && byDone(l))
     }
     // Une langue choisie l'emporte sur « seulement les textes non français » : on vient
     // de cliquer « DE 1 240 », on veut ces 1 240 fiches, pas leur intersection avec autre chose.
@@ -132,13 +144,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
         && l.product.description.trim().toLowerCase() !== l.product.name.trim().toLowerCase()
       return saleText === 'all' || (saleText === 'with' ? has : !has)
     }
-    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l) && inPath(l))
+    if (pickedLang !== undefined) return lines.filter((l) => l.lang === pickedLang && bySale(l) && inPath(l) && byDone(l))
     const inScope = (l: Line) =>
       scope === 'all' ? true
         : scope === 'foreignPlus' ? l.lang !== 'fr'
           : !!l.lang && l.lang !== 'fr'
-    return lines.filter((l) => inScope(l) && bySale(l) && inPath(l))
-  }, [lines, products, scope, query, searching, pickedLang, saleText, path])
+    return lines.filter((l) => inScope(l) && bySale(l) && inPath(l) && byDone(l))
+  }, [lines, products, scope, query, searching, pickedLang, saleText, path, doneFilter])
 
   // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
@@ -228,6 +240,8 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
             nameSource: line.product.name,
             ...(line.product.description ? { descriptionSource: line.product.description } : {}),
             ...(r.note ? { note: r.note } : {}),
+            // Ce qui a été demandé, pour que l'écran puisse le montrer séparément.
+            ops: { ...(modes.translate ? { translate: true } : {}), ...(modes.improve ? { improve: true } : {}) },
             ...(line.lang ? { lang: line.lang } : {}),
             at: Date.now(),
           })
@@ -293,6 +307,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
           tallies={tallies} pickedLang={pickedLang} onPickLang={setPickedLang}
           scope={scope} onScope={setScope} searching={searching}
           saleText={saleText} onSaleText={setSaleText}
+          doneFilter={doneFilter} onDoneFilter={setDoneFilter}
           modes={modes} onModes={setModes}
           limitText={limitText} onLimitText={setLimitText}
           running={running} done={done} count={Math.min(limit, todo.length)}

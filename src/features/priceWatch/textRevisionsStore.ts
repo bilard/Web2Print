@@ -15,6 +15,16 @@ export interface TextRevision {
   descriptionSource?: string
   /** Ce que le modèle dit avoir changé. */
   note?: string
+  /**
+   * Ce qui a été demandé sur cette fiche. Sans lui, l'écran ne peut pas dire ce qu'il
+   * montre : « traduit » et « réécrit » se lisent pareil dans la colonne APRÈS, alors
+   * qu'on ne les relit pas de la même façon — une traduction se vérifie, une réécriture
+   * se juge.
+   *
+   * ⚠ Absent sur les fiches d'avant ce champ : elles s'affichent « traité », sans plus.
+   * Les ranger d'office en « traduit » serait une invention.
+   */
+  ops?: { translate?: boolean; improve?: boolean }
   at: number
   lang?: string
 }

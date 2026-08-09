@@ -12,11 +12,16 @@ export type SaleTextFilter = 'all' | 'with' | 'without'
  *  ajoute les indéterminés — le gros du catalogue, que le détecteur n'a pas su trancher
  *  et qui n'est pas pour autant du français. */
 export type EnrichScope = 'foreign' | 'foreignPlus' | 'all'
+/** Ce qu'on veut RELIRE. `translated`/`improved` distinguent les deux travaux, que la
+ *  colonne APRÈS montrait de la même façon alors qu'on ne les relit pas pareil : une
+ *  traduction se vérifie, une réécriture se juge. */
+export type DoneFilter = 'all' | 'todo' | 'translated' | 'improved'
 
 export function TextEnrichFilters({
   tallies, pickedLang, onPickLang,
   scope, onScope, searching,
   saleText, onSaleText,
+  doneFilter, onDoneFilter,
   modes, onModes,
   limitText, onLimitText,
   running, done, count, canRun, onRun,
@@ -29,6 +34,9 @@ export function TextEnrichFilters({
   searching: boolean
   saleText: SaleTextFilter
   onSaleText: (v: SaleTextFilter) => void
+  /** Ce qui a DÉJÀ été fait — pour relire séparément traductions et réécritures. */
+  doneFilter: DoneFilter
+  onDoneFilter: (v: DoneFilter) => void
   modes: { translate: boolean; improve: boolean }
   onModes: (m: { translate: boolean; improve: boolean }) => void
   limitText: string
@@ -71,20 +79,30 @@ export function TextEnrichFilters({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      {/* ⚠ Trois familles de filtres sur UNE ligne, séparées par un trait. Empilées, elles
+          poussaient la liste — le sujet de l'écran — sous la ligne de flottaison, et il
+          fallait défiler pour voir la première fiche. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.saleText')}</span>
         {(['all', 'with', 'without'] as SaleTextFilter[]).map((v) => (
           <button key={v} type="button" onClick={() => onSaleText(v)} className={chip(saleText === v)}>
             {t(v === 'all' ? 'pwte.sale.all' : v === 'with' ? 'pwte.sale.with' : 'pwte.sale.without')}
           </button>
         ))}
-      </div>
 
-      <div className={`flex flex-wrap items-center gap-1.5 ${langLocked ? 'opacity-40' : ''}`}>
-        <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.scope')}</span>
+        <span className="mx-1 h-3 w-px bg-white/10" />
+        <span className="text-[10px] uppercase tracking-wide text-white/25">{t('pwte.filter.done')}</span>
+        {(['all', 'todo', 'translated', 'improved'] as DoneFilter[]).map((v) => (
+          <button key={v} type="button" onClick={() => onDoneFilter(v)} className={chip(doneFilter === v)}>
+            {t(v === 'all' ? 'pwte.done.all' : v === 'todo' ? 'pwte.done.todo' : v === 'translated' ? 'pwte.done.translated' : 'pwte.done.improved')}
+          </button>
+        ))}
+
+        <span className={`mx-1 h-3 w-px bg-white/10 ${langLocked ? 'opacity-40' : ''}`} />
+        <span className={`text-[10px] uppercase tracking-wide text-white/25 ${langLocked ? 'opacity-40' : ''}`}>{t('pwte.filter.scope')}</span>
         {(['foreign', 'foreignPlus', 'all'] as EnrichScope[]).map((v) => (
           <button key={v} type="button" onClick={() => onScope(v)} disabled={langLocked}
-            className={chip(scope === v)}>
+            className={`${chip(scope === v)} ${langLocked ? 'opacity-40' : ''}`}>
             {t(v === 'foreign' ? 'pwte.scope.foreign' : v === 'foreignPlus' ? 'pwte.scope.foreignPlus' : 'pwte.scope.all')}
           </button>
         ))}
