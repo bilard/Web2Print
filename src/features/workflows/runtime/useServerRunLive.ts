@@ -22,22 +22,51 @@ interface RunLiveDoc {
   nodeCycles?: Record<string, number>
 }
 
+/**
+ * Silence au-delà duquel un run serveur est considéré comme MORT.
+ *
+ * ⚠⚠ Le statut du document ne suffit pas : une Cloud Function tuée (délai dépassé, mémoire
+ * saturée) laisse `status: 'running'` pour toujours. Se fier à ce champ faisait tourner les
+ * rouages à l'écran des heures après l'arrêt. Ce qui prouve qu'un run vit, c'est qu'il
+ * ÉCRIT — un log, un état de carte, un compteur. Trois minutes : les nodes à curseur
+ * battent bien plus souvent que ça, et un vrai run n'est jamais muet si longtemps.
+ */
+const LIVE_BEAT_MS = 3 * 60_000
+
 export function useServerRunLive(workflowId: string | undefined): void {
   const lastRunId = useRef<string | undefined>(undefined)
   const isInitial = useRef(true)
+  /** Dernière écriture observée du run serveur, quelle qu'elle soit. */
+  const lastBeat = useRef(0)
   useEffect(() => {
     const uid = getWorkspaceUid()
     if (!uid || !workflowId) return
     lastRunId.current = undefined
     isInitial.current = true
-    return onSnapshot(
+    lastBeat.current = 0
+    // ⚠ Réévalué par le TEMPS, pas seulement par les échos : un run mort n'écrit plus rien,
+    // donc aucun snapshot ne viendrait jamais dire qu'il s'est arrêté.
+    const beat = setInterval(() => {
+      if (lastBeat.current > 0 && Date.now() - lastBeat.current > LIVE_BEAT_MS) {
+        useRunContext.getState().setServerRunActive(false)
+      }
+    }, 15_000)
+    const stop = onSnapshot(
       doc(db, 'users', uid, 'workflowRunsLive', workflowId),
       (snap) => {
         const d = snap.data() as RunLiveDoc | undefined
         // ⚠ DIT à l'écran, même quand on n'hydrate pas : sans ce signal, les cartes du
         // dernier écho restaient « en cours » et tournaient à l'infini des heures après
         // l'arrêt du run — et le temps restant continuait de s'estimer dans le vide.
-        useRunContext.getState().setServerRunActive(d?.status === 'running')
+        //
+        // ⚠ Le battement se lit DANS le document, pas à l'instant où on le reçoit : au
+        // chargement d'une page, le premier écho arrive « maintenant » même si le run est
+        // mort depuis une heure. L'horodatage du dernier journal, lui, ne ment pas.
+        const beatTs = Math.max(d?.startedAt ?? 0, ...(d?.logs ?? []).map((l) => l.ts))
+        lastBeat.current = beatTs
+        useRunContext.getState().setServerRunActive(
+          d?.status === 'running' && beatTs > 0 && Date.now() - beatTs < LIVE_BEAT_MS,
+        )
         if (!d?.nodeStates) { isInitial.current = false; return }
         // Écho INITIAL d'un run serveur DÉJÀ TERMINÉ (au chargement de page) : on ne ré-hydrate
         // PAS. L'aperçu durable (workflowRuns, toutes sources) montre déjà le dernier run ;
@@ -98,5 +127,6 @@ export function useServerRunLive(workflowId: string | undefined): void {
       },
       (e) => console.warn('[runLive] écoute interrompue :', e.message),
     )
+    return () => { clearInterval(beat); stop() }
   }, [workflowId])
 }
