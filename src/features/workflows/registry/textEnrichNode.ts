@@ -19,6 +19,7 @@ import { pushAiUsageListener } from '@/features/stats/aiUsageTracking'
 import { EnrichBatchSchema } from '@/features/textEnrich/prompt'
 import { makeCallBatch } from '@/features/textEnrich/batchCaller'
 import { planPass, runPass, type EnrichUnit } from '@/features/textEnrich/pass'
+import { planWaves, runWaves } from '@/features/textEnrich/planWaves'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
 import {
@@ -146,7 +147,12 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
       rows: sheetRows,
     })
 
-    const { units, counts } = planPass(targets, plans)
+    // ⚠ Les plans partent en VAGUES : deux plans sur un même champ ne peuvent pas voyager
+    // ensemble (clé `produit::champ`), et surtout le second doit travailler sur ce que le
+    // premier a produit. Le chiffrage préalable, lui, porte sur la première vague : les
+    // suivantes dépendent de textes qui n'existent pas encore.
+    const waves = planWaves(plans)
+    const { units, counts } = planPass(targets, waves[0] ?? [])
 
     // Chiffré AVANT d'appeler quoi que ce soit : l'utilisateur voit le volume réel, pas
     // une estimation. C'est aussi ce que rend le mode simulation.
@@ -229,11 +235,18 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
     const popUsage = pushAiUsageListener((u) => { spentUsd += u.costUsd })
     let result
     try {
-      result = await runPass(capped, counts, {
+      result = await runWaves(waves, targets, capped, counts, (batchUnits, batchCounts) => runPass(batchUnits, batchCounts, {
         passId,
         callBatch,
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(config, byId.get(unit.productId)?.row ?? {}),
-        onRevision: (unit, field) => revisions.push({ productId: unit.productId, field: unit.field, value: field }),
+        onRevision: (unit, field) => {
+          revisions.push({ productId: unit.productId, field: unit.field, value: field })
+          // ⚠ Le champ du produit est REMPLACÉ en mémoire : sans ça, une seconde vague sur
+          // le même champ relirait le texte d'origine et l'amélioration s'appliquerait à
+          // l'allemand au lieu de la traduction.
+          const tg = byId.get(unit.productId)
+          if (tg) tg.fields[unit.field] = field
+        },
         // Une proposition refusée n'est PAS un incident : c'est la vérification qui fait son
         // travail. Elle est tracée pour que l'écran de comparaison puisse l'expliquer, sans
         // faire passer le run en erreur.
@@ -245,7 +258,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown }, EnrichOutp
         capUsd: config.capUsd > 0 ? config.capUsd : undefined,
         onChunkDone: (done, total) => ctx.log('info', t('run.textEnrich.progress', { done, total })),
         now: () => at,
-      })
+      }), { limit: Number(config.maxUnits) > 0 ? Number(config.maxUnits) : undefined })
     } finally {
       popUsage()
     }

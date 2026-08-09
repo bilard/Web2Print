@@ -76,15 +76,19 @@ describe('ce qui empêche de partir', () => {
     expect(configProblem(cfg({ plans: [plan({ kind: 'translate', prompt: '' })] }))).toBeNull()
   })
 
-  it('⚠ refuse DEUX plans sur la même colonne', () => {
-    // C'est une collision, pas un enchaînement : les unités sont identifiées par
-    // `produit::champ`, sans le plan. Le prompt porterait deux fois le même identifiant,
-    // la réponse en écraserait une, et les deux écritures viseraient la même cellule dans
-    // le même lot. On paierait deux fois pour un seul résultat — tiré du texte d'origine
-    // dans les deux cas, puisque les unités sont toutes calculées avant le premier appel.
-    expect(configProblem(cfg({
-      plans: [plan({ kind: 'translate' }), plan({ kind: 'improve' })],
-    }))).toEqual({ code: 'duplicate-key', key: 'nom' })
+  it('⚠ ACCEPTE deux plans sur la même colonne : traduire puis améliorer', () => {
+    // Ils ne se marchent plus dessus parce qu'ils ne partent plus ensemble — `planWaves`
+    // les range en vagues successives, et la seconde travaille sur le texte révisé par la
+    // première. La règle qui les interdisait valait tant que toutes les unités étaient
+    // calculées d'avance.
+    const cfg = {
+      ...DEFAULT_TEXT_ENRICH_CONFIG, projectId: 'p',
+      plans: [
+        { enabled: true, key: 'nom', kind: 'translate' as const, prompt: '', promptVersion: 'v1', minLength: 0 },
+        { enabled: true, key: 'nom', kind: 'improve' as const, prompt: 'Structure le libellé.', promptVersion: 'v1', minLength: 0 },
+      ],
+    }
+    expect(configProblem(cfg)).toBeNull()
   })
 
   it('accepte les mêmes natures sur des colonnes différentes', () => {

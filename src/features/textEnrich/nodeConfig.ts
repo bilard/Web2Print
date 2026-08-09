@@ -131,7 +131,7 @@ export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
 
 /** Ce qui empêche le passage de partir. Vérifié AVANT le premier appel : découvrir une
  *  consigne vide après trois cents fiches coûte de l'argent et une révision à annuler. */
-type ProblemCode = 'no-project' | 'no-plan' | 'no-prompt' | 'duplicate-key'
+type ProblemCode = 'no-project' | 'no-plan' | 'no-prompt'
 
 /** Le problème, et LA COLONNE en cause quand il y en a une. Sans elle, « une consigne est
  *  vide » envoie chercher parmi quatre lignes repliées — et le message est le seul retour
@@ -157,23 +157,12 @@ export function configProblem(
   // inventerait un style, et l'écrirait dans les fiches.
   const promptless = plans.find((p) => p.kind !== 'translate' && str(p.prompt).trim() === '')
   if (promptless) return { code: 'no-prompt', key: promptless.key }
-  // ⚠ DEUX PLANS SUR LA MÊME COLONNE, C'EST UNE COLLISION, pas un enchaînement.
-  // Les unités d'un lot sont identifiées par `produit::champ` — le plan n'entre pas dans
-  // la clé. Deux plans sur `nom` produisent donc deux unités indiscernables : le prompt
-  // porte deux fois le même identifiant, la réponse du modèle en écrase une, et les deux
-  // écritures visent la même cellule dans le même lot Firestore. On paie deux fois pour
-  // un seul résultat, tiré du texte d'origine dans les deux cas — le second plan ne voit
-  // JAMAIS le travail du premier, puisque les unités sont toutes calculées d'avance.
-  //
-  // Traduire PUIS étoffer un même champ se fait donc en deux passages, ce que le marqueur
-  // d'idempotence rend naturel : après la traduction le champ porte `translate:fr:v1`, un
-  // plan `improve` le retrouve éligible. C'est cette règle qui remplace l'ancienne
-  // vérification d'ordre, laquelle croyait l'enchaînement possible en un passage.
-  const seen = new Set<string>()
-  for (const p of plans) {
-    if (seen.has(p.key)) return { code: 'duplicate-key', key: p.key }
-    seen.add(p.key)
-  }
+  // ⚠ Deux plans sur la même colonne sont désormais AUTORISÉS, et c'est le geste normal :
+  // traduire puis améliorer un même champ. Ils ne se marchent plus dessus parce qu'ils ne
+  // partent plus ensemble — `planWaves` les range en vagues successives, et les textes
+  // révisés d'une vague deviennent l'entrée de la suivante. La règle qui les interdisait
+  // valait tant que toutes les unités étaient calculées d'avance : la seconde repartait
+  // alors du texte d'origine, et on payait deux fois pour un seul résultat.
   return null
 }
 
