@@ -539,7 +539,13 @@ export function NodeConfigPanel() {
                   const isWired = (port: string) => (wf?.edges ?? []).some((e) => e.target === node.id && e.targetHandle === port)
                   const off = f.disabledWhen?.(node.config as Record<string, unknown>, isWired) ?? false
                   return (
-                  <label key={f.name} className={`block ${off ? 'opacity-40 pointer-events-none select-none' : ''}`}>
+                  // ⚠⚠ Une <div>, PAS un <label>. Un label sans `for` réémet le clic vers le
+                  // PREMIER contrôle labelable qu'il contient — et `<button>` en est un. Sur
+                  // les champs composites (les sept pastilles de jours, les listes de
+                  // colonnes), chaque clic déclenchait donc DEUX bascules : celle du bouton
+                  // visé, puis celle du premier de la rangée. Effet net : rien ne bougeait,
+                  // et régler les jours d'une cadence était impossible.
+                  <div key={f.name} className={`block ${off ? 'opacity-40 pointer-events-none select-none' : ''}`}>
                     <span className="text-xs text-white/60 mb-1 block">
                       {f.labelKey ? t(f.labelKey) : f.label}{off ? <span className="text-[10px] text-amber-400/70 ml-2">— {f.disabledNoteKey ? t(f.disabledNoteKey) : f.disabledNote ?? t('wfn.noEffectHere')}</span> : null}
                     </span>
@@ -555,7 +561,7 @@ export function NodeConfigPanel() {
                       }
                     />
                     {(f.helpKey || f.help) ? <span className="text-[11px] text-white/30 mt-1 block">{f.helpKey ? t(f.helpKey) : f.help}</span> : null}
-                  </label>
+                  </div>
                   )
                 })
               )}
