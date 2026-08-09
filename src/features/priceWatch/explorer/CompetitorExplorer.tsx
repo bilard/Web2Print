@@ -227,13 +227,17 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
     () => (catalogMode ? filterCatalog(source.products, filter.q, []) : []),
     [catalogMode, source.products, filter.q],
   )
+  // ⚠ Gardés par `catalogMode`, comme la passe au-dessus : ces filtres traversent les
+  // 115 814 produits SUR LE CHEMIN DE RENDU. Les laisser tourner face à un concurrent
+  // ajoutait une recherche complète + cinq passes de comptage à chaque clic dans l'arbre,
+  // pour un résultat que rien n'affiche.
   const catalogFound = useMemo(
-    () => (filter.path.length === 0 ? catalogBeforeTaxo : filterCatalog(source.products, filter.q, filter.path)),
-    [catalogBeforeTaxo, filter.path, source.products, filter.q],
+    () => (!catalogMode ? [] : filter.path.length === 0 ? catalogBeforeTaxo : filterCatalog(source.products, filter.q, filter.path)),
+    [catalogMode, catalogBeforeTaxo, filter.path, source.products, filter.q],
   )
   const catFacts = useMemo(
-    () => catalogFacts(source.products, catalogFound),
-    [source.products, catalogFound],
+    () => catalogFacts(catalogMode ? source.products : [], catalogFound),
+    [catalogMode, source.products, catalogFound],
   )
   // L'arbre classe les CHEMINS de ce qui est affiché : ceux du catalogue quand c'est lui
   // qu'on parcourt, ceux des fiches appariées face à un concurrent.
