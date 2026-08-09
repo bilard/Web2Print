@@ -15,12 +15,12 @@ const DEFAULT_MAX_TOKENS = 8192
 /** DeepSeek (OpenAI-compatible) avec JSON natif (response_format json_object) :
  *  garantit une réponse JSON pure (pas de prose ni de bloc markdown) → parse direct
  *  fiable. deepseek-chat plafonne à 8192 tokens de sortie → clamp. */
-async function callDeepSeek(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
+async function callDeepSeek(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model,
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       max_tokens: Math.min(maxTokens, 8192),
@@ -32,11 +32,11 @@ async function callDeepSeek(key: string, prompt: string, maxTokens: number): Pro
   return { text: c?.message?.content ?? '', stopReason: c?.finish_reason }
 }
 
-async function callAnthropic(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
+async function callAnthropic(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: 'claude-opus-4-7', max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
   })
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`)
   const json = (await res.json()) as { content?: { text?: string }[]; stop_reason?: string }
@@ -44,12 +44,12 @@ async function callAnthropic(key: string, prompt: string, maxTokens: number): Pr
 }
 
 /** OpenAI (gpt-5.1) avec JSON natif. Les modèles gpt-5.x utilisent max_completion_tokens. */
-async function callOpenAI(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
+async function callOpenAI(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
-      model: 'gpt-5.1',
+      model,
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       max_completion_tokens: maxTokens,
@@ -61,9 +61,9 @@ async function callOpenAI(key: string, prompt: string, maxTokens: number): Promi
   return { text: c?.message?.content ?? '', stopReason: c?.finish_reason }
 }
 
-async function callGemini(key: string, prompt: string, maxTokens: number): Promise<{ text: string; stopReason?: string }> {
+async function callGemini(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${key}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -80,7 +80,7 @@ async function callGemini(key: string, prompt: string, maxTokens: number): Promi
 }
 
 /** Providers supportés côté serveur : keyId (users/{uid}.apiKeys.overrides), modèle, appel. */
-const PROVIDERS: Record<string, { keyId: string; model: string; call: (key: string, prompt: string, max: number) => Promise<{ text: string; stopReason?: string }> }> = {
+const PROVIDERS: Record<string, { keyId: string; model: string; call: (key: string, prompt: string, max: number, model: string) => Promise<{ text: string; stopReason?: string }> }> = {
   deepseek: { keyId: 'deepseek', model: 'deepseek-chat', call: callDeepSeek },
   gemini: { keyId: 'gemini', model: 'gemini-3.1-pro-preview', call: callGemini },
   openai: { keyId: 'openai', model: 'gpt-5.1', call: callOpenAI },
@@ -90,13 +90,28 @@ const PROVIDERS: Record<string, { keyId: string; model: string; call: (key: stri
 
 /** Cascade de raisonnement de l'utilisateur (users/{uid}.aiSettings.reasoningCascade).
  *  Défaut sans Anthropic (épuisé / hors choix par défaut). */
-async function getCascade(uid: string): Promise<string[]> {
+async function getCascade(uid: string): Promise<{ cascade: string[]; models: Record<string, string> }> {
   try {
     const snap = await getFirestore().doc(`users/${uid}`).get()
-    const c = (snap.data()?.aiSettings as { reasoningCascade?: unknown })?.reasoningCascade
-    if (Array.isArray(c) && c.length > 0) return c.map(String)
+    const ai = snap.data()?.aiSettings as {
+      reasoningCascade?: unknown
+      selectedModel?: Record<string, unknown>
+    } | undefined
+    const c = ai?.reasoningCascade
+    // ⚠⚠ Le MODÈLE choisi par l'utilisateur, pas celui codé en dur. Les réglages IA
+    // laissent choisir « deepseek-v4-flash » et le cron appelait « deepseek-chat » : le
+    // réglage n'avait aucun effet côté serveur, et personne ne pouvait le deviner — sur
+    // 200 000 champs, le modèle décide de la facture ET de la qualité.
+    const models: Record<string, string> = {}
+    for (const [k, v] of Object.entries(ai?.selectedModel ?? {})) {
+      if (typeof v === 'string' && v.trim()) models[k] = v.trim()
+    }
+    return {
+      cascade: Array.isArray(c) && c.length > 0 ? c.map(String) : ['deepseek', 'gemini', 'openai'],
+      models,
+    }
   } catch { /* défaut */ }
-  return ['deepseek', 'gemini', 'openai']
+  return { cascade: ['deepseek', 'gemini', 'openai'], models: {} }
 }
 
 /** Ordre d'essai des providers : les `prefer` en tête (modèles plus fiables pour une
@@ -112,7 +127,7 @@ export function buildProviderOrder(prefer: string[], cascade: string[]): string[
  *  place certains providers en tête sans casser le repli sur la cascade. */
 export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: number; preferProviders?: string[] } = {}): Promise<LlmResult> {
   const maxTokens = opts.maxTokens ?? DEFAULT_MAX_TOKENS
-  const cascade = await getCascade(uid)
+  const { cascade, models } = await getCascade(uid)
   const order = buildProviderOrder(opts.preferProviders ?? [], cascade)
   for (const provider of order) {
     const p = PROVIDERS[provider]
@@ -120,8 +135,11 @@ export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: n
     const key = await getUserApiKey(uid, p.keyId)
     if (!key) continue
     try {
-      const r = await p.call(key, prompt, maxTokens)
-      if (r.text.trim()) return { text: r.text, provider, model: p.model, stopReason: r.stopReason }
+      // `anthropic` et `claude` désignent le même fournisseur : le réglage est rangé
+      // sous la clé d'API, pas sous l'alias de cascade.
+      const chosen = models[provider] ?? models[p.keyId] ?? p.model
+      const r = await p.call(key, prompt, maxTokens, chosen)
+      if (r.text.trim()) return { text: r.text, provider, model: chosen, stopReason: r.stopReason }
     } catch (e) {
       console.warn(`[llm] ${provider} KO → provider suivant :`, e instanceof Error ? e.message.slice(0, 200) : e)
     }
