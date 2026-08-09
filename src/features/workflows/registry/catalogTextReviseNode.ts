@@ -24,6 +24,8 @@ import {
 } from '@/features/priceWatch/textEnrich/screenPrompt'
 import { findViolations } from '@/features/textEnrich/protected'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
+import { CatalogTextReviseConfigPanel } from './catalogTextReviseConfig'
+import { plansToFieldTasks, DEFAULT_REVISE_PLANS, type RevisePlan } from './catalogTextReviseTypes'
 import { t } from '@/lib/i18n'
 
 /** Même plafond que l'écran : la réponse pèse au moins autant que l'entrée, plus la note
@@ -33,19 +35,9 @@ const MAX_OUTPUT_TOKENS = 16000
 
 interface Config {
   watchId: string
-  /** ⚠ Une case et une consigne par CHAMP **et** par OPÉRATION. Traduire et améliorer
-   *  n'appellent pas les mêmes mots, et le nom n'appelle pas la même demande que le texte
-   *  de vente. Cocher les deux sur un champ le traduit PUIS le réécrit dans le MÊME appel :
-   *  le second travail voit le premier, là où deux passages séparés repartaient chacun du
-   *  texte d'origine — et facturaient deux fois. */
-  nameTranslate: boolean
-  nameTranslatePrompt: string
-  nameImprove: boolean
-  nameImprovePrompt: string
-  descTranslate: boolean
-  descTranslatePrompt: string
-  descImprove: boolean
-  descImprovePrompt: string
+  /** ⚠ Une LISTE de plans, comme sur « Enrichir les textes ». Deux plans sur le même
+   *  champ (traduire puis améliorer) sont ici la manière normale de travailler. */
+  plans: RevisePlan[]
   scope: 'foreign' | 'foreignPlus' | 'all'
   /** Reprendre les fiches dont le texte d'origine a changé depuis la réécriture. */
   refreshStale: boolean
@@ -84,14 +76,6 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
   outputColumns: ['produit', 'motif', 'avant', 'apres', 'justification'],
   configSchema: [
     { name: 'watchId', kind: 'text', labelKey: 'node.catalog-text-revise.watchId', helpKey: 'node.catalog-text-revise.watchId.help' },
-    { name: 'nameTranslate', kind: 'checkbox', labelKey: 'node.catalog-text-revise.nameTranslate', helpKey: 'node.catalog-text-revise.name.help', default: true },
-    { name: 'nameTranslatePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.nameTranslatePrompt' },
-    { name: 'nameImprove', kind: 'checkbox', labelKey: 'node.catalog-text-revise.nameImprove', default: false },
-    { name: 'nameImprovePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.nameImprovePrompt', helpKey: 'node.catalog-text-revise.nameImprovePrompt.help' },
-    { name: 'descTranslate', kind: 'checkbox', labelKey: 'node.catalog-text-revise.descTranslate', helpKey: 'node.catalog-text-revise.desc.help', default: true },
-    { name: 'descTranslatePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.descTranslatePrompt' },
-    { name: 'descImprove', kind: 'checkbox', labelKey: 'node.catalog-text-revise.descImprove', default: false },
-    { name: 'descImprovePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.descImprovePrompt', helpKey: 'node.catalog-text-revise.descImprovePrompt.help' },
     {
       name: 'scope', kind: 'select', labelKey: 'node.catalog-text-revise.scope', default: 'foreign',
       options: [
@@ -104,42 +88,27 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
     { name: 'maxUnits', kind: 'number', labelKey: 'node.catalog-text-revise.maxUnits', helpKey: 'node.catalog-text-revise.maxUnits.help', default: 500 },
   ],
   defaultConfig: {
-    watchId: '',
-    nameTranslate: true, nameTranslatePrompt: '', nameImprove: false, nameImprovePrompt: '',
-    descTranslate: true, descTranslatePrompt: '', descImprove: false, descImprovePrompt: '',
+    watchId: '', plans: DEFAULT_REVISE_PLANS,
     scope: 'foreign', refreshStale: true, maxUnits: 500,
   },
   cardSummary: (c) => {
-    const ops = (tr: boolean, im: boolean) => [
-      tr && t('node.catalog-text-revise.mode.translate'),
-      im && t('node.catalog-text-revise.mode.improve'),
-    ].filter(Boolean).join(' + ')
-    const parts = [
-      ops(c.nameTranslate, c.nameImprove) && `${t('node.catalog-text-revise.sum.name')} ${ops(c.nameTranslate, c.nameImprove)}`,
-      ops(c.descTranslate, c.descImprove) && `${t('node.catalog-text-revise.sum.desc')} ${ops(c.descTranslate, c.descImprove)}`,
-    ].filter(Boolean)
-    return parts.length > 0
-      ? t('node.catalog-text-revise.sum', { modes: parts.join(' · '), max: c.maxUnits || 0 })
-      : t('node.catalog-text-revise.sum.nothing')
+    const on = (c.plans ?? []).filter((p) => p.enabled)
+    if (on.length === 0) return t('node.catalog-text-revise.sum.nothing')
+    const label = (p: RevisePlan) =>
+      `${t(`node.catalog-text-revise.field.${p.field}` as 'node.catalog-text-revise.field.name')} ${t(`node.catalog-text-revise.mode.${p.kind}` as 'node.catalog-text-revise.mode.translate')}`
+    return t('node.catalog-text-revise.sum', { modes: on.map(label).join(' · '), max: c.maxUnits || 0 })
   },
+  ConfigComponent: CatalogTextReviseConfigPanel,
   runtime: 'client',
 
   async run(ctx, config) {
     const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     const watchId = deriveWatchId(config.watchId, ctx.workflowId)
-    const fields = {
-      name: {
-        translate: config.nameTranslate, improve: config.nameImprove,
-        translatePrompt: config.nameTranslatePrompt ?? '', improvePrompt: config.nameImprovePrompt ?? '',
-      },
-      description: {
-        translate: config.descTranslate, improve: config.descImprove,
-        translatePrompt: config.descTranslatePrompt ?? '', improvePrompt: config.descImprovePrompt ?? '',
-      },
+    const fields = plansToFieldTasks(config.plans ?? [])
+    if (![fields.name, fields.description].some((f) => f.translate || f.improve)) {
+      throw new Error(t('run.catalogTextRevise.noMode'))
     }
-    const asked = [fields.name, fields.description].some((f) => f.translate || f.improve)
-    if (!asked) throw new Error(t('run.catalogTextRevise.noMode'))
 
     const src = await loadSourceCatalog(uid, watchId)
     if (!src) throw new Error(t('run.catalogTextRevise.noCatalog', { watchId }))

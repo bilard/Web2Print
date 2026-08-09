@@ -12,6 +12,7 @@ import { loadTextRevisions, saveTextRevisions, type TextRevision } from '../../p
 import { reviseQueue } from '../../priceWatch/textEnrich/staleRevision'
 import { chunkByVolume } from '../../priceWatch/textEnrich/chunkByVolume'
 import { buildScreenPrompt } from '../../priceWatch/textEnrich/screenPrompt'
+import { plansToFieldTasks, DEFAULT_REVISE_PLANS, type RevisePlan } from '../../priceWatch/textEnrich/revisePlans'
 import { findViolations } from '../../textEnrich/protected'
 import { detectLanguage } from '../../textEnrich/detectLang'
 import { stableId } from '../../priceWatch/helpers'
@@ -35,21 +36,11 @@ interface LlmResult { id?: unknown; name?: unknown; description?: unknown; note?
 registerServerNode({
   type: 'catalog-text-revise',
   run: async (ctx, config) => {
-    // ⚠ Une case et une consigne par CHAMP **et** par OPÉRATION, comme au navigateur.
-    // Cocher les deux sur un champ le traduit PUIS le réécrit dans le MÊME appel.
-    const on = (v: unknown, dflt: boolean) => (v === undefined ? dflt : v !== false)
-    const fields = {
-      name: {
-        translate: on(config.nameTranslate, true), improve: config.nameImprove === true,
-        translatePrompt: String(config.nameTranslatePrompt ?? ''),
-        improvePrompt: String(config.nameImprovePrompt ?? ''),
-      },
-      description: {
-        translate: on(config.descTranslate, true), improve: config.descImprove === true,
-        translatePrompt: String(config.descTranslatePrompt ?? ''),
-        improvePrompt: String(config.descImprovePrompt ?? ''),
-      },
-    }
+    // ⚠ Les MÊMES plans qu'au navigateur : une ligne par champ et par opération, deux
+    // lignes sur un champ = traduire puis améliorer dans le même appel.
+    const fields = plansToFieldTasks(
+      Array.isArray(config.plans) ? (config.plans as RevisePlan[]) : DEFAULT_REVISE_PLANS,
+    )
     if (![fields.name, fields.description].some((f) => f.translate || f.improve)) {
       throw new Error(t(ctx.locale, 'run.catalogTextRevise.noMode'))
     }

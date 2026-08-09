@@ -35,6 +35,7 @@ const TWINS: [string, string][] = [
   ['src/features/priceWatch/textEnrich/staleRevision.ts', 'functions/src/priceWatch/textEnrich/staleRevision.ts'],
   ['src/features/textEnrich/protected.ts', 'functions/src/textEnrich/protected.ts'],
   ['src/features/textEnrich/detectLang.ts', 'functions/src/textEnrich/detectLang.ts'],
+  ['src/features/workflows/registry/catalogTextReviseTypes.ts', 'functions/src/priceWatch/textEnrich/revisePlans.ts'],
 ]
 
 describe('jumeaux serveur de « Traduire et étoffer les fiches »', () => {
