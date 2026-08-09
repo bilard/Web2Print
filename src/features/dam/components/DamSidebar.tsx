@@ -25,10 +25,15 @@ export function DamSidebar() {
   const { filters, setFilters } = useDamStore()
 
   return (
-    <div className="w-[220px] bg-surface-2 border-r border-white/5 p-4 flex flex-col gap-4 overflow-y-auto shrink-0">
-      <DamSearchBar />
-      <DamSearchByImage />
+    <div className="w-[220px] bg-surface-2 border-r border-white/5 flex flex-col shrink-0 min-h-0">
+      {/* ⚠ La recherche est HORS du flux défilant : elle glissait hors de vue au premier
+          défilement des filtres, alors que c'est par elle qu'on entre dans l'écran. */}
+      <div className="p-4 pb-3 flex flex-col gap-4 shrink-0 border-b border-white/5">
+        <DamSearchBar />
+        <DamSearchByImage />
+      </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
       <div>
         <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">{t('dam.meta.source')}</div>
         <div className="flex flex-wrap gap-1">
@@ -82,6 +87,7 @@ export function DamSidebar() {
             />
           ))}
         </div>
+      </div>
       </div>
     </div>
   )

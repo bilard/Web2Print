@@ -371,7 +371,7 @@ export default function DashboardPage() {
         aria-label={t('dashboard.mainMenu')}
       >
         {/* Logo (clic = toggle sidebar) */}
-        <div className={`py-4 flex items-center ${sidebarOpen ? 'px-4' : 'px-0 justify-center'}`}>
+        <div className={`py-4 flex items-center shrink-0 ${sidebarOpen ? 'px-4' : 'px-0 justify-center'}`}>
           <button
             onClick={toggleSidebar}
             className={`flex items-center rounded-md transition-colors hover:bg-white/[0.04] ${sidebarOpen ? 'gap-2 flex-1 min-w-0 px-1 py-1 -mx-1' : 'p-1'}`}
@@ -391,7 +391,7 @@ export default function DashboardPage() {
             le bloc utilisateur (avatar/réglages/déconnexion) hors de l'écran. */}
         <nav
           data-tour="sidebar"
-          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 min-h-0 overflow-y-auto overscroll-contain`}
+          className={`${sidebarOpen ? 'px-2' : 'px-1.5'} pb-3 space-y-0.5 flex-1 min-h-0 overflow-y-auto overscroll-contain`}
           aria-label={t('dashboard.moduleNav')}
         >
           {sidebarOpen ? (
