@@ -102,3 +102,19 @@ describe('fenêtre d’envoi', () => {
     expect(describeWindow(c)).toBe('À chaque run')
   })
 })
+
+// ⚠⚠ Le piège qui envoyait le rapport le dimanche seulement. « Tous les jours » est
+// stocké VIDE par convention ; `''.split(/[,\s]+/)` rend `['']` et `Number('')` vaut zéro,
+// c'est-à-dire dimanche. Le réglage le plus courant se transformait donc en son contraire,
+// en silence — et l'écran relisait « Tous » comme « dim », ce qui rendait le bouton
+// inopérant en apparence.
+describe('jours vides = TOUS les jours, jamais dimanche', () => {
+  it('une chaîne vide ne désigne aucun jour', () => {
+    const parse = (v: string) => v.split(/[,\s]+/).filter(Boolean).map(Number)
+      .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    expect(parse('')).toEqual([])
+    expect(parse('   ')).toEqual([])
+    expect(parse('0')).toEqual([0])
+    expect(parse('1,2,3,4,5')).toEqual([1, 2, 3, 4, 5])
+  })
+})

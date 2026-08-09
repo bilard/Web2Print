@@ -23,8 +23,13 @@ function closedReason(v: WindowVerdict, cfg: SendWindowConfig, locale: Locale): 
 }
 
 function toConfig(c: Record<string, unknown>, locale: Locale): SendWindowConfig {
+    // ⚠⚠ `filter(Boolean)` AVANT la conversion : `''.split(/[,\s]+/)` rend `['']`, et
+    // `Number('')` vaut ZÉRO — c'est-à-dire DIMANCHE. Une cadence réglée sur « tous les
+    // jours » (stocké vide, par convention) n'envoyait donc que le dimanche, en silence,
+    // et le réglage « Tous » était impossible à poser : l'écran le relisait aussitôt
+    // comme « dim ».
   const weekdays = String(c.weekdays ?? '')
-    .split(/[,\s]+/).map((v) => Number(v)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    .split(/[,\s]+/).filter(Boolean).map((v) => Number(v)).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
   return {
     frequency: (String(c.frequency ?? '') || DEFAULT_SEND_WINDOW.frequency) as SendFrequency,
     atTime: String(c.atTime ?? '').trim(),

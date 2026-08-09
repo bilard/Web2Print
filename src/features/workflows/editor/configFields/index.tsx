@@ -151,8 +151,12 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
  * dernier jour y revient aussi — les deux états sont le même, autant n'en montrer qu'un.
  */
 function WeekdaysField({ value, onChange }: FieldProps) {
+  // ⚠⚠ `filter(Boolean)` AVANT la conversion : `''.split(/[,\s]+/)` rend `['']` et
+  // `Number('')` vaut ZÉRO, donc DIMANCHE. « Tous les jours » (stocké vide) se relisait
+  // en « dimanche seulement » — cliquer « Tous » semblait ne rien faire, alors que la
+  // valeur était bien écrite puis aussitôt mal relue.
   const picked = String(value ?? '')
-    .split(/[,\s]+/).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    .split(/[,\s]+/).filter(Boolean).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
   const all = picked.length === 0
   const commit = (days: number[]) => {
     const kept = WEEK_ORDER.filter((d) => days.includes(d))
