@@ -35,23 +35,22 @@ interface LlmResult { id?: unknown; name?: unknown; description?: unknown; note?
 registerServerNode({
   type: 'catalog-text-revise',
   run: async (ctx, config) => {
-    // ⚠ UN traitement et UNE consigne PAR CHAMP, comme au navigateur : le nom et le texte
-    // de vente n'appellent pas la même demande.
-    const mode = (v: unknown): 'translate' | 'improve' | 'both' =>
-      v === 'improve' || v === 'both' ? v : 'translate'
+    // ⚠ Une case et une consigne par CHAMP **et** par OPÉRATION, comme au navigateur.
+    // Cocher les deux sur un champ le traduit PUIS le réécrit dans le MÊME appel.
+    const on = (v: unknown, dflt: boolean) => (v === undefined ? dflt : v !== false)
     const fields = {
       name: {
-        enabled: config.doName !== false,
-        mode: mode(config.nameMode),
-        prompt: String(config.namePrompt ?? ''),
+        translate: on(config.nameTranslate, true), improve: config.nameImprove === true,
+        translatePrompt: String(config.nameTranslatePrompt ?? ''),
+        improvePrompt: String(config.nameImprovePrompt ?? ''),
       },
       description: {
-        enabled: config.doDescription !== false,
-        mode: mode(config.descriptionMode),
-        prompt: String(config.descriptionPrompt ?? ''),
+        translate: on(config.descTranslate, true), improve: config.descImprove === true,
+        translatePrompt: String(config.descTranslatePrompt ?? ''),
+        improvePrompt: String(config.descImprovePrompt ?? ''),
       },
     }
-    if (!fields.name.enabled && !fields.description.enabled) {
+    if (![fields.name, fields.description].some((f) => f.translate || f.improve)) {
       throw new Error(t(ctx.locale, 'run.catalogTextRevise.noMode'))
     }
 

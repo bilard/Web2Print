@@ -41,25 +41,37 @@ describe('schéma de réponse', () => {
   })
 })
 
-describe('consignes PAR CHAMP', () => {
+describe('consignes PAR CHAMP et PAR OPÉRATION', () => {
   const P = [{ id: '1', name: 'BOBINEAU', description: 'Bobineau adaptable FLYMO' }]
-  const tasks = (over: Partial<Record<'name' | 'description', Partial<FieldTask>>> = {}) => ({
-    name: { enabled: true, mode: 'translate' as const, prompt: '', ...over.name },
-    description: { enabled: true, mode: 'improve' as const, prompt: '', ...over.description },
+  const task = (over: Partial<FieldTask> = {}): FieldTask =>
+    ({ translate: false, improve: false, translatePrompt: '', improvePrompt: '', ...over })
+  const build = (name: FieldTask, description: FieldTask) =>
+    buildScreenPrompt(P, '', { translate: true, improve: false }, { name, description })
+
+  it('⚠ traduit PUIS améliore le même champ, en UN appel, avec les deux consignes', () => {
+    const out = build(
+      task({ translate: true, improve: true, translatePrompt: 'Garde les réfs.', improvePrompt: 'Structure : Nom - Modèle - REF.' }),
+      task({ translate: true }),
+    )
+    expect(out).toContain('- nom : traduis en français ce qui ne l’est pas, PUIS réécris-le')
+    expect(out).toContain('· pour la traduction du nom : Garde les réfs.')
+    expect(out).toContain('· pour la réécriture du nom : Structure : Nom - Modèle - REF.')
   })
 
-  it('donne à chaque champ SA consigne, jamais celle de l’autre', () => {
-    const out = buildScreenPrompt(P, '', { translate: true, improve: false }, tasks({
-      name: { prompt: 'Structure : Nom - Modèle - REF.' },
-      description: { prompt: 'Liste les adaptables et les origines.' },
-    }))
-    expect(out).toContain('- nom : traduis-le en français, sans rien réécrire d’autre. Structure : Nom - Modèle - REF.')
-    expect(out).toContain('- description : réécris-le pour qu’il se lise et qu’il vende, en français. Liste les adaptables et les origines.')
+  it('une consigne ne fuit pas vers l’opération qu’elle ne vise pas', () => {
+    const out = build(task({ translate: true, improvePrompt: 'NE DOIT PAS APPARAÎTRE' }), task({ improve: true }))
+    expect(out).not.toContain('NE DOIT PAS APPARAÎTRE')
   })
 
-  it('⚠ un champ désactivé est NOMMÉ, pas tu : le modèle doit savoir qu’il le recopie', () => {
-    // Passé sous silence, il comble le vide en le réécrivant quand même.
-    const out = buildScreenPrompt(P, '', { translate: true, improve: false }, tasks({ name: { enabled: false } }))
+  it('chaque champ garde SA demande', () => {
+    const out = build(task({ translate: true }), task({ improve: true, improvePrompt: 'Liste les adaptables.' }))
+    expect(out).toContain('- nom : traduis-le en français, sans rien réécrire d’autre.')
+    expect(out).toContain('- description : réécris-le pour qu’il se lise et qu’il vende, en français.')
+    expect(out).toContain('· pour la réécriture du description : Liste les adaptables.')
+  })
+
+  it('⚠ un champ sans opération est NOMMÉ, pas tu : sinon le modèle le réécrit quand même', () => {
+    const out = build(task(), task({ translate: true }))
     expect(out).toContain('- nom : recopie-le EXACTEMENT, sans y toucher.')
   })
 

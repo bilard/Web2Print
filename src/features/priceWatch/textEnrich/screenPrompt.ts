@@ -63,19 +63,22 @@ export interface ScreenModes {
 }
 
 /**
- * Traitement demandé pour UN champ, avec sa consigne propre.
+ * Ce qu'on demande pour UN champ, avec une consigne par OPÉRATION.
  *
- * ⚠ Le nom et le texte de vente n'appellent pas la même demande — « Nom - Discriminant -
- * Modèle - REF » pour l'un, « liste les adaptables et les origines » pour l'autre. Une
- * consigne unique pour les deux forçait à écrire l'union des deux demandes, que le modèle
- * applique alors aux deux champs : le nom héritait des listes destinées à la description.
+ * ⚠ Traduire et améliorer sont deux demandes distinctes sur le même texte, et elles
+ * n'appellent pas les mêmes mots : « garde les références telles quelles » pour la
+ * traduction, « liste les adaptables et les origines » pour la réécriture. Une consigne
+ * unique obligeait à écrire l'union des deux, que le modèle appliquait alors aux deux
+ * opérations. Et les deux partent dans le MÊME appel : le second travail voit le premier,
+ * là où deux passages séparés repartaient chacun du texte d'origine.
  */
 export interface FieldTask {
-  /** Le champ est traité. Faux = le modèle le recopie tel quel. */
-  enabled: boolean
-  mode: 'translate' | 'improve' | 'both'
-  /** Consigne PROPRE à ce champ, recopiée telle quelle. */
-  prompt: string
+  translate: boolean
+  improve: boolean
+  /** Consigne de TRADUCTION, recopiée telle quelle. */
+  translatePrompt: string
+  /** Consigne de RÉÉCRITURE, recopiée telle quelle. */
+  improvePrompt: string
 }
 
 export interface FieldTasks {
@@ -83,31 +86,41 @@ export interface FieldTasks {
   description: FieldTask
 }
 
-const VERB: Record<FieldTask['mode'], string> = {
-  translate: 'traduis-le en français, sans rien réécrire d’autre',
-  improve: 'réécris-le pour qu’il se lise et qu’il vende, en français',
-  both: 'traduis-le en français ce qui ne l’est pas, PUIS réécris-le pour qu’il se lise et qu’il vende',
-}
-
-/** La tâche CHAMP PAR CHAMP. Un champ désactivé est nommé lui aussi : le modèle doit
+/** La tâche CHAMP PAR CHAMP. Un champ sans opération est nommé lui aussi : le modèle doit
  *  savoir qu'il le recopie, sinon il comble le silence en le réécrivant quand même. */
 function fieldLines(tasks: FieldTasks): string[] {
-  const one = (label: string, key: 'name' | 'description') => {
+  const one = (label: string, key: 'name' | 'description'): string[] => {
     const task = tasks[key]
-    if (!task.enabled) return `- ${label} : recopie-le EXACTEMENT, sans y toucher.`
-    const consigne = task.prompt.trim()
-    return `- ${label} : ${VERB[task.mode]}.${consigne ? ` ${consigne}` : ''}`
+    if (!task.translate && !task.improve) {
+      return [`- ${label} : recopie-le EXACTEMENT, sans y toucher.`]
+    }
+    const verb = task.translate && task.improve
+      ? 'traduis en français ce qui ne l’est pas, PUIS réécris-le pour qu’il se lise et qu’il vende'
+      : task.translate
+        ? 'traduis-le en français, sans rien réécrire d’autre'
+        : 'réécris-le pour qu’il se lise et qu’il vende, en français'
+    const out = [`- ${label} : ${verb}.`]
+    // Chaque consigne est rattachée à SON opération : mêlées, elles se contaminent.
+    if (task.translate && task.translatePrompt.trim()) {
+      out.push(`  · pour la traduction du ${label} : ${task.translatePrompt.trim()}`)
+    }
+    if (task.improve && task.improvePrompt.trim()) {
+      out.push(`  · pour la réécriture du ${label} : ${task.improvePrompt.trim()}`)
+    }
+    return out
   }
   return [
     'Pour chaque produit ci-dessous, champ par champ :',
-    one('nom', 'name'),
-    one('description', 'description'),
+    ...one('nom', 'name'),
+    ...one('description', 'description'),
     'Améliorer veut dire : des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Cela ne veut JAMAIS dire ajouter une caractéristique que le texte d’origine ne porte pas.',
   ]
 }
 
-/** La tâche demandée au modèle, selon les cases cochées. Aucune n'est cochée = on ne
- *  lance pas (l'écran désactive le bouton), donc ce cas ne se rend jamais. */
+/** La tâche demandée au modèle, selon les cases cochées. C'est le chemin de l'ÉCRAN, qui
+ *  pilote les deux champs d'un seul geste ; la carte de workflow, elle, passe des consignes
+ *  par champ et par opération. Aucune case cochée = on ne lance pas (l'écran désactive le
+ *  bouton), donc ce cas ne se rend jamais. */
 function taskLines(modes: ScreenModes): string[] {
   if (modes.translate && modes.improve) {
     return [

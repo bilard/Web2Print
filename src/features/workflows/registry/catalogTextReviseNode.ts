@@ -33,16 +33,19 @@ const MAX_OUTPUT_TOKENS = 16000
 
 interface Config {
   watchId: string
-  /** ⚠ UN traitement et UNE consigne PAR CHAMP. Le nom et le texte de vente n'appellent
-   *  pas la même demande — « Nom - Discriminant - Modèle - REF » pour l'un, « liste les
-   *  adaptables et les origines » pour l'autre. Une consigne unique obligeait à écrire
-   *  l'union des deux, que le modèle appliquait alors aux deux champs. */
-  doName: boolean
-  nameMode: 'translate' | 'improve' | 'both'
-  namePrompt: string
-  doDescription: boolean
-  descriptionMode: 'translate' | 'improve' | 'both'
-  descriptionPrompt: string
+  /** ⚠ Une case et une consigne par CHAMP **et** par OPÉRATION. Traduire et améliorer
+   *  n'appellent pas les mêmes mots, et le nom n'appelle pas la même demande que le texte
+   *  de vente. Cocher les deux sur un champ le traduit PUIS le réécrit dans le MÊME appel :
+   *  le second travail voit le premier, là où deux passages séparés repartaient chacun du
+   *  texte d'origine — et facturaient deux fois. */
+  nameTranslate: boolean
+  nameTranslatePrompt: string
+  nameImprove: boolean
+  nameImprovePrompt: string
+  descTranslate: boolean
+  descTranslatePrompt: string
+  descImprove: boolean
+  descImprovePrompt: string
   scope: 'foreign' | 'foreignPlus' | 'all'
   /** Reprendre les fiches dont le texte d'origine a changé depuis la réécriture. */
   refreshStale: boolean
@@ -81,26 +84,14 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
   outputColumns: ['produit', 'motif', 'avant', 'apres', 'justification'],
   configSchema: [
     { name: 'watchId', kind: 'text', labelKey: 'node.catalog-text-revise.watchId', helpKey: 'node.catalog-text-revise.watchId.help' },
-    { name: 'doName', kind: 'checkbox', labelKey: 'node.catalog-text-revise.doName', default: true },
-    {
-      name: 'nameMode', kind: 'select', labelKey: 'node.catalog-text-revise.nameMode', default: 'translate',
-      options: [
-        { value: 'translate', labelKey: 'node.catalog-text-revise.mode.translate' },
-        { value: 'improve', labelKey: 'node.catalog-text-revise.mode.improve' },
-        { value: 'both', labelKey: 'node.catalog-text-revise.mode.both' },
-      ],
-    },
-    { name: 'namePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.namePrompt', helpKey: 'node.catalog-text-revise.namePrompt.help' },
-    { name: 'doDescription', kind: 'checkbox', labelKey: 'node.catalog-text-revise.doDescription', default: true },
-    {
-      name: 'descriptionMode', kind: 'select', labelKey: 'node.catalog-text-revise.descriptionMode', default: 'translate',
-      options: [
-        { value: 'translate', labelKey: 'node.catalog-text-revise.mode.translate' },
-        { value: 'improve', labelKey: 'node.catalog-text-revise.mode.improve' },
-        { value: 'both', labelKey: 'node.catalog-text-revise.mode.both' },
-      ],
-    },
-    { name: 'descriptionPrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.descriptionPrompt', helpKey: 'node.catalog-text-revise.descriptionPrompt.help' },
+    { name: 'nameTranslate', kind: 'checkbox', labelKey: 'node.catalog-text-revise.nameTranslate', helpKey: 'node.catalog-text-revise.name.help', default: true },
+    { name: 'nameTranslatePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.nameTranslatePrompt' },
+    { name: 'nameImprove', kind: 'checkbox', labelKey: 'node.catalog-text-revise.nameImprove', default: false },
+    { name: 'nameImprovePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.nameImprovePrompt', helpKey: 'node.catalog-text-revise.nameImprovePrompt.help' },
+    { name: 'descTranslate', kind: 'checkbox', labelKey: 'node.catalog-text-revise.descTranslate', helpKey: 'node.catalog-text-revise.desc.help', default: true },
+    { name: 'descTranslatePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.descTranslatePrompt' },
+    { name: 'descImprove', kind: 'checkbox', labelKey: 'node.catalog-text-revise.descImprove', default: false },
+    { name: 'descImprovePrompt', kind: 'textarea', labelKey: 'node.catalog-text-revise.descImprovePrompt', helpKey: 'node.catalog-text-revise.descImprovePrompt.help' },
     {
       name: 'scope', kind: 'select', labelKey: 'node.catalog-text-revise.scope', default: 'foreign',
       options: [
@@ -114,15 +105,18 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
   ],
   defaultConfig: {
     watchId: '',
-    doName: true, nameMode: 'translate', namePrompt: '',
-    doDescription: true, descriptionMode: 'translate', descriptionPrompt: '',
+    nameTranslate: true, nameTranslatePrompt: '', nameImprove: false, nameImprovePrompt: '',
+    descTranslate: true, descTranslatePrompt: '', descImprove: false, descImprovePrompt: '',
     scope: 'foreign', refreshStale: true, maxUnits: 500,
   },
   cardSummary: (c) => {
-    const label = (mode: Config['nameMode']) => t(`node.catalog-text-revise.mode.${mode}` as 'node.catalog-text-revise.mode.translate')
+    const ops = (tr: boolean, im: boolean) => [
+      tr && t('node.catalog-text-revise.mode.translate'),
+      im && t('node.catalog-text-revise.mode.improve'),
+    ].filter(Boolean).join(' + ')
     const parts = [
-      c.doName && `${t('node.catalog-text-revise.sum.name')} ${label(c.nameMode)}`,
-      c.doDescription && `${t('node.catalog-text-revise.sum.desc')} ${label(c.descriptionMode)}`,
+      ops(c.nameTranslate, c.nameImprove) && `${t('node.catalog-text-revise.sum.name')} ${ops(c.nameTranslate, c.nameImprove)}`,
+      ops(c.descTranslate, c.descImprove) && `${t('node.catalog-text-revise.sum.desc')} ${ops(c.descTranslate, c.descImprove)}`,
     ].filter(Boolean)
     return parts.length > 0
       ? t('node.catalog-text-revise.sum', { modes: parts.join(' · '), max: c.maxUnits || 0 })
@@ -134,11 +128,18 @@ const catalogTextReviseNode: NodeSpec<Config, Record<string, never>, { revisions
     const uid = getWorkspaceUid()
     if (!uid) throw new Error(t('run.notSignedIn'))
     const watchId = deriveWatchId(config.watchId, ctx.workflowId)
-    if (!config.doName && !config.doDescription) throw new Error(t('run.catalogTextRevise.noMode'))
     const fields = {
-      name: { enabled: config.doName, mode: config.nameMode, prompt: config.namePrompt ?? '' },
-      description: { enabled: config.doDescription, mode: config.descriptionMode, prompt: config.descriptionPrompt ?? '' },
+      name: {
+        translate: config.nameTranslate, improve: config.nameImprove,
+        translatePrompt: config.nameTranslatePrompt ?? '', improvePrompt: config.nameImprovePrompt ?? '',
+      },
+      description: {
+        translate: config.descTranslate, improve: config.descImprove,
+        translatePrompt: config.descTranslatePrompt ?? '', improvePrompt: config.descImprovePrompt ?? '',
+      },
     }
+    const asked = [fields.name, fields.description].some((f) => f.translate || f.improve)
+    if (!asked) throw new Error(t('run.catalogTextRevise.noMode'))
 
     const src = await loadSourceCatalog(uid, watchId)
     if (!src) throw new Error(t('run.catalogTextRevise.noCatalog', { watchId }))
