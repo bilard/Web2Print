@@ -90,3 +90,59 @@ describe('enchaînement des vagues', () => {
     expect(calls).toBe(1)
   })
 })
+
+// ⚠⚠ Le défaut qui rendait l'amélioration INATTEIGNABLE. Sur 200 000 champs, la vague
+// « traduire » ne finit jamais dans un segment : coupée par l'échéance, elle faisait
+// abandonner la vague « améliorer », et la mémoire écartait ensuite ces lignes comme
+// faites. Le filtre « Améliorés » restait vide pour toujours.
+describe('temps partagé entre les vagues', () => {
+  const plans = [
+    { key: 'a', kind: 'translate' as const, minLength: 0, prompt: '', promptVersion: 'v1' },
+    { key: 'a', kind: 'improve' as const, minLength: 0, prompt: 'x', promptVersion: 'v1' },
+  ]
+  const target = { id: 'p1', fields: { a: { value: 'Hallo Welt' } } }
+  const counts = { considered: 0, revised: 0, rejected: 0, skipped: {} } as never
+
+  it('la seconde vague tourne même si la première a été coupée par l’ÉCHÉANCE', async () => {
+    const seen: string[] = []
+    await runWaves(planWaves(plans), [target], [{ productId: 'p1', field: 'a', plan: plans[0], text: 'Hallo Welt', row: {} }], counts,
+      async (units) => {
+        seen.push(units[0]?.plan.kind ?? '?')
+        return { counts, productIds: ['p1'], cappedBy: 'deadline' as const }
+      },
+      { deadlineAt: Date.now() + 60_000 })
+    expect(seen).toEqual(['translate', 'improve'])
+  })
+
+  it('le plafond de DÉPENSE, lui, arrête tout', async () => {
+    const seen: string[] = []
+    await runWaves(planWaves(plans), [target], [{ productId: 'p1', field: 'a', plan: plans[0], text: 'Hallo Welt', row: {} }], counts,
+      async (units) => {
+        seen.push(units[0]?.plan.kind ?? '?')
+        return { counts, productIds: ['p1'], cappedBy: 'spend' as const }
+      },
+      { deadlineAt: Date.now() + 60_000 })
+    expect(seen).toEqual(['translate'])
+  })
+
+  it('l’échéance globale dépassée arrête aussi', async () => {
+    const seen: string[] = []
+    await runWaves(planWaves(plans), [target], [{ productId: 'p1', field: 'a', plan: plans[0], text: 'Hallo Welt', row: {} }], counts,
+      async (units) => {
+        seen.push(units[0]?.plan.kind ?? '?')
+        return { counts, productIds: ['p1'], cappedBy: 'deadline' as const }
+      },
+      { deadlineAt: Date.now() - 1 })
+    expect(seen).toEqual(['translate'])
+  })
+
+  it('la première vague reçoit les deux tiers du temps, pas la totalité', async () => {
+    const t0 = 1_000_000
+    const deadlines: (number | undefined)[] = []
+    await runWaves(planWaves(plans), [target], [{ productId: 'p1', field: 'a', plan: plans[0], text: 'Hallo Welt', row: {} }], counts,
+      async (_units, c, dl) => { deadlines.push(dl); return { counts: c, productIds: ['p1'] } },
+      { deadlineAt: t0 + 900, now: () => t0 })
+    expect(deadlines[0]).toBe(t0 + 594)
+    expect(deadlines[1]).toBe(t0 + 900)
+  })
+})

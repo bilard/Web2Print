@@ -125,7 +125,7 @@ registerServerNode({
     })
 
     const result = await runWaves(waves, targets, capped, counts,
-      (batchUnits, batchCounts) => runPass(batchUnits, batchCounts, {
+      (batchUnits, batchCounts, waveDeadline) => runPass(batchUnits, batchCounts, {
         passId: `${Date.now().toString(36)}-${(ctx.workflowId ?? 'cron').slice(0, 6)}`,
         // ⚠ DIX et non vingt : la sortie de deepseek-chat plafonne à 8192 tokens. Un lot de
         // vingt textes de vente longs dépasse ce plafond, la réponse est tronquée EN
@@ -159,10 +159,11 @@ registerServerNode({
           kinds: [...new Set(violations.map((v) => v.kind))].join(', '),
         })),
         spentUsd: () => 0,
-        // ⚠ L'échéance du segment. Sans elle, la carte tentait d'avaler 207 802 champs
-        // dans une fenêtre de vingt-huit minutes : la fonction était tuée, la mémoire
-        // jamais écrite, et tout l'aval du graphe jamais atteint.
-        deadlineAt: ctx.deadlineAt,
+        // ⚠ L'échéance de la VAGUE, pas celle du segment : la première rend la main aux
+        // deux tiers du temps pour que l'amélioration ait sa part. Sans elle, la carte
+        // tentait d'avaler 207 802 champs dans une fenêtre de vingt-huit minutes — la
+        // fonction était tuée, la mémoire jamais écrite, l'aval jamais atteint.
+        deadlineAt: waveDeadline ?? ctx.deadlineAt,
         // ⚠ Une ligne tous les 500 champs, pas à chaque lot. Le journal ne garde que
         // 200 entrées : à raison d'une par lot de dix, la progression évinçait les seuls
         // messages qui comptent — « mémorisé », « temps écoulé », « publiées ». On ne
@@ -173,7 +174,10 @@ registerServerNode({
           }
         },
       }),
-      { limit: Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : undefined })
+      {
+        limit: Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : undefined,
+        deadlineAt: ctx.deadlineAt,
+      })
 
     if (result.cappedBy === 'deadline') ctx.log('warn', t(ctx.locale, 'run.textEnrich.deadline'))
     ctx.log('info', t(ctx.locale, 'run.textEnrich.done', { revised: result.counts.revised, rejected: result.counts.rejected, passId: '' }))

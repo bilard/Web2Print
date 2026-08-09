@@ -54,17 +54,31 @@ export async function runWaves(
   targets: EnrichTarget[],
   firstUnits: EnrichUnit[],
   baseCounts: EnrichPass['counts'],
-  run: (units: EnrichUnit[], counts: EnrichPass['counts']) => Promise<RunPassResult>,
-  opts: { limit?: number } = {},
+  run: (units: EnrichUnit[], counts: EnrichPass['counts'], deadlineAt?: number) => Promise<RunPassResult>,
+  opts: { limit?: number; deadlineAt?: number; now?: () => number } = {},
 ): Promise<RunPassResult> {
-  let result = await run(firstUnits, baseCounts)
+  // ⚠⚠ Le TEMPS est PARTAGÉ entre les vagues, il ne revient pas à la première.
+  //
+  // Sur un catalogue de 200 000 champs, la vague « traduire » ne finit jamais dans un
+  // segment : elle était coupée par l'échéance, `cappedBy` faisait abandonner la vague
+  // « améliorer », et la mémoire écartait ensuite ces lignes comme faites. L'amélioration
+  // n'avait donc AUCUNE chance de tourner un jour — le filtre « Améliorés » restait vide
+  // pour toujours, sans que rien ne l'explique. La première vague rend la main aux deux
+  // tiers du temps pour que la suivante travaille sur ce qu'elle vient de produire.
+  const now = opts.now ?? Date.now
+  const share = opts.deadlineAt != null && waves.length > 1
+    ? now() + Math.max(0, Math.floor((opts.deadlineAt - now()) * 0.66))
+    : opts.deadlineAt
+  let result = await run(firstUnits, baseCounts, share)
   let budget = opts.limit == null ? Infinity : Math.max(0, opts.limit - firstUnits.length)
   const productIds = new Set(result.productIds)
 
   for (const wave of waves.slice(1)) {
-    // Le plafond de dépense a coupé : enchaîner une vague de plus le dépasserait, et le
-    // journal annoncerait un travail qui n'a pas eu lieu.
-    if (result.cappedBy) break
+    // ⚠ Le plafond de DÉPENSE arrête tout : enchaîner le dépasserait. L'échéance de la
+    // vague, elle, n'est pas celle du passage — c'est justement le partage ci-dessus, et
+    // s'arrêter là rendrait l'amélioration inatteignable.
+    if (result.cappedBy === 'spend') break
+    if (result.cappedBy === 'deadline' && opts.deadlineAt != null && now() >= opts.deadlineAt) break
     if (budget <= 0) break
     const next = planPass(targets, wave)
     if (next.units.length === 0) continue
@@ -72,7 +86,7 @@ export async function runWaves(
     budget -= taken.length
     // Les compteurs repartent de ceux déjà cumulés : un passage rend UN bilan, pas un par
     // vague — l'utilisateur a lancé une fois.
-    result = await run(taken, result.counts)
+    result = await run(taken, result.counts, opts.deadlineAt)
     for (const id of result.productIds) productIds.add(id)
   }
   return { ...result, productIds: [...productIds] }
