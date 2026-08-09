@@ -8,13 +8,14 @@
 // Les textes réécrits vivent À CÔTÉ du catalogue, jamais dedans : « Comparer catalogue »
 // réécrit le catalogue en bloc et les effacerait sans un mot.
 import { useEffect, useMemo, useState } from 'react'
-import { Languages, Loader2, RotateCcw, ExternalLink } from 'lucide-react'
+import { Languages, Loader2 } from 'lucide-react'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { generateJson } from '@/features/ai/llmRouter'
 import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
 import { TextEnrichFilters } from './TextEnrichFilters'
+import { TextEnrichRow } from './TextEnrichRow'
 import { rejectionParts, type RejectionPart } from './violationSummary'
 import { chunkByVolume } from './chunkByVolume'
 import { findViolations } from '@/features/textEnrich/protected'
@@ -37,7 +38,7 @@ interface Line {
   revision?: TextRevision
 }
 
-export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
+export function TextEnrichScreen({ uid, watchId, products, loading, query, imagePrefix }: {
   uid: string
   watchId: string
   products: SourceProduct[]
@@ -45,6 +46,8 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
   /** La saisie du bandeau. ⚠ UNE seule recherche à l'écran : un champ propre à ce
    *  panneau laissait taper une référence en haut sans rien voir changer ici. */
   query: string
+  /** Préfixe des visuels réglé sur la source : les ERP n'y stockent qu'un nom de fichier. */
+  imagePrefix?: string
 }) {
   const { t, locale } = useTranslation()
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
@@ -318,70 +321,9 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query }: {
       ) : (
         <div className="flex-1 min-h-0 overflow-auto">
           {shown.slice(0, 300).map((l) => (
-            <div key={l.product.id} className="px-4 py-2.5 border-b border-white/[0.05]">
-              <div className="flex items-baseline gap-2 text-[10px] text-white/35">
-                {l.product.ref && <span className="tabular-nums">{l.product.ref}</span>}
-                {l.lang && (
-                  <span className="rounded border border-white/15 px-1 uppercase">{l.lang}</span>
-                )}
-                {l.product.url && (
-                  <a href={l.product.url} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-1 text-white/35 hover:text-indigo-300"
-                    title={t('pwte.openProduct')}>
-                    <ExternalLink className="w-3 h-3" />{t('pwte.openProduct')}
-                  </a>
-                )}
-                {l.revision && (
-                  <button type="button" onClick={() => void revert(l.product.id)}
-                    className="ml-auto flex items-center gap-1 text-white/35 hover:text-rose-300">
-                    <RotateCcw className="w-3 h-3" />{t('pwte.revert')}
-                  </button>
-                )}
-              </div>
-              {/* Avant à gauche, après à droite : c'est la comparaison qu'on vient faire,
-                  elle ne doit demander aucun clic. */}
-              <div className="mt-1 grid gap-3 sm:grid-cols-2">
-                <div className="min-w-0">
-                  <p className="text-[9px] uppercase tracking-wide text-white/25">{t('pwte.before')}</p>
-                  {/* Les deux champs sont NOMMÉS : sans étiquette, deux lignes de texte se
-                      lisent comme un titre et son sous-titre, alors que la seconde est le
-                      texte de vente — le champ que l'écran est censé traiter. */}
-                  <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
-                  <p className="text-[12px] text-white/70 break-words">{l.product.name}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
-                  {l.product.description
-                    ? <p className="text-[11px] text-white/35 break-words line-clamp-3">{l.product.description}</p>
-                    : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] uppercase tracking-wide text-emerald-300/40">{t('pwte.after')}</p>
-                  {l.revision ? (
-                    <>
-                      <p className="text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.name')}</p>
-                      <p className="text-[12px] text-emerald-100/90 break-words">{l.revision.name}</p>
-                      <p className="mt-1 text-[9px] uppercase tracking-wide text-white/20">{t('pwte.field.saleText')}</p>
-                      {l.revision.description
-                        ? <p className="text-[11px] text-emerald-200/50 break-words line-clamp-3">{l.revision.description}</p>
-                        : <p className="text-[11px] italic text-white/20">{t('pwte.field.empty')}</p>}
-                      {l.revision.note && (
-                        <p className="mt-0.5 text-[10px] italic text-white/30 break-words">{l.revision.note}</p>
-                      )}
-                    </>
-                  ) : rejected.get(l.product.id)?.length ? (
-                    <div className="space-y-0.5">
-                      <p className="text-[11px] text-amber-300/80">{t('pwte.rejected')}</p>
-                      {rejected.get(l.product.id)?.map((r, i) => (
-                        <p key={i} className="text-[10px] text-amber-200/50 break-words">
-                          {t(r.key, { token: r.token })}
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-white/20">{t('pwte.pending')}</p>
-                  )}
-                </div>
-              </div>
-            </div>
+            <TextEnrichRow key={l.product.id} product={l.product} lang={l.lang}
+              revision={l.revision} rejection={rejected.get(l.product.id)}
+              imagePrefix={imagePrefix} onRevert={() => void revert(l.product.id)} />
           ))}
           {shown.length > 300 && (
             <p className="py-3 text-center text-[11px] text-white/30">

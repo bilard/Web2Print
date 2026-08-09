@@ -456,7 +456,7 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
             et garder une colonne vide à droite laisserait croire à un appariement raté. */}
         {enrichMode ? (
           <TextEnrichScreen uid={uid ?? ''} watchId={watchId} products={source.products}
-            loading={source.loading} query={filter.q} />
+            loading={source.loading} query={filter.q} imagePrefix={src.imagePrefix} />
         ) : catalogMode ? (
           <ExplorerCatalog products={catalogFound} page={safePage} pageSize={pageSize}
             imagePrefix={src.imagePrefix} loading={source.loading} />
