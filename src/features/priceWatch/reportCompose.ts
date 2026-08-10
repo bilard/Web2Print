@@ -155,6 +155,35 @@ ${JSON.stringify(changes, null, 1)}` : ''}`
 const MIN_COMPOSED_LENGTH = 200
 
 /**
+ * Rend MOBILE ce que le modèle a écrit, quoi qu'il ait écrit.
+ *
+ * ⚠⚠ Une consigne de rendu ne suffit pas : le modèle recompose la page à chaque envoi, et
+ * il lui arrive de poser des largeurs fixes ou d'empêcher le retour à la ligne. Sur un
+ * téléphone, le tableau déborde et les colonnes de droite sont COUPÉES — le lecteur voit la
+ * colonne des libellés et pas les chiffres, c'est-à-dire l'inverse de ce qu'il vient
+ * chercher. Constaté en production le 2026-08-10, deux fois.
+ *
+ * On ne discute donc plus : ce qui empêche la mise en page de se replier est retiré ici,
+ * déterministiquement, sur la sortie du modèle comme sur celle de n'importe quel autre.
+ */
+function makeResponsive(html: string): string {
+  return html
+    // Une largeur d'ATTRIBUT en pixels bloque le repli. En pourcentage, elle ne gêne pas.
+    .replace(/(<(?:table|td|th)\b[^>]*?)\swidth\s*=\s*"(\d+)"/gi, '$1 width="100%"')
+    // Un plancher de largeur est le pire : il force le débordement même quand tout le reste
+    // sait se replier.
+    .replace(/min-width\s*:\s*\d+(?:px|em|rem)?\s*;?/gi, '')
+    // Une largeur fixe devient un PLAFOND : la mise en page voulue est conservée sur grand
+    // écran, et sur téléphone la table se réduit au lieu de sortir du cadre.
+    .replace(/(^|[^-\w])width\s*:\s*(\d{3,})px/gi, (_m, before: string, px: string) => `${before}max-width:${px}px;width:100%`)
+    // Interdire le retour à la ligne, c'est fabriquer le débordement.
+    .replace(/white-space\s*:\s*nowrap\s*;?/gi, '')
+    // ⚠ Sous 13 px, iOS agrandit la page pour compenser — et c'est ce zoom qui coupe les
+    // colonnes. On remonte le plancher plutôt que de subir la correction du système.
+    .replace(/font-size\s*:\s*(\d+)px/gi, (m, size: string) => (Number(size) < 13 ? 'font-size:13px' : m))
+}
+
+/**
  * Accepte — ou refuse — le HTML rendu par le modèle. Partagé, parce qu'un mail accepté
  * côté navigateur et refusé par le cron (ou l'inverse) donnerait deux rapports différents
  * selon l'heure d'envoi.
@@ -175,5 +204,5 @@ export function normalizeComposedHtml(raw: string | null | undefined): string | 
   if (html.length < MIN_COMPOSED_LENGTH) return null
   // Une réponse en prose (« Je ne peux pas… ») n'est pas un mail : au moins une balise.
   if (!/<[a-z][\s\S]*>/i.test(html)) return null
-  return html
+  return makeResponsive(html)
 }
