@@ -8,6 +8,7 @@ import { useProgressStore } from '@/stores/progress.store'
 import { interpolate } from './interpolate'
 import { mergeInputValue } from './mergeInputs'
 import { persistClientRun, type RunStatus } from '../persistence/runHistoryClient'
+import { startClientRunBeat, stopClientRunBeat } from './publishClientRun'
 // Messages d'exécution hors composant : helper `t()` de module.
 import { t } from '@/lib/i18n'
 
@@ -310,6 +311,10 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
   const runSet = opts.fromNodeId ? downstreamFrom(opts.fromNodeId, wf.edges) : null
   const startedAt = Date.now()
   const ac = ctxStore.startRun(runSet ? { clearIds: [...runSet] } : undefined)
+  // Publie ce run pour le reste du monde (autres onglets, autre poste, PWA, écran Suivi).
+  const runId = `c-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
+  // Ne bloque pas le démarrage : la prise de place lit un document, le run n'attend pas.
+  void startClientRunBeat(wf.id, runId)
   useProgressStore.getState().begin(runSet ? 'Exécution depuis le node…' : 'Exécution du workflow…')
   try {
     // Détection des loops avant tout topo
@@ -557,6 +562,13 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       // marqués « arrêté » par la course ci-dessus ; l'aval reste « pending »).
       if (ac.signal.aborted) break
     }
+  } catch (e) {
+    // Le run a explosé avant d'atteindre le résumé (cycle détecté par `topoSort`, loop mal
+    // formé…) : il n'aura pas d'autre occasion de publier son issue. Sans ce battement,
+    // le document live resterait « en cours » pour toujours ailleurs (autres onglets,
+    // PWA) — battu toutes les 5 s pour rien tant que ce même onglet tourne.
+    stopClientRunBeat(wf.id, runId, 'error')
+    throw e
   } finally {
     useRunContext.getState().endRun()
     useProgressStore.getState().end()
@@ -579,6 +591,11 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
     const status: RunStatus = errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error'
     void persistClientRun(uid, wf, { startedAt, status, nodeStates: states })
   }
+
+  // Dernier battement : l'issue du run, écrite tout de suite. Sans elle, l'écran laisserait
+  // le run « en cours » pendant les trois minutes de la garde de silence.
+  stopClientRunBeat(wf.id, runId,
+    ac.signal.aborted ? 'stopped' : errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error')
 
   return {
     aborted: ac.signal.aborted,

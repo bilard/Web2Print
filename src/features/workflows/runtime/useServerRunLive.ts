@@ -7,10 +7,13 @@ import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { STALE_RUN_MS } from '@/features/priceWatch/radar/scrapeState'
 import { useRunContext } from './runContext'
+import { activeClientRunId, isOwnEcho } from './publishClientRun'
 import type { NodeStatus } from '../types'
 
 interface RunLiveDoc {
   runId?: string
+  /** Depuis la Task 7, ce document peut aussi être écrit par un run NAVIGATEUR. */
+  origin?: 'client' | 'server'
   status?: string
   /** Début du run — sert à repérer un run interrompu resté « en cours ». */
   startedAt?: number
@@ -55,6 +58,11 @@ export function useServerRunLive(workflowId: string | undefined): void {
       doc(db, 'users', uid, 'workflowRunsLive', workflowId),
       (snap) => {
         const d = snap.data() as RunLiveDoc | undefined
+        // ⚠ Le document n'est plus écrit par le seul serveur : depuis que le run
+        // navigateur publie son battement, cet onglet peut recevoir son PROPRE écho.
+        // L'hydrater reviendrait à écraser l'état local par une copie vieille de cinq
+        // secondes.
+        if (isOwnEcho(d ?? null, activeClientRunId())) return
         // ⚠ DIT à l'écran, même quand on n'hydrate pas : sans ce signal, les cartes du
         // dernier écho restaient « en cours » et tournaient à l'infini des heures après
         // l'arrêt du run — et le temps restant continuait de s'estimer dans le vide.
@@ -96,10 +104,10 @@ export function useServerRunLive(workflowId: string | undefined): void {
         // Nouveau run (runId changé) → on vide l'état précédent (aperçu/cartes périmés).
         const reset = !!d.runId && d.runId !== lastRunId.current
         lastRunId.current = d.runId
-        // Tout nouveau run SERVEUR (runId changé, quel que soit son statut) reprend la main
-        // sur un run client resté « en cours » (isRunning coincé) qui, sinon, masquerait son
-        // état (garde dans hydrateServerRun). Sûr : workflowRunsLive n'est écrit QUE par le
-        // serveur → un run client (qui n'écrit pas ce doc) ne peut pas auto-déclencher ceci.
+        // Tout nouveau run (runId changé, quel que soit son statut — serveur OU un autre
+        // onglet) reprend la main sur un run client resté « en cours » (isRunning coincé)
+        // qui, sinon, masquerait son état (garde dans hydrateServerRun). Sûr : notre PROPRE
+        // écho est déjà écarté plus haut par `isOwnEcho` — on ne peut donc pas s'auto-déclencher.
         if (reset && useRunContext.getState().isRunning) {
           useRunContext.getState().resetRun()
         }
