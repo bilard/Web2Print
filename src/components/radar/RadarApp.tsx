@@ -6,6 +6,7 @@ import { buildOpsCockpit } from '@/features/priceWatch/dashboard/opsMetrics'
 import { runPulse, scrapeStatus } from '@/features/priceWatch/radar/scrapeState'
 import { RadarHeader } from './RadarHeader'
 import { RadarHero } from './RadarHero'
+import { RadarOpsCard } from './RadarOpsCard'
 import { RadarKpiGrid } from './RadarKpiGrid'
 import { RadarOpportunities } from './RadarOpportunities'
 import { RadarCompetitors } from './RadarCompetitors'
@@ -145,6 +146,7 @@ export function RadarApp() {
             {tab === 'apercu' && (
               <>
                 <RadarScrapeBadge status={status} onClick={() => setTab('scraping')} />
+                <RadarOpsCard watchId={watchId} workflowId={workflowId} ops={ops} />
                 <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} collectActive={status.state === 'running'} />
                 <RadarKpiGrid cockpit={cockpit} />
                 {/* Paysage : les deux listes passent côte à côte (2 colonnes). */}
