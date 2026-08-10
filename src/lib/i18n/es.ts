@@ -2442,6 +2442,15 @@ export const es: Record<TranslationKey, string> = {
   'ops.reasons.title': 'Motivo de la cola de textos',
   'ops.reasons.detail': '{fresh} nunca procesados · {stale} origen modificado desde entonces',
   'ops.reasons.unknown': 'sin desglosar',
+  'ops.cards.title': 'Tarjetas del run',
+  'ops.cards.open': 'Abrir el flujo en esta tarjeta',
+  'ops.incidents.title': 'Registro de incidencias',
+  'ops.incidents.empty': 'Ninguna incidencia en los últimos noventa días',
+  'ops.history.title': 'Historial de runs',
+  'ops.history.trend.up': '+{pct} % — la recolección se alarga',
+  'ops.history.trend.down': '−{pct} % — la recolección se acelera',
+  'ops.history.nodes': '{n} tarjetas',
+  'ops.history.errors': '{n} con error',
 
   // — Panneau d'aide (cadre ; le CONTENU passe par helpI18n) ——————————
   'help.manual': 'Manual de usuario',

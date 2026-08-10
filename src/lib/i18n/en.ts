@@ -2443,6 +2443,15 @@ export const en: Record<TranslationKey, string> = {
   'ops.reasons.title': 'Reason for the text queue',
   'ops.reasons.detail': '{fresh} never processed · {stale} source changed since',
   'ops.reasons.unknown': 'not broken down',
+  'ops.cards.title': 'Run cards',
+  'ops.cards.open': 'Open the flow on this card',
+  'ops.incidents.title': 'Incident log',
+  'ops.incidents.empty': 'No incident in the last ninety days',
+  'ops.history.title': 'Run history',
+  'ops.history.trend.up': '+{pct} % — the harvest is getting longer',
+  'ops.history.trend.down': '−{pct} % — the harvest is getting faster',
+  'ops.history.nodes': '{n} cards',
+  'ops.history.errors': '{n} in error',
 
   // — Panneau d'aide (cadre ; le CONTENU passe par helpI18n) ——————————
   'help.manual': 'User manual',

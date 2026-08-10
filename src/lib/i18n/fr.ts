@@ -2536,6 +2536,15 @@ export const fr = {
   'ops.reasons.title': 'Motif de la file de textes',
   'ops.reasons.detail': '{fresh} jamais traités · {stale} source modifiée depuis',
   'ops.reasons.unknown': 'non ventilé',
+  'ops.cards.title': 'Cartes du run',
+  'ops.cards.open': 'Ouvrir le flux sur cette carte',
+  'ops.incidents.title': 'Journal des pannes',
+  'ops.incidents.empty': 'Aucun incident sur les quatre-vingt-dix derniers jours',
+  'ops.history.title': 'Historique des runs',
+  'ops.history.trend.up': '+{pct} % — la moisson s’allonge',
+  'ops.history.trend.down': '−{pct} % — la moisson accélère',
+  'ops.history.nodes': '{n} cartes',
+  'ops.history.errors': '{n} en erreur',
 
   // — Panneau d'aide (cadre ; le CONTENU passe par helpI18n) ——————————
   'help.manual': "Manuel d'utilisation",

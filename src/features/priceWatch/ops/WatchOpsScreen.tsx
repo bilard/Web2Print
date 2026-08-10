@@ -8,6 +8,9 @@ import { buildOpsCockpit } from '../dashboard/opsMetrics'
 import { useWatchOps } from './useWatchOps'
 import { OpsHeader } from './OpsHeader'
 import { ChantierCard } from './ChantierCard'
+import { RunCardsStrip } from './RunCardsStrip'
+import { IncidentLog } from './IncidentLog'
+import { RunHistory } from './RunHistory'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useTranslation } from '@/lib/i18n'
@@ -35,7 +38,7 @@ export function WatchOpsScreen() {
   const report = useCatalogReport(watchId)
   const meta = useCompetitorMeta(watchId)
   const cockpit = useMemo(() => (report ? buildOpsCockpit(report, meta) : null), [report, meta])
-  const { view } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
+  const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
 
   if (watches.length === 0) {
     return <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.empty')}</p>
@@ -78,7 +81,9 @@ export function WatchOpsScreen() {
         </div>
       )}
 
-      {/* Emplacements Task 12 : cartes du run, journal des incidents, historique. */}
+      <RunCardsStrip workflowId={workflowId} />
+      <RunHistory workflowId={workflowId} />
+      <IncidentLog incidents={incidents} />
     </div>
   )
 }
