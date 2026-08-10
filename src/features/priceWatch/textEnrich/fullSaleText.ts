@@ -69,7 +69,11 @@ export function completeOriginText(p: SourceProduct, revision?: TextRevision): s
 export function originForDisplay(
   p: SourceProduct, revision?: TextRevision,
 ): { text?: string; truncated: boolean } {
-  const shown = p.description
+  // ⚠⚠ La colonne jumelle « (source) » d'ABORD, comme le nom juste au-dessus. Sans elle, la
+  // colonne AVANT affichait le texte ENRICHI — « Comparer catalogue » l'a recopié dans le
+  // catalogue dès que la carte est passée — en face d'une pastille « NL » : l'après des deux
+  // côtés, et un original néerlandais introuvable à l'écran.
+  const shown = p.descriptionSource ?? revision?.descriptionSource ?? p.description
   const whole = wholeVersionOf(shown, p, revision)
   if (whole) return { text: whole, truncated: false }
   return { ...(shown ? { text: shown } : {}), truncated: isTruncated(shown) }

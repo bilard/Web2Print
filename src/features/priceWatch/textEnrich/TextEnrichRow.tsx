@@ -17,16 +17,21 @@ import { absoluteImage } from '../explorer/pairing'
 import { TextEnrichBlock, type Provenance } from './TextEnrichBlock'
 import { TextEnrichRowMeta } from './TextEnrichRowMeta'
 import { originForDisplay, madeOnTruncatedSource, isTruncated } from './fullSaleText'
+import { orderColumns } from './columnOrder'
+import { sheetOps } from './sheetRewrite'
 import type { RejectionPart } from './violationSummary'
 import type { SourceProduct } from '../catalog/match'
 import type { TextRevision } from '../textRevisionsStore'
 import { opsOf } from './revisionOps'
 
-export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix, onRevert }: {
+export function TextEnrichRow({ product, lang, revision, fromSheet, rejection, imagePrefix, onRevert }: {
   product: SourceProduct
   /** Langue détectée sur le texte de vente, `null` quand le détecteur s'abstient. */
   lang: string | null
   revision?: TextRevision
+  /** La FEUILLE porte la trace d'une réécriture, sans document de révision (cf.
+   *  `sheetRewrite.ts`). ⚠ Rien à annuler ici : l'original vit dans la feuille. */
+  fromSheet?: boolean
   /** Motifs du refus quand la réécriture a été rejetée par la garde. */
   rejection?: RejectionPart[]
   imagePrefix?: string
@@ -37,11 +42,12 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
   // ⚠ Ce que la CARTE de workflow a réécrit, colonne par colonne. Elle travaille sur une
   // feuille et ne sait pas laquelle de ses colonnes deviendra le nom du produit : on
   // affiche donc la colonne telle qu'elle s'appelle dans le fichier (« TEXT_VENTE »,
-  // « DESIGNATION »), ce qui se lit très bien et n'invente rien.
-  const cols = Object.entries(revision?.byColumn ?? {})
+  // « DESIGNATION »), ce qui se lit très bien et n'invente rien — mais on les RANGE, du
+  // libellé vers l'argumentaire, comme la paire « Nom / Texte de vente » au-dessus.
+  const cols = orderColumns(Object.entries(revision?.byColumn ?? {}), p)
   // ⚠ Déduit quand la révision est antérieure au champ `ops` : elle affichait « Traité »
   // alors que sa note dit « Traduction de l'anglais vers le français ».
-  const ops = opsOf(revision, lang)
+  const ops = revision ? opsOf(revision, lang) : sheetOps(lang)
   // Ce qu'on écrit sur les blocs de DROITE. « Traité » seul quand ni l'une ni l'autre n'est
   // connue : une révision antérieure au champ `ops`, sur une fiche dont la langue d'origine
   // n'a pas été tranchée — la ranger d'office en « traduit » serait une invention.
@@ -116,6 +122,15 @@ export function TextEnrichRow({ product, lang, revision, rejection, imagePrefix,
                 {revision.note && (
                   <p className="mt-0.5 text-[10px] italic text-white/30 break-words">{revision.note}</p>
                 )}
+              </>
+            ) : fromSheet ? (
+              // ⚠⚠ Réécrite dans la FEUILLE, sans document de révision : le texte courant du
+              // catalogue EST le résultat. Sans ce cas, l'écran annonçait « pas encore
+              // traduit » en affichant la traduction française à côté d'une pastille « NL ».
+              <>
+                <TextEnrichBlock label={t('pwte.field.name')} from={after} tone="after" strong text={p.name} />
+                <TextEnrichBlock label={t('pwte.field.saleText')} from={after} tone="after"
+                  text={p.description} />
               </>
             ) : rejection?.length ? (
               <div className="space-y-0.5">

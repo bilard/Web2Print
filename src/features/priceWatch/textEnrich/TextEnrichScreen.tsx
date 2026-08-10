@@ -24,8 +24,9 @@ import { isUnderPath } from '../explorer/taxonomyTree'
 import { langBreakdown } from './langBreakdown'
 import { revisionKeyOf } from './revisionLookup'
 import { originTextOf } from './originText'
-import { opsOf } from './revisionOps'
+import { opsOf, type RevisionOps } from './revisionOps'
 import { completeOriginText, isTruncated, madeOnTruncatedSource, originForDisplay } from './fullSaleText'
+import { rewrittenInSheet, sheetOps } from './sheetRewrite'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -37,6 +38,18 @@ import {
  *  invalide — l'écran reste alors à « 0 / 10 » sans rien dire. */
 const MAX_OUTPUT_TOKENS = 16000
 
+/**
+ * Ce qui a DÉJÀ été fait sur cette ligne, quelle que soit la main qui l'a fait. `null` = rien.
+ *
+ * ⚠ Les deux chemins comptent : le document de révision (écran ou carte publiée) ET la
+ * colonne jumelle de la feuille. Le second manquait, et l'écran reproposait indéfiniment
+ * des fiches déjà traduites.
+ */
+function doneOps(l: Line): RevisionOps | null {
+  if (l.revision) return opsOf(l.revision, l.lang)
+  return l.fromSheet ? sheetOps(l.lang) : null
+}
+
 interface Line {
   product: SourceProduct
   lang: string | null
@@ -45,6 +58,10 @@ interface Line {
    *  la carte de workflow clefe sur la RÉFÉRENCE. Sans lui, « Annuler » supprimerait un
    *  document qui n'existe pas et la ligne resterait affichée comme traitée. */
   revisionId?: string
+  /** La FEUILLE porte la trace d'une réécriture (colonnes jumelles « (source) »), sans
+   *  qu'aucun document de révision n'existe. ⚠ Sur la ligne et pas dans une fausse
+   *  `TextRevision` : cf. `sheetRewrite.ts`. */
+  fromSheet: boolean
 }
 
 export function TextEnrichScreen({ uid, watchId, products, loading, query, path, imagePrefix }: {
@@ -131,6 +148,11 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
       // propre pastille et de la portée « langue étrangère » — c'est ce qui faisait
       // afficher « Rien à traiter » sous le filtre « Traduits ».
       lang: detectLanguage(originTextOf(p, revision)).lang,
+      // ⚠ Vrai même SANS document de révision : la carte de workflow en mode feuille ne
+      // persiste rien, seule la colonne jumelle « (source) » témoigne. Sans ce drapeau,
+      // l'écran annonçait « pas encore traduit » sur une fiche dont il affichait la
+      // traduction, et la resoumettait au modèle à chaque relance.
+      fromSheet: !revision && rewrittenInSheet(p),
       ...(key ? { revisionId: key, revision } : {}),
     }
   }), [products, revisions])
@@ -147,9 +169,9 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     // « Rien à traiter » sur des fiches traduites, visibles juste en dessous.
     const byDone = (l: Line) => {
       if (doneFilter === 'all') return true
-      if (doneFilter === 'todo') return !l.revision
-      if (!l.revision) return false
-      const ops = opsOf(l.revision, l.lang)
+      const ops = doneOps(l)
+      if (doneFilter === 'todo') return !ops
+      if (!ops) return false
       return doneFilter === 'translated' ? ops.translate : ops.improve
     }
     // ⚠ Une recherche EXPLICITE l'emporte sur le filtre de langue. Chercher une référence
@@ -191,6 +213,11 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     [shown],
   )
 
+  // Compté sur les LIGNES et non sur les documents de révision : les fiches réécrites par la
+  // carte en mode feuille n'en ont pas, et « 12 déjà faits » sur un catalogue traduit aux
+  // trois quarts se lisait comme une panne.
+  const doneCount = useMemo(() => lines.filter((l) => doneOps(l) !== null).length, [lines])
+
   // Ventilation calculée sur TOUT le catalogue, jamais sur la liste filtrée : sinon
   // choisir « DE » ferait disparaître les autres pastilles, et on ne pourrait plus revenir.
   const tallies = useMemo(() => langBreakdown(lines.map((l) => l.lang)), [lines])
@@ -217,9 +244,9 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
   const todo = useMemo(
     () => shown.filter((l) => {
       if (rejected.has(l.product.id)) return false
-      if (!l.revision) return true
       if (madeOnTruncatedSource(l.product, l.revision)) return true
-      const done = opsOf(l.revision, l.lang)
+      const done = doneOps(l)
+      if (!done) return true
       return (modes.translate && !done.translate) || (modes.improve && !done.improve)
     }),
     [shown, rejected, modes],
@@ -386,7 +413,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
           <Languages className="w-4 h-4 text-indigo-300" />
           <h2 className="text-sm font-medium text-white">{t('pwte.title')}</h2>
           <span className="text-[11px] text-white/40 tabular-nums">
-            {t('pwte.counts', { todo: n(todo.length), done: n(revisions.size), total: n(products.length) })}
+            {t('pwte.counts', { todo: n(todo.length), done: n(doneCount), total: n(products.length) })}
           </span>
         </div>
 
@@ -447,7 +474,7 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
         <div className="flex-1 min-h-0 overflow-auto">
           {shown.slice(0, 300).map((l) => (
             <TextEnrichRow key={l.product.id} product={l.product} lang={l.lang}
-              revision={l.revision} rejection={rejected.get(l.product.id)}
+              revision={l.revision} fromSheet={l.fromSheet} rejection={rejected.get(l.product.id)}
               imagePrefix={imagePrefix} onRevert={() => void revert(l.revisionId ?? l.product.id)} />
           ))}
           {shown.length > 300 && (
