@@ -92,7 +92,9 @@ function isEmpty(v: unknown): boolean {
 // suivi : laissée hors de ce jeu, son réglage vide retombait sur `stableId(id du flux)` —
 // elle écrivait donc à côté, en journalisant fièrement « N fiches publiées », pendant que
 // l'écran de relecture lisait une collection vide.
-const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track', 'text-enrich'])
+// Exporté : c'est aussi l'ensemble que relit `firstWatchId.ts` pour rattacher un incident
+// NAVIGATEUR au bon journal — même liste, un seul endroit qui la tient à jour côté client.
+export const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-search', 'price-watch-track', 'text-enrich'])
 /** Nodes qui ALIMENTENT l'index concurrent (le comparatif, lui, le consomme). */
 const INDEX_FEEDERS = new Set(['harvest-competitor', 'directed-search'])
 

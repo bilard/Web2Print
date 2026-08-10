@@ -9,6 +9,8 @@ import { interpolate } from './interpolate'
 import { mergeInputValue } from './mergeInputs'
 import { persistClientRun, type RunStatus } from '../persistence/runHistoryClient'
 import { startClientRunBeat, stopClientRunBeat } from './publishClientRun'
+import { firstWatchId } from './firstWatchId'
+import { recordIncident } from '@/features/priceWatch/ops/incidents'
 // Messages d'exécution hors composant : helper `t()` de module.
 import { t } from '@/lib/i18n'
 
@@ -315,6 +317,9 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
   const runId = `c-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
   // Ne bloque pas le démarrage : la prise de place lit un document, le run n'attend pas.
   void startClientRunBeat(wf.id, runId)
+  // Suivi adressé par CE flux, une fois pour tout le run — `null` quand ce workflow n'en
+  // adresse aucun : pas de suivi identifiable ⇒ pas d'incident consigné (cf. plus bas).
+  const incidentWatchId = firstWatchId(wf)
   useProgressStore.getState().begin(runSet ? 'Exécution depuis le node…' : 'Exécution du workflow…')
   try {
     // Détection des loops avant tout topo
@@ -514,6 +519,16 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
           if (ac.signal.aborted) return
           const msg = err instanceof Error ? err.message : String(err)
           useRunContext.getState().endNode(node.id, 'error', msg)
+          // Journal des pannes de la veille tarifaire : seulement quand CE flux en adresse
+          // une — un flux sans suivi n'a rien à faire dans ce journal, silencieusement.
+          // Fire-and-forget absolu (`recordIncident` avale déjà ses propres erreurs) : ne
+          // doit jamais pouvoir ralentir ou faire échouer le run.
+          const uid = getWorkspaceUid()
+          if (uid && incidentWatchId) {
+            void recordIncident(uid, incidentWatchId, {
+              ts: Date.now(), message: msg, nodeLabel: t(spec.labelKey), runId, origin: 'client',
+            })
+          }
         }
       }
 
