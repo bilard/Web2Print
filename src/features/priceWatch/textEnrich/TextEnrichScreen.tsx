@@ -25,6 +25,7 @@ import { langBreakdown } from './langBreakdown'
 import { revisionKeyOf } from './revisionLookup'
 import { originTextOf } from './originText'
 import { opsOf } from './revisionOps'
+import { completeOriginText, isTruncated, madeOnTruncatedSource, originForDisplay } from './fullSaleText'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -178,11 +179,15 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     return lines.filter((l) => inScope(l) && bySale(l) && inPath(l) && byDone(l))
   }, [lines, products, scope, query, searching, pickedLang, saleText, path, doneFilter, reviewing])
 
-  // Fiches dont le texte de vente a été COUPÉ à l'écriture du catalogue. Compté sur ce
-  // qui est affiché : c'est là qu'on le constate, et c'est ce nombre qui dit si l'action
-  // corrective vaut la peine.
+  // Fiches dont le texte de vente a été COUPÉ à l'écriture du catalogue ET dont aucun
+  // exemplaire entier ne subsiste ailleurs. Compté sur ce qui est affiché : c'est là qu'on
+  // le constate, et c'est ce nombre qui dit si l'action corrective vaut la peine.
+  //
+  // ⚠ Les fiches RÉPARABLES (la carte de workflow a gardé la cellule entière de la feuille)
+  // en sortent : le bandeau demandait de relancer « Comparer catalogue » pour des textes que
+  // l'écran affiche et retraduit déjà entiers.
   const truncated = useMemo(
-    () => shown.filter((l) => (l.product.description ?? '').trimEnd().endsWith('…')).length,
+    () => shown.filter((l) => originForDisplay(l.product, l.revision).truncated).length,
     [shown],
   )
 
@@ -203,10 +208,17 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
   // deux cents en tête de liste, se faisait refuser pour la même raison, et n'avançait
   // jamais d'une ligne — en repayant le modèle à chaque tour. Elles restent affichées avec
   // leur motif ; c'est la file qui les saute, pas l'écran qui les cache.
+  //
+  // ⚠⚠ Une réécriture faite sur un texte COUPÉ repasse, quoi qu'elle porte comme opérations.
+  // Le catalogue a longtemps enregistré les descriptions sous un plafond de 300 caractères :
+  // les fiches traitées à cette époque portent une traduction amputée, et « déjà traduite »
+  // les écartait pour toujours. Elles ne repassent QUE si le texte entier existe quelque
+  // part (cf. `madeOnTruncatedSource`) — sinon chaque relance repaierait la même coupe.
   const todo = useMemo(
     () => shown.filter((l) => {
       if (rejected.has(l.product.id)) return false
       if (!l.revision) return true
+      if (madeOnTruncatedSource(l.product, l.revision)) return true
       const done = opsOf(l.revision, l.lang)
       return (modes.translate && !done.translate) || (modes.improve && !done.improve)
     }),
@@ -228,10 +240,19 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     // ⚠ Le texte SOUMIS est le dernier en date, pas celui du catalogue : améliorer une
     // fiche déjà traduite doit partir de la traduction, sinon on réécrit l'allemand — et
     // on écrase la traduction par une reformulation de l'original.
-    const current = (l: Line) => ({
-      name: l.revision?.name ?? l.product.name,
-      description: l.revision?.description ?? l.product.description,
-    })
+    //
+    // ⚠⚠ …SAUF s'il est COUPÉ. Repartir d'un moignon reproduit la coupe à l'identique, run
+    // après run : c'est ce qui gravait « …, Revolution 2300 (single line), R… » dans le
+    // catalogue. On reprend alors le texte d'origine ENTIER — la cellule de la feuille, que
+    // la carte de workflow a conservée — quitte à retraduire depuis l'allemand.
+    const current = (l: Line) => {
+      const latest = l.revision?.description ?? l.product.description
+      const whole = isTruncated(latest) ? completeOriginText(l.product, l.revision) : undefined
+      return {
+        name: l.revision?.name ?? l.product.name,
+        description: whole ?? latest,
+      }
+    }
     const chunks = chunkByVolume(batchList, (l) => {
       const c = current(l)
       return c.name.length + (c.description?.length ?? 0)
@@ -300,8 +321,13 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
             // amélioration posée sur une traduction ne doit pas faire passer la traduction
             // pour le texte d'origine — c'est vers l'allemand que le retour arrière ramène.
             nameSource: line.revision?.nameSource ?? line.product.name,
+            // ⚠ Un original COUPÉ cède la place au texte entier retrouvé : c'est vers lui
+            // que « Annuler » doit ramener, pas vers le moignon de 300 caractères qu'on
+            // vient précisément de remplacer.
             ...((d) => (d ? { descriptionSource: d } : {}))(
-              line.revision?.descriptionSource ?? line.product.description,
+              ((memo) => (isTruncated(memo) ? completeOriginText(line.product, line.revision) ?? memo : memo))(
+                line.revision?.descriptionSource ?? line.product.description,
+              ),
             ),
             ...(r.note ? { note: r.note } : {}),
             // Ce qui a été fait sur cette fiche, CUMULÉ : une amélioration ne doit pas

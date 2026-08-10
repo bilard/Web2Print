@@ -178,7 +178,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
         break
       case 'action:export-ec': if (canExport) setEcExportOpen(true); break
       // Ouvert depuis la Veille tarifaire : le contrôle des appariements douteux vit ici.
-      case 'action:competitors': setCompetitorsOpen(true); break
+      // ⚠ Sur les CONCURRENTS, pas sur la traduction : cet intent vient de la Veille
+      // tarifaire pour contrôler des appariements douteux. Passe par `openExplorerOn` pour
+      // ne pas hériter de la vue laissée par une ouverture précédente.
+      case 'action:competitors': openExplorerOn(null); break
       // Même écran, ouvert directement sur la vue « Traduire et améliorer les textes ».
       case 'action:enrich-texts': openExplorerOn('enrich'); break
     }
@@ -758,7 +761,10 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
                 jamais montée et l'entrée serait introuvable. */}
             {canCompetitors && (
             <button
-              onClick={() => { setExplorerMode(null); openCompetitors() }}
+              // ⚠ S'ouvre sur « Traduire et améliorer les textes », pas sur les sites : c'est
+              // le travail quotidien qu'on vient faire ici, et le rail laisse rejoindre un
+              // concurrent en un clic. `openCompetitors` reste le bascule (recliquer ferme).
+              onClick={() => { setExplorerMode('enrich'); openCompetitors() }}
               className={`flex items-center gap-2 border text-[13px] font-medium px-4 py-2 rounded-lg transition-colors ${
                 competitorsOpen
                   ? 'bg-indigo-500/15 border-indigo-400/40 text-indigo-200'
