@@ -45,3 +45,8 @@ export const textRevisionsCol = (uid: string, watchId: string) =>
 export const pairingRulesDoc = (uid: string, watchId: string) =>
   `${watchDoc(uid, watchId)}/settings/pairing`
 
+/** Avancement publié par les nodes — jumeau du chemin client. Un watchId non canonicalisé
+ *  ici viserait un AUTRE document que celui du navigateur — l'écran mentirait la nuit. */
+export const opsProgressDoc = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/ops/progress`
+
