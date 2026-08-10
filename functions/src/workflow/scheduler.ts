@@ -139,6 +139,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     const result = await executeWorkflowHeadless(wf, {
       uid,
       signal: ac.signal,
+      runId,
       // Échéance de restitution des nodes à curseur : ancrée sur CE tick (pas sur le
       // startedAt logique d'une série de reprises — chaque tranche a sa pleine fenêtre).
       deadlineAt: Date.now() + RUN_TIMEOUT_MS - DOWNSTREAM_RESERVE_MS,

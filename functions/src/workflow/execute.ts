@@ -6,6 +6,8 @@ import { getServerNode } from './registry'
 import { SERVER_UNSUPPORTED, SERVER_SKIP_VISUAL, SERVER_PASS_THROUGH } from './nodes/index'
 import { mergeInputValue } from './mergeInputs'
 import { getUserLocale, t } from '../i18n'
+import { firstWatchId, LABELS } from './preflight'
+import { recordIncident, pruneExpiredIncidents } from '../priceWatch/opsIncidents'
 
 export interface HeadlessResult {
   status: 'success' | 'error' | 'partial'
@@ -96,10 +98,16 @@ export async function executeWorkflowHeadless(
     onNodeDone?: (nodeId: string, output: Record<string, unknown>) => void | Promise<void>
     /** Échéance de restitution pour les nodes à curseur (cf. ServerRunCtx.deadlineAt). */
     deadlineAt?: number
+    /** Identifiant du run courant — reporté sur les incidents consignés (cf. plus bas). */
+    runId?: string
   },
 ): Promise<HeadlessResult> {
   // Résolue UNE fois par run : une lecture Firestore, pas une par message.
   const locale = await getUserLocale(opts.uid)
+  // Suivi adressé par CE flux, une fois pour tout le run — jumeau EXACT du câblage
+  // navigateur (executor.ts) : `null` quand ce workflow n'en adresse aucun, et alors
+  // aucune carte en erreur n'y sera consignée.
+  const incidentWatchId = firstWatchId(wf)
   const logs: RunLog[] = []
   const log = (level: RunLog['level'], msg: string, node?: string) => {
     logs.push({ ts: Date.now(), level, node, msg })
@@ -130,6 +138,9 @@ export async function executeWorkflowHeadless(
   const skipped = new Set<string>()
   const started = new Set<string>() // nodes entrés dans spec.run (garde reprise)
   let cycleComplete = false // posé par ctx.reportCycleComplete (fin de cycle de moisson)
+  // Un incident au moins a-t-il été consigné pendant CE run ? Sert à ne purger qu'une fois
+  // par run (pas une fois par carte en erreur) — cf. `pruneExpiredIncidents` plus bas.
+  let recordedIncident = false
 
   const loops = detectLoops(wf.nodes, wf.edges)
   const internalIds = new Set<string>()
@@ -321,6 +332,37 @@ export async function executeWorkflowHeadless(
         skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id)
       } else {
         errored.add(node.id); log('error', msg, node.id)
+        // Journal des pannes de la veille tarifaire — MÊME granularité que le navigateur
+        // (executor.ts) : une entrée par carte en erreur, silencieusement omise quand ce
+        // flux n'adresse aucun suivi. Fire-and-forget : `recordIncident` avale déjà ses
+        // propres erreurs et ne doit jamais ralentir ni faire échouer le run.
+        //
+        // ⚠ Pas de double consignation avec le `catch` de `scheduler.ts` (run qui plante
+        // entièrement) POUR LA MÊME panne : ce catch-ci ne rethrow JAMAIS — y compris pour
+        // un échec DANS `runBody` (chaque itération de boucle est `await`ée à l'intérieur
+        // de CE `try`, dans la branche `loopPair` ci-dessus, donc son échec atterrit ici
+        // aussi, attribué à la carte « each »). L'échec d'un node reste donc toujours local
+        // à `runNode` ; il ne peut jamais déclencher AUSSI le catch englobant pour la MÊME
+        // raison — celui-ci n'est atteignable que par une panne D'UN AUTRE ORDRE (bug
+        // d'infrastructure du run — écriture d'état live, boucle de niveaux —, pas l'échec
+        // d'un `spec.run()`).
+        //
+        // ⚠⚠ Ceci ne couvre PAS les reprises cron (tick suivant après timeout, même runId,
+        // cf. scheduler.ts::canResume). `onNodeDone`/`saveNodeOutput` ne checkpointent que
+        // les nodes qui RÉUSSISSENT ; un node resté en erreur au tick N n'est donc jamais
+        // dans `resume.outputs` et se retrouve ré-exécuté au tick N+1 — s'il échoue à
+        // nouveau, un DEUXIÈME incident est consigné, même runId, même carte. Ce n'est pas
+        // la même panne comptée deux fois par erreur de câblage : c'est une VRAIE
+        // ré-exécution qui échoue une deuxième fois. Accepté tel quel (pas de dédup par
+        // runId+node : un in-memory set ne survivrait pas au changement d'invocation entre
+        // deux ticks) — signalé au journal des rapports plutôt que corrigé en silence.
+        if (incidentWatchId) {
+          recordedIncident = true
+          void recordIncident(opts.uid, incidentWatchId, {
+            ts: Date.now(), message: msg, nodeLabel: LABELS[node.type] ?? node.type,
+            origin: 'server', ...(opts.runId ? { runId: opts.runId } : {}),
+          })
+        }
       }
     }
   }
@@ -353,6 +395,16 @@ export async function executeWorkflowHeadless(
     await runConcurrent(group, MAX_NODE_CONCURRENCY, runNode)
     await opts.onProgress?.(deriveStates(), nodeOutputs)
   }
+
+  // Purge du journal des pannes — UNE fois par run, pas une fois par carte en erreur : la
+  // granularité fine ci-dessus (une entrée par carte) rend la rétention 90 jours réellement
+  // nécessaire en cron (des dizaines d'incidents/jour sur un flux qui échoue régulièrement),
+  // là où le navigateur ne l'atteint qu'à force de runs répétés. Isolée dans son propre
+  // échec (cf. `pruneExpiredIncidents`) et attendue (pas fire-and-forget) : une Cloud
+  // Function peut être coupée juste après son `return`, un `void` risquerait de ne jamais
+  // s'exécuter — ce coût (une lecture Firestore de plus, une fois par run) est acceptable
+  // ici, contrairement à `recordIncident` qui reste fire-and-forget sur le chemin chaud.
+  if (incidentWatchId && recordedIncident) await pruneExpiredIncidents(opts.uid, incidentWatchId)
 
   const errorCount = errored.size
   const status: HeadlessResult['status'] = errorCount === 0 ? 'success' : nodeCount > 0 ? 'partial' : 'error'

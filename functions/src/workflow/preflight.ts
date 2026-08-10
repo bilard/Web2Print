@@ -25,7 +25,10 @@ const WATCH_NODES = new Set(['harvest-competitor', 'compare-catalog', 'directed-
 /** Nodes qui ALIMENTENT l'index concurrent (le comparatif le consomme). */
 const INDEX_FEEDERS = new Set(['harvest-competitor', 'directed-search'])
 
-const LABELS: Record<string, string> = {
+// Exporté : `execute.ts` s'en sert pour le libellé d'une carte en erreur consignée au
+// journal des pannes (couvre les nodes de la veille tarifaire ; les autres retombent sur
+// leur `type` brut — aucun catalogue de libellés traduits n'existe côté serveur).
+export const LABELS: Record<string, string> = {
   'harvest-competitor': 'Moisson concurrents',
   'compare-catalog': 'Comparer catalogue',
   'directed-search': 'Recherche dirigée',
