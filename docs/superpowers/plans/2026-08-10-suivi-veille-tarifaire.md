@@ -515,15 +515,26 @@ export function shouldPublish(lastAt: number, now: number, force: boolean): bool
   return force || lastAt === 0 || now - lastAt >= OPS_WRITE_INTERVAL_MS
 }
 
-let lastAt = 0
+/**
+ * Dernière écriture PAR SUIVI.
+ *
+ * ⚠ Un compteur global se ferait taire tout seul : rien n'interdit deux cartes « Textes »
+ * dans un flux, ni deux suivis dans le même onglet, et la seconde n'écrirait jamais.
+ *
+ * ⚠ Limite assumée : deux cartes « Textes » sur le MÊME suivi publient dans le même champ
+ * du même document — la dernière écriture gagne. Le document décrit un suivi, pas une
+ * carte. Si ce cas devient courant, il faudra clefer par carte, ce qui change la forme du
+ * document et l'écran.
+ */
+const lastAtByWatch = new Map<string, number>()
 
 /** Écrit l'avancement. Fire-and-forget : un échec ne doit jamais perturber le passage. */
 export async function publishTextsProgress(
   uid: string, watchId: string, texts: TextsProgress, opts: { force?: boolean } = {},
 ): Promise<void> {
   const now = Date.now()
-  if (!shouldPublish(lastAt, now, opts.force === true)) return
-  lastAt = now
+  if (!shouldPublish(lastAtByWatch.get(watchId) ?? 0, now, opts.force === true)) return
+  lastAtByWatch.set(watchId, now)
   try {
     await setDoc(doc(db, opsProgressDoc(uid, watchId)), { updatedAt: now, texts }, { merge: true })
   } catch (e) {
@@ -532,7 +543,7 @@ export async function publishTextsProgress(
 }
 
 /** Remet le compteur d'espacement à zéro — un nouveau passage publie immédiatement. */
-export function resetPublishThrottle(): void { lastAt = 0 }
+export function resetPublishThrottle(watchId: string): void { lastAtByWatch.delete(watchId) }
 ```
 
 - [ ] **Step 4 : Lancer le test**
@@ -624,14 +635,14 @@ export function shouldPublish(lastAt: number, now: number, force: boolean): bool
   return force || lastAt === 0 || now - lastAt >= OPS_WRITE_INTERVAL_MS
 }
 
-let lastAt = 0
+const lastAtByWatch = new Map<string, number>()
 
 export async function publishTextsProgress(
   uid: string, watchId: string, texts: TextsProgress, opts: { force?: boolean } = {},
 ): Promise<void> {
   const now = Date.now()
-  if (!shouldPublish(lastAt, now, opts.force === true)) return
-  lastAt = now
+  if (!shouldPublish(lastAtByWatch.get(watchId) ?? 0, now, opts.force === true)) return
+  lastAtByWatch.set(watchId, now)
   try {
     await getFirestore()
       .doc(`users/${uid}/priceWatch/${watchId}/ops/progress`)
@@ -641,7 +652,7 @@ export async function publishTextsProgress(
   }
 }
 
-export function resetPublishThrottle(): void { lastAt = 0 }
+export function resetPublishThrottle(watchId: string): void { lastAtByWatch.delete(watchId) }
 ```
 
 - [ ] **Step 4 : Lancer le test**
@@ -815,7 +826,7 @@ Juste après le `ctx.log('info', t('run.textEnrich.planned', …))` (~ligne 205)
           : {}),
       }), { force })
     }
-    resetPublishThrottle()
+    if (opsWatchId) resetPublishThrottle(opsWatchId)
     publishOps(0, true)
 ```
 
@@ -1043,25 +1054,21 @@ export function shouldBeat(lastAt: number, now: number, force: boolean): boolean
 
 let timer: ReturnType<typeof setInterval> | null = null
 let lastBeatAt = 0
-let blocked = false
+/** Le run que CET onglet publie, ou null quand la place appartient à un autre. */
+let currentRunId: string | null = null
 
-async function beat(workflowId: string, runId: string, force: boolean, endStatus?: string): Promise<void> {
+async function beat(
+  workflowId: string, runId: string, force: boolean,
+  opts: { replace?: boolean; endStatus?: string } = {},
+): Promise<void> {
   const uid = getWorkspaceUid()
-  if (!uid || blocked) return
+  if (!uid) return
   const now = Date.now()
   if (!shouldBeat(lastBeatAt, now, force)) return
   lastBeatAt = now
   const ref = doc(db, 'users', uid, 'workflowRunsLive', workflowId)
+  const endStatus = opts.endStatus
   try {
-    if (force && lastBeatAt === now) {
-      const snap = await getDoc(ref)
-      if (!canOverwrite((snap.data() as LiveDocHead | undefined) ?? null, runId, now)) {
-        // On ne se bat pas pour le document : on renonce et on le dit une fois.
-        blocked = true
-        console.warn('[suivi] un autre run occupe déjà l’état live de ce flux — pas d’écrasement.')
-        return
-      }
-    }
     const states = useRunContext.getState().nodeStates
     const nodeStates: Record<string, string> = {}
     const nodeCounts: Record<string, number> = {}
@@ -1071,34 +1078,61 @@ async function beat(workflowId: string, runId: string, force: boolean, endStatus
       if (typeof st.count === 'number') nodeCounts[id] = st.count
       if (typeof st.cycles === 'number') nodeCycles[id] = st.cycles
     }
-    await setDoc(ref, {
+    const payload = {
       runId, origin: 'client', trigger: 'manual',
       workflowName: useWorkflowStore.getState().current?.name ?? '',
       beatAt: now, nodeStates, nodeCounts, nodeCycles,
       ...(endStatus ? { status: endStatus, endedAt: now } : { status: 'running' }),
-    }, { merge: true })
+    }
+    // ⚠ REMPLACEMENT au démarrage, fusion ensuite. Le merge Firestore fusionne les maps
+    // clé à clé : `nodeStates` garderait les entrées de cartes SUPPRIMÉES du graphe,
+    // affichées « en erreur » indéfiniment, et un `endedAt` périmé survivrait au nouveau
+    // `startedAt` — durée de run absurde. Le jumeau serveur a exactement cette garde
+    // (`replace` dans functions/src/workflow/runLive.ts).
+    await (opts.replace ? setDoc(ref, { ...payload, startedAt: now }) : setDoc(ref, payload, { merge: true }))
   } catch (e) {
     console.warn('[suivi] battement du run refusé :', e)
   }
 }
 
-/** Démarre la publication. À appeler au tout début d'un run navigateur. */
-export function startClientRunBeat(workflowId: string, runId: string): void {
+/**
+ * Démarre la publication. À appeler au tout début d'un run navigateur.
+ *
+ * ⚠ La place se prend UNE FOIS, au démarrage. Un cron qui démarre après nous n'est pas
+ * détecté : il écrasera notre battement, ce qui est l'ordre d'arrivée correct. Relire le
+ * document toutes les cinq secondes pour arbitrer coûterait une lecture par battement sur
+ * toute la durée du run, pour un conflit qui se produit rarement et se résout tout seul.
+ */
+export async function startClientRunBeat(workflowId: string, runId: string): Promise<void> {
   stopTimer()
   lastBeatAt = 0
-  blocked = false
-  void beat(workflowId, runId, true).then(() => {
-    // ⚠ Le document doit être REMPLACÉ au démarrage, pas fusionné : les états de cartes
-    // supprimées du graphe survivraient et s'afficheraient « en erreur » indéfiniment.
-    // `setDoc` sans merge est fait ici, une seule fois, par le premier battement forcé.
-  })
+  currentRunId = runId
+  const uid = getWorkspaceUid()
+  if (!uid) return
+  try {
+    const snap = await getDoc(doc(db, 'users', uid, 'workflowRunsLive', workflowId))
+    if (!canOverwrite((snap.data() as LiveDocHead | undefined) ?? null, runId, Date.now())) {
+      // On ne se bat pas pour le document : un autre run vivant l'occupe. Le run local
+      // continue normalement — il ne sera simplement pas publié.
+      currentRunId = null
+      console.warn('[suivi] un autre run occupe l’état live de ce flux — publication abandonnée.')
+      return
+    }
+  } catch (e) {
+    console.warn('[suivi] état live illisible, publication abandonnée :', e)
+    currentRunId = null
+    return
+  }
+  await beat(workflowId, runId, true, { replace: true })
   timer = setInterval(() => { void beat(workflowId, runId, false) }, CLIENT_BEAT_INTERVAL_MS)
 }
 
 /** Arrête la publication et écrit l'issue. */
 export function stopClientRunBeat(workflowId: string, runId: string, status: string): void {
   stopTimer()
-  void beat(workflowId, runId, true, status)
+  if (currentRunId !== runId) return   // la place ne nous appartenait pas
+  void beat(workflowId, runId, true, { endStatus: status })
+  currentRunId = null
 }
 
 function stopTimer(): void {
@@ -1165,11 +1199,10 @@ Expected: FAIL — `isOwnEcho` n'est pas exporté.
 
 - [ ] **Step 3 : Ajouter la fonction et le run courant**
 
-Dans `src/features/workflows/runtime/publishClientRun.ts`, ajouter :
+Dans `src/features/workflows/runtime/publishClientRun.ts`, ajouter (la variable
+`currentRunId` est déjà déclarée et tenue à jour par la Task 7) :
 
 ```ts
-let currentRunId: string | null = null
-
 /** L'identifiant du run que CET onglet publie, ou null. */
 export function activeClientRunId(): string | null { return currentRunId }
 
@@ -1178,9 +1211,6 @@ export function isOwnEcho(head: { origin?: string; runId?: string } | null, runI
   return !!head && head.origin === 'client' && !!runId && head.runId === runId
 }
 ```
-
-Poser `currentRunId = runId` dans `startClientRunBeat`, `currentRunId = null` dans
-`stopClientRunBeat`.
 
 - [ ] **Step 4 : Lancer le test**
 
@@ -1210,7 +1240,8 @@ Dans `src/features/workflows/runtime/executeWorkflow` (`executor.ts`), après
 ```ts
   // Publie ce run pour le reste du monde (autres onglets, autre poste, PWA, écran Suivi).
   const runId = `c-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
-  startClientRunBeat(wf.id, runId)
+  // Ne bloque pas le démarrage : la prise de place lit un document, le run n'attend pas.
+  void startClientRunBeat(wf.id, runId)
 ```
 
 À la fin de la même fonction (`executor.ts:576-581`), l'historique durable est **déjà**
