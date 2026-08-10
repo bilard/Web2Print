@@ -21,6 +21,8 @@ import { loadEnrichMemory, saveEnrichMemory } from '../../textEnrich/memoryStore
 import { buildPublishedRevisions, type RevisionEvent } from '../../textEnrich/publishRevisions'
 import { savePublishedRevisions } from '../../priceWatch/textRevisionsStore'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
+import { textsSnapshot } from '../../priceWatch/textsSnapshot'
+import { publishTextsProgress, resetPublishThrottle } from '../../priceWatch/opsProgress'
 import type { CellValue } from '../../excel/types'
 import { callLlm, parseLlmJson } from '../llm'
 import { t } from '../../i18n'
@@ -83,6 +85,29 @@ registerServerNode({
     ctx.log('info', t(ctx.locale, 'run.textEnrich.planned', {
       units: units.length, considered: counts.considered, done: counts.skipped['already-done'],
     }))
+    // Publie le volume RÉEL dès qu'il est connu — avant le premier appel au modèle, jumeau
+    // du navigateur. Sans cette première écriture, l'écran « Suivi » reste vide pendant les
+    // minutes de chiffrage d'un run cron, précisément quand on vient voir s'il tourne.
+    const opsWatchId = resolveSitesInput(inputs.sites, {
+      sitesText: '', watchIdRaw: String((config as { watchId?: unknown }).watchId ?? ''),
+      workflowId: ctx.workflowId,
+    }).watchId
+    const opsStartedAt = Date.now()
+    const publishOps = (doneUnits: number, force = false) => {
+      if (!opsWatchId) return
+      void publishTextsProgress(ctx.uid, opsWatchId, textsSnapshot({
+        units, considered: counts.considered, alreadyDone: counts.skipped['already-done'],
+        done: doneUnits, startedAt: opsStartedAt, now: Date.now(), origin: 'server',
+        ...(memoryOn
+          ? { reasons: {
+              fresh: decisions.filter((d) => d.reason === 'new').length,
+              stale: decisions.filter((d) => d.reason === 'changed').length,
+            } }
+          : {}),
+      }), { force })
+    }
+    if (opsWatchId) resetPublishThrottle(opsWatchId)
+    publishOps(0, true)
     if (units.length === 0) {
       return { enriched: { name: sheet?.name ?? 'sheet', columns: sheet?.columns ?? [], rows: allRows }, revisions: { name: 'revisions', columns: [], rows: [] } }
     }
@@ -184,6 +209,7 @@ registerServerNode({
           if (done % 500 < 10 || done >= total) {
             ctx.log('info', t(ctx.locale, 'run.textEnrich.progress', { done, total }))
           }
+          publishOps(done, done >= total)
         },
       }),
       {
