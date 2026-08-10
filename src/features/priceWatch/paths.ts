@@ -76,3 +76,12 @@ export const pairingRulesDoc = (uid: string, watchId: string) =>
 // les deux à la lecture.
 export const textRevisionsCol = (uid: string, watchId: string) =>
   `${watchDoc(uid, watchId)}/textRevisions`
+
+/** Avancement publié par les nodes — un document par suivi, quelques centaines d'octets. */
+export const opsProgressDoc = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/ops/progress`
+
+/** Journal des pannes. ⚠ Une COLLECTION : les chemins Firestore alternent collection et
+ *  document, on ne peut pas ajouter d'entrées dans `.../ops/incidents`. */
+export const opsIncidentsCol = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/opsIncidents`
