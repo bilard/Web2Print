@@ -40,18 +40,18 @@ export interface Chantier {
   id: ChantierId
   /** Ce qui est fait — fiches, champs ou sites selon le chantier. */
   done: number
-  /** Ce qu'il reste. */
+  /** Ce qu'il reste (net du travail déjà fait). */
   remaining: number
   /** 0 → 100. */
   pct: number
   /** Durée estimée, ou null quand elle ne vaudrait rien. */
   etaMs: number | null
-  /** Débit mesuré (unités/minute), null avant la première minute. */
+  /** Débit mesuré (unités/minute), null avant la première minute ou si le travail s'est arrêté. */
   perMin: number | null
   /** Ventilation par langue — traduction seulement. */
   byLang?: { lang: string | null; count: number }[]
-  /** Jamais traité / texte source modifié depuis. Absent quand la source ne le dit pas. */
-  reasons?: { fresh: number; stale: number }
+  /** Vrai si le travail s'est arrêté (inactif depuis plus de OPS_BEAT_MS). */
+  stale?: boolean
 }
 
 export interface WatchOpsView {
@@ -59,6 +59,8 @@ export interface WatchOpsView {
   chantiers: Chantier[]
   /** Dernière écriture d'avancement, tous chantiers confondus. */
   lastBeatAt: number | null
+  /** Jamais traité / texte source modifié depuis — global au passage de textes, pas par chantier. */
+  textsReasons?: { fresh: number; stale: number }
 }
 
 export interface WatchOpsInput {

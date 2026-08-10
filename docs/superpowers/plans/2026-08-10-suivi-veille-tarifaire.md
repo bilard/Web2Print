@@ -1581,9 +1581,17 @@ terminé), le temps écoulé, la prochaine relance. Un run non vivant s'affiche
 `ChantierCard.tsx` (≤ 110 lignes) : un chantier — titre via `chantierLabelKey`, barre de
 progression, `done` / `remaining`, pourcentage, durée estimée via `etaParts` (masquée quand
 `etaMs` est `null`, avec la mention « estimation indisponible »), débit `perMin` quand il
-existe, ventilation `byLang` en liste courte, et `reasons` (jamais traité / source modifiée)
-quand la source la donne. Quand `reasons` est absent, afficher « non ventilé » — surtout pas
-deux zéros.
+existe, et ventilation `byLang` en liste courte.
+
+Un chantier dont `stale` est vrai — le passage n'a plus donné signe de vie depuis plus de
+`OPS_BEAT_MS` — affiche **« passage arrêté »** et masque son estimation. Un chiffre calculé
+sur un travail arrêté ne vaut rien, et il gonfle silencieusement tant que l'écran reste
+ouvert.
+
+La ventilation « jamais traité / source modifiée depuis » ne vit **pas** sur un chantier :
+elle est globale au passage et se lit sur `view.textsReasons`. `WatchOpsScreen` l'affiche
+une fois, sous les chantiers texte. Absente (mode PIM), afficher « non ventilé » — surtout
+pas deux zéros, qui se liraient comme « rien à faire ».
 
 `WatchOpsScreen.tsx` (≤ 120 lignes) : assemblage. Sélecteur de suivi (`WatchSelector`),
 `useWatchOps`, `OpsHeader`, la grille de `ChantierCard`, et les emplacements des blocs de la
