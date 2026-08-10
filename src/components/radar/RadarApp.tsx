@@ -130,6 +130,11 @@ export function RadarApp() {
       </RadarHeader>
 
       <main className="radar-safe-x radar-safe-bottom mx-auto max-w-lg space-y-4 pt-2 landscape:max-w-5xl">
+        {/* Comme le scraping et le workflow (juste en dessous) : consultable AVANT le
+            premier rapport « Comparer catalogue » — c'est justement là qu'on veut voir
+            tourner la toute première moisson depuis son téléphone. `RadarOpsCard` gère
+            déjà un `ops` nul et se tait d'elle-même s'il n'y a ni run ni chantier. */}
+        {tab === 'apercu' && <RadarOpsCard watchId={watchId} workflowId={workflowId} ops={ops} />}
         {/* Le suivi du scraping ne dépend PAS d'un « Comparer » : il reste consultable
             avant le premier rapport (c'est justement là qu'on le regarde). */}
         {tab === 'scraping' ? (
@@ -146,7 +151,6 @@ export function RadarApp() {
             {tab === 'apercu' && (
               <>
                 <RadarScrapeBadge status={status} onClick={() => setTab('scraping')} />
-                <RadarOpsCard watchId={watchId} workflowId={workflowId} ops={ops} />
                 <RadarHero cockpit={cockpit} holdSeries={hold} ops={ops} collectActive={status.state === 'running'} />
                 <RadarKpiGrid cockpit={cockpit} />
                 {/* Paysage : les deux listes passent côte à côte (2 colonnes). */}
