@@ -30,6 +30,21 @@ const RULES = `Contraintes de forme, à respecter quoi qu'il arrive :
 - n'invente aucune caractéristique : tu reformules ce qui est là, tu ne complètes pas avec ce que tu sais du produit ;
 - réponds en français.`
 
+/**
+ * Le même contrat pour un champ déclaré SYNTHÈSE ASSUMÉE (`plan.allowSummary`).
+ *
+ * ⚠ Sans lui, un plan « fais une synthèse courte pour le nom du produit » recevait la
+ * consigne de l'utilisateur ET l'ordre de ne rien raccourcir : deux demandes opposées dans
+ * le même prompt, une réponse au hasard, et un refus de la garde derrière.
+ */
+const SUMMARY_RULES = `Contraintes de forme, à respecter quoi qu'il arrive :
+- SYNTHÈSE ASSUMÉE : ce champ doit être RACCOURCI. Tu as le droit d'écarter des éléments de l'original — c'est ce qu'on te demande ;
+- garde en priorité ce qui IDENTIFIE le produit : sa nature, sa marque, sa référence, son modèle ;
+- ce que tu gardes doit être recopié EXACTEMENT : références, codes et valeurs chiffrées, chiffre pour chiffre ;
+- n'ajoute JAMAIS une marque ou un fabricant absent du texte d'origine ;
+- n'invente aucune caractéristique : tu choisis parmi ce qui est là, tu ne complètes pas avec ce que tu sais du produit ;
+- réponds en français.`
+
 /** Ce qu'on attend du modèle pour chaque texte du lot. */
 export const EnrichBatchSchema = z.object({
   results: z.array(z.object({
@@ -111,7 +126,7 @@ export function buildBatchPrompt(units: EnrichUnit[], opts: PromptOptions = {}):
     ...(consigne ? [consigne, ''] : []),
     KIND_LINE[plan.kind],
     '',
-    RULES,
+    plan.allowSummary ? SUMMARY_RULES : RULES,
     ...(opts.withNote ? ['- indique en une phrase ce que tu as changé.'] : []),
     '',
     'Textes :',

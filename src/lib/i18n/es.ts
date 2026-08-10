@@ -1784,6 +1784,8 @@ export const es: Record<TranslationKey, string> = {
   'node.text-enrich.useTemplate': 'Plantilla',
   'node.text-enrich.includeEmpty': 'Campos vacíos',
   'node.text-enrich.includeUndetected': 'Idioma indeterminado',
+  'node.text-enrich.allowSummary': 'Síntesis asumida',
+  'node.text-enrich.allowSummary.help': 'Este campo debe ACORTARSE: se levanta el control de perímetro solo para él. Sin esta casilla, una consigna del tipo «haz una síntesis corta» se rechaza en cada pasada — por defecto la garantía exige que no se pierda nada del original. ⚠ Exención amplia: la síntesis puede descartar referencias, cotas y modelos. Sigue prohibido INVENTAR una marca o una característica.',
   'node.text-enrich.includeUndetected.help': 'Traducir también los textos cuyo idioma el detector no ha podido determinar: alrededor del 70 % de un catálogo de piezas, ya que se abstiene con textos cortos, muy técnicos o mal codificados. Su silencio no significa «ya está en francés». El modelo tiene la consigna de devolver sin cambios un texto que ya esté en francés.',
   'node.text-enrich.brandField': 'Columna marca',
   'node.text-enrich.ref2Field': 'Columna ref. fabricante',

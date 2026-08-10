@@ -24,6 +24,8 @@ export interface PlanConfig {
   includeEmpty?: boolean
   /** Traduire aussi les textes dont la langue n'a pas été tranchée — 70 % du catalogue. */
   includeUndetected?: boolean
+  /** Ce champ est une SYNTHÈSE assumée : le raccourcir est le but, pas un défaut. */
+  allowSummary?: boolean
 }
 
 export interface TextEnrichConfig {
@@ -145,6 +147,9 @@ export function configToPlans(config: TextEnrichConfig): FieldPlan[] {
         : {}),
       ...(p.includeEmpty ? { includeEmpty: true } : {}),
       ...(p.includeUndetected ? { includeUndetected: true } : {}),
+      // ⚠ Jamais sur une traduction : traduire n'est pas résumer, et une case cochée puis
+      // le type du plan changé lèverait la garde sur une traduction sans qu'on l'ait voulu.
+      ...(p.allowSummary && p.kind !== 'translate' ? { allowSummary: true } : {}),
     }))
 }
 

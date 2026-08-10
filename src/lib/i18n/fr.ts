@@ -1863,6 +1863,8 @@ export const fr = {
   'node.text-enrich.useTemplate': 'Gabarit',
   'node.text-enrich.includeEmpty': 'Champs vides',
   'node.text-enrich.includeUndetected': 'Langue indéterminée',
+  'node.text-enrich.allowSummary': 'Synthèse assumée',
+  'node.text-enrich.allowSummary.help': 'Ce champ doit être RACCOURCI : le contrôle de périmètre est levé pour lui seul. Sans cette case, une consigne du type « fais une synthèse courte » est refusée à chaque passage — la garde exige par défaut que rien de l’original ne se perde. ⚠ Levée large : la synthèse peut écarter références, cotes et modèles. Il lui reste interdit d’INVENTER une marque ou une caractéristique.',
   'node.text-enrich.includeUndetected.help': 'Traduire aussi les textes dont le détecteur n’a pas su trancher la langue — environ 70 % d’un catalogue de pièces, car il s’abstient sur les textes courts, très techniques ou à l’encodage abîmé. Son silence ne veut pas dire « déjà en français ». Le modèle a pour consigne de rendre tel quel un texte déjà français.',
   'node.text-enrich.brandField': 'Colonne marque',
   'node.text-enrich.ref2Field': 'Colonne réf. constructeur',

@@ -298,6 +298,19 @@ export function TextEnrichConfigPanel({
               />
               {t('node.text-enrich.includeEmpty')}
             </label>
+            {/* ⚠ L'inverse : jamais sur une traduction — traduire n'est pas résumer. Coché,
+                ce champ a le droit de RACCOURCIR, et la garde ne lui reproche plus rien
+                d'autre que d'inventer. C'est la porte de sortie d'une consigne comme
+                « fais une synthèse courte », que l'isopérimètre refuserait chaque nuit. */}
+            {plan.kind !== 'translate' && (
+              <label className="flex items-center gap-1" title={t('node.text-enrich.allowSummary.help')}>
+                <input
+                  type="checkbox" checked={!!plan.allowSummary} className="h-3.5 w-3.5 accent-accent"
+                  onChange={(e) => setPlan(i, { allowSummary: e.target.checked })}
+                />
+                {t('node.text-enrich.allowSummary')}
+              </label>
+            )}
             {/* ⚠ N'a de sens que sur une TRADUCTION : c'est la langue détectée qui trie, et
                 elle seule. Sur « Améliorer », la longueur décide et la case ne changerait
                 rien — l'afficher là serait un réglage qui ment. */}

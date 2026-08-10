@@ -35,6 +35,17 @@ export interface FieldPlan {
    * rien, mais on ne perd plus 70 % du catalogue.
    */
   includeUndetected?: boolean
+  /**
+   * SYNTHÈSE ASSUMÉE : ce champ doit être RACCOURCI, on lève le contrôle de périmètre.
+   *
+   * ⚠ Existe parce qu'une consigne comme « fais une synthèse courte pour le nom du produit »
+   * demande exactement ce que la garde refuse depuis qu'elle exige l'isopérimètre : ce
+   * plan-là serait rejeté toutes les nuits, sans rien écrire. Le drapeau est PAR PLAN —
+   * l'isopérimètre reste absolu partout ailleurs.
+   *
+   * ⚠ N'a aucun sens sur une traduction : traduire, ce n'est pas résumer.
+   */
+  allowSummary?: boolean
 }
 
 /**

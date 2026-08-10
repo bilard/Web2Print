@@ -135,3 +135,27 @@ describe('périmètre', () => {
     expect(isSafeRevision('Fil de Ø 1,3mm, longueur 8 m', 'Fil de 1,3 mm de diamètre, longueur 8 m.')).toBe(true)
   })
 })
+
+// La porte de sortie, déclarée PLAN PAR PLAN : « fais une synthèse courte pour le nom du
+// produit » demande exactement ce que l'isopérimètre refuse. Sans elle, ce plan-là était
+// rejeté à chaque passage, sans rien écrire.
+describe('synthèse assumée', () => {
+  const SRC = 'Original STIHL Ersatzteil : VIKING MB 545.0 T, MB 650.0 KS, MB 655.0 VM '
+    + '— longueur 2035mm ( 0000-082-0413 )'
+
+  it('laisse passer un raccourci qui écarte modèles, cotes et références', () => {
+    expect(isSafeRevision(SRC, 'Cache complet STIHL', { refs: ['0000-082-0413'], brands: ['STIHL'], allowSummary: true }))
+      .toBe(true)
+  })
+
+  it('REFUSE toujours une marque INVENTÉE — écarter n’est pas inventer', () => {
+    expect(findViolations('Cache complet (Quant) noir-gris', 'Cache complet HONDA', {
+      brands: ['Honda'], allowSummary: true,
+    })).toEqual([{ kind: 'brand-added', token: 'Honda' }])
+  })
+
+  it('le même raccourci reste REFUSÉ sans le drapeau', () => {
+    expect(isSafeRevision(SRC, 'Cache complet STIHL', { refs: ['0000-082-0413'], brands: ['STIHL'] }))
+      .toBe(false)
+  })
+})

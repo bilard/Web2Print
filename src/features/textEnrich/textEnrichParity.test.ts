@@ -71,7 +71,12 @@ describe('jumeaux serveur du moteur d’enrichissement', () => {
     // Elles étaient hors du découpage ci-dessus, et c'est par là que la dérive est passée :
     // le navigateur exigeait l'isopérimètre (ne jamais abréger une liste de compatibilité)
     // pendant que le cron demandait toujours l'ancienne version, toutes les nuits.
-    const rules = (s: string) => /const RULES = `([\s\S]*?)`/.exec(s)?.[1] ?? '(introuvable)'
+    // ⚠ TOUS les blocs de règles, pas seulement `RULES` : « synthèse assumée » a son propre
+    // contrat, et une porte de sortie qui diverge est encore plus discrète qu'une règle.
+    const rules = (s: string) => {
+      const found = [...s.matchAll(/const (\w*RULES) = `([\s\S]*?)`/g)].map((m) => `${m[1]}\n${m[2]}`)
+      return found.length > 0 ? found.join('\n———\n') : '(introuvable)'
+    }
     expect(rules(body('functions/src/textEnrich/prompt.ts')))
       .toBe(rules(body('src/features/textEnrich/prompt.ts')))
   })

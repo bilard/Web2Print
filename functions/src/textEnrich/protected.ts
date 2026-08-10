@@ -28,6 +28,18 @@ export interface ProtectedOptions {
   eans?: (string | null | undefined)[]
   /** Marques à ne jamais traduire ni inventer. */
   brands?: (string | null | undefined)[]
+  /**
+   * SYNTHÈSE ASSUMÉE : ce champ doit être raccourci, on lève le contrôle de PÉRIMÈTRE.
+   *
+   * ⚠ Déclaré plan par plan, jamais par défaut. Une consigne comme « fais une synthèse
+   * courte pour le nom du produit » demande exactement ce que la garde refuse — et sans
+   * cette porte, ce plan-là serait rejeté toutes les nuits, sans rien écrire.
+   *
+   * ⚠ Ne lève QUE le périmètre. Une synthèse n'a pas plus le droit qu'une autre réécriture
+   * de perdre la référence du produit, d'altérer une cote ou d'inventer une marque : ce
+   * qu'elle garde doit rester exact.
+   */
+  allowSummary?: boolean
 }
 
 type ViolationKind =
@@ -133,55 +145,71 @@ function foldBrand(s: string): string {
  * ferait rejeter des descriptions parfaitement valides qui n'ont jamais cité de code.
  * L'exception est la marque, où l'AJOUT est aussi grave que la perte : inventer un
  * fabricant absent de la source, c'est fabriquer de la donnée.
+ *
+ * ⚠⚠ `allowSummary` renverse la moitié de ce contrat, et il faut le dire clairement : un
+ * champ déclaré « synthèse assumée » a le droit de TOUT écarter — références, cotes,
+ * modèles, marque. Écarter est ce qu'on lui demande, et rien ne permet de distinguer
+ * « 510 mm volontairement omis » de « 510 mm devenu 51 cm » sans comprendre le texte. Ne
+ * subsiste donc que l'interdit qui ne dépend pas du périmètre : ne rien INVENTER.
  */
 export function findViolations(before: string, after: string, opts: ProtectedOptions = {}): Violation[] {
   const out: Violation[] = []
   const src = String(before ?? '')
   const dst = String(after ?? '')
-
-  for (const raw of opts.refs ?? []) {
-    const ref = String(raw ?? '').trim()
-    if (!ref || !containsRef(src, ref)) continue
-    if (!containsRef(dst, ref)) out.push({ kind: 'ref-lost', token: ref })
-  }
-
-  for (const raw of opts.eans ?? []) {
-    const ean = String(raw ?? '').trim()
-    if (!ean || !containsEan(src, ean)) continue
-    if (!containsEan(dst, ean)) out.push({ kind: 'ean-lost', token: ean })
-  }
-
-  // ⚠ Le PÉRIMÈTRE, pas seulement l'exactitude : tout code énuméré par l'original doit se
-  // retrouver dans la réécriture. C'est la garde qui manquait — les références du produit
-  // étaient protégées, la liste des modèles compatibles ne l'était pas.
-  // Les références DÉCLARÉES sont déjà jugées au-dessus, sous leur propre motif : les
-  // reprendre ici ferait dire deux fois la même chose à l'écran de refus.
-  const declared = new Set(
-    [...(opts.refs ?? []), ...(opts.eans ?? [])].map((r) => normalizeRef(String(r ?? ''))).filter(Boolean),
-  )
-  for (const code of codesOf(src)) {
-    if (declared.has(normalizeRef(code))) continue
-    if (!containsRef(dst, code)) out.push({ kind: 'code-lost', token: code })
-  }
-
-  if (!ELISION.test(src) && ELISION.test(dst)) {
-    out.push({ kind: 'elision', token: (dst.match(ELISION) ?? [''])[0] })
-  }
-
-  const afterDims = dimensionsOf(dst)
-  for (const dim of dimensionsOf(src)) {
-    if (!afterDims.has(dim)) out.push({ kind: 'number-lost', token: dim })
-  }
-
   const dstFolded = foldBrand(dst)
   const srcFolded = foldBrand(src)
+
+  if (!opts.allowSummary) {
+    for (const raw of opts.refs ?? []) {
+      const ref = String(raw ?? '').trim()
+      if (!ref || !containsRef(src, ref)) continue
+      if (!containsRef(dst, ref)) out.push({ kind: 'ref-lost', token: ref })
+    }
+
+    for (const raw of opts.eans ?? []) {
+      const ean = String(raw ?? '').trim()
+      if (!ean || !containsEan(src, ean)) continue
+      if (!containsEan(dst, ean)) out.push({ kind: 'ean-lost', token: ean })
+    }
+
+    // ⚠ Le PÉRIMÈTRE, pas seulement l'exactitude : tout code énuméré par l'original doit se
+    // retrouver dans la réécriture. C'est la garde qui manquait — les références du produit
+    // étaient protégées, la liste des modèles compatibles ne l'était pas.
+    // Les références DÉCLARÉES sont déjà jugées au-dessus, sous leur propre motif : les
+    // reprendre ici ferait dire deux fois la même chose à l'écran de refus.
+    const declared = new Set(
+      [...(opts.refs ?? []), ...(opts.eans ?? [])].map((r) => normalizeRef(String(r ?? ''))).filter(Boolean),
+    )
+    for (const code of codesOf(src)) {
+      if (declared.has(normalizeRef(code))) continue
+      if (!containsRef(dst, code)) out.push({ kind: 'code-lost', token: code })
+    }
+
+    if (!ELISION.test(src) && ELISION.test(dst)) {
+      out.push({ kind: 'elision', token: (dst.match(ELISION) ?? [''])[0] })
+    }
+
+    const afterDims = dimensionsOf(dst)
+    for (const dim of dimensionsOf(src)) {
+      if (!afterDims.has(dim)) out.push({ kind: 'number-lost', token: dim })
+    }
+
+    for (const raw of opts.brands ?? []) {
+      const brand = foldBrand(raw ?? '')
+      if (brand && srcFolded.includes(brand) && !dstFolded.includes(brand)) {
+        out.push({ kind: 'brand-lost', token: String(raw) })
+      }
+    }
+  }
+
+  // ⚠ HORS du garde : une synthèse écarte, elle n'invente pas. Fabriquer un fabricant
+  // absent de la source reste interdit quel que soit le mode.
   for (const raw of opts.brands ?? []) {
     const brand = foldBrand(raw ?? '')
     if (!brand) continue
-    const inSrc = srcFolded.includes(brand)
-    const inDst = dstFolded.includes(brand)
-    if (inSrc && !inDst) out.push({ kind: 'brand-lost', token: String(raw) })
-    if (!inSrc && inDst) out.push({ kind: 'brand-added', token: String(raw) })
+    if (!srcFolded.includes(brand) && dstFolded.includes(brand)) {
+      out.push({ kind: 'brand-added', token: String(raw) })
+    }
   }
 
   return out

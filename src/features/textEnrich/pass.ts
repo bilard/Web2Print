@@ -185,7 +185,12 @@ export async function runPass(
           counts = countOutcome(counts, { revised: false })
           return
         }
-        const violations = findViolations(unit.text, value, deps.protectedOf(unit))
+        // ⚠ Le drapeau vient du PLAN, pas des colonnes protégées : `protectedOf` lit la
+        // fiche, il ne sait pas ce qu'on demande à ce champ-là.
+        const violations = findViolations(unit.text, value, {
+          ...deps.protectedOf(unit),
+          ...(unit.plan.allowSummary ? { allowSummary: true } : {}),
+        })
         if (violations.length > 0) {
           deps.onRejected?.(unit, violations)
           counts = countOutcome(counts, { revised: false, rejected: true })
