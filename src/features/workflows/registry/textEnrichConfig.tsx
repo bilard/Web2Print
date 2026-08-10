@@ -183,6 +183,19 @@ export function TextEnrichConfigPanel({
           />
           {t('node.text-enrich.dryRun')}
         </label>
+        {/* ⚠⚠ Déclaré dans le `configSchema` mais JAMAIS rendu ici : `NodeConfigPanel`
+            affiche le panneau sur mesure OU le schéma, jamais les deux. Le réglage était
+            donc invisible et figé sur « oui », et rien ne permettait de rejouer le
+            catalogue après un changement de consigne — la mémoire de feuille clefe sur
+            l'empreinte du TEXTE SOURCE, pas sur la consigne : une consigne réécrite ne
+            reprend rien tant que la source n'a pas bougé. */}
+        <label className="flex items-center gap-1.5" title={t('node.text-enrich.incremental.help')}>
+          <input
+            type="checkbox" checked={config.incremental !== false} className="h-3.5 w-3.5 accent-accent"
+            onChange={(e) => onChange({ ...config, incremental: e.target.checked })}
+          />
+          {t('node.text-enrich.incremental')}
+        </label>
       </div>
 
       <div className="h-px bg-border" />
