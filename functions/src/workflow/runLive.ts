@@ -3,6 +3,7 @@
 // afficher la progression sur les cartes (sinon un run cron/serveur est invisible côté
 // navigateur). Un doc par workflow (écrasé à chaque run) : users/{uid}/workflowRunsLive/{workflowId}.
 import { getFirestore } from 'firebase-admin/firestore'
+import { recordIncident } from '../priceWatch/opsIncidents'
 import type { RunLog } from './types'
 
 type LiveNodeStatus = 'running' | 'success' | 'error' | 'skipped' | 'pending'
@@ -67,12 +68,26 @@ export function humanizeError(raw: string): string {
 
 /** Ajoute une ligne d'ERREUR aux logs live SANS écraser l'historique du run (arrayUnion).
  *  Sans elle, un crash de run ne laissait qu'un `status: 'error'` muet — introuvable
- *  depuis l'app (« dernier run en erreur » sans aucun détail). Message traduit en FR. */
-export async function appendRunLiveError(uid: string, workflowId: string, msg: string): Promise<void> {
+ *  depuis l'app (« dernier run en erreur » sans aucun détail). Message traduit en FR.
+ *
+ *  Consigne AUSSI l'incident dans le journal dédié (`opsIncidents`) quand ce workflow
+ *  adresse un suivi de la veille tarifaire (`opts.watchId`) : les logs live sont écrasés
+ *  au run suivant, le journal survit quatre-vingt-dix jours — cf. incidents.ts. */
+export async function appendRunLiveError(
+  uid: string, workflowId: string, msg: string, opts: { watchId?: string | null; runId?: string } = {},
+): Promise<void> {
   const { FieldValue } = await import('firebase-admin/firestore')
+  const fr = humanizeError(msg).slice(0, 600)
   try {
     await getFirestore()
       .doc(`users/${uid}/workflowRunsLive/${workflowId}`)
-      .set({ logs: FieldValue.arrayUnion({ ts: Date.now(), level: 'error', msg: humanizeError(msg).slice(0, 600) }) }, { merge: true })
+      .set({ logs: FieldValue.arrayUnion({ ts: Date.now(), level: 'error', msg: fr }) }, { merge: true })
   } catch { /* best-effort */ }
+  if (opts.watchId) {
+    // ⚠ Pas de clé `runId: undefined` : Firestore valide `.set()` de façon SYNCHRONE et
+    // lève sur un `undefined` imbriqué (cf. reference_firestore_setdoc_undefined_trap).
+    await recordIncident(uid, opts.watchId, {
+      ts: Date.now(), message: fr, origin: 'server', ...(opts.runId ? { runId: opts.runId } : {}),
+    })
+  }
 }

@@ -50,3 +50,8 @@ export const pairingRulesDoc = (uid: string, watchId: string) =>
 export const opsProgressDoc = (uid: string, watchId: string) =>
   `${watchDoc(uid, watchId)}/ops/progress`
 
+/** Journal des pannes — jumeau du chemin client. Une COLLECTION (cf. src/features/
+ *  priceWatch/paths.ts) : on ajoute des entrées, on ne remplace pas un document unique. */
+export const opsIncidentsCol = (uid: string, watchId: string) =>
+  `${watchDoc(uid, watchId)}/opsIncidents`
+

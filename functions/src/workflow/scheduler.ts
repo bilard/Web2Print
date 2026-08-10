@@ -4,7 +4,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { initializeApp, getApps } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { executeWorkflowHeadless } from './execute'
-import { preflightWarnings } from './preflight'
+import { preflightWarnings, firstWatchId } from './preflight'
 import { writeRunHistory } from './runHistory'
 import { writeRunLive, appendRunLiveError, humanizeError } from './runLive'
 import {
@@ -209,8 +209,13 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   } catch (err) {
     if (trigger === 'cron') await clearCheckpoint(uid, wf.id).catch(() => {})
     await writeRunLive(uid, wf.id, { runId, endedAt: Date.now(), status: 'error' })
-    // Le POURQUOI du crash, visible dans la console du dashboard (sinon boîte noire).
-    await appendRunLiveError(uid, wf.id, `Run interrompu : ${err instanceof Error ? err.message : String(err)}`)
+    // Le POURQUOI du crash, visible dans la console du dashboard (sinon boîte noire), et
+    // dans le journal des pannes quand ce workflow adresse un suivi (survit à l'élagage
+    // des logs live et de l'historique, cf. appendRunLiveError).
+    await appendRunLiveError(
+      uid, wf.id, `Run interrompu : ${err instanceof Error ? err.message : String(err)}`,
+      { watchId: firstWatchId(wf), runId },
+    )
     throw err
   } finally {
     clearTimeout(timer)

@@ -52,6 +52,18 @@ function effectiveWatchId(wf: Graph, node: GraphNode): string {
   return deriveWatchId(watchIdOf(node), wf.id)
 }
 
+/** Premier suivi adressé par ce workflow, ou `null` s'il n'en désigne aucun. Sert à
+ *  rattacher un incident SERVEUR (crash de run) au bon journal — cf. `appendRunLiveError`.
+ *  Ne tranche pas entre plusieurs suivis distincts (`preflightWarnings` le signale déjà) :
+ *  un incident mal aiguillé reste préférable à aucun incident consigné. */
+export function firstWatchId(wf: Graph): string | null {
+  const connected = new Set<string>()
+  for (const e of wf.edges) { connected.add(e.source); connected.add(e.target) }
+  const active = wf.nodes.filter((n) => wf.edges.length === 0 || connected.has(n.id))
+  const watcher = active.find((n) => WATCH_NODES.has(n.type))
+  return watcher ? effectiveWatchId(wf, watcher) : null
+}
+
 /** `to` est-il atteignable depuis `from` en suivant les arêtes ? */
 function reaches(wf: Graph, from: string, to: string): boolean {
   const seen = new Set([from])
