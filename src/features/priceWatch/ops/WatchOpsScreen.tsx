@@ -7,11 +7,11 @@ import { useWatchList, useCatalogReport, useCompetitorMeta } from '../useCatalog
 import { buildOpsCockpit } from '../dashboard/opsMetrics'
 import { useWatchOps } from './useWatchOps'
 import { OpsHeader } from './OpsHeader'
+import { OpsActions } from './OpsActions'
 import { ChantierCard } from './ChantierCard'
 import { RunCardsStrip } from './RunCardsStrip'
 import { IncidentLog } from './IncidentLog'
 import { RunHistory } from './RunHistory'
-import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useTranslation } from '@/lib/i18n'
 
@@ -30,9 +30,6 @@ export function WatchOpsScreen() {
     if (watches.length === 0) { setWatchId(null); return }
     if (!watchId || !watches.some((w) => w.watchId === watchId)) setWatchId(watches[0].watchId)
   }, [watches, watchId])
-
-  // Aucune action câblée pour l'instant — la Task 13 y accroche relance/pause/export.
-  useModuleIntent('watch-ops', () => {})
 
   const workflowId = watches.find((w) => w.watchId === watchId)?.workflowId ?? null
   const report = useCatalogReport(watchId)
@@ -59,6 +56,7 @@ export function WatchOpsScreen() {
       </header>
 
       <OpsHeader run={view.run} workflowId={workflowId} />
+      <OpsActions workflowId={workflowId} run={view.run} />
 
       {view.chantiers.length === 0 ? (
         <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.noChantier')}</p>
