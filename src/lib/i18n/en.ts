@@ -1993,6 +1993,7 @@ export const en: Record<TranslationKey, string> = {
   'rd.wf.trigger.cron': 'scheduled',
   'rd.wf.trigger.manual': 'started by hand',
   'rd.wf.trigger.webhook': 'webhook',
+  'rd.wf.trigger.client': 'browser',
   'rd.wf.startedAt': 'started at {time} · {ago}',
   'rd.wf.nodesOk': '{ok}/{total} steps OK',
   'rd.wf.nodesError': '{count} failed',
