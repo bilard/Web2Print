@@ -120,8 +120,8 @@ graphe. Réutilise `runProgress` tel quel. Un clic ouvre le flux sur la carte.
 
 ### 4. Journal des incidents
 
-`users/{uid}/priceWatch/{watchId}/ops/incidents` — collection écrite par le client **et**
-le serveur au moment de l'erreur : quel site, quand, quel message, quel run. Persistant et
+`users/{uid}/priceWatch/{watchId}/opsIncidents/{incidentId}` — collection écrite par le
+client **et** le serveur au moment de l'erreur : quel site, quand, quel message, quel run. Persistant et
 indépendant de l'élagage des runs, qui ne garde que les 20 derniers : sans ce journal, un
 incident de mardi a disparu mercredi. Rétention 90 jours, élagage à l'écriture.
 
