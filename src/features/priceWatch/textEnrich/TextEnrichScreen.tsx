@@ -325,9 +325,8 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
             // que « Annuler » doit ramener, pas vers le moignon de 300 caractères qu'on
             // vient précisément de remplacer.
             ...((d) => (d ? { descriptionSource: d } : {}))(
-              ((memo) => (isTruncated(memo) ? completeOriginText(line.product, line.revision) ?? memo : memo))(
-                line.revision?.descriptionSource ?? line.product.description,
-              ),
+              completeOriginText(line.product, line.revision)
+              ?? line.revision?.descriptionSource ?? line.product.description,
             ),
             ...(r.note ? { note: r.note } : {}),
             // Ce qui a été fait sur cette fiche, CUMULÉ : une amélioration ne doit pas
