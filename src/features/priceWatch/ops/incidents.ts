@@ -18,6 +18,22 @@ export function expiredIncidents(list: { id: string; ts: number }[], now: number
   return list.filter((i) => now - i.ts > OPS_INCIDENT_MAX_AGE_MS).map((i) => i.id)
 }
 
+/**
+ * Incidents qui viennent d'apparaître : absents de la liste précédente ET survenus
+ * après `sinceTs`. PUR — sortie du hook exprès pour être testée isolément.
+ *
+ * ⚠ Le filtre sur `sinceTs` (le montage de l'écran) est ce qui évite la volée de
+ * notifications à l'ouverture : la toute première comparaison part d'une liste
+ * précédente VIDE, donc un journal de pannes vieilles de trois semaines passerait
+ * entièrement pour « nouveau » sans lui.
+ */
+export function newIncidentsSince<T extends { id: string; ts: number }>(
+  previous: T[], current: T[], sinceTs: number,
+): T[] {
+  const known = new Set(previous.map((i) => i.id))
+  return current.filter((i) => !known.has(i.id) && i.ts > sinceTs)
+}
+
 /** Combien on en affiche, et donc combien on en lit. */
 const INCIDENTS_PAGE = 50
 /** Fenêtre scannée pour la purge à l'écriture — large mais bornée : jamais tout un

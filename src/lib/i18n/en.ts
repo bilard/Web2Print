@@ -2452,6 +2452,7 @@ export const en: Record<TranslationKey, string> = {
   'ops.cards.open': 'Open the flow on this card',
   'ops.incidents.title': 'Incident log',
   'ops.incidents.empty': 'No incident in the last ninety days',
+  'ops.incident.alert.title': 'New incident',
   'ops.history.title': 'Run history',
   'ops.history.trend.up': '+{pct} % — the harvest is getting longer',
   'ops.history.trend.down': '−{pct} % — the harvest is getting faster',

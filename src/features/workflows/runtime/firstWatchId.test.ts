@@ -43,4 +43,17 @@ describe('firstWatchId', () => {
     })
     expect(firstWatchId(w)).toBe(deriveWatchId('depuis-sites-sources', 'w1'))
   })
+
+  it('deux suivis DISTINCTS dans le même flux : le premier nœud de veille rencontré gagne', () => {
+    // Comportement retenu, pas idéal : `validateWorkflow` signale déjà ce cas au pré-vol
+    // (deux suivis dans un même flux) — ici on documente juste lequel des deux l'emporte.
+    const w = wf({
+      nodes: [
+        node('h', 'harvest-competitor', { watchId: 'suivi-un' }),
+        node('c', 'compare-catalog', { watchId: 'suivi-deux' }),
+      ],
+      edges: [edge('h', 'out', 'c', 'in')],
+    })
+    expect(firstWatchId(w)).toBe(deriveWatchId('suivi-un', 'w1'))
+  })
 })

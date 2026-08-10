@@ -2451,6 +2451,7 @@ export const es: Record<TranslationKey, string> = {
   'ops.cards.open': 'Abrir el flujo en esta tarjeta',
   'ops.incidents.title': 'Registro de incidencias',
   'ops.incidents.empty': 'Ninguna incidencia en los últimos noventa días',
+  'ops.incident.alert.title': 'Nueva incidencia',
   'ops.history.title': 'Historial de runs',
   'ops.history.trend.up': '+{pct} % — la recolección se alarga',
   'ops.history.trend.down': '−{pct} % — la recolección se acelera',

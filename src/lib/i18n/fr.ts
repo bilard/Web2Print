@@ -2545,6 +2545,7 @@ export const fr = {
   'ops.cards.open': 'Ouvrir le flux sur cette carte',
   'ops.incidents.title': 'Journal des pannes',
   'ops.incidents.empty': 'Aucun incident sur les quatre-vingt-dix derniers jours',
+  'ops.incident.alert.title': 'Nouvelle panne',
   'ops.history.title': 'Historique des runs',
   'ops.history.trend.up': '+{pct} % — la moisson s’allonge',
   'ops.history.trend.down': '−{pct} % — la moisson accélère',

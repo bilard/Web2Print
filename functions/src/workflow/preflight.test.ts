@@ -1,6 +1,7 @@
 // functions/src/workflow/preflight.test.ts
 import { describe, it, expect } from 'vitest'
-import { preflightWarnings } from './preflight'
+import { preflightWarnings, firstWatchId } from './preflight'
+import { deriveWatchId } from '../priceWatch/sourceSites'
 
 const wf = (nodes: { id: string; type: string; config?: unknown }[], edges: [string, string, string?][]) => ({
   id: 'wfF1',
@@ -49,5 +50,34 @@ describe('preflight serveur — cohérence entre nodes', () => {
       { id: 'h', type: 'harvest-competitor' },
       { id: 'c', type: 'compare-catalog', config: 'nawak' },
     ], [['h', 'c']]))).not.toThrow()
+  })
+})
+
+describe('firstWatchId — rattachement d’un incident SERVEUR au bon journal', () => {
+  it('un seul suivi : le résout', () => {
+    const w = wf([{ id: 'h', type: 'harvest-competitor', config: { watchId: 'F1 Pro' } }], [])
+    expect(firstWatchId(w)).toBe(deriveWatchId('F1 Pro', 'wfF1'))
+  })
+
+  it('aucun suivi adressé : rend null', () => {
+    const w = wf([{ id: 'u', type: 'upload' }], [])
+    expect(firstWatchId(w)).toBeNull()
+  })
+
+  it('une carte orpheline (liens ailleurs dans le graphe) est exclue', () => {
+    const w = wf([
+      { id: 'a', type: 'upload' }, { id: 'b', type: 'export' },
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'orphelin' } },
+    ], [['a', 'b']])
+    expect(firstWatchId(w)).toBeNull()
+  })
+
+  it('deux suivis DISTINCTS dans le même flux : le premier nœud de veille rencontré ' +
+    'gagne (comportement retenu — `preflightWarnings` signale déjà l’incohérence)', () => {
+    const w = wf([
+      { id: 'h', type: 'harvest-competitor', config: { watchId: 'suivi-un' } },
+      { id: 'c', type: 'compare-catalog', config: { watchId: 'suivi-deux' } },
+    ], [['h', 'c']])
+    expect(firstWatchId(w)).toBe(deriveWatchId('suivi-un', 'wfF1'))
   })
 })

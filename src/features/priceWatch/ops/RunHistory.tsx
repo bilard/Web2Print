@@ -32,9 +32,10 @@ export function RunHistory({ workflowId }: { workflowId: string | null }) {
         {runs.map((r) => (
           <li key={r.id} className="flex items-center gap-2 text-[12px] tabular-nums">
             <span className="text-white/50 w-32 shrink-0">{when(r.startedAt)}</span>
-            <span className="text-white/70 w-16 shrink-0">
-              {r.endedAt != null ? duration(r.endedAt - r.startedAt) : '—'}
-            </span>
+            {/* Pas de branche « fin manquante » : la requête (`useRunHistory`) trie sur
+                `endedAt`, que Firestore exclut donc des résultats quand il est absent —
+                un run de cette liste a TOUJOURS sa fin. */}
+            <span className="text-white/70 w-16 shrink-0">{duration((r.endedAt as number) - r.startedAt)}</span>
             <span className={`w-20 shrink-0 ${STATUS_TONE[r.status] ?? 'text-white/50'}`}>
               {t(`rd.wf.status.${r.status}` as 'rd.wf.status.running')}
             </span>
