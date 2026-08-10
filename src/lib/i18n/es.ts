@@ -5827,6 +5827,7 @@ export const es: Record<TranslationKey, string> = {
   'pwte.origin.source': 'Origen F1',
   'pwte.origin.cut': 'Texto guardado CORTADO por el catálogo: vuelva a lanzar «Comparar catálogo» para recuperar el argumentario completo.',
   'pwte.origin.redo': 'Reescritura hecha sobre un texto cortado: se ha recuperado el texto completo, esta ficha volverá a pasar en el próximo tratamiento.',
+  'pwte.origin.amputated': 'Reescritura ANTERIOR al control de perímetro: perdió una referencia o abrevió una lista. La ficha vuelve a la cola y el próximo tratamiento la rehará completa.',
   'pwte.truncatedSource.banner': '{count} fichas mostradas tienen el texto de venta CORTADO: así se guardó en el catálogo. Ejecute «Comparar catálogo» una vez: se ha levantado el límite y la traducción se aplicará al texto completo.',
   'pwte.filter.action': 'Tratamiento',
   'pwte.filter.scope': 'Por tratar',

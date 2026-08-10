@@ -18,6 +18,7 @@ import { TextEnrichBlock, type Provenance } from './TextEnrichBlock'
 import { TextEnrichRowMeta } from './TextEnrichRowMeta'
 import { originForDisplay, madeOnTruncatedSource, isTruncated } from './fullSaleText'
 import { orderColumns } from './columnOrder'
+import { perimeterBroken } from './perimeterBroken'
 import { sheetOps } from './sheetRewrite'
 import type { RejectionPart } from './violationSummary'
 import type { SourceProduct } from '../catalog/match'
@@ -62,6 +63,9 @@ export function TextEnrichRow({ product, lang, revision, fromSheet, rejection, i
   // Une réécriture faite sur un moignon ne se répare pas à l'affichage : elle se refait. La
   // file la reprend d'elle-même, on le DIT ici pour que la coupe visible s'explique.
   const redo = madeOnTruncatedSource(p, revision)
+  // Écrite avant la garde d'isopérimètre, et amputée : elle est retournée dans la file. On
+  // le DIT, sinon la fiche s'affiche comme réussie alors qu'elle a perdu des références.
+  const amputated = perimeterBroken(p, revision)
   const img = (p.image ? absoluteImage(p.image, imagePrefix) : '') || null
 
   return (
@@ -112,11 +116,13 @@ export function TextEnrichRow({ product, lang, revision, fromSheet, rejection, i
                     <TextEnrichBlock label={t('pwte.field.saleText')} from={after} tone="after"
                       text={revision.description}
                       {...(isTruncated(revision.description)
-                        ? { warn: t(redo ? 'pwte.origin.redo' : 'pwte.origin.cut') } : {})} />
+                        ? { warn: t(redo ? 'pwte.origin.redo' : 'pwte.origin.cut') }
+                        : amputated ? { warn: t('pwte.origin.amputated') } : {})} />
                   </>
                 )}
                 {cols.map(([key, v]) => (
                   <TextEnrichBlock key={key} label={key} from={after} tone="after" text={v.after}
+                    {...(amputated ? { warn: t('pwte.origin.amputated') } : {})}
                     {...(v.note ? { note: v.note } : {})} />
                 ))}
                 {revision.note && (

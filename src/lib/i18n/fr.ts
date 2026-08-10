@@ -6020,6 +6020,7 @@ export const fr = {
   'pwte.origin.source': 'Source F1',
   'pwte.origin.cut': 'Texte enregistré COUPÉ par le catalogue — relancez « Comparer catalogue » pour récupérer l’argumentaire entier.',
   'pwte.origin.redo': 'Réécriture faite sur un texte coupé : le texte entier a été retrouvé, cette fiche repasse au prochain traitement.',
+  'pwte.origin.amputated': 'Réécriture ANTÉRIEURE au contrôle de périmètre : elle a perdu une référence ou abrégé une liste. La fiche est retournée dans la file, le prochain traitement la refera entière.',
   'pwte.truncatedSource.banner': '{count} fiches affichées ont leur texte de vente COUPÉ — le catalogue les a enregistrées ainsi. Relancez « Comparer catalogue » une fois : le plafond a été levé, et la traduction portera alors sur le texte entier.',
   'pwte.filter.action': 'Traitement',
   'pwte.filter.scope': 'À traiter',

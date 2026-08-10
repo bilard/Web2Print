@@ -5828,6 +5828,7 @@ export const en: Record<TranslationKey, string> = {
   'pwte.origin.source': 'F1 source',
   'pwte.origin.cut': 'Text stored TRUNCATED by the catalogue — run “Compare catalogue” again to recover the whole copy.',
   'pwte.origin.redo': 'Rewritten from a truncated text: the full text has been recovered, so this item goes through again on the next run.',
+  'pwte.origin.amputated': 'Rewritten BEFORE the scope check: it lost a reference or shortened a list. The item is back in the queue and the next run will redo it in full.',
   'pwte.truncatedSource.banner': '{count} listed products have a CUT sale text — the catalogue was written that way. Run “Compare catalogue” once: the cap has been lifted, and translation will then work on the whole text.',
   'pwte.filter.action': 'Processing',
   'pwte.filter.scope': 'To process',

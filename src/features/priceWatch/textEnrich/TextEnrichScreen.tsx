@@ -25,6 +25,7 @@ import { originTextOf } from './originText'
 import { opsOf, type RevisionOps } from './revisionOps'
 import { completeOriginText, isTruncated, madeOnTruncatedSource, originForDisplay } from './fullSaleText'
 import { rewrittenInSheet, sheetOps } from './sheetRewrite'
+import { perimeterBroken } from './perimeterBroken'
 import type { SourceProduct } from '../catalog/match'
 import {
   loadTextRevisions, saveTextRevisions, dropTextRevision, type TextRevision,
@@ -243,6 +244,10 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
     () => shown.filter((l) => {
       if (rejected.has(l.product.id)) return false
       if (madeOnTruncatedSource(l.product, l.revision)) return true
+      // ⚠⚠ Rattrapage de ce qui a été écrit AVANT la garde d'isopérimètre : une liste de
+      // compatibilité tronquée par « … », un couple de références disparu. « Déjà traduite »
+      // écartait ces fiches pour toujours, et elles s'affichaient comme réussies.
+      if (perimeterBroken(l.product, l.revision)) return true
       const done = doneOps(l)
       if (!done) return true
       return (modes.translate && !done.translate) || (modes.improve && !done.improve)
