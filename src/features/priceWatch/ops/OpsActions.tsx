@@ -12,12 +12,14 @@ import { runWorkflowNow, stopServerRun, suspendWorkflow } from '../radar/radarSc
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
+import { OpsConfirm } from './OpsConfirm'
 import type { RunView } from './buildWatchOps'
 import { duration } from '../dashboard/format'
 import { useTranslation } from '@/lib/i18n'
 
 type Kind = 'run' | 'stop' | 'suspend' | 'resume'
 type ResumeState = 'loading' | 'ready' | 'noNode' | 'off' | 'error' | 'noWorkflow'
+type ConfirmKind = 'stop' | 'suspend'
 
 function Btn({ onClick, busy, disabled, title, icon: Icon, tone, children }: {
   onClick: () => void; busy: boolean; disabled?: boolean; title?: string
@@ -44,6 +46,7 @@ export function OpsActions({ workflowId, run }: { workflowId: string | null; run
   const canAct = useCan('priceWatch.opsAct')
   const [busy, setBusy] = useState<Kind | null>(null)
   const [resumeState, setResumeState] = useState<ResumeState>('loading')
+  const [confirmKind, setConfirmKind] = useState<ConfirmKind | null>(null)
 
   // Présence du node « Textes » dans CE flux. ⚠ Un échec de lecture reste EXPLICITE
   // (`error`), jamais confondu avec `loading` — un bouton grisé sans raison est une énigme.
@@ -71,27 +74,29 @@ export function OpsActions({ workflowId, run }: { workflowId: string | null; run
     toast[r.errorCount > 0 ? 'warning' : 'success'](
       t(r.errorCount > 0 ? 'ops.actions.run.errors' : 'ops.actions.run.ok', { nodes: r.nodeCount, errors: r.errorCount }))
   })
-  const onStop = () => {
-    if (!window.confirm(t('ops.actions.stop.confirm', { duration: duration(run?.elapsedMs ?? 0) }))) return
-    guard('stop', async () => { await stopServerRun(uid!, workflowId!); toast.info(t('ops.actions.stop.done')) })
-  }
-  const onSuspend = () => {
-    if (!window.confirm(t('ops.actions.suspend.confirm'))) return
-    guard('suspend', async () => {
-      const done = await suspendWorkflow(uid!, workflowId!)
-      if (done) toast.success(t('ops.actions.suspend.done'))
-      else toast.info(t('ops.actions.suspend.noCron'))
-    })
-  }
+  // Le CLIC/l'intent n'ouvre que la confirmation — l'action réelle attend `onConfirm`.
+  const doStop = () => guard('stop', async () => { await stopServerRun(uid!, workflowId!); toast.info(t('ops.actions.stop.done')) })
+  const doSuspend = () => guard('suspend', async () => {
+    const done = await suspendWorkflow(uid!, workflowId!)
+    if (done) toast.success(t('ops.actions.suspend.done'))
+    else toast.info(t('ops.actions.suspend.noCron'))
+  })
   const onResume = () => guard('resume', async () => {
     const r = await runWorkflowNow(workflowId!)
     toast.success(t('ops.actions.resume.ok', { nodes: r.nodeCount }))
   })
-  // Déclenchable sans passer par le bouton : `guard` revérifie `canAct` à l'exécution.
+  const onConfirm = () => {
+    const kind = confirmKind
+    setConfirmKind(null)
+    if (kind === 'stop') doStop()
+    else if (kind === 'suspend') doSuspend()
+  }
+  // Déclenchable sans passer par le bouton : `guard` revérifie `canAct` à l'exécution, et
+  // l'intent ouvre la MÊME confirmation qu'un clic — jamais un contournement silencieux.
   useModuleIntent('watch-ops', (action) => {
     if (action === 'action:run') onRun()
-    else if (action === 'action:stop' && run?.alive) onStop()
-    else if (action === 'action:suspend') onSuspend()
+    else if (action === 'action:stop' && run?.alive) setConfirmKind('stop')
+    else if (action === 'action:suspend') setConfirmKind('suspend')
     else if (action === 'action:resume' && resumeState === 'ready' && !run?.alive) onResume()
   })
   if (!canAct) return null
@@ -106,15 +111,25 @@ export function OpsActions({ workflowId, run }: { workflowId: string | null; run
   return (
     <div className="flex flex-wrap items-center gap-2" data-pw-section="ops-actions">
       {run?.alive ? (
-        <Btn onClick={onStop} busy={busy === 'stop'} icon={Square} tone="stop">{t('ops.actions.stop')}</Btn>
+        <Btn onClick={() => setConfirmKind('stop')} busy={busy === 'stop'} icon={Square} tone="stop">{t('ops.actions.stop')}</Btn>
       ) : (
         <Btn onClick={onRun} busy={busy === 'run'} icon={Play} tone="go">{t('ops.actions.run')}</Btn>
       )}
-      <Btn onClick={onSuspend} busy={busy === 'suspend'} icon={PauseCircle} tone="warn">{t('ops.actions.suspend')}</Btn>
+      <Btn onClick={() => setConfirmKind('suspend')} busy={busy === 'suspend'} icon={PauseCircle} tone="warn">{t('ops.actions.suspend')}</Btn>
       <Btn onClick={onResume} busy={busy === 'resume'} disabled={resumeState !== 'ready' || !!run?.alive} title={resumeReason}
         icon={RotateCcw} tone="neutral">
         {t('ops.actions.resume')}
       </Btn>
+      <OpsConfirm
+        open={confirmKind !== null}
+        onOpenChange={(o) => { if (!o) setConfirmKind(null) }}
+        title={confirmKind === 'stop' ? t('ops.actions.stop.confirmTitle') : t('ops.actions.suspend.confirmTitle')}
+        description={confirmKind === 'stop'
+          ? t('ops.actions.stop.confirm', { duration: duration(run?.elapsedMs ?? 0) })
+          : t('ops.actions.suspend.confirm')}
+        actionLabel={confirmKind === 'stop' ? t('ops.actions.stop') : t('ops.actions.suspend')}
+        onConfirm={onConfirm}
+      />
     </div>
   )
 }
