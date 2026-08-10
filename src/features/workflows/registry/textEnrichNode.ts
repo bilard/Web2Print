@@ -293,10 +293,17 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
         chunkSize: 14,
         // ⚠ SIX lots en vol. Un seul plafonnait le débit à la latence du modèle : 86
         // champs/minute mesurés en production. Quatre l'ont porté à 172 — un doublement,
-        // pas un quadruplement, donc DeepSeek sature déjà un peu. Six reste sous le seuil
-        // où les refus 429 coûteraient plus cher que l'attente ; au-delà, on paierait des
-        // rejets sans rien gagner.
-        concurrency: 6,
+        // pas un quadruplement, donc DeepSeek sature déjà un peu. Six restait sous le seuil
+        // où les refus 429 coûteraient plus cher que l'attente.
+        //
+        // ⚠ 6 → 12 le 2026-08-10, et la mesure ci-dessus ne vaut PLUS : depuis l'exigence
+        // d'isopérimètre, le modèle n'abrège plus rien et chaque réponse est deux à trois
+        // fois plus longue. Le débit mesuré est tombé à ~52 champs/minute — le goulot n'est
+        // plus le nombre d'appels en vol mais le temps de GÉNÉRATION de chacun, que des
+        // voies supplémentaires recouvrent au lieu de saturer.
+        // ⚠ Signal de retour arrière : des « deepseek KO → 429 » au journal. Ils veulent
+        // dire qu'on paie des rejets ; revenir à 6.
+        concurrency: 12,
         callBatch,
         protectedOf: (unit: EnrichUnit) => protectedFieldsOf(config, byId.get(unit.productId)?.row ?? {}),
         onRevision: (unit, field) => {
