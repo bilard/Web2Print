@@ -17,6 +17,10 @@ interface RunLiveDoc {
   status?: string
   /** Début du run — sert à repérer un run interrompu resté « en cours ». */
   startedAt?: number
+  /** Dernier battement — écrit à CHAQUE tour, contrairement à `logs` (peut rester vide un
+   *  moment si aucune carte n'a encore rien à raconter). Sans lui dans le calcul de
+   *  vivacité, un run sans messages semblait mort après trois minutes alors qu'il tourne. */
+  beatAt?: number
   nodeStates?: Record<string, NodeStatus>
   logs?: { ts: number; level: 'info' | 'warn' | 'error'; node?: string; msg: string }[]
   nodeOutputs?: Record<string, Record<string, unknown>>
@@ -70,7 +74,7 @@ export function useServerRunLive(workflowId: string | undefined): void {
         // ⚠ Le battement se lit DANS le document, pas à l'instant où on le reçoit : au
         // chargement d'une page, le premier écho arrive « maintenant » même si le run est
         // mort depuis une heure. L'horodatage du dernier journal, lui, ne ment pas.
-        const beatTs = Math.max(d?.startedAt ?? 0, ...(d?.logs ?? []).map((l) => l.ts))
+        const beatTs = Math.max(d?.startedAt ?? 0, d?.beatAt ?? 0, ...(d?.logs ?? []).map((l) => l.ts))
         lastBeat.current = beatTs
         useRunContext.getState().setServerRunActive(
           d?.status === 'running' && beatTs > 0 && Date.now() - beatTs < LIVE_BEAT_MS,
@@ -107,7 +111,10 @@ export function useServerRunLive(workflowId: string | undefined): void {
         // Tout nouveau run (runId changé, quel que soit son statut — serveur OU un autre
         // onglet) reprend la main sur un run client resté « en cours » (isRunning coincé)
         // qui, sinon, masquerait son état (garde dans hydrateServerRun). Sûr : notre PROPRE
-        // écho est déjà écarté plus haut par `isOwnEcho` — on ne peut donc pas s'auto-déclencher.
+        // écho — y COMPRIS l'écho TERMINAL, après que `stopClientRunBeat` ait fini — est
+        // déjà écarté plus haut par `isOwnEcho` (`activeClientRunId()` continue de renvoyer
+        // notre dernier `runId` publié une fois le run terminé, précisément pour ce cas) —
+        // on ne peut donc pas s'auto-déclencher.
         if (reset && useRunContext.getState().isRunning) {
           useRunContext.getState().resetRun()
         }

@@ -62,6 +62,42 @@ let owned = false
 /** Issue demandée pendant que la prise de place est encore en vol. Appliquée dès qu'elle
  *  aboutit, à la place du premier battement « running » qui serait déjà faux. */
 let pendingEndStatus: string | null = null
+/** Le dernier `runId` que CET onglet a effectivement publié, JAMAIS remis à `null`.
+ *
+ * ⚠⚠ Distinct de `currentRunId` : celui-ci retombe à `null` dès que `stopClientRunBeat` a
+ * écrit l'issue, alors que l'écho Firestore de cette DERNIÈRE écriture arrive encore
+ * quelques instants après (aller-retour réseau). S'il n'était plus reconnu comme « le
+ * nôtre » à ce moment-là, `useServerRunLive` le traiterait comme un run étranger tout
+ * juste terminé et viderait journaux/aperçus de cartes de CE run — à la seconde même où
+ * il se termine. `activeClientRunId()` renvoie CETTE variable, précisément pour que
+ * l'écho terminal reste reconnu. Sûr de ne jamais grandir en zombie : chaque `runId` est
+ * unique (horodatage + suffixe aléatoire), donc le garder indéfiniment ne fait jamais
+ * croire à tort qu'un DOC ULTÉRIEUR (autre run, cron ou autre onglet) est de nous. */
+let lastPublishedRunId: string | null = null
+
+type LiveLogEntry = { ts: number; level: 'info' | 'warn' | 'error'; node: string; msg: string }
+
+/**
+ * Reconstruit un journal PLAT depuis `nodeStates` (le `node` émetteur, absent de
+ * `NodeRunState.logs`, redevient la clé de l'objet parcouru) — format aligné sur le jumeau
+ * serveur (`RunLog`), que `useServerRunLive` sait déjà répartir par carte (`logsByNode`).
+ *
+ * ⚠ Sans ce champ, la console du panneau de run (qui s'abonne à ce même document) se
+ * viderait dès qu'un run navigateur démarre : elle ne montrerait plus que les journaux du
+ * dernier run SERVEUR, silencieux le temps du run client.
+ *
+ * Mêmes limites que le jumeau serveur (`logs.slice(-200)` dans `scheduler.ts`) : les 200
+ * dernières lignes (chronologique), chaque message tronqué à 600 caractères.
+ */
+function buildLiveLogs(
+  states: Record<string, { logs?: { ts: number; level: 'info' | 'warn' | 'error'; msg: string }[] }>,
+): LiveLogEntry[] {
+  const flat: LiveLogEntry[] = []
+  for (const [id, st] of Object.entries(states)) {
+    for (const l of st.logs ?? []) flat.push({ ts: l.ts, level: l.level, node: id, msg: l.msg.slice(0, 600) })
+  }
+  return flat.sort((a, b) => a.ts - b.ts).slice(-200)
+}
 
 async function beat(
   workflowId: string, runId: string, force: boolean,
@@ -88,9 +124,9 @@ async function beat(
       if (typeof st.cycles === 'number') nodeCycles[id] = st.cycles
     }
     const payload = {
-      runId, origin: 'client', trigger: 'manual',
+      runId, origin: 'client', trigger: 'client',
       workflowName: useWorkflowStore.getState().current?.name ?? '',
-      beatAt: now, nodeStates, nodeCounts, nodeCycles,
+      beatAt: now, nodeStates, nodeCounts, nodeCycles, logs: buildLiveLogs(states),
       ...(endStatus ? { status: endStatus, endedAt: now } : { status: 'running' }),
     }
     // ⚠ REMPLACEMENT au démarrage, fusion ensuite. Le merge Firestore fusionne les maps
@@ -119,7 +155,7 @@ export async function startClientRunBeat(workflowId: string, runId: string): Pro
   owned = false
   pendingEndStatus = null
   const uid = getWorkspaceUid()
-  if (!uid) return
+  if (!uid) { currentRunId = null; return }
   try {
     const snap = await getDoc(doc(db, 'users', uid, 'workflowRunsLive', workflowId))
     // Le run a pu s'arrêter (ou un run plus récent démarrer) pendant cette lecture.
@@ -139,7 +175,11 @@ export async function startClientRunBeat(workflowId: string, runId: string): Pro
     return
   }
   // La place est gagnée : à partir d'ici, `stopClientRunBeat` peut écrire directement.
+  // `lastPublishedRunId` avant même d'écrire : dès cet instant, un écho portant ce `runId`
+  // est reconnu comme le nôtre (cf. son commentaire) — et ça reste vrai même si le `beat`
+  // qui suit échoue (auquel cas aucun écho de toute façon).
   owned = true
+  lastPublishedRunId = runId
   if (pendingEndStatus != null) {
     // `stopClientRunBeat` a été appelé PENDANT la négociation de la place (run très court,
     // abort immédiat). On publie l'issue tout de suite — jamais un « running » qui serait
@@ -152,11 +192,23 @@ export async function startClientRunBeat(workflowId: string, runId: string): Pro
     return
   }
   await beat(workflowId, runId, true, { replace: true })
-  timer = setInterval(() => { void beat(workflowId, runId, false) }, CLIENT_BEAT_INTERVAL_MS)
+  // ⚠⚠ Le run a pu se terminer PENDANT ce `setDoc` : `stopClientRunBeat` était alors passé
+  // avec `timer` encore à `null` (rien à arrêter) et avait déjà écrit l'issue. Poser le
+  // minuteur ici SANS ce test le republierait en `running` toutes les 5 s, pour toujours —
+  // même symptôme que `pendingEndStatus` corrige, sur une fenêtre différente (après ce
+  // `await`, pas avant).
+  if (currentRunId !== runId || !owned) return
+  timer = setInterval(() => {
+    // Ceinture et bretelles : un `stopClientRunBeat` qui tournerait dans cette MÊME fenêtre
+    // (entre deux tours) doit arrêter le minuteur lui-même plutôt que de battre indéfiniment.
+    if (currentRunId !== runId || !owned) { stopTimer(); return }
+    void beat(workflowId, runId, false)
+  }, CLIENT_BEAT_INTERVAL_MS)
 }
 
-/** L'identifiant du run que CET onglet publie, ou null. */
-export function activeClientRunId(): string | null { return currentRunId }
+/** Le `runId` que `isOwnEcho` doit reconnaître comme le nôtre — le dernier publié, PAS
+ *  seulement celui activement en cours (cf. `lastPublishedRunId`). */
+export function activeClientRunId(): string | null { return lastPublishedRunId }
 
 /** Ce battement est-il le nôtre ? PUR. */
 export function isOwnEcho(head: { origin?: string; runId?: string } | null, runId: string | null): boolean {
