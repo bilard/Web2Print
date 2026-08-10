@@ -25,6 +25,8 @@ import { loadEnrichMemory, saveEnrichMemory } from '@/features/textEnrich/memory
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { resolveSitesInput } from '@/features/priceWatch/sourceSites'
 import { savePublishedRevisions } from '@/features/priceWatch/textRevisionsStore'
+import { textsSnapshot } from '@/features/priceWatch/ops/textsSnapshot'
+import { publishTextsProgress, resetPublishThrottle } from '@/features/priceWatch/ops/progressStore'
 import { buildPublishedRevisions, type RevisionEvent } from '@/features/textEnrich/publishRevisions'
 import { applyRevision, type EnrichPass } from '@/features/textEnrich/revision'
 import { loadTargets, saveRevisions, savePass } from '@/features/textEnrich/enrichStore'
@@ -203,6 +205,29 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
       considered: counts.considered,
       done: counts.skipped['already-done'],
     }))
+    // Publie le volume RÉEL dès qu'il est connu — avant le premier appel au modèle. Sans
+    // cette première écriture, l'écran « Suivi » reste vide pendant les minutes de
+    // chiffrage, précisément quand on vient voir si quelque chose a démarré.
+    const opsWatchId = resolveSitesInput(inputs.sites, {
+      sitesText: '', watchIdRaw: config.watchId ?? '', workflowId: ctx.workflowId,
+    }).watchId
+    const opsUid = getWorkspaceUid()
+    const opsStartedAt = Date.now()
+    const publishOps = (doneUnits: number, force = false) => {
+      if (!opsUid || !opsWatchId) return
+      void publishTextsProgress(opsUid, opsWatchId, textsSnapshot({
+        units, considered: counts.considered, alreadyDone: counts.skipped['already-done'],
+        done: doneUnits, startedAt: opsStartedAt, now: Date.now(), origin: 'client',
+        ...(memoryOn
+          ? { reasons: {
+              fresh: decisions.filter((d) => d.reason === 'new').length,
+              stale: decisions.filter((d) => d.reason === 'changed').length,
+            } }
+          : {}),
+      }), { force })
+    }
+    if (opsWatchId) resetPublishThrottle(opsWatchId)
+    publishOps(0, true)
     // ⚠ Émis AVANT le mode simulation, donc visible sans dépenser un dollar : c'est
     // précisément le réglage qu'une simulation doit permettre de vérifier.
     const missing = missingProtectedColumns(config, targets.map((tg) => tg.row ?? {}))
@@ -333,6 +358,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
         // voyait plus la fin du passage, seulement son milieu.
         onChunkDone: (done, total) => {
           if (done % 500 < 10 || done >= total) ctx.log('info', t('run.textEnrich.progress', { done, total }))
+          publishOps(done, done >= total)
         },
         now: () => at,
       }), { limit: Number(config.maxUnits) > 0 ? Number(config.maxUnits) : undefined })
