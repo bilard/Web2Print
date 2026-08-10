@@ -30,6 +30,7 @@ const ADAPTED: [RegExp, string][] = [
   // Le découpage en lots vient du moteur de complétion Excel côté client ; le serveur en
   // a une copie locale, elle-même couverte plus bas.
   [/from '\.\/batches'/g, "from '@/features/excel/ai-completion/columnCompletionEngine'"],
+  [/from '\.\.\/priceWatch\/catalog\/keys'/g, "from '@/features/priceWatch/catalog/keys'"],
 ]
 
 const TWINS: [string, string][] = [
@@ -42,6 +43,10 @@ const TWINS: [string, string][] = [
   ['src/features/textEnrich/sheetMemory.ts', 'functions/src/textEnrich/sheetMemory.ts'],
   ['src/features/textEnrich/publishRevisions.ts', 'functions/src/textEnrich/publishRevisions.ts'],
   ['src/features/textEnrich/pass.ts', 'functions/src/textEnrich/pass.ts'],
+  // ⚠⚠ La GARDE. Elle manquait à cette liste, et c'est par là que la dérive est passée :
+  // le navigateur a appris à refuser une liste de compatibilité amputée pendant que le cron
+  // continuait de l'écrire, toutes les nuits, sans un mot.
+  ['src/features/textEnrich/protected.ts', 'functions/src/textEnrich/protected.ts'],
 ]
 
 describe('jumeaux serveur du moteur d’enrichissement', () => {
@@ -57,11 +62,18 @@ describe('jumeaux serveur du moteur d’enrichissement', () => {
     // `zod` n'est pas une dépendance des Cloud Functions : le serveur valide par
     // `parseLlmJson`. Le texte envoyé au modèle, lui, doit être le MÊME — c'est lui qui
     // décide de ce qui s'écrit dans les fiches.
-    // À partir de la CONSTRUCTION du prompt : au-dessus, le jumeau porte un type écrit
-    // à la main là où le client l'infère de zod.
     const cut = (s: string) => s.slice(s.indexOf('export function buildBatchPrompt')).trim()
     expect(cut(body('functions/src/textEnrich/prompt.ts')))
       .toBe(cut(body('src/features/textEnrich/prompt.ts')))
+  })
+
+  it('⚠⚠ les CONTRAINTES DE FORME sont identiques des deux côtés', () => {
+    // Elles étaient hors du découpage ci-dessus, et c'est par là que la dérive est passée :
+    // le navigateur exigeait l'isopérimètre (ne jamais abréger une liste de compatibilité)
+    // pendant que le cron demandait toujours l'ancienne version, toutes les nuits.
+    const rules = (s: string) => /const RULES = `([\s\S]*?)`/.exec(s)?.[1] ?? '(introuvable)'
+    expect(rules(body('functions/src/textEnrich/prompt.ts')))
+      .toBe(rules(body('src/features/textEnrich/prompt.ts')))
   })
 
   it('⚠ le DÉCOUPAGE en lots est identique : c’est lui qui décide si la réponse tient', () => {

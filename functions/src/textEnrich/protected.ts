@@ -1,7 +1,7 @@
 // functions/src/textEnrich/protected.ts
 // ⚠ COPIE de src/features/textEnrich/protected.ts (bundles séparés : `functions/` est hermétique,
 // `rootDir: "src"`). Toute modification là-bas doit être reportée ici — cf.
-// textReviseParity.test.ts.
+// textEnrichParity.test.ts.
 // Ce qu'une réécriture n'a PAS le droit de toucher : références, codes-barres, valeurs
 // chiffrées, marques. PUR.
 //
@@ -36,6 +36,8 @@ type ViolationKind =
   | 'number-lost'   // une valeur chiffrée avec unité a disparu ou changé
   | 'brand-lost'    // une marque présente à l'origine a disparu
   | 'brand-added'   // une marque ABSENTE de l'origine a été ajoutée
+  | 'code-lost'     // un code du TEXTE (modèle compatible, réf constructeur) a disparu
+  | 'elision'       // la réécriture a abrégé : « … », « etc. », « et autres »
 
 export interface Violation {
   kind: ViolationKind
@@ -63,6 +65,44 @@ function normalizeDimension(raw: string): string {
 function dimensionsOf(text: string): Set<string> {
   return new Set([...String(text ?? '').matchAll(DIMENSION)].map((m) => normalizeDimension(m[0])))
 }
+
+/**
+ * Codes portés par le TEXTE : modèles compatibles (« MB 545.0 VE »), références
+ * constructeur citées (« 0000-082-0413 »), codes article d'origine.
+ *
+ * ⚠⚠ Ce ne sont PAS les références déclarées du produit (`opts.refs`) : celles-là, on les
+ * connaît. Ici on protège ce que la fiche ÉNUMÈRE — et c'est exactement ce que le modèle
+ * abrège. Observé en prod : une liste de trente tondeuses compatibles rendue « MB 650.0
+ * KS… », et le couple de références de fin purement et simplement disparu. Une liste de
+ * compatibilité amputée est pire qu'absente : le client vérifie, ne trouve pas son modèle,
+ * et n'achète pas.
+ *
+ * Retenu comme code : au moins 4 caractères et 2 chiffres, en alphanumérique et séparateurs.
+ * Sous ce seuil on ne garde rien — « 3 mm », « MB 6.1 » ou une année seraient du bruit, et
+ * les cotes sont déjà surveillées par `DIMENSION`.
+ */
+const CODE_TOKEN = /[A-Za-z0-9][A-Za-z0-9.\-/]*/g
+
+function codesOf(text: string): string[] {
+  const out = new Set<string>()
+  const isDimension = new RegExp(`^${DIMENSION.source}$`, 'i')
+  for (const m of String(text ?? '').matchAll(CODE_TOKEN)) {
+    const core = m[0].replace(/^[.\-/]+|[.\-/]+$/g, '')
+    if (core.length < 4) continue
+    if ((core.match(/\d/g) ?? []).length < 2) continue
+    // Une cote est déjà surveillée par `DIMENSION`, et avec une meilleure règle (« 1,5 kg »
+    // et « 1.5kg » y sont la même valeur). La signaler deux fois brouillerait le motif.
+    if (isDimension.test(core)) continue
+    out.add(core)
+  }
+  return [...out]
+}
+
+/**
+ * La réécriture a-t-elle ABRÉGÉ ? Les marques d'élision sont les mêmes dans toutes les
+ * langues traitées ici, et elles ne sont fautives que si l'original ne les portait pas.
+ */
+const ELISION = /…|\.\.\.|\betc\b|\bet autres\b|\band others\b|\bu\.\s?a\.\b/i
 
 /** Un texte contient-il cette référence, quelle que soit sa ponctuation ? On compare des
  *  formes normalisées, faute de quoi « 1134-4319-01 » et « 1134431901 » se liraient comme
@@ -109,6 +149,23 @@ export function findViolations(before: string, after: string, opts: ProtectedOpt
     const ean = String(raw ?? '').trim()
     if (!ean || !containsEan(src, ean)) continue
     if (!containsEan(dst, ean)) out.push({ kind: 'ean-lost', token: ean })
+  }
+
+  // ⚠ Le PÉRIMÈTRE, pas seulement l'exactitude : tout code énuméré par l'original doit se
+  // retrouver dans la réécriture. C'est la garde qui manquait — les références du produit
+  // étaient protégées, la liste des modèles compatibles ne l'était pas.
+  // Les références DÉCLARÉES sont déjà jugées au-dessus, sous leur propre motif : les
+  // reprendre ici ferait dire deux fois la même chose à l'écran de refus.
+  const declared = new Set(
+    [...(opts.refs ?? []), ...(opts.eans ?? [])].map((r) => normalizeRef(String(r ?? ''))).filter(Boolean),
+  )
+  for (const code of codesOf(src)) {
+    if (declared.has(normalizeRef(code))) continue
+    if (!containsRef(dst, code)) out.push({ kind: 'code-lost', token: code })
+  }
+
+  if (!ELISION.test(src) && ELISION.test(dst)) {
+    out.push({ kind: 'elision', token: (dst.match(ELISION) ?? [''])[0] })
   }
 
   const afterDims = dimensionsOf(dst)
