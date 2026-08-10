@@ -57,7 +57,7 @@ function kpiCell(label: string, value: string, color: string, sub: string): stri
     <table width="100%" cellpadding="0" cellspacing="0" style="background:${CARD};border:1px solid ${LINE};border-radius:10px;">
       <tr><td style="padding:14px 16px;">
         <div style="font:600 10px/1.2 -apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:${MUTED};">${esc(label)}</div>
-        <div style="font:700 26px/1.15 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${color};padding-top:6px;">${esc(value)}</div>
+        <div style="font:700 21px/1.15 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${color};padding-top:6px;">${esc(value)}</div>
         <div style="font:400 11px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${MUTED};padding-top:4px;">${esc(sub)}</div>
       </td></tr>
     </table>
@@ -66,7 +66,7 @@ function kpiCell(label: string, value: string, color: string, sub: string): stri
 
 function section(title: string, lead: string, body: string): string {
   return `<tr><td style="padding:26px 12px 0;">
-    <div style="font:700 15px/1.3 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};">${esc(title)}</div>
+    <div style="font:700 14px/1.3 -apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.01em;color:${TXT};">${esc(title)}</div>
     <div style="font:400 12px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${MUTED};padding:4px 0 10px;">${esc(lead)}</div>
     ${body}
   </td></tr>`
@@ -84,7 +84,7 @@ function alertBox(items: string[], tone: 'danger' | 'ok'): string {
 function table(headers: string[], rows: string[][], aligns: ('l' | 'r')[]): string {
   const th = headers.map((h, i) => `<th align="${aligns[i] === 'r' ? 'right' : 'left'}" style="padding:8px 10px;font:600 10px/1.2 -apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:${MUTED};border-bottom:1px solid ${LINE};">${esc(h)}</th>`).join('')
   const tr = rows.map((r, n) => `<tr style="background:${n % 2 ? 'rgba(255,255,255,.02)' : 'transparent'};">${
-    r.map((c, i) => `<td align="${aligns[i] === 'r' ? 'right' : 'left'}" style="padding:8px 10px;font:400 13px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};border-bottom:1px solid ${LINE};">${c}</td>`).join('')
+    r.map((c, i) => `<td align="${aligns[i] === 'r' ? 'right' : 'left'}" style="padding:7px 9px;font:400 13px/1.45 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};border-bottom:1px solid ${LINE};">${c}</td>`).join('')
   }</tr>`).join('')
   return `<table width="100%" cellpadding="0" cellspacing="0" style="background:${CARD};border:1px solid ${LINE};border-radius:10px;border-collapse:separate;overflow:hidden;">
     <tr>${th}</tr>${tr}</table>`
@@ -182,12 +182,12 @@ export function renderPriceWatchReport(
 <style>:root{color-scheme:dark;supported-color-schemes:dark;}</style>
 <title>${esc(opts.title)}</title></head>
 <body style="margin:0;padding:0;background:${BG};">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:24px 12px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:16px 4px;">
 <tr><td align="center">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:100%;">
 
   <tr><td style="padding:0 12px 18px;">
-    <div style="font:700 22px/1.25 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};">${esc(opts.title)}</div>
+    <div style="font:700 19px/1.25 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};">${esc(opts.title)}</div>
     <div style="font:400 12px/1.5 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${MUTED};padding-top:5px;">
       ${esc(watchLabel)} · analyse du ${esc(analysedAt)} · ${nf(matched)} produits appariés chez ${comps.length} concurrent(s)
     </div>

@@ -14,9 +14,16 @@ describe('mise en page repliable', () => {
     const out = normalizeComposedHtml(`<table style="min-width:640px;background:#111">${'x'.repeat(250)}</table>`)
     expect(out).not.toContain('min-width')
   })
-  it('transforme une largeur fixe en PLAFOND', () => {
+  it('transforme une largeur fixe en pleine largeur', () => {
     const out = normalizeComposedHtml(`<div style="width:760px;padding:8px">${'x'.repeat(250)}</div>`)
-    expect(out).toContain('max-width:760px;width:100%')
+    expect(out).toContain('max-width:100%;width:100%')
+  })
+
+  // ⚠ Sur un écran de 390 px, un retrait de 32 px de chaque côté mange un sixième de la
+  // largeur — et c'est autant de colonnes qui ne tiennent plus.
+  it('ramène les retraits latéraux d’une maquette d’ordinateur', () => {
+    expect(normalizeComposedHtml(`<td style="padding:14px 32px">${'x'.repeat(250)}</td>`))
+      .toContain('padding:14px 12px')
   })
   it('supprime l’interdiction de revenir à la ligne', () => {
     expect(normalizeComposedHtml(`<td style="white-space:nowrap;color:#fff">${'x'.repeat(250)}</td>`))

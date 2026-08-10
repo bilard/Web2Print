@@ -123,11 +123,18 @@ const RENDER_RULES = `Contraintes techniques du support (un client de messagerie
 - rends UNIQUEMENT du HTML de corps de mail, sans <html>, <head>, <script> ni <style> séparé ;
 - mets en page avec des <table> et des styles INLINE : Gmail retire les feuilles de style et ignore flex/grid ;
 - fond sombre (#0f1117), texte clair (#e8eaf0), cartes #171a23, bordures #242836, rose #fb7185 pour ce qui alerte, vert #34d399 pour ce qui rassure ;
+- HIÉRARCHIE VISUELLE, obtenue par le POIDS et la COULEUR avant la taille — un mail dont tout est gros ne hiérarchise rien :
+  · titre de section : 16 px, gras, rose ; il ouvre, il ne crie pas ;
+  · en-tête de colonne : 11 px, majuscules, interlettrage large, gris #9aa0b4 ;
+  · première colonne d'un tableau (le nom de la chose) : 14 px, demi-gras, texte clair ;
+  · LE CHIFFRE qui porte l'information : gras et coloré, c'est le seul élément qui doit accrocher l'œil dans une ligne ;
+  · le reste (unités, totaux, mentions) : 13 px, gris — présent, jamais au premier plan ;
+  · de l'air entre les sections (24 px) et peu à l'intérieur (7 px par cellule) : c'est l'espacement qui sépare, pas les traits ;
 - largeur maximale 600 px, police système ;
 - ⚠ LE MAIL EST LU SUR UN TÉLÉPHONE. Un écran de 390 px de large doit suffire : au-delà, le client de messagerie réduit TOUT le mail pour le faire entrer et plus rien n'est lisible. Donc :
   · TROIS colonnes au maximum par tableau — s'il en faut plus, coupe en deux tableaux ou mets la donnée secondaire sous le libellé ;
   · chaque <table> porte width="100%" ; AUCUNE largeur fixe en px sur une cellule, aucune valeur en white-space:nowrap ;
-  · corps de texte à 15 px minimum, en-têtes de colonne à 12 px minimum, jamais en dessous ;
+  · corps de texte à 14 px, en-têtes de colonne à 11 px, jamais sous 13 px pour ce qui se lit vraiment ;
   · une cellule doit pouvoir revenir à la ligne : pas de libellé collé sur une seule ligne ;
 - n'invente aucun chiffre : n'utilise que les données fournies ci-dessous, et n'en déduis aucune statistique à partir des exemples (ils sont volontairement biaisés vers les produits les plus sous-cotés).`
 
@@ -188,6 +195,14 @@ function makeResponsive(html: string): string {
     // ⚠ Sous 13 px, iOS agrandit la page pour compenser — et c'est ce zoom qui coupe les
     // colonnes. On remonte le plancher plutôt que de subir la correction du système.
     .replace(/font-size\s*:\s*(\d+)px/gi, (m, size: string) => (Number(size) < 13 ? 'font-size:13px' : m))
+    // ⚠⚠ PLEINE LARGEUR, demandé après lecture sur téléphone. Un plafond de 600 px laisse
+    // des bandes noires de chaque côté et rétrécit des tableaux déjà denses ; sur un écran
+    // de 390 px, chaque pixel rendu au contenu est une colonne de plus qui tient.
+    // Contrepartie assumée : sur un grand écran, le mail s'étale sur toute la fenêtre.
+    .replace(/max-width\s*:\s*\d{3,}px/gi, 'max-width:100%')
+    // Les retraits latéraux généreux d'une maquette d'ordinateur mangent un cinquième d'un
+    // écran de téléphone. Ramenés à ce qu'il faut pour que le texte ne colle pas au bord.
+    .replace(/padding\s*:\s*(\d+)px\s+(\d{2,})px/gi, (_m, v: string, h: string) => `padding:${v}px ${Math.min(12, Number(h))}px`)
 }
 
 /**
