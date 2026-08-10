@@ -6038,6 +6038,8 @@ export const fr = {
   'pwte.reject.number': 'la valeur « {token} » a été modifiée ou perdue',
   'pwte.reject.brandLost': 'la marque « {token} » a disparu du texte',
   'pwte.reject.brandAdded': 'la marque « {token} » a été ajoutée alors qu’elle était absente',
+  'pwte.reject.code': 'le code « {token} » de l’original (modèle compatible, référence citée) a disparu du texte',
+  'pwte.reject.elision': 'le texte a été ABRÉGÉ (« {token} ») : une énumération de l’original n’est plus complète',
   'pwte.searchOverrides': 'Recherche en cours — le filtre de langue est suspendu',
   'pwte.limit': 'Traiter au plus (0 = tout)',
   'pwte.run': 'Traduire {count} fiches',

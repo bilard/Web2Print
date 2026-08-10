@@ -113,7 +113,7 @@ function fieldLines(tasks: FieldTasks): string[] {
     'Pour chaque produit ci-dessous, champ par champ :',
     ...one('nom', 'name'),
     ...one('description', 'description'),
-    'Améliorer veut dire : des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Cela ne veut JAMAIS dire ajouter une caractéristique que le texte d’origine ne porte pas.',
+    'Améliorer veut dire : des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Cela ne veut JAMAIS dire raccourcir, résumer ni abréger une énumération, ni ajouter une caractéristique que le texte d’origine ne porte pas.',
   ]
 }
 
@@ -125,13 +125,13 @@ function taskLines(modes: ScreenModes): string[] {
   if (modes.translate && modes.improve) {
     return [
       'Pour chaque produit ci-dessous : traduis en français ce qui ne l’est pas, PUIS réécris le texte de vente pour qu’il se lise et qu’il vende.',
-      'Améliorer veut dire : des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Cela ne veut JAMAIS dire ajouter une caractéristique que le texte d’origine ne porte pas.',
+      'Améliorer veut dire : des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Cela ne veut JAMAIS dire raccourcir, résumer ni abréger une énumération, ni ajouter une caractéristique que le texte d’origine ne porte pas.',
     ]
   }
   if (modes.improve) {
     return [
       'Réécris le texte de vente de chaque produit ci-dessous pour qu’il se lise et qu’il vende, en français.',
-      'Des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. N’ajoute JAMAIS une caractéristique que le texte d’origine ne porte pas.',
+      'Des phrases complètes, l’usage et le bénéfice mis en avant, le jargon d’export supprimé. Ne raccourcis JAMAIS une énumération et n’ajoute JAMAIS une caractéristique que le texte d’origine ne porte pas.',
     ]
   }
   return ['Traduis en français le nom et le texte de vente de chaque produit ci-dessous, sans rien réécrire d’autre.']
@@ -144,6 +144,10 @@ export function buildScreenPrompt(
   /** Consignes par champ. Fournies, elles REMPLACENT les modes globaux — c'est le chemin
    *  de la carte de workflow ; l'écran, lui, pilote les deux champs d'un seul geste. */
   fields?: FieldTasks,
+  /** Consigne CORRECTIVE d'une reprise : ce que la réponse précédente avait omis, nommé.
+   *  ⚠ Placée APRÈS les contraintes et AVANT les fiches — jamais avant la consigne de
+   *  l'utilisateur, qui reste en tête et verbatim. */
+  corrective?: string,
 ): string {
   const items = products.map((p) => [
     `--- id=${JSON.stringify(p.id)}`,
@@ -161,11 +165,19 @@ export function buildScreenPrompt(
     'Rends TOUJOURS les deux champs : « name » et « description ». Si le produit a une description, elle doit ressortir traduite — ne la fusionne pas dans le nom et ne la laisse pas vide. S’il n’en a pas, laisse « description » vide plutôt que d’en inventer une.',
     '',
     'Contraintes de forme :',
+    // ⚠⚠ EN TÊTE, et formulée comme une interdiction. Observé en prod : une liste de trente
+    // tondeuses compatibles rendue « MB 650.0 KS… », et les deux références de fin
+    // disparues. « Améliorer » se lisait comme « condenser ».
+    '- ISOPÉRIMÈTRE : le texte final porte EXACTEMENT les mêmes informations que l’original. Tu reformules, tu ne résumes JAMAIS.',
+    '- reprends TOUS les modèles, TOUTES les références, TOUS les codes et TOUS les éléments d’une énumération, un par un, sans exception — même s’ils sont trente ;',
+    '- il est INTERDIT d’abréger une liste : jamais « … », jamais « etc. », jamais « et autres », jamais « entre autres » ;',
+    '- rien ne se perd en route : si une phrase de l’original porte une information (usage, montage, sécurité, référence), elle doit se retrouver dans le texte final ;',
     '- recopie EXACTEMENT les références, codes article et codes-barres, chiffre pour chiffre ;',
     '- recopie EXACTEMENT les valeurs chiffrées et leurs unités ;',
     '- n’ajoute aucune marque absente et ne traduis pas celles qui sont là ;',
     '- n’invente aucune caractéristique.',
     '',
+    ...(corrective?.trim() ? [corrective.trim(), ''] : []),
     items,
   ].filter((x) => x !== undefined).join('\n')
 }

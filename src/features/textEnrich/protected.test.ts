@@ -98,3 +98,40 @@ describe('cumul', () => {
     )).toBe(true)
   })
 })
+
+// ⚠⚠ Le défaut le plus coûteux observé en prod (2026-08-10) : le modèle ne se trompait pas,
+// il ABRÉGEAIT. Une liste de trente tondeuses compatibles rendue « MB 650.0 KS… », et le
+// couple de références de fin purement disparu. Une liste de compatibilité amputée est pire
+// qu'absente : le client cherche son modèle, ne le trouve pas, et n'achète pas.
+describe('périmètre', () => {
+  const SRC = 'Original STIHL Ersatzteil passend für z.B.: VIKING Rasenmäher: MB 545.0 T, '
+    + 'MB 650.0 KS, MB 650.0 T, MB 655.0 G, MB 655.0 VM ( 0000-082-0413, 0000 082 0413 )'
+
+  it('REFUSE une énumération amputée', () => {
+    const v = findViolations(SRC, 'Pièce d’origine STIHL, compatible VIKING : MB 545.0 T, MB 650.0 KS.')
+    expect(v.filter((x) => x.kind === 'code-lost').map((x) => x.token)).toContain('655.0')
+  })
+
+  it('REFUSE les références citées qui disparaissent', () => {
+    const v = findViolations(SRC, 'Pièce d’origine STIHL pour tondeuses VIKING MB 545.0 T, MB 650.0 KS, MB 650.0 T, MB 655.0 G, MB 655.0 VM.')
+    expect(v.map((x) => x.token)).toContain('0000-082-0413')
+  })
+
+  it('REFUSE une élision que l’original ne portait pas', () => {
+    const v = findViolations('MB 545.0 T, MB 650.0 KS, MB 655.0 VM', 'Compatible MB 545.0 T, MB 650.0 KS, MB 655.0 VM…')
+    expect(v.map((x) => x.kind)).toContain('elision')
+  })
+
+  it('laisse passer une reformulation ISOPÉRIMÈTRE', () => {
+    expect(isSafeRevision(SRC,
+      'Pièce d’origine STIHL, compatible avec les tondeuses VIKING : MB 545.0 T, MB 650.0 KS, '
+      + 'MB 650.0 T, MB 655.0 G et MB 655.0 VM. Références : 0000-082-0413 et 0000 082 0413.',
+    )).toBe(true)
+  })
+
+  it('ne compte pas une cote comme un code — elle est déjà surveillée', () => {
+    // « 1,3mm » écrit « 1,3 mm » ne perd rien : deux motifs pour le même fait brouilleraient
+    // la lecture du refus, et un faux refus coûte une fiche non traduite.
+    expect(isSafeRevision('Fil de Ø 1,3mm, longueur 8 m', 'Fil de 1,3 mm de diamètre, longueur 8 m.')).toBe(true)
+  })
+})

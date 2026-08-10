@@ -20,6 +20,10 @@ import { aiHints, renderTemplate } from './template'
  * mégarde, et à ce que ses refus soient rares.
  */
 const RULES = `Contraintes de forme, à respecter quoi qu'il arrive :
+- ISOPÉRIMÈTRE : le texte final porte EXACTEMENT les mêmes informations que l'original. Tu reformules, tu ne résumes JAMAIS ;
+- reprends TOUS les modèles, TOUTES les références, TOUS les codes et TOUS les éléments d'une énumération, un par un, sans exception — même s'ils sont trente ;
+- il est INTERDIT d'abréger une liste : jamais « … », jamais « etc. », jamais « et autres », jamais « entre autres » ;
+- rien ne se perd en route : si une phrase de l'original porte une information (usage, montage, sécurité, référence), elle doit se retrouver dans le texte final ;
 - recopie EXACTEMENT les références, codes article et codes-barres : chiffre pour chiffre, sans corriger ce qui te semble mal formé ;
 - recopie EXACTEMENT les valeurs chiffrées et leurs unités : « 510 mm » ne devient ni « 51 cm » ni « environ 50 cm » ;
 - n'ajoute JAMAIS une marque ou un fabricant absent du texte d'origine, et ne traduis pas ceux qui y sont ;

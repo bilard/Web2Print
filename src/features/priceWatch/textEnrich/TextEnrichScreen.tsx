@@ -12,13 +12,11 @@ import { Languages, Loader2 } from 'lucide-react'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { toast } from 'sonner'
 import { detectLanguage } from '@/features/textEnrich/detectLang'
-import { generateJson } from '@/features/ai/llmRouter'
-import { ScreenBatchSchema, screenSchemaForLLM, buildScreenPrompt } from './screenPrompt'
+import { submitBatch, correctiveFor, type EnrichUnit } from './submitBatch'
 import { TextEnrichFilters, type DoneFilter } from './TextEnrichFilters'
 import { TextEnrichRow } from './TextEnrichRow'
 import { rejectionParts, type RejectionPart } from './violationSummary'
 import { chunkByVolume } from './chunkByVolume'
-import { findViolations } from '@/features/textEnrich/protected'
 import { searchCatalog } from '../explorer/catalogList'
 import { isUnderPath } from '../explorer/taxonomyTree'
 import { langBreakdown } from './langBreakdown'
@@ -285,86 +283,47 @@ export function TextEnrichScreen({ uid, watchId, products, loading, query, path,
       return c.name.length + (c.description?.length ?? 0)
     })
     let processed = 0
+    const send = (units: EnrichUnit[], corrective?: string) => submitBatch(units, {
+      instruction: prompt, modes, maxTokens: MAX_OUTPUT_TOKENS, at: Date.now(),
+      ...(corrective ? { corrective } : {}),
+      onProviderFailed: ({ provider, error }) => {
+        toast.warning(t('pwte.providerFailed', { provider, message: error.message.slice(0, 120) }))
+      },
+    })
     try {
       for (const chunk of chunks) {
-        const raw = await generateJson({
-          task: 'data.textEnrich',
-          prompt: buildScreenPrompt(chunk.map((l) => {
-            const c = current(l)
-            return {
-              id: l.product.id, name: c.name,
-              ...(c.description ? { description: c.description } : {}),
-              lang: l.lang,
-            }
-          }), prompt, modes),
-          schema: ScreenBatchSchema,
-          schemaForLLM: screenSchemaForLLM,
-          version: 'text-enrich-screen/v2',
-          maxTokens: MAX_OUTPUT_TOKENS,
-          // ⚠ Un fournisseur qui tombe et cède la main au suivant doit se VOIR : sans ça,
-          // un quota épuisé se manifeste par un écran qui n'avance pas, et on cherche la
-          // panne dans le module.
-          onProviderFailed: ({ provider, error }) => {
-            toast.warning(t('pwte.providerFailed', { provider, message: error.message.slice(0, 120) }))
-          },
-        })
+        const units: EnrichUnit[] = chunk.map((l) => ({
+          product: l.product, lang: l.lang,
+          ...(l.revision ? { revision: l.revision } : {}),
+          submit: current(l),
+        }))
+        const first = await send(units)
+        const written = [...first.written]
+        const answered = new Set(first.answered)
+        let refusals = first.refusals
 
-        const written: TextRevision[] = []
-        const byId = new Map(chunk.map((l) => [l.product.id, l]))
-        const answered = new Set<string>()
-        for (const r of raw.results) {
-          const line = byId.get(r.id)
-          // Un identifiant inconnu trahit une liste décalée : on écarte plutôt que de
-          // ranger un texte sur le mauvais produit.
-          if (!line) continue
-          answered.add(line.product.id)
-          const name = String(r.name ?? '').trim()
-          const description = String(r.description ?? '').trim()
-          if (!name) continue
+        // ⚠⚠ UNE reprise, et une seule, sur les fiches refusées — en NOMMANT ce qui a été
+        // perdu. Depuis que la garde exige l'isopérimètre (aucun modèle compatible, aucune
+        // référence citée abrégée), le premier jet part souvent au refus pour une omission
+        // que le modèle corrige dès qu'on la lui montre. Sans reprise, la fiche restait non
+        // traduite et l'appel était payé pour rien ; avec deux, on paierait l'entêtement.
+        if (refusals.size > 0) {
+          const again = units.filter((u) => refusals.has(u.product.id))
+          const retry = await send(again, correctiveFor(again, refusals))
+          written.push(...retry.written)
+          for (const id of retry.answered) answered.add(id)
+          refusals = new Map(
+            [...refusals].filter(([id]) => !retry.written.some((w) => w.productId === id))
+              .map(([id, v]) => [id, retry.refusals.get(id) ?? v]),
+          )
+        }
 
-          // Même vérification que le moteur : une réécriture qui perd une référence ou
-          // altère une valeur chiffrée est refusée, pas écrite.
-          const cur = current(line)
-          const before = `${cur.name} ${cur.description ?? ''}`
-          const after = `${name} ${description ?? ''}`
-          const violations = findViolations(before, after, {
-            refs: [line.product.ref, line.product.ref2],
-            eans: [line.product.ean],
-          })
-          if (violations.length > 0) {
-            // Refus MOTIVÉ : la garde protège les références et les cotes, mais son
-            // verdict doit se lire sur la fiche — sinon le module a simplement l'air
-            // de ne pas marcher.
-            reasons.set(line.product.id, rejectionParts(violations))
-            refused++
-            continue
-          }
-
-          written.push({
-            productId: line.product.id,
-            name,
-            ...(description ? { description } : {}),
-            // ⚠ L'original est le PREMIER connu, jamais la passe précédente : une
-            // amélioration posée sur une traduction ne doit pas faire passer la traduction
-            // pour le texte d'origine — c'est vers l'allemand que le retour arrière ramène.
-            nameSource: line.revision?.nameSource ?? line.product.name,
-            // ⚠ Un original COUPÉ cède la place au texte entier retrouvé : c'est vers lui
-            // que « Annuler » doit ramener, pas vers le moignon de 300 caractères qu'on
-            // vient précisément de remplacer.
-            ...((d) => (d ? { descriptionSource: d } : {}))(
-              completeOriginText(line.product, line.revision)
-              ?? line.revision?.descriptionSource ?? line.product.description,
-            ),
-            ...(r.note ? { note: r.note } : {}),
-            // Ce qui a été fait sur cette fiche, CUMULÉ : une amélioration ne doit pas
-            // effacer la trace de la traduction qui l'a précédée.
-            ops: ((was) => ({
-              ...(was.translate || modes.translate ? { translate: true } : {}),
-              ...(was.improve || modes.improve ? { improve: true } : {}),
-            }))(opsOf(line.revision, line.lang)),
-            ...(line.lang ? { lang: line.lang } : {}),
-            at: Date.now(),
-          })
+        for (const [id, violations] of refusals) {
+          // Refus MOTIVÉ : la garde protège les références, les cotes et le périmètre, mais
+          // son verdict doit se lire sur la fiche — sinon le module a simplement l'air de ne
+          // pas marcher.
+          reasons.set(id, rejectionParts(violations))
+          refused++
         }
 
         // Le modèle a ignoré ces fiches : ni écrites, ni refusées. Sans ce décompte,

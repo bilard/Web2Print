@@ -14,6 +14,8 @@ const LABEL: Record<Violation['kind'], TranslationKey> = {
   'number-lost': 'pwte.reject.number',
   'brand-lost': 'pwte.reject.brandLost',
   'brand-added': 'pwte.reject.brandAdded',
+  'code-lost': 'pwte.reject.code',
+  elision: 'pwte.reject.elision',
 }
 
 export interface RejectionPart {

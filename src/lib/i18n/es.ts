@@ -5845,6 +5845,8 @@ export const es: Record<TranslationKey, string> = {
   'pwte.reject.number': 'el valor «{token}» se ha modificado o perdido',
   'pwte.reject.brandLost': 'la marca «{token}» ha desaparecido del texto',
   'pwte.reject.brandAdded': 'la marca «{token}» se ha añadido aunque no estaba',
+  'pwte.reject.code': 'el código «{token}» del original (modelo compatible, referencia citada) ha desaparecido del texto',
+  'pwte.reject.elision': 'el texto se ha ABREVIADO («{token}»): una enumeración del original ya no está completa',
   'pwte.searchOverrides': 'Búsqueda activa: el filtro de idioma está suspendido',
   'pwte.limit': 'Procesar como máximo (0 = todo)',
   'pwte.run': 'Traducir {count} fichas',

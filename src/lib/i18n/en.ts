@@ -5846,6 +5846,8 @@ export const en: Record<TranslationKey, string> = {
   'pwte.reject.number': 'value "{token}" was altered or lost',
   'pwte.reject.brandLost': 'brand "{token}" disappeared from the text',
   'pwte.reject.brandAdded': 'brand "{token}" was added although it was absent',
+  'pwte.reject.code': 'code “{token}” from the original (compatible model, quoted reference) has disappeared from the text',
+  'pwte.reject.elision': 'the text was SHORTENED (“{token}”): a list from the original is no longer complete',
   'pwte.searchOverrides': 'Search active — the language filter is suspended',
   'pwte.limit': 'Process at most (0 = all)',
   'pwte.run': 'Translate {count} listings',
