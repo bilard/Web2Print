@@ -50,8 +50,12 @@ const ROSE = '#fb7185'
 const GREEN = '#34d399'
 const AMBER = '#fbbf24'
 
+// ⚠ 50 % et non 25 % : quatre cartes de front tiennent sur un écran d'ordinateur, pas sur
+// un téléphone de 390 px — chacune y faisait 90 px de large pour un nombre en corps 26, et
+// le client de messagerie réduisait tout le mail pour le faire entrer. Deux rangées de deux
+// se lisent partout, sans feuille de style ni requête média (que Gmail n'applique pas).
 function kpiCell(label: string, value: string, color: string, sub: string): string {
-  return `<td width="25%" valign="top" style="padding:0 6px;">
+  return `<td width="50%" valign="top" style="padding:0 6px 12px;">
     <table width="100%" cellpadding="0" cellspacing="0" style="background:${CARD};border:1px solid ${LINE};border-radius:10px;">
       <tr><td style="padding:14px 16px;">
         <div style="font:600 10px/1.2 -apple-system,Segoe UI,Roboto,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:${MUTED};">${esc(label)}</div>
@@ -148,12 +152,14 @@ export function renderPriceWatchReport(
     alerts.push(`<b style="color:${AMBER};">${nf(k.ruptures)} rupture(s)</b> chez vos concurrents — autant d'occasions de vendre pendant qu'ils ne le peuvent pas.`)
   }
 
+  // ⚠ TROIS colonnes, pas cinq. Sur un téléphone, cinq colonnes laissent 70 px à chacune :
+  // le client de messagerie réduit alors tout le mail pour le faire entrer, et plus rien
+  // n'est lisible. « Appariés » est reversé dans « moins cher / appariés », et le nombre de
+  // fiches indexées relève de l'écran de veille, pas d'un mail de synthèse.
   const compRows = byAggression.slice(0, 20).map((c) => [
     esc(c.domain.replace(/^www\./, '')),
-    nf(c.matched),
     gapCell(c.medGapPct ?? c.avgGapPct),
     `${nf(c.cheaper)} <span style="color:${MUTED};">/ ${nf(c.matched)}</span>`,
-    nf(c.audit?.indexed ?? 0),
   ])
 
   const famRows = fams.slice(0, 12).map((f) => [
@@ -174,7 +180,7 @@ export function renderPriceWatchReport(
 <body style="margin:0;padding:0;background:${BG};">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:24px 12px;">
 <tr><td align="center">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:760px;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
 
   <tr><td style="padding:0 12px 18px;">
     <div style="font:700 22px/1.25 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:${TXT};">${esc(opts.title)}</div>
@@ -184,16 +190,19 @@ export function renderPriceWatchReport(
   </td></tr>
 
   <tr><td>
-    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
       ${kpiCell('Indice tarif', index == null ? '—' : String(Math.round(index)),
         index == null ? TXT : index > 101 ? ROSE : index < 99 ? GREEN : AMBER,
         'base 100 = médiane du marché')}
       ${kpiCell('Tenue prix', holdPct == null ? '—' : `${Math.round(holdPct)} %`, GREEN,
         'comparaisons où je tiens')}
+      </tr><tr>
       ${kpiCell('Exposés', exposedPct == null ? '—' : `${Math.round(exposedPct)} %`, ROSE,
         `${nf(undercut)} produits sur ${nf(matched)}`)}
       ${kpiCell('Ruptures', nf(k.ruptures ?? 0), AMBER, 'chez les concurrents')}
-    </tr></table>
+      </tr>
+    </table>
   </td></tr>
 
   ${opts.analysis?.trim()
@@ -210,7 +219,7 @@ export function renderPriceWatchReport(
 
   ${section('Position par concurrent',
     'Écart MÉDIAN de ses prix face aux vôtres — la médiane, et non la moyenne : quelques appariements aberrants suffisent à faire dériver une moyenne. Négatif = il vend moins cher.',
-    table(['Concurrent', 'Appariés', 'Écart médian', 'Moins cher sur', 'Fiches'], compRows, ['l', 'r', 'r', 'r', 'r']))}
+    table(['Concurrent', 'Écart médian', 'Moins cher / appariés'], compRows, ['l', 'r', 'r']))}
 
   ${famRows.length > 0
     ? section('Familles les plus exposées',

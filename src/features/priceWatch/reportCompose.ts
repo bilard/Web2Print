@@ -123,7 +123,12 @@ const RENDER_RULES = `Contraintes techniques du support (un client de messagerie
 - rends UNIQUEMENT du HTML de corps de mail, sans <html>, <head>, <script> ni <style> séparé ;
 - mets en page avec des <table> et des styles INLINE : Gmail retire les feuilles de style et ignore flex/grid ;
 - fond sombre (#0f1117), texte clair (#e8eaf0), cartes #171a23, bordures #242836, rose #fb7185 pour ce qui alerte, vert #34d399 pour ce qui rassure ;
-- largeur maximale 760 px, police système ;
+- largeur maximale 600 px, police système ;
+- ⚠ LE MAIL EST LU SUR UN TÉLÉPHONE. Un écran de 390 px de large doit suffire : au-delà, le client de messagerie réduit TOUT le mail pour le faire entrer et plus rien n'est lisible. Donc :
+  · TROIS colonnes au maximum par tableau — s'il en faut plus, coupe en deux tableaux ou mets la donnée secondaire sous le libellé ;
+  · chaque <table> porte width="100%" ; AUCUNE largeur fixe en px sur une cellule, aucune valeur en white-space:nowrap ;
+  · corps de texte à 15 px minimum, en-têtes de colonne à 12 px minimum, jamais en dessous ;
+  · une cellule doit pouvoir revenir à la ligne : pas de libellé collé sur une seule ligne ;
 - n'invente aucun chiffre : n'utilise que les données fournies ci-dessous, et n'en déduis aucune statistique à partir des exemples (ils sont volontairement biaisés vers les produits les plus sous-cotés).`
 
 /**
