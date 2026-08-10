@@ -1327,7 +1327,7 @@ Créer `src/features/priceWatch/ops/incidents.ts` :
 // incident de mardi a disparu mercredi matin. C'est précisément celui qu'on cherche.
 import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { opsIncidentsCol, watchDoc } from '../paths'
+import { opsIncidentsCol } from '../paths'
 import { OPS_INCIDENT_MAX_AGE_MS, type WatchIncident } from './opsTypes'
 
 /** Identifiants des incidents périmés. PUR. */
@@ -1364,14 +1364,7 @@ export function watchIncidents(
     (e) => console.warn('[suivi] journal des incidents illisible :', e),
   )
 }
-
-// `watchDoc` est réexporté par `paths` ; l'import ci-dessus le garde pour la lisibilité
-// des chemins dans les messages d'erreur.
-void watchDoc
 ```
-
-> **Note à l'implémenteur :** si `watchDoc` n'est pas utilisé, le supprimer de l'import et
-> retirer le `void watchDoc` — `npm run lint` doit rester à 0 warning.
 
 - [ ] **Step 4 : Lancer le test**
 
