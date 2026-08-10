@@ -13,7 +13,7 @@ import type { WatchOpsProgress } from './opsTypes'
  * `workflows/runtime/useServerRunLive` — surtout ne pas inventer un troisième seuil, deux
  * écrans se contrediraient sur « est-ce que ça tourne ».
  */
-export const OPS_BEAT_MS = 3 * 60_000
+const OPS_BEAT_MS = 3 * 60_000
 
 /** Sous ce niveau d'avancement, toute estimation de durée est une invention. */
 const ETA_FLOOR = 0.1

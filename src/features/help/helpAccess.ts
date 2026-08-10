@@ -31,6 +31,7 @@ const HELP_SECTION_ACCESS: Record<string, string | string[]> = {
   'scraping-templates': 'scrapingTemplates.view',
   'scraping-hub': 'scrapingHub.view',
   'price-watch': 'priceWatch.view',
+  'watch-ops': 'priceWatch.ops',
   'retail-promo': 'retailPromo.view',
   workflow: 'workflows.view',
   hyperframes: 'hyperframes.view',

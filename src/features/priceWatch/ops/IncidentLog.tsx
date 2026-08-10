@@ -9,7 +9,7 @@ export function IncidentLog({ incidents }: { incidents: (WatchIncident & { id: s
   const { t } = useTranslation()
 
   return (
-    <div className="bg-surface rounded-lg p-4">
+    <div className="bg-surface rounded-lg p-4" data-pw-section="ops-incidents">
       <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
         <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
         {t('ops.incidents.title')}

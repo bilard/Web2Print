@@ -49,6 +49,7 @@ const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage').th
 const HyperframesPage = lazy(() => import('@/features/video/HyperframesPage').then((m) => ({ default: m.HyperframesPage })))
 const TelegramInboxView = lazy(() => import('@/features/telegram/TelegramInboxView').then((m) => ({ default: m.TelegramInboxView })))
 const PriceWatchPanel = lazy(() => import('@/features/priceWatch/PriceWatchPanel').then((m) => ({ default: m.PriceWatchPanel })))
+const WatchOpsScreen = lazy(() => import('@/features/priceWatch/ops/WatchOpsScreen').then((m) => ({ default: m.WatchOpsScreen })))
 const FinancePanel = lazy(() => import('@/features/finance/FinancePanel').then((m) => ({ default: m.FinancePanel })))
 const RetailPromoPage = lazy(() => import('@/features/retail-promo/RetailPromoPage').then((m) => ({ default: m.RetailPromoPage })))
 const CatalogHome = lazy(() => import('@/features/catalog/CatalogHome').then((m) => ({ default: m.CatalogHome })))
@@ -641,6 +642,16 @@ export default function DashboardPage() {
             </div>
           }>
             <PriceWatchPanel />
+          </Suspense>
+        </div>
+      ) : activeSection === 'watch-ops' && canSee('watch-ops') ? (
+        <div className="flex-1 overflow-auto px-8 pb-8 bg-background">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+            </div>
+          }>
+            <WatchOpsScreen />
           </Suspense>
         </div>
       ) : activeSection === 'finances' && canSee('finances') ? (

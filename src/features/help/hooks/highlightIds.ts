@@ -13,6 +13,7 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.chat',
   'dashboard.sidebar.workflows',
   'dashboard.sidebar.price-watch',
+  'dashboard.sidebar.watch-ops',
   'dashboard.sidebar.retail-promo',
   'dashboard.sidebar.catalog',
   'dashboard.sidebar.demo-express',

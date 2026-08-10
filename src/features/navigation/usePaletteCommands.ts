@@ -75,6 +75,7 @@ const MODULE_KEYWORDS: Partial<Record<Section, string>> = {
   'scraping-templates': 'templates scraping extraction selecteurs selectors',
   'scraping-hub': 'scraping hub regles crawl enrichissement rules enrichment',
   'price-watch': 'veille tarifaire prix concurrents price monitoring watch competitors',
+  'watch-ops': 'suivi avancement traitements en cours veille progress monitoring',
   'demo-express': 'demo express prospect seeding',
   'retail-promo': 'creation studio promo prospectus affiche retail poster',
   catalog: 'catalogue studio pages chemin de fer catalogue print',

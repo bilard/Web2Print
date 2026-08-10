@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Building2, Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3, Wallet } from 'lucide-react'
+import { Building2, Library, FilePlus, FileSpreadsheet, Upload, FolderTree, Image as ImageIcon, Database, BookOpen, BookText, MessageSquare, Send, Workflow, Film, ShieldCheck, TrendingUpDown, Tag, Sparkles, BarChart3, Wallet, Activity } from 'lucide-react'
 import { useIsAdmin } from '@/features/access/useAccess'
 import { useAccessStore } from '@/stores/access.store'
 import type { TranslationKey } from '@/lib/i18n'
@@ -19,7 +19,7 @@ import type { TranslationKey } from '@/lib/i18n'
 export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
-  | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'retail-promo' | 'catalog'
+  | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'watch-ops' | 'retail-promo' | 'catalog'
   | 'demo-express' | 'mfr-insights' | 'finances' | 'team'
 
 /**
@@ -35,7 +35,7 @@ const SECTION_SET: Record<Section, true> = {
   blank: true, import: true, library: true, images: true, data: true, chat: true,
   settings: true, taxonomies: true, 'scraping-templates': true, 'scraping-hub': true,
   workflows: true, hyperframes: true, telegram: true, access: true, 'price-watch': true,
-  'retail-promo': true, catalog: true, 'demo-express': true, 'mfr-insights': true,
+  'watch-ops': true, 'retail-promo': true, catalog: true, 'demo-express': true, 'mfr-insights': true,
   finances: true, team: true,
 }
 export const ALL_SECTIONS = Object.keys(SECTION_SET) as Section[]
@@ -167,6 +167,14 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'section:rules', labelKey: 'nav.priceWatch.rules', intent: 'price-watch:section:rules', permission: 'priceWatch.rules' },
     ],
   },
+  { id: 'watch-ops', group: 'web', icon: Activity, labelKey: 'nav.watchOps', accent: 'text-amber-400',
+    activeBg: 'bg-amber-500/[0.1]', activeText: 'text-amber-300',
+    children: [
+      { id: 'section:live',      labelKey: 'nav.watchOps.live',      intent: 'watch-ops:section:live' },
+      { id: 'section:incidents', labelKey: 'nav.watchOps.incidents', intent: 'watch-ops:section:incidents' },
+      { id: 'section:history',   labelKey: 'nav.watchOps.history',   intent: 'watch-ops:section:history' },
+    ],
+  },
   // ── Publication ──
   { id: 'demo-express', group: 'publish', icon: Sparkles, labelKey: 'nav.demoExpress', accent: 'text-lime-400', activeBg: 'bg-lime-500/[0.1]', activeText: 'text-lime-300',
     children: [
@@ -259,6 +267,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   'scraping-hub': 'scrapingHub.view',
   workflows: 'workflows.view',
   'price-watch': 'priceWatch.view',
+  'watch-ops': 'priceWatch.ops',
   'retail-promo': 'retailPromo.view',
   catalog: 'catalog.view',
   hyperframes: 'hyperframes.view',

@@ -2,7 +2,12 @@
 //
 // ⚠ Séparé de l'historique des runs, élagué à vingt par flux : sur un flux horaire, un
 // incident de mardi a disparu mercredi matin. C'est précisément celui qu'on cherche.
-import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query } from 'firebase/firestore'
+//
+// ⚠ Consigner (`recordIncident`) et élaguer (`pruneIncidents`) n'ont PAS de jumeau ici :
+// seul le SERVEUR écrit (`functions/src/priceWatch/opsIncidents.ts`, appelé depuis
+// `appendRunLiveError`) — aucun run NAVIGATEUR ne consigne encore ses propres pannes. Ce
+// module ne fait donc que LIRE (`watchIncidents`) et purger côté pur (`expiredIncidents`).
+import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { opsIncidentsCol } from '../paths'
 import { OPS_INCIDENT_MAX_AGE_MS, type WatchIncident } from './opsTypes'
@@ -13,23 +18,7 @@ export function expiredIncidents(list: { id: string; ts: number }[], now: number
 }
 
 /** Combien on en affiche, et donc combien on en lit. */
-export const INCIDENTS_PAGE = 50
-
-/** Consigne une panne. Fire-and-forget : jamais bloquant pour le run. */
-export async function recordIncident(uid: string, watchId: string, incident: WatchIncident): Promise<void> {
-  try {
-    await addDoc(collection(db, opsIncidentsCol(uid, watchId)), {
-      ...incident, message: incident.message.slice(0, 600),
-    })
-  } catch (e) {
-    console.warn('[suivi] incident non consigné :', e)
-  }
-}
-
-/** Supprime les incidents périmés. Appelé à l'écriture, jamais à la lecture. */
-export async function pruneIncidents(uid: string, watchId: string, ids: string[]): Promise<void> {
-  await Promise.all(ids.map((id) => deleteDoc(doc(db, opsIncidentsCol(uid, watchId), id)).catch(() => {})))
-}
+const INCIDENTS_PAGE = 50
 
 /** Abonnement aux derniers incidents. */
 export function watchIncidents(

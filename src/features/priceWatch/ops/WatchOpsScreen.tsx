@@ -12,8 +12,12 @@ import { ChantierCard } from './ChantierCard'
 import { RunCardsStrip } from './RunCardsStrip'
 import { IncidentLog } from './IncidentLog'
 import { RunHistory } from './RunHistory'
+import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useTranslation } from '@/lib/i18n'
+
+/** Sous-section de menu → ancre `data-pw-section` visée par le défilement. */
+const SECTION_ANCHOR: Record<string, string> = { live: 'ops-header', incidents: 'ops-incidents', history: 'ops-history' }
 
 export function WatchOpsScreen() {
   const { t } = useTranslation()
@@ -22,7 +26,7 @@ export function WatchOpsScreen() {
 
   const publishView = useModuleViewStore((s) => s.set)
   useEffect(() => {
-    publishView('watch-ops', 'section:ops')
+    publishView('watch-ops', 'section:live')
     return () => publishView('watch-ops', null)
   }, [publishView])
 
@@ -36,6 +40,23 @@ export function WatchOpsScreen() {
   const meta = useCompetitorMeta(watchId)
   const cockpit = useMemo(() => (report ? buildOpsCockpit(report, meta) : null), [report, meta])
   const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
+
+  // ⚠ Défilement INSTANTANÉ, jamais `behavior: 'smooth'` : sur un écran qui se repeint en
+  // continu (tick de l'horloge, abonnements Firestore), `smooth` reste bloqué à 0 — cf.
+  // le même piège mesuré sur `PriceWatchPanel`. On réessaie : la cible peut ne pas encore
+  // exister (contenu sous Suspense) ou se déplacer (blocs au-dessus qui grandissent).
+  useModuleIntent('watch-ops', (action) => {
+    if (!action.startsWith('section:')) return
+    const anchor = SECTION_ANCHOR[action.slice('section:'.length)]
+    if (!anchor) return
+    const goTo = () => {
+      const el = document.querySelector<HTMLElement>(`[data-pw-section="${anchor}"]`)
+      el?.scrollIntoView({ block: 'start' })
+      return !!el
+    }
+    if (!goTo()) { for (const delay of [120, 350, 700, 1200]) window.setTimeout(goTo, delay) }
+    window.setTimeout(goTo, 1600)
+  })
 
   if (watches.length === 0) {
     return <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.empty')}</p>

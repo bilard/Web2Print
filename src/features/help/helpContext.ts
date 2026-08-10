@@ -29,6 +29,9 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   // permission, vues depuis une seule société.
   team: 'access',
   'price-watch': 'price-watch',
+  // Aucun article dédié pour l'instant : partage celui de la veille tarifaire (même
+  // domaine, l'écran « Suivi » n'en est qu'un cadran).
+  'watch-ops': 'price-watch',
   'retail-promo': 'retail-promo',
   catalog: 'getting-started',
   'demo-express': 'getting-started',

@@ -16,7 +16,7 @@ export function RunHistory({ workflowId }: { workflowId: string | null }) {
   if (runs.length === 0) return null
 
   return (
-    <div className="bg-surface rounded-lg p-4">
+    <div className="bg-surface rounded-lg p-4" data-pw-section="ops-history">
       <div className="flex items-center gap-2 mb-2">
         <Clock className="w-3.5 h-3.5 text-white/40" />
         <h3 className="text-sm font-semibold text-white">{t('ops.history.title')}</h3>
