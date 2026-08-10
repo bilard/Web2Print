@@ -2778,6 +2778,7 @@ export const es: Record<TranslationKey, string> = {
   'run.gm.htmlInjected': 'Contenido {{html}} inyectado en el cuerpo ({count} car.).',
   'run.gm.htmlTokenNoData': 'Envío CANCELADO: «{{html}}» está en el cuerpo, pero el puerto «data» no lleva ningún HTML. El correo habría salido con el token escrito tal cual. Causas habituales: este nodo se ejecutó SOLO (ejecute el flujo completo, o al menos el nodo que produce el HTML); varias aristas llegan a «data» y se han sobrescrito; o lo que llega es una hoja de filas, no HTML.',
   'run.gm.dataNotInserted': 'Contenido HTML/texto recibido en el puerto «data» pero no insertado: añadir {{html}} en el cuerpo para mostrarlo.',
+  'run.gm.emptyBody': 'Envío RECHAZADO: el cuerpo del mensaje está vacío y no hay ningún archivo adjunto. El destinatario solo habría recibido un asunto. Vacíe el campo «Cuerpo» para que el HTML recibido en «data» sea el cuerpo, o inserte {{html}} en él.',
   'run.gm.combinedTable': 'Tabla combinada: {count} columnas ({columns}) × {rows} filas.',
   'run.gm.htmlTable': 'Modo HTML: columnas representadas como tabla ({rows} filas).',
   'run.gm.tableInjected': 'Tabla {{table}} inyectada: {rows} filas.',

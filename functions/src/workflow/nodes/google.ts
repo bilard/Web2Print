@@ -984,7 +984,18 @@ registerServerNode({
     // écrit en toutes lettres, visible du destinataire et irrattrapable une fois envoyé.
     if (/\{\{\s*html\s*\}\}/.test(body)) throw new Error(t(ctx.locale, 'run.gm.htmlTokenNoData'))
     if (rows && hasTableToken(body)) body = injectTable(body, rows, isHtml)
-    const mime = buildMime(to, String(config.subject ?? ''), body, isHtml, buildAttachment(rows))
+    // ⚠ Le HTML reçu est IGNORÉ quand le corps est rempli sans porter « {{html}} » : le
+    // destinataire reçoit le gabarit, pas le rapport, et rien ne le disait côté serveur
+    // (le navigateur, lui, avertissait déjà).
+    if (typeof inputs.data === 'string' && inputs.data.trim() && !/\{\{\s*html\s*\}\}/.test(String(config.body ?? '')) && String(config.body ?? '').trim()) {
+      ctx.log('warn', t(ctx.locale, 'run.gm.dataNotInserted'))
+    }
+    const attachment = buildAttachment(rows)
+    // ⚠⚠ ARRÊT plutôt qu'un mail VIDE. Un corps vide sans pièce jointe part quand même :
+    // le destinataire reçoit une enveloppe avec un objet et rien dedans, et on cherche la
+    // panne partout sauf ici. Constaté en production le 2026-08-10.
+    if (!body.trim() && !attachment) throw new Error(t(ctx.locale, 'run.gm.emptyBody'))
+    const mime = buildMime(to, String(config.subject ?? ''), body, isHtml, attachment)
     const id = await gmailSend(token, mime, ctx.locale)
     ctx.log('info', t(ctx.locale, 'run.gm.sent', { to, id }))
     return { result: { sent: true, count: 1 } }

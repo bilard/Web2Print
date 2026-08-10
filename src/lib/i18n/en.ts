@@ -2779,6 +2779,7 @@ export const en: Record<TranslationKey, string> = {
   'run.gm.htmlInjected': '{{html}} content injected into the body ({count} chars).',
   'run.gm.htmlTokenNoData': 'Send CANCELLED: "{{html}}" sits in the body, but the "data" port carries no HTML. The email would have gone out with the token spelled out. Usual causes: this node was run ALONE (run the whole workflow, or at least the node producing the HTML); several edges land on "data" and overwrote each other; or what arrives is a sheet of rows, not HTML.',
   'run.gm.dataNotInserted': 'HTML/text content received on the "data" port but not inserted: add {{html}} to the body to display it.',
+  'run.gm.emptyBody': 'Send REFUSED: the message body is empty and there is no attachment. The recipient would have got a subject line and nothing else. Clear the “Body” field so the HTML received on “data” becomes the body, or insert {{html}} into it.',
   'run.gm.combinedTable': 'Combined table: {count} columns ({columns}) × {rows} rows.',
   'run.gm.htmlTable': 'HTML mode: columns rendered as a table ({rows} rows).',
   'run.gm.tableInjected': '{{table}} table injected: {rows} rows.',

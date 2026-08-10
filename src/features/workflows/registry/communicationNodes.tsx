@@ -830,6 +830,11 @@ const sendGmailNode: NodeSpec<
       ctx.log('warn', t('run.gm.manyRowsHint', { count: inputRows.length }))
     }
 
+    // ⚠⚠ ARRÊT plutôt qu'un mail VIDE. Un corps vide sans pièce jointe partait quand
+    // même : le destinataire recevait une enveloppe avec un objet et rien dedans, et on
+    // cherchait la panne partout sauf ici. Constaté en production le 2026-08-10.
+    if (!finalBody.trim() && (attachments?.length ?? 0) === 0) throw new Error(t('run.gm.emptyBody'))
+
     ctx.log('info', t('run.gm.sending', { to: config.to }))
     const result = await sendGmail(accessToken, {
       to: config.to,

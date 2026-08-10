@@ -769,6 +769,15 @@ const MESSAGES = {
     en: 'send-gmail: recipient ("to") missing.',
   },
   'run.gm.sent': { fr: 'Email envoyé à {to} (id {id}).', en: 'Email sent to {to} (id {id}).' },
+  'run.gm.dataNotInserted': {
+    fr: "Contenu HTML/texte reçu sur le port « data » mais non inséré : ajoute {{html}} dans le corps pour l'afficher.",
+    en: 'HTML/text content received on the "data" port but not inserted: add {{html}} to the body to display it.',
+  },
+  'run.gm.emptyBody': {
+    fr: 'Envoi REFUSÉ : le corps du message est vide et il n’y a aucune pièce jointe. Le destinataire n’aurait reçu qu’un objet. Videz le champ « Corps » pour que le HTML reçu sur « data » devienne le corps, ou insérez-y {{html}}.',
+    en: 'Send REFUSED: the message body is empty and there is no attachment. The recipient would have got a subject line and nothing else. Clear the “Body” field so the HTML received on “data” becomes the body, or insert {{html}} into it.',
+  },
+
 
   // — Exécuteur : arrêt et type inconnu (client ET serveur) —
   'run.stopped': { fr: 'Run arrêté', en: 'Run stopped' },
