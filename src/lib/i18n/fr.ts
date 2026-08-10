@@ -2076,6 +2076,7 @@ export const fr = {
   'rd.wf.trigger.manual': 'lancé à la main',
   'rd.wf.trigger.webhook': 'webhook',
   'rd.wf.trigger.client': 'navigateur',
+  'rd.wf.trigger.telegram': 'depuis Telegram',
   'rd.wf.startedAt': 'démarré à {time} · {ago}',
   'rd.wf.nodesOk': '{ok}/{total} étapes OK',
   'rd.wf.nodesError': '{count} en erreur',

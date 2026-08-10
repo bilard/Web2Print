@@ -66,7 +66,9 @@ function HistorySidebar({
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[r.status ?? ''] ?? 'bg-neutral-600'}`} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{fmtDate(r.endedAt)}</span>
-                  <span className="block text-[10px] text-neutral-500">{r.trigger ?? 'run'}</span>
+                  <span className="block text-[10px] text-neutral-500">
+                    {r.trigger ? t(`rd.wf.trigger.${r.trigger}` as 'rd.wf.trigger.cron') : t('pw.ops.run')}
+                  </span>
                 </span>
               </button>
               <button
