@@ -3,8 +3,6 @@
 // tokens Jina, prochaine moisson. Tout est LIVE (le rapport et la conso arrivent en
 // onSnapshot ; countdown au tic). Lecture seule, aucun bouton d'action ici.
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/lib/firebase/config'
 import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from 'lucide-react'
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
@@ -12,28 +10,10 @@ import { AnimatedNumber } from './AnimatedNumber'
 import { buildOpsCockpit, competitorCountsLabel } from './opsMetrics'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
+import { useWorkflowSchedule } from './useWorkflowSchedule'
 import { duration, ago, compactNum } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronLabels'
 import { useTranslation } from '@/lib/i18n'
-
-interface ScheduleDoc {
-  enabled: boolean; nextRunAt: number; lastRunAt?: number; lastStatus?: string
-  /** Cycle de moisson terminé à 100 % (tous les sites) — attend l'échéance calendaire. */
-  cycleWaiting?: boolean
-}
-
-/** Abonnement best-effort au planning du workflow (clé = workflowId ; pour F1 Pro le
- *  watchId EST l'id du workflow). Absent → pas de compteur (jamais de faux countdown). */
-function useWorkflowSchedule(workflowId: string | null): ScheduleDoc | null {
-  const [sched, setSched] = useState<ScheduleDoc | null>(null)
-  useEffect(() => {
-    if (!workflowId) { setSched(null); return }
-    return onSnapshot(doc(db, 'workflowSchedules', workflowId),
-      (s) => setSched(s.exists() ? (s.data() as ScheduleDoc) : null),
-      () => setSched(null))
-  }, [workflowId])
-  return sched
-}
 
 /** Tuile compteur : icône + label en tête, grand chiffre, sous-texte. */
 function Cell({ icon: Icon, tint, label, value, sub, title, children }: {
@@ -79,6 +59,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const liveMeta = useCompetitorMeta(watchId)
   const ck = buildOpsCockpit(report, liveMeta)
   const spend = useScrapeSpend()
+  // Clé = workflowId ; pour F1 Pro le watchId EST l'id du workflow.
   const sched = useWorkflowSchedule(watchId)
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
