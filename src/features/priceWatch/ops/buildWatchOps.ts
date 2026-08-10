@@ -85,10 +85,13 @@ function pctOf(done: number, remaining: number): number {
   return total === 0 ? 0 : Math.round((done / total) * 100)
 }
 
-function textChantiers(p: WatchOpsProgress, now: number): Chantier[] {
+function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[]; reasons?: { fresh: number; stale: number } } {
   const t = p.texts
-  if (!t) return []
-  const elapsedMs = Math.max(0, now - t.startedAt)
+  if (!t) return { chantiers: [] }
+  // ⚠ Le temps écoulé est borné par le dernier signe de vie : si l'écran reste ouvert
+  // longtemps après l'arrêt du travail, l'estimation ne s'éternise pas.
+  const elapsedMs = Math.max(0, Math.min(now, t.beatAt) - t.startedAt)
+  const isStalework = now - t.beatAt > OPS_BEAT_MS
   const out: Chantier[] = []
   for (const [kind, remaining] of Object.entries(t.pending)) {
     if (!remaining) continue
@@ -99,29 +102,31 @@ function textChantiers(p: WatchOpsProgress, now: number): Chantier[] {
     const done = Math.round(t.done * share)
     const effectiveRemaining = Math.max(0, remaining - done)
     out.push({
-      id, done, remaining,
+      id, done, remaining: effectiveRemaining,
       pct: pctOf(done, effectiveRemaining),
-      etaMs: eta(done, effectiveRemaining, elapsedMs),
-      perMin: elapsedMs >= 60_000 && done > 0 ? Math.round(done / (elapsedMs / 60_000)) : null,
+      etaMs: isStalework ? null : eta(done, effectiveRemaining, elapsedMs),
+      perMin: isStalework || elapsedMs < 60_000 || done === 0 ? null : Math.round(done / (elapsedMs / 60_000)),
       ...(id === 'translate' && t.byLang ? { byLang: t.byLang } : {}),
-      ...(t.reasons ? { reasons: t.reasons } : {}),
+      ...(isStalework ? { stale: true } : {}),
     })
   }
-  return out
+  return { chantiers: out, reasons: t.reasons }
 }
 
-function harvestChantier(c: OpsCockpit, now: number): Chantier | null {
+function harvestChantier(c: OpsCockpit): Chantier | null {
   if (!c.hasData && c.sitesActive === 0) return null
   const done = c.sitesComplete
   const remaining = Math.max(0, c.sitesActive - c.sitesComplete)
-  const elapsedMs = c.lastCollectAt ? Math.max(0, now - c.lastCollectAt) : 0
   return {
     id: 'harvest', done, remaining,
     // ⚠ Le pourcentage vient du BALAYAGE moyen, pas du compte de sites : un site à moitié
     // moissonné avance, et un écran qui reste à 0 % pendant vingt minutes fait croire à
     // un blocage.
     pct: Math.round(c.avgProgress * 100),
-    etaMs: eta(done, remaining, elapsedMs),
+    // ⚠ Pas d'estimation pour la moisson : lastCollectAt est quasi instantané pendant
+    // une moisson active (battement à chaque site visité), le débit exploserait. Mieux
+    // vaut pas d'estimation qu'une invention.
+    etaMs: null,
     perMin: null,
   }
 }
@@ -129,11 +134,17 @@ function harvestChantier(c: OpsCockpit, now: number): Chantier | null {
 export function buildWatchOps(input: WatchOpsInput): WatchOpsView {
   const { progress, cockpit, run, now } = input
   const chantiers: Chantier[] = []
+  let textsReasons: { fresh: number; stale: number } | undefined
+
   if (cockpit) {
-    const h = harvestChantier(cockpit, now)
+    const h = harvestChantier(cockpit)
     if (h) chantiers.push(h)
   }
-  if (progress) chantiers.push(...textChantiers(progress, now))
+  if (progress) {
+    const { chantiers: textChants, reasons } = textChantiers(progress, now)
+    chantiers.push(...textChants)
+    textsReasons = reasons
+  }
 
   const runView: RunView | null = run
     ? (() => {
@@ -154,5 +165,6 @@ export function buildWatchOps(input: WatchOpsInput): WatchOpsView {
   return {
     run: runView, chantiers,
     lastBeatAt: beats.length ? Math.max(...beats) : null,
+    ...(textsReasons ? { textsReasons } : {}),
   }
 }

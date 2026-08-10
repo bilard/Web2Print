@@ -18,18 +18,23 @@ describe("buildWatchOps — chantier textes", () => {
       cockpit: null, run: null, now: NOW,
     })
     const trad = v.chantiers.find((c) => c.id === 'translate')!
-    expect(trad.remaining).toBe(2_000)
+    // done global 500 réparti au prorata : translate = 500 * 2000/3000 = 333
+    // remaining net = 2000 - 333 = 1667
+    expect(trad.remaining).toBe(1_667)
     const impr = v.chantiers.find((c) => c.id === 'improve')!
-    expect(impr.remaining).toBe(1_000)
+    // done global 500 réparti au prorata : improve = 500 * 1000/3000 = 167
+    // remaining net = 1000 - 167 = 833
+    expect(impr.remaining).toBe(833)
   })
 
   it("estime la durée sur le débit MESURÉ du passage", () => {
     // 500 champs en 10 minutes = 50/min ; il en reste 2 500 → 50 minutes.
+    // Le passage vient d'écrire (beatAt: NOW), donc pas de staleness.
     const v = buildWatchOps({
       progress: progress({
         considered: 3_000, alreadyDone: 0, pending: { translate: 3_000 },
         done: 500, total: 3_000,
-        startedAt: NOW - 600_000, beatAt: NOW - 5_000, origin: 'server',
+        startedAt: NOW - 600_000, beatAt: NOW, origin: 'server',
       }),
       cockpit: null, run: null, now: NOW,
     })
@@ -41,11 +46,26 @@ describe("buildWatchOps — chantier textes", () => {
       progress: progress({
         considered: 3_000, alreadyDone: 0, pending: { translate: 3_000 },
         done: 10, total: 3_000,
-        startedAt: NOW - 60_000, beatAt: NOW - 5_000, origin: 'server',
+        startedAt: NOW - 60_000, beatAt: NOW, origin: 'server',
       }),
       cockpit: null, run: null, now: NOW,
     })
     expect(v.chantiers.find((c) => c.id === 'translate')!.etaMs).toBeNull()
+  })
+
+  it("annule etaMs et perMin si le travail s'est arrêté (beatAt > 3 minutes)", () => {
+    const v = buildWatchOps({
+      progress: progress({
+        considered: 3_000, alreadyDone: 0, pending: { translate: 3_000 },
+        done: 500, total: 3_000,
+        startedAt: NOW - 600_000, beatAt: NOW - 4 * 60_000, origin: 'server',
+      }),
+      cockpit: null, run: null, now: NOW,
+    })
+    const trad = v.chantiers.find((c) => c.id === 'translate')!
+    expect(trad.etaMs).toBeNull()
+    expect(trad.perMin).toBeNull()
+    expect(trad.stale).toBe(true)
   })
 
   it("range l'indéterminé à part, jamais avec le français", () => {
@@ -57,9 +77,11 @@ describe("buildWatchOps — chantier textes", () => {
       }),
       cockpit: null, run: null, now: NOW,
     })
-    expect(v.chantiers.find((c) => c.id === 'translate')!.byLang).toEqual([
+    const trad = v.chantiers.find((c) => c.id === 'translate')!
+    expect(trad.byLang).toEqual([
       { lang: 'de', count: 60 }, { lang: null, count: 40 },
     ])
+    // Le chantier ne porte plus reasons — c'est global à WatchOpsView.textsReasons
   })
 })
 
