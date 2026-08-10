@@ -28,6 +28,13 @@ describe('mise en page repliable', () => {
   })
   it('laisse tranquille ce qui est déjà correct', () => {
     const ok = `<table width="100%" style="font-size:15px">${'x'.repeat(250)}</table>`
-    expect(normalizeComposedHtml(ok)).toBe(ok)
+    expect(normalizeComposedHtml(ok)).toContain(ok)
+  })
+
+  // ⚠ Le fragment n'a pas d'en-tête : la déclaration de thème voyage dans le corps, sans
+  // quoi iOS recolore le texte et le rend illisible sur son propre fond.
+  it('déclare le thème sombre au client de messagerie', () => {
+    expect(normalizeComposedHtml(`<table>${'x'.repeat(250)}</table>`))
+      .toContain('color-scheme:dark')
   })
 })

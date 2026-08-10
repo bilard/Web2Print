@@ -174,6 +174,12 @@ export function renderPriceWatchReport(
 
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- ⚠⚠ SANS ces deux balises, iOS Mail décide qu'il a affaire à un mail clair et RECOLORE
+     le texte pour son mode sombre : sur un fond déjà sombre, le résultat est du gris foncé
+     sur du noir — illisible, alors que le MÊME HTML s'affiche correctement ailleurs.
+     Les déclarer dit au client que le mail gère lui-même son thème ; il n'y touche plus. -->
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<style>:root{color-scheme:dark;supported-color-schemes:dark;}</style>
 <title>${esc(opts.title)}</title></head>
 <body style="margin:0;padding:0;background:${BG};">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:24px 12px;">

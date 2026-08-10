@@ -167,7 +167,14 @@ const MIN_COMPOSED_LENGTH = 200
  * déterministiquement, sur la sortie du modèle comme sur celle de n'importe quel autre.
  */
 function makeResponsive(html: string): string {
-  return html
+  // ⚠⚠ Le mail composé est un FRAGMENT : il n'a pas d'en-tête où poser les balises meta.
+  // Sans déclaration de thème, iOS Mail décide qu'il a affaire à un mail clair et RECOLORE
+  // le texte pour son mode sombre — sur un fond déjà sombre, cela donne du gris foncé sur du
+  // noir. Le même HTML s'affiche pourtant correctement sur ordinateur : c'est le client qui
+  // transforme, pas la mise en page qui est fausse. Constaté en production le 2026-08-10.
+  // Apple Mail honore un `<style>` posé dans le corps ; les autres l'ignorent sans dommage.
+  const scheme = '<style>:root{color-scheme:dark;supported-color-schemes:dark;}</style>'
+  return (scheme + html)
     // Une largeur d'ATTRIBUT en pixels bloque le repli. En pourcentage, elle ne gêne pas.
     .replace(/(<(?:table|td|th)\b[^>]*?)\swidth\s*=\s*"(\d+)"/gi, '$1 width="100%"')
     // Un plancher de largeur est le pire : il force le débordement même quand tout le reste
