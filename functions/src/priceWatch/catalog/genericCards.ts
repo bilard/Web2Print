@@ -179,6 +179,76 @@ function asNumber(v: unknown): number | undefined {
 const CARD_LOOKBEHIND = 4000
 
 /**
+ * Visuel d'une carte, en préférant celui dont le NOM DE FICHIER porte la référence.
+ *
+ * ⚠ Une ligne de grille commence souvent par le logo de la MARQUE : pris tel quel, tous
+ * les produits d'un même fabricant partagent la même vignette et la fiche montre un logo
+ * au lieu de la pièce. Même signal que `filterImagesByProductRef` côté enrichissement.
+ * Repli sur la première image : sans référence dans aucun nom, on ne devine pas.
+ */
+function imageForRef(block: string, ref: string, baseUrl?: string): string | undefined {
+  const needle = ref.toLowerCase().replace(/[^a-z0-9]/g, '')
+  if (needle.length >= 4) {
+    for (const m of block.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)) {
+      if (m[1].toLowerCase().replace(/[^a-z0-9]/g, '').includes(needle)) return absUrl(m[1], baseUrl)
+    }
+  }
+  return extractCardImage(block, baseUrl)
+}
+
+/** Une page ne portant AUCUN motif de prix est une page « catalogue » : prix sur devis,
+ *  tarifs réservés aux clients connectés (grossistes B2B), ou boutique en mode vitrine.
+ *  PUR. */
+function pageHasNoPrice(html: string): boolean {
+  return !/\d[\d\s\u00a0.,]*\s*(?:&euro;|€|EUR\b|CHF\b|\$)/i.test(html)
+}
+
+/** Attributs qui portent la RÉFÉRENCE d'un article, par convention datalayer/GTM. */
+const REF_ATTR = /\bdata-(?:article-?number|artnr|sku|product-?(?:ref|reference|number|code)|item-?(?:ref|number))=["']([^"']{2,40})["']/i
+/** Attributs qui portent le NOM. */
+const NAME_ATTR = /\bdata-(?:product-?)?(?:name|title)=["']([^"']{3,180})["']/i
+
+/**
+ * Palier 2bis — cartes décrites par des ATTRIBUTS `data-*` nommés (et non par un payload
+ * JSON) : `data-article-number` + `data-name` sur la ligne, le lien de fiche à l'intérieur.
+ *
+ * ⚠ Signal générique, pas un site : c'est la convention des couches de tracking (GTM,
+ * `productimpression`) que les plateformes maison posent sur chaque ligne de grille. Elle
+ * survit là où tout le reste échoue — ni microdata, ni JSON-LD, ni classe « product ».
+ *
+ * ⚠⚠ Le PRIX peut manquer, et c'est légitime : un grossiste B2B ne le publie qu'aux
+ * clients connectés. On ne l'exige donc que si la page en contient au moins un — sinon on
+ * retiendrait des cartes sans prix sur un site qui en affiche, c'est-à-dire du bruit de
+ * navigation. Sans prix, la fiche reste utile : nom, référence, image, URL — de quoi
+ * savoir CE QUE le concurrent référence, à défaut de savoir à combien.
+ */
+function parseDataAttrProducts(html: string, baseUrl?: string): CompetitorListing[] {
+  const noPrice = pageHasNoPrice(html)
+  const out: CompetitorListing[] = []
+  // Découpe par balise ouvrante portant une référence : chaque ligne de grille en a une.
+  const starts = [...html.matchAll(/<(?:div|li|tr|article)\b[^>]*\bdata-(?:article-?number|artnr|sku|product-?(?:ref|reference|number|code)|item-?(?:ref|number))=["'][^"']{2,40}["'][^>]*>/gi)]
+  for (let i = 0; i < starts.length; i++) {
+    const from = starts[i].index ?? 0
+    const to = i + 1 < starts.length ? (starts[i + 1].index ?? html.length) : html.length
+    const block = html.slice(from, Math.min(to, from + 20_000))
+    const ref = block.match(REF_ATTR)?.[1]?.trim()
+    const name = decode(block.match(NAME_ATTR)?.[1]?.trim() ?? '') || extractCardName(block)
+    const url = extractCardUrl(block, baseUrl)
+    if (!ref || !name || !url) continue
+    const { price, listPrice } = extractCardPrice(block)
+    if (price == null && !noPrice) continue
+    out.push({
+      url, name, ref,
+      ...(price != null ? { price } : {}),
+      ...(listPrice != null ? { listPrice } : {}),
+      image: imageForRef(block, ref, baseUrl),
+      currency: 'EUR',
+    })
+  }
+  return out
+}
+
+/**
  * Palier 2 — payload produit JSON porté par un attribut `data-*` (convention datalayer /
  * ajout au panier : `data-product`, `data-item`, `data-gtm-product`, `data-piece`…).
  *
@@ -307,7 +377,7 @@ function dedupe(cards: CompetitorListing[]): CompetitorListing[] {
  * n'est pas une page liste, soit la techno n'est pas couverte.
  */
 export function parseListingDomCards(html: string, baseUrl?: string): CompetitorListing[] {
-  for (const tier of [parseMicrodataProducts, parseDataPayloadProducts, parseDomCards]) {
+  for (const tier of [parseMicrodataProducts, parseDataPayloadProducts, parseDataAttrProducts, parseDomCards]) {
     const cards = dedupe(tier(html, baseUrl))
     if (cards.length >= 2) return cards
   }

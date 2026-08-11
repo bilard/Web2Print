@@ -194,3 +194,57 @@ describe('conteneur « product… » IMBRIQUÉ dans la carte (123courroies)', ()
     expect(rows.every((r) => r.image)).toBe(true)
   })
 })
+
+
+// ⚠⚠ Extrait RÉEL d'une grille granit-parts.fr (grossiste B2B) : la ligne est décrite par
+// des attributs `data-*` de tracking, il n'y a NI microdata, NI JSON-LD, NI classe
+// « product » — et surtout AUCUN prix, puisque ce vendeur ne les publie qu'à ses clients
+// connectés. Les trois paliers précédents rendaient 0.
+const GRANIT_ROWS = `
+<div class="table__body">
+  <div class="table__row entdecken-productTableListEntry" data-entdecken-component="productTableListEntry"
+       data-article-number="777346540210A02" data-brand="Scharmüller"
+       data-name="Scharmüller Attelage bras de relevage" data-googletagmanagertype="productimpression">
+    <div class="image"><img src="/media/logo/136x96/scharmueller.png"></div>
+    <div class="datapair__content"><a class="link" href="/e/product/777346540210A02?id=61703042">
+      <span class="link__text">777346540210A02</span></a></div>
+    <div class="image"><img src="/media/image/268x268/GP/777346540210A02.jpg"></div>
+    <div class="datapair__label">Charge de traction (kg)</div><div class="datapair__content">15000</div>
+  </div>
+  <div class="table__row entdecken-productTableListEntry" data-entdecken-component="productTableListEntry"
+       data-article-number="777346540260A02" data-brand="Scharmüller"
+       data-name="Scharmüller Attelage bras de relevage">
+    <div class="image"><img src="/media/logo/136x96/scharmueller.png"></div>
+    <div class="datapair__content"><a class="link" href="/e/product/777346540260A02?id=61703044">
+      <span class="link__text">777346540260A02</span></a></div>
+    <div class="image"><img src="/media/image/268x268/GP/777346540260A02.jpg"></div>
+  </div>
+</div>`
+
+describe('cartes décrites par des ATTRIBUTS data-* (plateforme maison, prix non publiés)', () => {
+  it('relève nom, référence et fiche même SANS prix', () => {
+    const rows = parseListingDomCards(GRANIT_ROWS, 'https://www.granit-parts.fr/')
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({
+      url: 'https://www.granit-parts.fr/e/product/777346540210A02?id=61703042',
+      name: 'Scharmüller Attelage bras de relevage',
+      ref: '777346540210A02',
+    })
+    // Sans prix publié : le champ reste absent, il n'est pas inventé à zéro.
+    expect(rows[0].price).toBeUndefined()
+  })
+
+  it('prend la PHOTO du produit, pas le logo de la marque qui la précède', () => {
+    // Sans ce choix, tous les articles d'un même fabricant partagent la même vignette.
+    const rows = parseListingDomCards(GRANIT_ROWS, 'https://www.granit-parts.fr/')
+    expect(rows[0].image).toBe('https://www.granit-parts.fr/media/image/268x268/GP/777346540210A02.jpg')
+  })
+
+  it('⚠ n’accepte une carte SANS prix que si la page n’en affiche AUCUN', () => {
+    // Garde-fou : sur une page qui affiche des prix, une carte sans prix est du bruit de
+    // navigation — le comportement d'origine (prix obligatoire) doit rester intact.
+    const withPrices = GRANIT_ROWS.replace('</div>`', '<div class="promo">129,90 €</div></div>')
+    const rows = parseListingDomCards(withPrices + '<div class="x">49,00 €</div>', 'https://www.granit-parts.fr/')
+    expect(rows).toHaveLength(0)
+  })
+})
