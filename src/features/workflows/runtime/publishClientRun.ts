@@ -65,7 +65,7 @@ let currentRunId: string | null = null
  * pas à distinguer « c'est notre run » de « on ne sait pas encore si c'est notre run » : on
  * écrirait soit dans le document d'un cron qui vient de gagner la course (trap #2 violé),
  * soit un `running` par-dessus l'issue déjà écrite par `stopClientRunBeat` (run éternellement
- * « en cours » à l'écran, battu toutes les 5 s pour toujours). `owned` tranche les deux cas. */
+ * « en cours » à l'écran, battu toutes les 10 s pour toujours). `owned` tranche les deux cas. */
 let owned = false
 /** Issue demandée pendant que la prise de place est encore en vol. Appliquée dès qu'elle
  *  aboutit, à la place du premier battement « running » qui serait déjà faux. */
@@ -153,8 +153,8 @@ async function beat(
  *
  * ⚠ La place se prend UNE FOIS, au démarrage. Un cron qui démarre après nous n'est pas
  * détecté : il écrasera notre battement, ce qui est l'ordre d'arrivée correct. Relire le
- * document toutes les cinq secondes pour arbitrer coûterait une lecture par battement sur
- * toute la durée du run, pour un conflit qui se produit rarement et se résout tout seul.
+ * document à chaque battement pour arbitrer coûterait une lecture de plus sur toute la
+ * durée du run, pour un conflit qui se produit rarement et se résout tout seul.
  */
 export async function startClientRunBeat(workflowId: string, runId: string): Promise<void> {
   stopTimer()
@@ -202,7 +202,7 @@ export async function startClientRunBeat(workflowId: string, runId: string): Pro
   await beat(workflowId, runId, true, { replace: true })
   // ⚠⚠ Le run a pu se terminer PENDANT ce `setDoc` : `stopClientRunBeat` était alors passé
   // avec `timer` encore à `null` (rien à arrêter) et avait déjà écrit l'issue. Poser le
-  // minuteur ici SANS ce test le republierait en `running` toutes les 5 s, pour toujours —
+  // minuteur ici SANS ce test le republierait en `running` toutes les 10 s, pour toujours —
   // même symptôme que `pendingEndStatus` corrige, sur une fenêtre différente (après ce
   // `await`, pas avant).
   if (currentRunId !== runId || !owned) return

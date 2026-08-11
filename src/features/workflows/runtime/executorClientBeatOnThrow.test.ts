@@ -1,7 +1,7 @@
 // Le catch dédié dans `executeWorkflow` : un run qui explose avant le résumé (cycle détecté
 // par `topoSort`, loop mal formé…) n'a pas d'autre occasion de publier son issue. Sans ce
 // `catch`, le document live resterait « en cours » pour toujours ailleurs (autres onglets,
-// PWA), battu toutes les 5 s pour rien. `publishClientRun` est mocké : son comportement
+// PWA), battu toutes les 10 s pour rien. `publishClientRun` est mocké : son comportement
 // propre (course start/stop) est déjà couvert par publishClientRun(Race).test.ts — on
 // vérifie ici seulement le CÂBLAGE : l'executor appelle bien `stopClientRunBeat` sur throw,
 // avec le même `workflowId`/`runId` que celui donné à `startClientRunBeat`, et rethrow.

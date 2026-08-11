@@ -3,7 +3,7 @@
 // est encore en vol — pas pendant le `getDoc` qui précède. `owned` est déjà vrai à ce
 // moment-là, donc `stopClientRunBeat` écrit directement l'issue ; sans garde après ce
 // `await`, `startClientRunBeat` reprenait la main ensuite et posait un minuteur qui
-// républie "running" toutes les 5 s pour toujours (le doc ne se stabilise jamais).
+// républie "running" toutes les 10 s pour toujours (le doc ne se stabilise jamais).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const writes: Record<string, unknown>[] = []

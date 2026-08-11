@@ -582,55 +582,66 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
       // marqués « arrêté » par la course ci-dessus ; l'aval reste « pending »).
       if (ac.signal.aborted) break
     }
+
+    // Résumé calculé sur les SEULS nodes de ce run (sous-graphe si run partiel),
+    // pour un message de fin fiable (≠ états résiduels d'un run précédent).
+    const scopeIds = runSet ? [...runSet] : wf.nodes.map((n) => n.id)
+    const states = useRunContext.getState().nodeStates
+    const ran = scopeIds.map((id) => states[id]).filter(Boolean) as NodeRunState[]
+    const errors = ran.filter((s) => s.status === 'error')
+    const firstWarn = ran
+      .filter((s) => s.status === 'success')
+      .flatMap((s) => s.logs ?? [])
+      .find((l) => l.level === 'warn')
+    const okCount = ran.filter((s) => s.status === 'success').length
+
+    // Persiste un snapshot durable du run (historique de l'écran Résultats). Non bloquant.
+    const uid = getWorkspaceUid()
+    if (uid && !ac.signal.aborted) {
+      const status: RunStatus = errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error'
+      void persistClientRun(uid, wf, { startedAt, status, nodeStates: states })
+    }
+
+    // Dernier battement : l'issue du run, écrite tout de suite — DANS le try, avant la
+    // purge du `finally` ci-dessous. Sans elle, l'écran laisserait le run « en cours »
+    // pendant les dix secondes de la garde de silence.
+    stopClientRunBeat(wf.id, runId,
+      ac.signal.aborted ? 'stopped' : errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error')
+
+    return {
+      aborted: ac.signal.aborted,
+      okCount,
+      errorCount: errors.length,
+      firstError: errors[0]?.error,
+      firstWarn: firstWarn?.msg,
+    }
   } catch (e) {
     // Le run a explosé avant d'atteindre le résumé (cycle détecté par `topoSort`, loop mal
     // formé…) : il n'aura pas d'autre occasion de publier son issue. Sans ce battement,
     // le document live resterait « en cours » pour toujours ailleurs (autres onglets,
-    // PWA) — battu toutes les 5 s pour rien tant que ce même onglet tourne.
+    // PWA) — battu toutes les 10 s pour rien tant que ce même onglet tourne.
     stopClientRunBeat(wf.id, runId, 'error')
     throw e
   } finally {
     useRunContext.getState().endRun()
     useProgressStore.getState().end()
-  }
-  // Purge du journal des pannes — UNE fois par run, pas une fois par carte en erreur : sur
-  // un run qui échoue sur trente sites, l'ancienne version lisait jusqu'à 500 documents
-  // (PRUNE_SCAN_LIMIT) PAR incident, soit des milliers de lectures pour un seul run. Même
-  // garde que le serveur (`functions/src/workflow/execute.ts`) : attendue, pas
-  // fire-and-forget — un onglet fermé juste après ne doit pas la couper en plein vol.
-  if (incidentWatchId && recordedIncident) {
-    const pruneUid = getWorkspaceUid()
-    if (pruneUid) await pruneExpiredIncidents(pruneUid, incidentWatchId)
-  }
-  // Résumé calculé sur les SEULS nodes de ce run (sous-graphe si run partiel),
-  // pour un message de fin fiable (≠ états résiduels d'un run précédent).
-  const scopeIds = runSet ? [...runSet] : wf.nodes.map((n) => n.id)
-  const states = useRunContext.getState().nodeStates
-  const ran = scopeIds.map((id) => states[id]).filter(Boolean) as NodeRunState[]
-  const errors = ran.filter((s) => s.status === 'error')
-  const firstWarn = ran
-    .filter((s) => s.status === 'success')
-    .flatMap((s) => s.logs ?? [])
-    .find((l) => l.level === 'warn')
-  const okCount = ran.filter((s) => s.status === 'success').length
-
-  // Persiste un snapshot durable du run (historique de l'écran Résultats). Non bloquant.
-  const uid = getWorkspaceUid()
-  if (uid && !ac.signal.aborted) {
-    const status: RunStatus = errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error'
-    void persistClientRun(uid, wf, { startedAt, status, nodeStates: states })
-  }
-
-  // Dernier battement : l'issue du run, écrite tout de suite. Sans elle, l'écran laisserait
-  // le run « en cours » pendant les trois minutes de la garde de silence.
-  stopClientRunBeat(wf.id, runId,
-    ac.signal.aborted ? 'stopped' : errors.length === 0 ? 'success' : okCount > 0 ? 'partial' : 'error')
-
-  return {
-    aborted: ac.signal.aborted,
-    okCount,
-    errorCount: errors.length,
-    firstError: errors[0]?.error,
-    firstWarn: firstWarn?.msg,
+    // Purge du journal des pannes — UNE fois par run, pas une fois par carte en erreur : sur
+    // un run qui échoue sur trente sites, l'ancienne version lisait jusqu'à 500 documents
+    // (PRUNE_SCAN_LIMIT) PAR incident, soit des milliers de lectures pour un seul run. Même
+    // garde que le serveur (`functions/src/workflow/execute.ts`).
+    //
+    // ⚠⚠ ICI, dans le `finally`, APRÈS `stopClientRunBeat` — les deux branches ci-dessus
+    // l'ont déjà appelé avant d'y arriver, succès comme erreur. Un placement AVANT le
+    // battement final retardait l'annonce de fin pour les autres onglets et la PWA
+    // (le document restait « en cours » pendant la lecture des 500 documents et les
+    // suppressions), et un placement APRÈS le `try/catch` (hors `finally`) sautait
+    // silencieusement quand le run explosait — le `catch` relance, cette ligne n'était
+    // alors jamais atteinte. Attendue (pas fire-and-forget) : un onglet fermé juste après
+    // ne doit pas la couper en plein vol, mais l'écran a déjà reçu son battement final
+    // avant que ça n'arrive, dans les deux branches.
+    if (incidentWatchId && recordedIncident) {
+      const pruneUid = getWorkspaceUid()
+      if (pruneUid) await pruneExpiredIncidents(pruneUid, incidentWatchId)
+    }
   }
 }
