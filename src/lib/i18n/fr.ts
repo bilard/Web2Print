@@ -2589,6 +2589,8 @@ export const fr = {
   'ops.gauges.window': "sur les 90 dernières secondes",
   'ops.gauges.perMin': "fiches/min",
   'ops.gauges.matched': "Appariés",
+  'ops.gauges.running': "En cours",
+  'ops.gauges.warmup': "mesure en cours…",
   'ops.gauges.groupActive': "En service",
   'ops.gauges.groupInactive': "Au repos",
   'ops.gauges.pages': "{count} p/min",

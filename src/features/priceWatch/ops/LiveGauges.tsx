@@ -125,12 +125,24 @@ export function LiveGauges({ meta, matchedBySite }: {
               )}
             {/* Fond selon l'APPARTENANCE (au flux ou au repos), liseré selon l'ACTIVITÉ :
                 deux informations distinctes, deux canaux visuels distincts. */}
+            {/* ⚠ Une carte QUI TRAVAILLE doit se voir de loin, comme le badge « En cours »
+                de l'écran Sites sources. Le liseré seul ne suffisait pas : quatre cartes
+                identiques au fond près, et il fallait lire le compteur pour savoir
+                laquelle tournait. On ajoute donc un halo complet et un badge nommé —
+                réservés au régime LIVE, sinon ils ne distingueraient plus rien. */}
             <div className={`rounded-lg border-l-2 px-3 py-2.5 transition-colors ${tone.edge} ${
               active ? 'bg-surface-2' : 'bg-well opacity-70'
-            }`}>
+            } ${r.pulse === 'live' ? 'ring-1 ring-emerald-400/30 shadow-[0_0_20px_-8px] shadow-emerald-400/40' : ''}`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
-                <span className="text-[12px] text-white/80 truncate">{m.domain ?? siteId}</span>
+                <span className={`text-[12px] truncate ${r.pulse === 'live' ? 'text-white font-medium' : 'text-white/80'}`}>
+                  {m.domain ?? siteId}
+                </span>
+                {r.pulse === 'live' && (
+                  <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-1.5 py-px">
+                    {t('ops.gauges.running')}
+                  </span>
+                )}
                 <span className={`ml-auto text-[10px] tabular-nums shrink-0 ${tone.text}`}
                   title={t('ops.gauges.sinceTitle')}>
                   {ago(r.sinceChangeMs)}
@@ -143,7 +155,12 @@ export function LiveGauges({ meta, matchedBySite }: {
                 <span className={`text-lg font-semibold tabular-nums ${r.productsPerMin > 0 ? 'text-amber-300' : 'text-white/30'}`}>
                   {n(r.productsPerMin)}
                 </span>
-                <span className="text-[10px] uppercase tracking-wide text-white/35">{t('ops.gauges.perMin')}</span>
+                {/* ⚠ « 0 fiches/min » sur une carte qui travaille se lit comme une panne.
+                    Au démarrage d'une passe, il n'y a simplement pas encore deux mesures
+                    pour faire une pente : on le DIT, au lieu d'afficher un zéro muet. */}
+                <span className="text-[10px] uppercase tracking-wide text-white/35">
+                  {r.pulse === 'live' && r.productsPerMin === 0 ? t('ops.gauges.warmup') : t('ops.gauges.perMin')}
+                </span>
                 <span className="ml-auto text-[10px] tabular-nums text-white/40">
                   {t('ops.gauges.pages', { count: n(r.pagesPerMin) })}
                 </span>
