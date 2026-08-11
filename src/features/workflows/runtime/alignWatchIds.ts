@@ -17,15 +17,28 @@ export function drivenBySourceSites(wf: Workflow, nodeId: string): boolean {
   return !!src && wf.nodes.find((n) => n.id === src.source)?.type === 'source-sites'
 }
 
+/** Valeur BRUTE de `config.watchId`, telle que saisie — vide si absente ou si ce n'est
+ *  pas une chaîne (import corrompu, JSON édité à la main). ⚠ Parité avec le jumeau
+ *  serveur : `watchIdOf` dans `functions/src/workflow/preflight.ts` applique la MÊME
+ *  garde stricte. Un `String(x)` aurait coercé un nombre ou un booléen en identifiant —
+ *  une valeur qui n'a jamais été un `watchId` volontaire ne doit pas en devenir un,
+ *  navigateur et cron doivent retomber sur l'id du workflow de la même façon.
+ *  Constaté par `firstWatchIdParity.test.ts` : `config.watchId: 123` dérivait "123" côté
+ *  navigateur et retombait sur l'id du workflow côté cron, deux journaux différents. */
+export function rawWatchId(config: unknown): string {
+  if (!config || typeof config !== 'object') return ''
+  const v = (config as Record<string, unknown>).watchId
+  return typeof v === 'string' ? v : ''
+}
+
 /** Le suivi réellement adressé, mêmes règles que `resolveSitesInput`. */
 export function watchIdOf(wf: Workflow, nodeId: string, config: Record<string, unknown>): string {
   const src = wf.edges.find((e) => e.target === nodeId && e.targetHandle === 'sites')
   const srcNode = src ? wf.nodes.find((n) => n.id === src.source) : undefined
   if (srcNode?.type === 'source-sites') {
-    const c = (srcNode.config ?? {}) as Record<string, unknown>
-    return deriveWatchId(String(c.watchId ?? ''), wf.id)
+    return deriveWatchId(rawWatchId(srcNode.config), wf.id)
   }
-  return deriveWatchId(String(config.watchId ?? ''), wf.id)
+  return deriveWatchId(rawWatchId(config), wf.id)
 }
 
 /** Écrit `watchId` sur les cartes désignées. Les autres, et le reste du graphe, intacts. */

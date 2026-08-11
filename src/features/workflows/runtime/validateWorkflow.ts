@@ -14,7 +14,7 @@
 import type { Workflow, NodeSpec, PortType } from '../types'
 import { isCompatible } from './ports'
 import { deriveWatchId } from '@/features/priceWatch/sourceSites'
-import { drivenBySourceSites, watchIdOf } from './alignWatchIds'
+import { drivenBySourceSites, rawWatchId, watchIdOf } from './alignWatchIds'
 import { breaksServerRun, ignoredOnServer } from './serverCapability'
 import { t } from '@/lib/i18n'
 
@@ -174,7 +174,7 @@ function alignFix(
   }
   const sourceSites = active.filter((n) => n.type === 'source-sites')
   const target = sourceSites.length > 0
-    ? uniqueOf(sourceSites.map((n) => deriveWatchId(String((n.config as { watchId?: unknown } | undefined)?.watchId ?? ''), wf.id)))
+    ? uniqueOf(sourceSites.map((n) => deriveWatchId(rawWatchId(n.config), wf.id)))
     : uniqueOf(watchers.filter((w) => INDEX_FEEDERS.has(w.n.type)).map((w) => w.watchId))
   if (!target) return undefined
 
