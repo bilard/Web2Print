@@ -34,6 +34,38 @@ const LIVE_HEARTBEAT_MS = 10_000
 /** Miroir du type local de `runLive.ts` — il n'y est pas exporté, et l'exporter pour ce
  *  seul usage élargirait la surface d'un module d'écriture. */
 type LiveNodeStatus = 'running' | 'success' | 'error' | 'skipped' | 'pending'
+
+/** Au-delà, un run qui n'écrit plus est mort — même seuil que l'écran « Suivi »
+ *  (`LIVE_BEAT_MS`, src/lib/liveRun.ts) : deux valeurs différentes feraient diverger ce
+ *  que le serveur REFUSE et ce que l'écran AFFICHE. */
+const RUN_ALIVE_MS = 3 * 60_000
+
+/**
+ * Un run est-il en train de tourner sur ce workflow ? PUR côté décision, une lecture.
+ *
+ * ⚠⚠ Rien n'empêchait deux exécutions simultanées du MÊME flux : le cron ne se
+ * chevauche pas lui-même (verrou `nextRunAt`), mais un « Lancer (serveur) » pendant un
+ * tick cron partait quand même. Les deux écrivent alors le même document d'état live —
+ * l'écran alterne entre deux runs et n'en raconte aucun — les mêmes métas de moisson et
+ * le même rapport, et la facture des modèles est payée deux fois. La garde côté client
+ * ne suffit pas : elle masque le bouton quand un run est visible, elle n'existe pas
+ * quand c'est le cron qui vient de démarrer.
+ */
+export interface LiveRunDoc { status?: string; beatAt?: number; startedAt?: number; trigger?: string }
+
+/** La DÉCISION, isolée de la lecture pour être testable. PUR. */
+export function aliveRunOf(d: LiveRunDoc | undefined, now: number): { trigger: string } | null {
+  if (!d || d.status !== 'running') return null
+  // Repli sur `startedAt` : les documents écrits avant l'estampille `beatAt` n'en ont pas,
+  // et les traiter comme morts autoriserait le doublon qu'on vient interdire.
+  const beat = d.beatAt ?? d.startedAt ?? 0
+  return now - beat <= RUN_ALIVE_MS ? { trigger: d.trigger ?? 'cron' } : null
+}
+
+async function liveRun(uid: string, workflowId: string): Promise<{ trigger: string } | null> {
+  const snap = await getFirestore().doc(`users/${uid}/workflowRunsLive/${workflowId}`).get().catch(() => null)
+  return aliveRunOf(snap?.data() as LiveRunDoc | undefined, Date.now())
+}
 /** Plafond de plannings traités par tick du scanner (les autres repassent au tick suivant,
  * ordonnés par échéance). Évite qu'un lot massif fasse expirer toute la Function. */
 const MAX_SCHEDULES_PER_TICK = 25
@@ -349,6 +381,16 @@ export const workflowCronScheduler = onSchedule(
       // même workflow pendant qu'il tourne encore (moisson longue) → empilement de runs et
       // planning jamais avancé (dashboard figé). `lastRunAt = now` = DÉBUT du run (affiché).
       // Si le process meurt en cours, le verrou expire seul (nextRunAt ~30 min → reprise auto).
+      // ⚠ Un run lancé À LA MAIN a la priorité : quelqu'un le regarde. On repousse de
+      // cinq minutes plutôt que de doubler le travail. ⚠⚠ On ne cède PAS devant un run
+      // « cron » vivant : ce serait notre propre reprise après pause (le checkpoint écrit
+      // `status: running`), et la bloquer figerait le flux jusqu'à expiration du verrou.
+      const human = await liveRun(s.uid, s.workflowId)
+      if (human && human.trigger !== 'cron') {
+        await docSnap.ref.update({ nextRunAt: now + 5 * 60_000 })
+        console.log('workflowCronScheduler: run manuel en cours, tick reporté', s.workflowId)
+        continue
+      }
       await docSnap.ref.update({ lastRunAt: now, lastStatus: 'running', nextRunAt: now + RUN_TIMEOUT_MS + 120_000 })
       try {
         const result = await runWorkflow(wf, s.uid, 'cron')
@@ -377,6 +419,12 @@ export const runWorkflowNow = onCall(
     if (!uid) throw new HttpsError('unauthenticated', 'Connexion requise.')
     const workflowId = String((req.data as { workflowId?: string })?.workflowId ?? '')
     if (!workflowId) throw new HttpsError('invalid-argument', 'workflowId requis.')
+    // ⚠ Refus AVANT d'engager la moindre dépense : un second run n'irait pas plus vite,
+    // il écrirait par-dessus le premier et paierait deux fois les modèles.
+    const already = await liveRun(uid, workflowId)
+    if (already) {
+      throw new HttpsError('failed-precondition', 'Un run est déjà en cours sur ce flux.')
+    }
     const startedAt = Date.now()
     const result = await runOne(uid, workflowId, 'manual')
     // Resynchroniser le planning : un run manuel peut TERMINER le cycle (→ attendre
