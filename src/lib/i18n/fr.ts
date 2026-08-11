@@ -2586,6 +2586,7 @@ export const fr = {
   'ops.gauges.title': "Régime de collecte",
   'ops.gauges.window': "sur les 90 dernières secondes",
   'ops.gauges.perMin': "fiches/min",
+  'ops.gauges.matched': "Appariés",
   'ops.gauges.pages': "{count} p/min",
   'ops.gauges.sinceTitle': "Depuis le dernier signe de vie de ce site",
   'ops.gauges.indexedTitle': "Fiches déjà collectées",

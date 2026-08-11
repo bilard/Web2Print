@@ -42,6 +42,12 @@ export function WatchOpsScreen() {
   const report = useCatalogReport(watchId)
   const meta = useCompetitorMeta(watchId)
   const cockpit = useMemo(() => (report ? buildOpsCockpit(report, meta) : null), [report, meta])
+  // Appariés par site, depuis le dernier « Comparer ». Absent du rapport = absent de la
+  // carte (« — ») : afficher 0 pour un site jamais comparé se lirait comme un échec.
+  const matchedBySite = useMemo(
+    () => new Map((report?.byCompetitor ?? []).map((c) => [c.siteId, c.matched])),
+    [report],
+  )
   const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
   // ⚠ Lu ICI et pas dans les deux composants : l'en-tête montre la durée typique et la
   // tendance, l'historique montre les lignes — même liste, un seul abonnement Firestore.
@@ -103,7 +109,7 @@ export function WatchOpsScreen() {
       {/* Le tableau de bord AVANT les chantiers : on vient d'abord voir si ça tourne, on
           regarde le détail ensuite. Il se masque tout seul quand aucun site n'a rien
           collecté — un cadran à zéro sur un écran vide se lit comme une panne. */}
-      <LiveGauges meta={meta} />
+      <LiveGauges meta={meta} matchedBySite={matchedBySite} />
 
       {view.chantiers.length === 0 ? (
         <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.noChantier')}</p>

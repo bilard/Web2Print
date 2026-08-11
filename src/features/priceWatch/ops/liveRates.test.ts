@@ -61,3 +61,26 @@ describe('régime instantané de la collecte', () => {
     expect(r.pulse).toBe('slow')
   })
 })
+
+describe('⚠⚠ un saut de compteur n’est pas un régime', () => {
+  it('ignore les fiches apparues sans qu’aucune page ne soit lue', () => {
+    // Le « Comparer » réécrit `productCount` avec la valeur dédupliquée : le compteur
+    // saute de plusieurs milliers d'un coup. Relevé à l'écran : « 2 507 fiches/min ·
+    // 0 p/min » sur un site dont le balayage était terminé.
+    const h: RateSample[] = [
+      { at: T, products: 1_000, pages: 120 },
+      { at: T + 60_000, products: 3_500, pages: 120 },
+    ]
+    const r = rateOf(h, T + 60_000)
+    expect(r.pagesPerMin).toBe(0)
+    expect(r.productsPerMin).toBe(0)
+  })
+
+  it('mais compte normalement dès qu’une page a été lue', () => {
+    const h: RateSample[] = [
+      { at: T, products: 1_000, pages: 120 },
+      { at: T + 60_000, products: 1_090, pages: 126 },
+    ]
+    expect(rateOf(h, T + 60_000).productsPerMin).toBe(90)
+  })
+})

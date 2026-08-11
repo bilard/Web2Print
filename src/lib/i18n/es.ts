@@ -2492,6 +2492,7 @@ export const es: Record<TranslationKey, string> = {
   'ops.gauges.title': "Ritmo de recopilación",
   'ops.gauges.window': "en los últimos 90 segundos",
   'ops.gauges.perMin': "fichas/min",
+  'ops.gauges.matched': "Emparejados",
   'ops.gauges.pages': "{count} pág./min",
   'ops.gauges.sinceTitle': "Desde la última señal de vida de este sitio",
   'ops.gauges.indexedTitle': "Fichas ya recopiladas",

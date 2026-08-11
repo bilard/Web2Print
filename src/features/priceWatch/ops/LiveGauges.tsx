@@ -39,20 +39,28 @@ function Dial({ value, tone }: { value: number; tone: string }) {
   )
 }
 
-export function LiveGauges({ meta }: { meta: Map<string, HarvestMeta> }) {
+export function LiveGauges({ meta, matchedBySite }: {
+  meta: Map<string, HarvestMeta>
+  /** Appariés par siteId, issus du dernier « Comparer » (`report.byCompetitor`).
+   *  ⚠ C'est un INSTANTANÉ, pas un flux : il ne bouge qu'en fin de run, quand la
+   *  comparaison tourne. L'afficher à côté du régime évite d'attendre en vain qu'il
+   *  monte pendant la collecte. */
+  matchedBySite: Map<string, number>
+}) {
   const { t, locale } = useTranslation()
   const rates = useLiveRates(meta)
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
 
-  // Un site désactivé n'a pas sa place sur un tableau de bord : il n'est pas en panne,
-  // il ne roule pas. Les sites jamais moissonnés non plus — ils n'ont aucun régime.
+  // Les sites COCHÉS d'abord, en ordre alphabétique ; les autres ensuite, même ordre.
+  // Le classement par régime avait l'air malin et ne l'était pas : les cadrans changeaient
+  // de place à chaque battement, et on cherchait un site en le suivant des yeux au lieu de
+  // le lire. Une position stable vaut mieux qu'un palmarès.
   const rows = [...meta.entries()]
-    .filter(([, m]) => m.enabled !== false && (m.productCount ?? 0) + (m.pageCount ?? 0) > 0)
-    // Ce qui travaille en premier : on vient voir ce qui bouge, pas l'ordre alphabétique.
-    .sort(([a, ma], [b, mb]) => {
-      const pa = rates.get(a)?.productsPerMin ?? 0
-      const pb = rates.get(b)?.productsPerMin ?? 0
-      return pb - pa || (mb.productCount ?? 0) - (ma.productCount ?? 0)
+    .filter(([, m]) => (m.productCount ?? 0) + (m.pageCount ?? 0) > 0)
+    .sort(([, ma], [, mb]) => {
+      const active = (m: HarvestMeta) => (m.enabled !== false ? 0 : 1)
+      return active(ma) - active(mb)
+        || (ma.domain ?? '').localeCompare(mb.domain ?? '', undefined, { sensitivity: 'base' })
     })
   if (rows.length === 0) return null
 
@@ -64,13 +72,20 @@ export function LiveGauges({ meta }: { meta: Map<string, HarvestMeta> }) {
         <span className="text-[11px] text-white/40">{t('ops.gauges.window')}</span>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {rows.map(([siteId, m]) => {
           const r = rates.get(siteId)!
           const tone = PULSE[r.pulse]
           const progress = Math.round((m.harvestProgress ?? 0) * 100)
+          const matched = matchedBySite.get(siteId)
+          // Un site EN SERVICE se détache du fond : c'est là que le regard doit tomber.
+          // Les sites au repos gardent le fond neutre — présents, pas mis en avant.
+          const working = r.pulse !== 'idle'
           return (
-            <div key={siteId} className="rounded-lg bg-well px-3 py-2.5">
+            <div key={siteId}
+              className={`rounded-lg px-3 py-2.5 transition-colors ${working
+                ? 'bg-indigo-500/[0.07] border border-indigo-400/20'
+                : 'bg-well border border-transparent'}`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
                 <span className="text-[12px] text-white/80 truncate">{m.domain ?? siteId}</span>
@@ -102,6 +117,16 @@ export function LiveGauges({ meta }: { meta: Map<string, HarvestMeta> }) {
                 <span className="text-[10px] tabular-nums text-amber-300/80 shrink-0"
                   title={t('ops.gauges.indexedTitle')}>
                   {n(m.productCount ?? 0)}
+                </span>
+              </div>
+
+              {/* APPARIÉS — le chiffre qui décide de la valeur du site. En vert, comme
+                  partout où il apparaît. « — » quand la comparaison n'a pas encore tourné :
+                  un zéro laisserait croire à un échec d'appariement. */}
+              <div className="mt-2 flex items-baseline gap-1.5 border-t border-white/5 pt-2">
+                <span className="text-[10px] uppercase tracking-wide text-white/35">{t('ops.gauges.matched')}</span>
+                <span className={`text-sm font-semibold tabular-nums ${matched ? 'text-emerald-300' : 'text-white/30'}`}>
+                  {matched == null ? '—' : n(matched)}
                 </span>
               </div>
             </div>

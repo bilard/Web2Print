@@ -2493,6 +2493,7 @@ export const en: Record<TranslationKey, string> = {
   'ops.gauges.title': "Collection rate",
   'ops.gauges.window': "over the last 90 seconds",
   'ops.gauges.perMin': "listings/min",
+  'ops.gauges.matched': "Matched",
   'ops.gauges.pages': "{count} pages/min",
   'ops.gauges.sinceTitle': "Since this site last showed a sign of life",
   'ops.gauges.indexedTitle': "Listings already collected",

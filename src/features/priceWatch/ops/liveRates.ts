@@ -72,8 +72,14 @@ export function rateOf(history: RateSample[], now: number, beatAt?: number): Liv
   // nul. Sinon on rendrait « +∞ fiches/min » au premier écho.
   const spanMs = first && last ? last.at - first.at : 0
   const perMin = (delta: number): number => (spanMs > 0 ? Math.max(0, Math.round((delta / spanMs) * 60_000)) : 0)
-  const productsPerMin = first && last ? perMin(last.products - first.products) : 0
   const pagesPerMin = first && last ? perMin(last.pages - first.pages) : 0
+  const rawProducts = first && last ? perMin(last.products - first.products) : 0
+  // ⚠⚠ Des fiches SANS pages ne sont pas une collecte : c'est le « Comparer » qui vient de
+  // réécrire le compteur avec la valeur dédupliquée. Relevé à l'écran : « 2 507 fiches/min ·
+  // 0 p/min » sur un site au balayage terminé — un régime de course affiché par un moteur à
+  // l'arrêt. On ne collecte pas de fiche sans lire de page ; sans cette règle, le cadran
+  // ment précisément au moment où on le consulte pour vérifier qu'il ne ment pas.
+  const productsPerMin = pagesPerMin > 0 ? rawProducts : 0
 
   const lastChangeAt = history.length ? history[history.length - 1].at : undefined
   // Le plus récent des deux signaux : un battement serveur sans changement de compteur
