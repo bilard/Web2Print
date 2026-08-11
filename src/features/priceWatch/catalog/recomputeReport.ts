@@ -7,7 +7,7 @@ import { buildReport } from './report'
 import type { SiteRef } from './matrix'
 import { loadAllListings, saveCompetitorMeta } from './store'
 import { loadSourceCatalog, saveCatalogReport, loadCatalogReportKpis } from '../reportStore'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 export interface RecomputeResult {
   matched: number

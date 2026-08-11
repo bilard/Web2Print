@@ -5,7 +5,7 @@
 // plupart des e-commerce ET marketplaces (Shopify, WooCommerce, Magento, Amazon, Cdiscount…).
 // Utilisé en FALLBACK de parseListingPage (PrestaShop) : quand ce dernier ne trouve rien,
 // on tente l'extraction générique → la moisson n'est plus liée à une seule techno.
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 type Availability = NonNullable<CompetitorListing['availability']>
 

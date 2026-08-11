@@ -10,7 +10,7 @@
 // Fonctions PURES (E/S injectées via SearchDeps.fetchHtml), donc testables et partagées
 // client/serveur, comme le reste de features/priceWatch/catalog.
 
-import { parseListingPage, type CompetitorListing } from './prestashop'
+import { parseListingPage, type CompetitorListing } from './competitorListing'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
 import { familiesConflict } from './partFamily'
 import { vetoedPair } from './match'

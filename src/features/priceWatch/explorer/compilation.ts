@@ -18,7 +18,7 @@
 import { pairSiteListings, type PairedRow } from './pairing'
 import { withVisual, type VisualCall } from './confidence'
 import type { SourceProduct } from '../catalog/match'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 
 /** Une ligne de la compilation : la ligne appariée, plus le concurrent d'où elle vient —
  *  sans lui, l'écran ne peut plus dire qui l'on est en train de valider. */

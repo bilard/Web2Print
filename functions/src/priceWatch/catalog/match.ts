@@ -15,7 +15,7 @@ import {
 import { familiesConflict, partFamilies } from './partFamily'
 import { nameTokens } from './nameTokens'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
-import type { CompetitorListing, Availability } from './prestashop'
+import type { CompetitorListing, Availability } from './competitorListing'
 
 /** TVA française de droit commun. Paramétrable : certaines familles en dérogent. */
 /** TVA par défaut, en TAUX (0,2 = 20 %). Exporté : la relecture du catalogue source

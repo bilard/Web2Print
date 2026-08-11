@@ -1,12 +1,22 @@
-// src/features/priceWatch/catalog/prestashop.ts
-// Extracteur de catalogue PrestaShop 1.7. PUR : entrée = HTML, sortie = données.
+// src/features/priceWatch/catalog/competitorListing.ts
+// Ce qu'on relève chez un concurrent : le type `CompetitorListing` et l'extraction d'une
+// page de liste. PUR — entrée = HTML, sortie = données.
 //
-// UN SEUL extracteur pour tous les sites (cf. « pas de scrapers par fournisseur ») :
-// les 5 concurrents relevés sur le terrain sont des PrestaShop 1.7 et partagent les
-// mêmes classes (`product-miniature`, `product-reference`, `product-price`). Les
-// thèmes diffèrent (habillage, obfuscation base64 des liens chez l'un, référence en
-// tête de titre chez un autre) — ce sont des VARIANTES gérées par des replis
-// successifs, pas des implémentations séparées.
+// ⚠⚠ Ce fichier s'est appelé `prestashop.ts` jusqu'au 2026-08-11, parce que les cinq
+// premiers concurrents branchés tournaient sous PrestaShop 1.7. Le nom a survécu pendant
+// que tout le GÉNÉRIQUE venait s'y greffer — le type de relevé, l'analyse des prix, la
+// détection du mode catalogue — au point qu'on expliquait un site sans PrestaShop en
+// parlant de PrestaShop. Un nom qui ment sur son contenu finit par tromper ceux qui
+// lisent le code : renommé.
+//
+// Ce qui reste PROPRE à PrestaShop, et clairement marqué comme tel : `splitProductBlocks`
+// (cartes `product-miniature`) et `detectCatalogMode` (`is_catalog` / `show_prices`). Tout
+// le reste vaut pour n'importe quelle boutique ; les autres technos sont couvertes par les
+// paliers de `genericCards.ts` (microdata, JSON-LD, payload `data-*`, attributs `data-*`,
+// cartes DOM), et la cascade complète est arbitrée par `extractListingProducts`.
+//
+// UN SEUL extracteur pour tous les sites, jamais un par vendeur : les variantes (habillage,
+// obfuscation base64 des liens, référence en tête de titre) sont des REPLIS successifs.
 //
 // Volontairement en expressions régulières et non via DOMParser : le même code doit
 // tourner dans le navigateur ET dans une Cloud Function (pas de DOM côté serveur).

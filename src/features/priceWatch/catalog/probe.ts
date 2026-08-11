@@ -3,7 +3,7 @@
 // AVANT de lancer la moisson complète. Objectif : ne pas dépenser de tokens à moissonner
 // un site qui n'affiche pas ses prix (B2B, JavaScript). PUR (fetch injecté).
 import { planCategories, type CompetitorConfig, type HarvestDeps } from './runHarvest'
-import { parseListingPage, type CompetitorListing } from './prestashop'
+import { parseListingPage, type CompetitorListing } from './competitorListing'
 import { auditListings, type CompetitorAudit } from './report'
 
 export interface ProbeResult {

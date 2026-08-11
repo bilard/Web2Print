@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { loadAllListings } from '../catalog/store'
 import { loadSourceCatalog } from '../reportStore'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 import { DEFAULT_VAT_RATE, type SourceProduct } from '../catalog/match'
 import { debugLog } from '@/lib/debugLog'
 

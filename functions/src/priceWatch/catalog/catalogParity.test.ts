@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest'
 import {
   parsePriceFragment, splitProductBlocks, extractAvailability,
   parseJsonLdObjects, parseProductPage, parseListingPage,
-} from './prestashop'
+} from './competitorListing'
 import { candidateKeys, proveMatch, refTokensFromUrl } from './keys'
 import { indexKeysOf, buildMemoryIndex, matchProduct, dedupeListings, extractOriginRefs } from './match'
 import { foldText, keywordsForFamilies } from './categories'
@@ -18,7 +18,7 @@ import { DEFAULT_PAIRING_RULES, resolvePairingRules, rulesDifferFromDefault, sum
 import { pickDisplayColumns, taxoPathOf, trimDescription, DESCRIPTION_MAX } from './displayColumns'
 import { parseListingDomCards } from './genericCards'
 
-describe('prestashop (parité serveur)', () => {
+describe('competitorListing (parité serveur)', () => {
   it('parse les prix marchands', () => {
     expect(parsePriceFragment('4,67 € TTC')).toBe(4.67)
     expect(parsePriceFragment('1 299,90 €')).toBe(1299.9)

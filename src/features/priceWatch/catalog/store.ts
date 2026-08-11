@@ -1,5 +1,5 @@
 // Persistance de l'index catalogue concurrent. Adaptateurs Firestore FINS : toute la
-// logique métier vit dans les modules purs (harvest, match, keys, prestashop).
+// logique métier vit dans les modules purs (harvest, match, keys, competitorListing).
 //
 // Modèle : un doc méta par concurrent (curseur inclus), un doc par page liste
 // moissonnée. Le node de matching relit toutes les pages d'un site pour reconstruire
@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 import type { HarvestCursor } from './harvest'
 import { stripUndefined } from '@/lib/stripUndefined'
 import { dedupeListings } from './match'

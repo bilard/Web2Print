@@ -3,7 +3,7 @@ import { buildTaxoTree, isUnderPath } from './taxonomyTree'
 import { filterRows, EMPTY_EXPLORER_FILTER } from './filters'
 import { pairSiteListings } from './pairing'
 import type { SourceProduct } from '../catalog/match'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 
 const PATHS: Record<string, string[]> = {
   p1: ['Motoculture', 'Tondeuses', 'Courroies'],

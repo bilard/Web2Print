@@ -13,7 +13,7 @@
 // à payer est qu'il porte sur un site à la fois : c'est un compromis assumé, et il est
 // annoncé dans l'écran.
 import { buildMemoryIndex, matchProduct, type SourceProduct } from './catalog/match'
-import type { CompetitorListing } from './catalog/prestashop'
+import type { CompetitorListing } from './catalog/competitorListing'
 import type { MatchEvidence, PairingRules } from './catalog/pairingRules'
 
 /** Une paire qui apparaît ou disparaît quand on change les règles. Non exportée :

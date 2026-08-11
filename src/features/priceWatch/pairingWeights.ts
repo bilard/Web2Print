@@ -9,7 +9,7 @@
 // et c'est pourquoi l'écran nomme ces nombres « appariements obtenus par cette voie ».
 import { buildMemoryIndex, matchProduct, type SourceProduct, type VetoReason } from './catalog/match'
 import { candidateKeys } from './catalog/keys'
-import type { CompetitorListing } from './catalog/prestashop'
+import type { CompetitorListing } from './catalog/competitorListing'
 import type { MatchEvidence, PairingRules } from './catalog/pairingRules'
 
 /** Voie de clé, telle que l'arbre la présente — plus lisible que `kind` + `origin`. */

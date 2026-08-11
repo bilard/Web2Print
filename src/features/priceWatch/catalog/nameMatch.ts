@@ -2,7 +2,7 @@
 // que des CANDIDATS à validation humaine ; n'entre JAMAIS dans le comparatif réel (on ne
 // touche pas proveMatch). Un seuil de distinctivité écarte les noms génériques (« VIS »,
 // « FILTRE A AIR ») qui matcheraient des milliers d'articles. PUR, testable.
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 // Mots vides FR + termes trop communs sur un catalogue de pièces (ne discriminent rien).
 const STOP = new Set([

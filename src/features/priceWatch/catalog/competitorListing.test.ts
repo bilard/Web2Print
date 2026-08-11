@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   parseListingPage, parsePriceFragment, splitProductBlocks,
-  extractAvailability, parseProductPage, parseJsonLdObjects, nextListingUrl, pageUrl, detectCatalogMode } from './prestashop'
+  extractAvailability, parseProductPage, parseJsonLdObjects, nextListingUrl, pageUrl, detectCatalogMode } from './competitorListing'
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, '__fixtures__', `listing-${name}.html`), 'utf-8')

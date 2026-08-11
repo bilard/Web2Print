@@ -10,7 +10,7 @@
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from '../catalog/match'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from '../catalog/pairingRules'
 import type { MatchProof } from '../catalog/keys'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 import { scorePair, type Confidence } from './confidence'
 
 /** Nature de la preuve d'appariement (même classement que le rapport). */

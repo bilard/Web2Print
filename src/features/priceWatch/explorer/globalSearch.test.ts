@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { listingMatchesKey, scanSite } from './globalSearch'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 
 const l = (o: Partial<CompetitorListing>): CompetitorListing =>
   ({ url: 'https://c.fr/p.html', name: 'Produit', ...o })

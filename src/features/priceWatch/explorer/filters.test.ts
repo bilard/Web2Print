@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { filterRows, matchesExplorerQuery, buildTokenIndex, suggest, EMPTY_EXPLORER_FILTER } from './filters'
 import { pairSiteListings, type PairedRow } from './pairing'
 import type { SourceProduct } from '../catalog/match'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 
 const products: SourceProduct[] = [
   { id: 'p1', name: 'Courroie tondeuse autoportée', ref: 'ABC-123', ean: '4049582395377', price: 100 },

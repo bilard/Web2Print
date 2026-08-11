@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildReport, rankProducts, auditListings, type ProductRow, type CompetitorAudit } from './report'
 import type { SiteRef } from './matrix'
 import type { SourceProduct } from './match'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 const sites: SiteRef[] = [
   { siteId: 'pm', domain: 'pro-motoculture.com' },

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parseListingPage } from './prestashop'
+import { parseListingPage } from './competitorListing'
 import { searchProductOnSite, searchUrl, directedPass } from './searchDirected'
 
 const fixture = (name: string) =>

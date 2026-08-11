@@ -3,7 +3,7 @@ import {
   indexKeysOf, titleKeysOf, buildMemoryIndex, matchProduct, comparePrices, extractOriginRefs,
   type IndexLookup,
 } from './match'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 const listing = (o: Partial<CompetitorListing>): CompetitorListing =>
   ({ url: 'https://c.fr/p.html', name: 'Produit', ...o })

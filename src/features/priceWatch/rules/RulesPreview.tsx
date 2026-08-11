@@ -9,7 +9,7 @@ import { useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { previewPairing } from '../pairingPreview'
 import type { SourceProduct } from '../catalog/match'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 import type { PairingRules } from '../catalog/pairingRules'
 import { useTranslation } from '@/lib/i18n'
 

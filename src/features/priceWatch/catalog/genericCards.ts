@@ -7,7 +7,7 @@
 //   3. cartes DOM répétées (conteneur class~=product contenant prix + lien) — best-effort.
 // PUR + server-safe (regex, pas de DOMParser). Garde-fous stricts : un item n'est retenu
 // que s'il a URL + prix + nom ; il faut ≥ 2 items (une liste en a plusieurs) ; dédup URL.
-import { parsePriceFragment, type CompetitorListing } from './prestashop'
+import { parsePriceFragment, type CompetitorListing } from './competitorListing'
 
 const stripTags = (s: string) => s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 const decode = (s: string) => s.replace(/&amp;/g, '&').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&eacute;/g, 'é').replace(/&egrave;/g, 'è')

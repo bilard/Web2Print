@@ -7,7 +7,7 @@ import { createPairingRun, pairAllSites } from './pairingRun'
 import { matrixFromPairing, buildMatrix } from './matrix'
 import { reportFromPairing, buildReport } from './report'
 import type { SourceProduct } from './match'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 const products: SourceProduct[] = [
   { id: 'p1', name: 'Courroie de coupe', ref: 'BS691991', price: 10 },

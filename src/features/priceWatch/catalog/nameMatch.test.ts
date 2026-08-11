@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { nameTokens, buildNameIndex, nameMatchCandidates } from './nameMatch'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 const L = (name: string): CompetitorListing => ({ url: 'u', name })
 

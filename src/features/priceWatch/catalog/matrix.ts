@@ -7,7 +7,7 @@
 import type { SourceProduct } from './match'
 import { pairAllSites, type PairingRun } from './pairingRun'
 import type { MatchProof } from './keys'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 export interface SiteRef {
   siteId: string

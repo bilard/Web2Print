@@ -6,7 +6,7 @@
 // admin SDK (firebase-admin) au lieu du SDK web.
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import { competitorDoc, competitorPagesCol, watchRootDoc } from '../paths'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 import type { HarvestCursor } from './harvest'
 import { dedupeListings } from './match'
 

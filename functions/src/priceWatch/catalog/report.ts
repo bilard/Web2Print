@@ -13,7 +13,7 @@ import { pairAllSites, auditListings, type PairingRun, type CompetitorAudit } fr
 export { auditListings }
 export type { CompetitorAudit }
 import type { SiteRef } from './matrix'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 // Types internes au module (référencés par les interfaces exportées ci-dessous ;
 // non exportés — le dashboard lit ces champs via ProductRow, cf. knip).

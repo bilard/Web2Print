@@ -12,7 +12,7 @@
 //   - on ne retient de chaque site que le PREMIER résultat et son compte. L'écran a
 //     besoin de savoir OÙ aller, pas de rejouer la liste ici.
 import { normalizeEan, normalizeRef } from '../catalog/keys'
-import type { CompetitorListing } from '../catalog/prestashop'
+import type { CompetitorListing } from '../catalog/competitorListing'
 import { foldText } from '../catalog/categories'
 
 export interface GlobalHit {

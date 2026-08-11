@@ -16,7 +16,7 @@
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from './match'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { MatchProof } from './keys'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. Mesuré ICI
  *  parce que c'est le seul endroit qui voit encore les fiches : l'index du site est relâché

@@ -3,7 +3,7 @@ import { measurePairing } from './pairingWeights'
 import { DEFAULT_PAIRING_RULES, resolvePairingRules } from './catalog/pairingRules'
 import { vetoReason, vetoedPair } from './catalog/match'
 import type { SourceProduct } from './catalog/match'
-import type { CompetitorListing } from './catalog/prestashop'
+import type { CompetitorListing } from './catalog/competitorListing'
 import type { MatchProof } from './catalog/keys'
 
 const proof = (raw: string, evidence: MatchProof['evidence'] = 'ref-in-url'): MatchProof => ({

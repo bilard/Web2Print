@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { previewPairing } from './pairingPreview'
 import { DEFAULT_PAIRING_RULES, resolvePairingRules } from './catalog/pairingRules'
 import type { SourceProduct } from './catalog/match'
-import type { CompetitorListing } from './catalog/prestashop'
+import type { CompetitorListing } from './catalog/competitorListing'
 
 const products: SourceProduct[] = [
   { id: 'p1', name: 'COURROIE', ref: '6151-704-2110', price: 6 },

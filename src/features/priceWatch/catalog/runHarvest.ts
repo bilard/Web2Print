@@ -4,7 +4,7 @@
 // Une passe consomme un budget borné de pages puis rend la main : le curseur persiste,
 // le tick suivant reprend. Jamais de balayage complet en un run (cf. audit : budget
 // ~500 s, le node DOIT se terminer pour que le checkpoint survive).
-import { parseListingPage, nextListingUrl, pageUrl, detectCatalogMode } from './prestashop'
+import { parseListingPage, nextListingUrl, pageUrl, detectCatalogMode } from './competitorListing'
 import { parseListingGeneric } from './genericListing'
 import { parseListingDomCards } from './genericCards'
 import { extractCategoryLinks, selectCategories, keywordsForFamilies } from './categories'
@@ -15,7 +15,7 @@ import {
   initCursor, currentTarget, advance, openSweep, pageDocId, pageSignature,
   PLAN_RETRY_COOLDOWN_MS, type HarvestCursor,
 } from './harvest'
-import type { CompetitorListing } from './prestashop'
+import type { CompetitorListing } from './competitorListing'
 // Messages de run : ces logs remontent dans le panneau d'exécution du workflow via
 // `deps.log`. Helper `t()` de module — ce fichier est un moteur pur, pas un composant.
 import { t } from '@/lib/i18n'
