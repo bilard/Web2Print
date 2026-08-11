@@ -2532,7 +2532,6 @@ export const fr = {
   'ops.chantier.structure': 'Structuration',
   'ops.card.stale': 'arrêté',
   'ops.card.stopped': 'passage arrêté',
-  'ops.card.capped': 'lot du run terminé — {n} champs par run',
   'ops.card.eta.hm': '{h} h {m} min restantes',
   'ops.card.eta.m': '{m} min restantes',
   'ops.card.fields.done.one': '{n} champ traité',

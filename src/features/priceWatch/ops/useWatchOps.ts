@@ -20,9 +20,6 @@ const TICK_MS = 1_000
 
 export function useWatchOps(
   watchId: string | null, workflowId: string | undefined, cockpit: OpsCockpit | null,
-  /** Plafond par run de la carte « Textes », lu par l'écran (`useResumeMode`) : sans lui,
-   *  un lot terminé se lit « passage arrêté ». */
-  textsCapPerRun: number | null = null,
 ): { view: WatchOpsView; incidents: (WatchIncident & { id: string })[] } {
   // ⚠ Le hook RÉACTIF, pas `getWorkspaceUid()` : un rattachement de société doit rediriger
   // l'écran sans rechargement (cf. la doc de useWorkspaceUid). `getWorkspaceUid()` est pour
@@ -113,5 +110,5 @@ export function useWatchOps(
     }
   }, [incidents])
 
-  return { view: buildWatchOps({ progress, cockpit, run, now, textsCapPerRun }), incidents }
+  return { view: buildWatchOps({ progress, cockpit, run, now }), incidents }
 }

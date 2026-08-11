@@ -13,7 +13,6 @@ import { RunCardsStrip } from './RunCardsStrip'
 import { IncidentLog } from './IncidentLog'
 import { RunHistory } from './RunHistory'
 import { useRunHistory } from './useRunHistory'
-import { useResumeMode } from './useResumeMode'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useTranslation } from '@/lib/i18n'
@@ -41,11 +40,7 @@ export function WatchOpsScreen() {
   const report = useCatalogReport(watchId)
   const meta = useCompetitorMeta(watchId)
   const cockpit = useMemo(() => (report ? buildOpsCockpit(report, meta) : null), [report, meta])
-  // La carte « Textes » du flux porte DEUX réglages que cet écran doit dire : ce qu'un
-  // lancement refera, et combien de champs il traitera au plus. Une seule lecture pour les
-  // deux.
-  const texts = useResumeMode(workflowId)
-  const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit, texts.maxUnits)
+  const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
   // ⚠ Lu ICI et pas dans les deux composants : l'en-tête montre la durée typique et la
   // tendance, l'historique montre les lignes — même liste, un seul abonnement Firestore.
   const { runs, trend, typical } = useRunHistory(workflowId)
@@ -82,7 +77,7 @@ export function WatchOpsScreen() {
       </header>
 
       <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
-      <OpsActions workflowId={workflowId} run={view.run} resumeMode={texts.mode} />
+      <OpsActions workflowId={workflowId} run={view.run} />
 
       {view.chantiers.length === 0 ? (
         <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.noChantier')}</p>

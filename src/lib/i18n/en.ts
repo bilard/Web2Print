@@ -2439,7 +2439,6 @@ export const en: Record<TranslationKey, string> = {
   'ops.chantier.structure': 'Structuring',
   'ops.card.stale': 'stalled',
   'ops.card.stopped': 'pass stalled',
-  'ops.card.capped': 'run batch finished — {n} fields per run',
   'ops.card.eta.hm': '{h} h {m} min left',
   'ops.card.eta.m': '{m} min left',
   'ops.card.fields.done.one': '{n} field done',

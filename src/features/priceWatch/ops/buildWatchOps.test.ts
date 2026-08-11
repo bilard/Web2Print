@@ -90,45 +90,6 @@ describe("buildWatchOps — chantier textes", () => {
     expect(trad.etaMs).toBeNull()
   })
 
-  // ⚠⚠ Mesuré en prod : la carte « Textes » plafonne à 500 champs par run, le passage en
-  // traite 504 sur 207 802, s'arrête — et l'écran affichait « PASSAGE ARRÊTÉ » en orange
-  // pendant que le run continuait tranquillement ses autres cartes. Le lot est fait, il
-  // n'y a pas de panne ; seul le flux connaît ce plafond, le document d'avancement non.
-  it("ne dit PAS « arrêté » d'un passage qui a rempli son lot — c'est le plafond, pas une panne", () => {
-    const texts = {
-      considered: 300_000, alreadyDone: 90_000, pending: { translate: 207_802 },
-      done: 504, total: 207_802,
-      startedAt: NOW - 20 * 60_000, beatAt: NOW - 15 * 60_000, origin: 'server' as const,
-    }
-    const capped = buildWatchOps({
-      progress: progress(texts), cockpit: null, run: null, now: NOW, textsCapPerRun: 500,
-    }).chantiers.find((c) => c.id === 'translate')!
-    expect(capped.stale).toBeUndefined()
-    expect(capped.cappedAt).toBe(500)
-
-    // Sans plafond connu, le même silence reste une anomalie : on ne masque pas un arrêt,
-    // on l'explique quand on peut.
-    const unknown = buildWatchOps({
-      progress: progress(texts), cockpit: null, run: null, now: NOW,
-    }).chantiers.find((c) => c.id === 'translate')!
-    expect(unknown.stale).toBe(true)
-    expect(unknown.cappedAt).toBeUndefined()
-  })
-
-  it("dit encore « arrêté » d'un passage coupé AVANT son plafond", () => {
-    const v = buildWatchOps({
-      progress: progress({
-        considered: 3_000, alreadyDone: 0, pending: { translate: 3_000 },
-        done: 120, total: 3_000,
-        startedAt: NOW - 600_000, beatAt: NOW - 4 * 60_000, origin: 'server',
-      }),
-      cockpit: null, run: null, now: NOW, textsCapPerRun: 500,
-    })
-    const trad = v.chantiers.find((c) => c.id === 'translate')!
-    expect(trad.stale).toBe(true)
-    expect(trad.cappedAt).toBeUndefined()
-  })
-
   it("range l'indéterminé à part, jamais avec le français", () => {
     const v = buildWatchOps({
       progress: progress({
