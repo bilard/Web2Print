@@ -3,7 +3,7 @@ import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 // concurrents avec stats persistées LIVE (useCompetitorMeta + useCatalogReport,
 // onSnapshot — indépendant de tout run). Clé de lecture = watchId dérivé comme au
 // runtime (config sinon id du workflow courant).
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef} from 'react'
 import { Plus, ClipboardPaste, Search, X, Trash2, CheckSquare, Square } from 'lucide-react'
 import { toast } from 'sonner'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -62,6 +62,11 @@ export function SourceSitesConfig({ config, onChange }: {
   const [statusFilter, setStatusFilter] = useState<SiteStatus | null>(null)
   const [credsRow, setCredsRow] = useState<number | null>(null)
   const [scrapingId, setScrapingId] = useState<string | null>(null)
+  /** Annulation du scrape en cours. ⚠⚠ Le moteur SAVAIT déjà s'arrêter — `runHarvest`
+   *  teste `signal.aborted` entre deux pages — mais aucun appelant ne lui passait de
+   *  signal et aucun bouton ne l'ouvrait : une moisson lancée par erreur sur un gros
+   *  catalogue tournait jusqu'au bout, et le seul recours était de recharger la page. */
+  const abortRef = useRef<AbortController | null>(null)
   const [purging, setPurging] = useState(false)
 
   // Moisson manuelle d'UN site (bouton ▶) : réutilise le moteur, budget court (test),
@@ -73,12 +78,22 @@ export function SourceSitesConfig({ config, onChange }: {
     const site = rowsToCompetitorSites([{ ...r, enabled: true }])[0]
     if (!site) return
     setScrapingId(domain)
+    abortRef.current?.abort()
+    const ac = new AbortController()
+    abortRef.current = ac
     try {
       // ⚠ DEUX opérations, DEUX diagnostics. Sous un try commun, un recalcul de benchmark
       // en échec s'affichait comme « moisson échouée » : le scraping avait pourtant
       // collecté et enregistré ses fiches. Confondre les deux fait chercher une panne de
       // scraping là où il n'y en a pas.
-      const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12 })
+      const res = await harvestOneSite(uid, watchId, site, { pageBudget: 12, signal: ac.signal })
+      // Arrêt demandé : ce qui a été collecté AVANT reste écrit (les pages sont
+      // persistées au fil de l'eau). On ne dit donc pas « échec », on dit « arrêté ».
+      if (ac.signal.aborted) {
+        toast.info(t('tst.ss.harvestStopped', { domain, products: res.productsIndexed }))
+        setScrapingId(null)
+        return
+      }
       toast.success(t('tst.rd.harvestResult', {
         host: domain, products: res.productsIndexed, pct: res.pctPrice,
         engine: res.engine ? t('tst.rd.harvestEngine', { engine: res.engine }) : '',
@@ -404,6 +419,7 @@ export function SourceSitesConfig({ config, onChange }: {
                 onAuth={() => setCredsRow((c) => (c === i ? null : i))}
                 onScrape={() => void scrapeSite(r)}
                 scraping={scrapingId === normalizeDomain(r.domain)}
+                onStopScrape={() => abortRef.current?.abort()}
                 onReset={() => void resetSite(r)}
                 onRemove={() => { onChange({ ...config, sites: rows.filter((_, j) => j !== i) }); setCredsRow(null) }}
               />

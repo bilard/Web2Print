@@ -3,7 +3,7 @@
 //   dernière passe) · corbeille ; niveau 2 — moteur forcé + chips de stats insécables.
 // Pendant la moisson : ring vert pulsé + barre de balayage animée (progress-indeterminate).
 // Après la passe : badge verdict lisible d'un coup d'œil, pop fx-result s'il vient de tomber.
-import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw, ExternalLink } from 'lucide-react'
+import { Trash2, Lock, LockOpen, Play, Loader2, RotateCcw, ExternalLink, Square } from 'lucide-react'
 import { agoShort, pct } from '@/features/priceWatch/dashboard/format'
 import { siteStatus, SITE_STATUS_META } from '@/features/priceWatch/sourceSites'
 import { displayDomain, siteHomeUrl } from '@/features/priceWatch/siteLink'
@@ -115,7 +115,7 @@ function chip(label: string, value: string, tone: 'ok' | 'warn' | 'mute', title?
   )
 }
 
-export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onScrape, scraping, onReset, onRemove }: {
+export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBudget, stats, live, now, onToggle, onEngine, onMode, onAuth, onBudget, onScrape, onStopScrape, scraping, onReset, onRemove }: {
   domain: string
   enabled: boolean
   engine: string
@@ -140,6 +140,8 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
   onBudget: (pages: number | undefined) => void
   /** Lance une moisson de CE site seul (bouton ▶). */
   onScrape: () => void
+  /** Interrompt la moisson en cours. Ce qui est déjà collecté reste écrit. */
+  onStopScrape: () => void
   /** true = ce site est en cours de moisson manuelle (spinner). */
   scraping: boolean
   /** Réinitialise les données collectées de ce site (destructif). */
@@ -213,14 +215,30 @@ export function SourceSitesRowItem({ domain, enabled, engine, mode, auth, pageBu
           ) : <span className="text-[10px] text-white/20 italic whitespace-nowrap">{t('ss.neverScraped')}</span>}
         </div>
         <div className="shrink-0 flex items-center gap-0.5 -mr-1">
-          <button
-            onClick={onScrape}
-            disabled={scraping || live}
-            title="Scraper ce site maintenant (moisson de ce concurrent seul)"
-            className="transition-colors p-1 rounded hover:bg-white/5 text-white/35 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" /> : <Play className="w-3.5 h-3.5" />}
-          </button>
+          {/* ⚠ Pendant la moisson, le bouton devient un ARRÊT — il ne se contente pas de
+              tourner, désactivé. Une moisson lancée par erreur sur un gros catalogue
+              n'avait aucune sortie : il fallait recharger la page, ce qui laisse le
+              curseur dans un état qu'on ne choisit pas. Les pages déjà collectées, elles,
+              restent écrites : l'arrêt ne perd rien. */}
+          {scraping ? (
+            <button
+              onClick={onStopScrape}
+              title={t('ss.scrape.stop')}
+              className="transition-colors p-1 rounded hover:bg-white/5 text-rose-400 hover:text-rose-300 group/stop"
+            >
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400 group-hover/stop:hidden" />
+              <Square className="w-3.5 h-3.5 hidden group-hover/stop:block" />
+            </button>
+          ) : (
+            <button
+              onClick={onScrape}
+              disabled={live}
+              title={t('ss.scrape.start')}
+              className="transition-colors p-1 rounded hover:bg-white/5 text-white/35 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Play className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             onClick={onAuth}
             title={t(auth ? 'ss.authConfigured' : 'ss.authConfigure')}
