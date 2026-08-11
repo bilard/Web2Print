@@ -304,3 +304,35 @@ describe('⚠⚠ descente dans les sous-rayons pendant la moisson', () => {
     expect(saved).toHaveLength(1)
   })
 })
+
+describe('⚠⚠ les rayons acquis survivent au cycle suivant', () => {
+  it('fusionne le plan découvert avec celui du cycle précédent', async () => {
+    // Mesuré en production : swap-europe collectait 1 414 fiches par passe pour TREIZE de
+    // plus dans l'index, après quarante balayages. Les sous-rayons trouvés en cours de
+    // moisson étaient effacés à chaque réouverture, et le site remoissonnait sans fin les
+    // mêmes pages. Un site qui tourne en rond ressemble à s'y méprendre à un site qui
+    // travaille.
+    const home = '<html><a href="/c/moteur">Moteur</a></html>'
+    const cursors: HarvestCursor[] = []
+    await harvestPass(
+      { siteId: 's', domain: 'shop.fr', families: [] },
+      {
+        force: true,
+        fetchHtml: async () => home,
+        // Balayage TERMINÉ portant un sous-rayon acquis au cycle précédent.
+        loadCursor: async () => ({
+          categories: ['https://shop.fr/c/moteur', 'https://shop.fr/c/moteur/courroies'],
+          catIndex: 2, page: 1, sweeps: 1, done: true,
+        }),
+        saveCursor: async (_id, c) => { cursors.push(c) },
+        savePage: async () => {},
+      },
+      1,
+    )
+    const plan = cursors[cursors.length - 1].categories
+    expect(plan).toContain('https://shop.fr/c/moteur/courroies')
+    // Le plan NEUF passe en tête : les rayons principaux d'abord. (`homeUrl` normalise le
+    // domaine en `www.`, d'où la forme du rayon fraîchement découvert.)
+    expect(plan[0]).toBe('https://www.shop.fr/c/moteur')
+  })
+})

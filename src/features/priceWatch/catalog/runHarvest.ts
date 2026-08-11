@@ -237,7 +237,22 @@ export async function harvestPass(
       return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: true, cursor: empty }
     }
     // Plan retrouvé : la veille n'a plus lieu d'être.
-    cursor = cursor ? { ...openSweep(cursor, categories), planFailedAt: undefined } : initCursor(categories)
+    // ⚠⚠ Le plan du cycle précédent est CONSERVÉ, fusionné au plan fraîchement découvert.
+    // Sans cela, les sous-rayons trouvés en cours de moisson (cf. « DESCENTE » plus bas)
+    // étaient effacés à chaque réouverture de balayage : le site repartait des seuls rayons
+    // visibles depuis l'accueil, remoissonnait les mêmes pages et réécrivait les mêmes
+    // documents. Mesuré en production : swap-europe collectait 1 414 fiches par passe pour
+    // TREIZE de plus dans l'index, après quarante balayages complets. Le travail était réel,
+    // le résultat nul — un site qui tourne en rond ressemble à s'y méprendre à un site qui
+    // travaille.
+    //
+    // Le plan neuf passe en tête (les rayons principaux d'abord), les acquis suivent ; la
+    // dédup et le plafond empêchent l'enflure. Une URL devenue morte coûte un fetch et
+    // rend zéro produit : bien moins cher qu'un rayon qu'on ne revisite jamais.
+    const merged = cursor
+      ? dedupeUrls([...categories, ...cursor.categories]).slice(0, MAX_PLAN)
+      : categories
+    cursor = cursor ? { ...openSweep(cursor, merged), planFailedAt: undefined } : initCursor(categories)
     deps.log?.(t('run.harvest.sweepingCategories', { domain: cfg.domain, count: categories.length }))
   }
 
