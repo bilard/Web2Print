@@ -56,16 +56,27 @@ export function PriceWatchReportConfig({ config, onChange, availableColumns }: {
       <div className="space-y-1">
         <span className="text-[11px] text-white/40 block">{t('pw.compose.presets')}</span>
         <div className="flex flex-wrap gap-1.5">
-          {COMPOSE_PRESETS.map((p) => (
-            <button
-              key={p.labelKey} type="button"
-              onClick={() => onChange({ ...config, prompt: t(p.textKey) })}
-              className="text-[11px] rounded px-2 py-1 border border-white/10 text-white/60
-                hover:text-white hover:border-white/25 transition-colors flex items-center gap-1"
-            >
-              <Wand2 className="w-3 h-3" />{t(p.labelKey)}
-            </button>
-          ))}
+          {COMPOSE_PRESETS.map((p) => {
+            // ⚠ Actif = la consigne EST ce texte, au caractère près. Dès qu'on l'adapte,
+            // le surlignage tombe — et c'est juste : le mail ne sera plus celui de
+            // l'exemple. Comparé au texte rendu, pas à la clé : c'est ce que le champ
+            // contient réellement.
+            const active = prompt.trim() === t(p.textKey).trim()
+            return (
+              <button
+                key={p.labelKey} type="button"
+                onClick={() => onChange({ ...config, prompt: t(p.textKey) })}
+                aria-pressed={active}
+                className={`text-[11px] rounded px-2 py-1 border transition-colors flex items-center gap-1 ${
+                  active
+                    ? 'border-indigo-400/50 bg-indigo-500/15 text-indigo-200'
+                    : 'border-white/10 text-white/60 hover:text-white hover:border-white/25'
+                }`}
+              >
+                <Wand2 className="w-3 h-3" />{t(p.labelKey)}
+              </button>
+            )
+          })}
         </div>
       </div>
 

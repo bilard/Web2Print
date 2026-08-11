@@ -139,7 +139,7 @@ export function renderPriceWatchReport(
     }${aggressive.length > 5 ? '…' : ''}`)
   }
   if (riskyFams.length > 0) {
-    alerts.push(`<b style="color:${ROSE};">${riskyFams.length} famille(s)</b> ont plus de ${opts.familyThresholdPct} % de leurs produits sous-cotés : ${
+    alerts.push(`<b style="color:${ROSE};">${riskyFams.length} famille(s)</b> ont plus de ${opts.familyThresholdPct} % de leurs prix sous-cotés : ${
       riskyFams.slice(0, 5).map((f) => `${esc(f.famille)} (${Math.round(f.pct)} %)`).join(', ')
     }${riskyFams.length > 5 ? '…' : ''}`)
   }
@@ -218,7 +218,7 @@ export function renderPriceWatchReport(
     : ''}
 
   ${alerts.length > 0
-    ? section('⚠ Écarts significatifs', `Seuils appliqués : concurrent sous vos prix de plus de ${opts.competitorThresholdPct} % en médiane, famille au-delà de ${opts.familyThresholdPct} % de produits sous-cotés.`, alertBox(alerts, 'danger'))
+    ? section('⚠ Écarts significatifs', `Seuils appliqués : concurrent sous vos prix de plus de ${opts.competitorThresholdPct} % en médiane, famille au-delà de ${opts.familyThresholdPct} % de prix sous-cotés.`, alertBox(alerts, 'danger'))
     : section('Écarts significatifs', 'Aucun seuil d’alerte franchi sur cette analyse.', alertBox(['Aucun concurrent ni famille au-delà des seuils configurés.'], 'ok'))}
 
   ${section('Position par concurrent',
@@ -228,12 +228,12 @@ export function renderPriceWatchReport(
   ${famRows.length > 0
     ? section('Familles les plus exposées',
         'Part de vos produits qu’au moins un concurrent vend moins cher. Familles de moins de 5 produits écartées : le ratio n’y veut rien dire.',
-        table(['Famille', 'Produits', 'Sous-cotés'], famRows, ['l', 'r', 'r']))
+        table(['Famille', 'Produits', 'Prix sous-cotés'], famRows, ['l', 'r', 'r']))
     : ''}
 
   ${exRows.length > 0
     ? section('Exemples d’écarts',
-        'Extraits de la liste détaillée, qui est PLAFONNÉE aux produits les plus sous-cotés : ces lignes illustrent, elles ne mesurent pas. Les chiffres ci-dessus, eux, portent sur le catalogue complet.',
+        'Extraits de la liste détaillée, qui est PLAFONNÉE aux prix les plus sous-cotés : ces lignes illustrent, elles ne mesurent pas. Les chiffres ci-dessus, eux, portent sur le catalogue complet.',
         table(['Produit', 'Mon prix HT', 'Meilleur écart'], exRows, ['l', 'r', 'r']))
     : ''}
 

@@ -19,7 +19,7 @@ export function RadarKpiGrid({ cockpit }: { cockpit: Cockpit }) {
       <Tile
         label="Exposés"
         value={fmtPct(exposedPct)}
-        sub={`${fmtInt(kpis.productsUndercut)}/${fmtInt(kpis.products)} sous-cotés`}
+        sub={`${fmtInt(kpis.productsUndercut)}/${fmtInt(kpis.products)} prix sous-cotés`}
         tone={exposedPct != null && exposedPct > 0 ? 'var(--radar-bad)' : undefined}
       />
       <Tile
