@@ -22,6 +22,27 @@ function didWork(r: RunRow): boolean {
   return typeof r.endedAt === 'number' && r.status !== 'error' && (r.succeeded ?? 1) > 0
 }
 
+/**
+ * Les runs COMPARABLES entre eux : ceux qui ont mené à bien autant de cartes que le
+ * meilleur de la liste. PUR.
+ *
+ * ⚠⚠ « Au moins une carte aboutie » ne suffisait pas — deuxième tentative, et l'écran l'a
+ * encore démenti. Un run que la cadence d'envoi suspend fait quand même aboutir ses
+ * premières cartes (sites sources, règles) en une seconde, avant que tout l'aval ne soit
+ * sauté : il a « travaillé » au sens strict, mais il n'a pas moissonné. Comparer sa durée
+ * à celle d'un run complet n'a aucun sens et fabriquait « +2251 % — les runs s'allongent ».
+ *
+ * On ne compare donc que les runs de même ampleur. Pas de seuil de durée arbitraire : la
+ * référence est le meilleur run OBSERVÉ, elle suit le flux quand il gagne ou perd une
+ * carte. Un historique où un seul run est complet ne rend aucune tendance — c'est
+ * préférable à une tendance inventée.
+ */
+function comparable(runs: RunRow[]): RunRow[] {
+  const worked = runs.filter(didWork)
+  const best = Math.max(0, ...worked.map((r) => r.succeeded ?? 0))
+  return best > 0 ? worked.filter((r) => (r.succeeded ?? best) >= best) : worked
+}
+
 /** Combien de runs récents servent la durée typique. */
 const TYPICAL_SAMPLE = 5
 
@@ -43,8 +64,7 @@ const TYPICAL_SAMPLE = 5
  * un run avorté ne mesure pas la durée du travail.
  */
 export function typicalDuration(runs: RunRow[]): number | null {
-  const durations = runs
-    .filter(didWork)
+  const durations = comparable(runs)
     .slice(0, TYPICAL_SAMPLE)
     .map((r) => (r.endedAt as number) - r.startedAt)
     .sort((a, b) => a - b)
@@ -67,7 +87,7 @@ export function durationTrend(runs: RunRow[]): number | null {
   // ⚠ Mêmes exclusions que `typicalDuration` (cf. `didWork`), et la tendance y est encore
   // plus sensible : elle compare deux MOYENNES, qu'un seul run d'une seconde suffit à
   // écraser.
-  const done = runs.filter(didWork)
+  const done = comparable(runs)
   if (done.length < 4) return null
   const half = Math.floor(done.length / 2)
   const avg = (rows: RunRow[]) =>

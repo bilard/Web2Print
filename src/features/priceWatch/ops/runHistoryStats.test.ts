@@ -6,6 +6,8 @@ const MIN = 60_000
 const run = (m: number, i = 0) => ({ startedAt: i, endedAt: i + m * MIN, succeeded: 6 })
 /** Un run où la cadence d'envoi a TOUT suspendu : « Terminé », une seconde, rien d'abouti. */
 const idle = (i: number) => ({ startedAt: i, endedAt: i + 1_000, succeeded: 0 })
+/** Pire : suspendu APRÈS deux cartes. Il a « travaillé », il n'a pas moissonné. */
+const partial = (i: number) => ({ startedAt: i, endedAt: i + 1_000, succeeded: 2 })
 
 describe('durationTrend — « la moisson s’allonge » est une information d’exploitation', () => {
   it('compare la moitié récente à la moitié ancienne', () => {
@@ -28,6 +30,12 @@ describe('durationTrend — « la moisson s’allonge » est une information d�
   it('écarte les runs qui n’ont RIEN abouti — « +2251 % » venait de runs tout sautés', () => {
     // Six runs : trois d'une seconde sans une seule carte aboutie, trois vrais.
     expect(durationTrend([idle(9), idle(8), idle(7), run(20, 6), run(20, 5), run(10, 4), run(10, 3)])).toBe(100)
+  })
+
+  it('écarte les runs PARTIELS — deux cartes en une seconde ne se comparent pas à un run complet', () => {
+    // Trois runs suspendus après deux cartes, quatre runs complets à six cartes.
+    const runs = [partial(9), partial(8), partial(7), run(20, 6), run(20, 5), run(10, 4), run(10, 3)]
+    expect(durationTrend(runs)).toBe(100)
   })
 
   it('ne se prononce pas sous quatre runs — deux points ne font pas une tendance', () => {
@@ -54,6 +62,15 @@ describe('typicalDuration — la seule estimation honnête de l’écran', () =>
 
   it('écarte aussi les runs tout sautés, « Terminé » mais sans travail', () => {
     expect(typicalDuration([idle(9), idle(8), run(25, 7), run(26, 6), run(24, 5)])).toBe(25 * MIN)
+  })
+
+  it('ne retient que les runs de même ampleur que le meilleur', () => {
+    expect(typicalDuration([partial(9), partial(8), run(25, 7), run(26, 6), run(24, 5)])).toBe(25 * MIN)
+  })
+
+  it('ne connaissant l’ampleur d’aucun run, les compare tous — on n’invente pas leur passé', () => {
+    const old = (m: number, i: number) => ({ startedAt: i, endedAt: i + m * MIN })
+    expect(typicalDuration([old(10, 3), old(20, 2), old(30, 1)])).toBe(20 * MIN)
   })
 
   it('ne compte que l’échantillon récent : un passé lointain rapide ne rajeunit pas les runs d’aujourd’hui', () => {
