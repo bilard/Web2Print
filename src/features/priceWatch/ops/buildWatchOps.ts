@@ -43,6 +43,9 @@ export interface Chantier {
   byLang?: { lang: string | null; count: number }[]
   /** Vrai si le travail s'est arrêté (inactif depuis plus de LIVE_BEAT_MS). */
   stale?: boolean
+  /** Plafond de champs par run atteint : le passage a fini SON lot, il n'est pas en panne.
+   *  Porte la valeur du plafond, que la carte affiche. */
+  cappedAt?: number
 }
 
 export interface WatchOpsView {
@@ -59,6 +62,9 @@ export interface WatchOpsInput {
   cockpit: OpsCockpit | null
   run: RunSnapshot | null
   now: number
+  /** Plafond de champs par run de la carte « Textes » (`maxUnits`), lu sur le flux.
+   *  `null` = pas de plafond, ou carte illisible. */
+  textsCapPerRun?: number | null
 }
 
 /** Durée restante extrapolée sur le débit MESURÉ, jamais sur une part incluant le travail
@@ -80,13 +86,20 @@ function pctOf(done: number, remaining: number): number {
   return total === 0 ? 0 : Math.round((done / total) * 100)
 }
 
-function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[]; reasons?: { fresh: number; stale: number } } {
+function textChantiers(p: WatchOpsProgress, now: number, capPerRun: number | null): { chantiers: Chantier[]; reasons?: { fresh: number; stale: number } } {
   const t = p.texts
   if (!t) return { chantiers: [] }
   // ⚠ Le temps écoulé est borné par le dernier signe de vie : si l'écran reste ouvert
   // longtemps après l'arrêt du travail, l'estimation ne s'éternise pas.
   const elapsedMs = Math.max(0, Math.min(now, t.beatAt) - t.startedAt)
-  const isStalework = now - t.beatAt > LIVE_BEAT_MS
+  // ⚠⚠ Le plafond de la carte « Textes » (500 champs par run par défaut) explique le
+  // silence bien mieux qu'une panne : le passage traite son lot, s'arrête, et laisse
+  // 207 000 champs pour les runs suivants. L'écran affichait alors « PASSAGE ARRÊTÉ » en
+  // orange sur un run parfaitement sain — le faux signal le plus voyant de la page. Un lot
+  // atteint n'est pas un arrêt, et c'est la seule façon de les distinguer : le document
+  // d'avancement ne porte pas le plafond, seul le flux le connaît.
+  const cappedOut = capPerRun != null && t.done >= capPerRun
+  const isStalework = !cappedOut && now - t.beatAt > LIVE_BEAT_MS
   const out: Chantier[] = []
   for (const [kind, remaining] of Object.entries(t.pending)) {
     if (!remaining) continue
@@ -108,6 +121,7 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
       // plupart du temps rien ne tourne. On croyait à une panne là où le travail est fini.
       // Le silence n'est une anomalie que s'il reste quelque chose à faire.
       ...(isStalework && effectiveRemaining > 0 ? { stale: true } : {}),
+      ...(cappedOut && effectiveRemaining > 0 ? { cappedAt: capPerRun } : {}),
     })
   }
   return { chantiers: out, reasons: t.reasons }
@@ -132,7 +146,7 @@ function harvestChantier(c: OpsCockpit): Chantier | null {
 }
 
 export function buildWatchOps(input: WatchOpsInput): WatchOpsView {
-  const { progress, cockpit, run, now } = input
+  const { progress, cockpit, run, now, textsCapPerRun = null } = input
   const chantiers: Chantier[] = []
   let textsReasons: { fresh: number; stale: number } | undefined
 
@@ -141,7 +155,7 @@ export function buildWatchOps(input: WatchOpsInput): WatchOpsView {
     if (h) chantiers.push(h)
   }
   if (progress) {
-    const { chantiers: textChants, reasons } = textChantiers(progress, now)
+    const { chantiers: textChants, reasons } = textChantiers(progress, now, textsCapPerRun)
     chantiers.push(...textChants)
     textsReasons = reasons
   }

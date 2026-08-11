@@ -65,9 +65,13 @@ export interface ChantierUnitKeys {
  * PAS la même chose : 21 et 1 comptent des SITES (bouclés / pas encore bouclés), tandis que
  * 64 % est l'avancement du balayage EN COURS. Côte à côte et sans distinction, ils donnaient
  * l'impression d'une erreur de calcul. Le calcul est juste ; c'est ce que l'écran en disait
- * qui ne l'était pas — d'où l'unité nommée et le pourcentage étiqueté, ici seulement. Les
- * chantiers de textes comptent des CHAMPS et n'ont pas ce problème : les uniformiser les
- * dégraderait.
+ * qui ne l'était pas — d'où l'unité nommée et le pourcentage étiqueté.
+ *
+ * ⚠⚠ Les chantiers de TEXTES avaient le même défaut, et on avait écrit ici le contraire.
+ * Une unité d'enrichissement est un CHAMP d'une fiche (`EnrichUnit` = `productId` + `field`),
+ * pas une fiche : « 207 298 restants » sur un catalogue de 115 814 références se lit comme
+ * une erreur de comptage — c'est le premier chiffre que l'utilisateur a relevé. Les deux
+ * nombres portent donc leur unité eux aussi.
  */
 export function chantierUnitKeys(id: ChantierId): ChantierUnitKeys {
   if (id === 'harvest') {
@@ -78,8 +82,8 @@ export function chantierUnitKeys(id: ChantierId): ChantierUnitKeys {
     }
   }
   return {
-    done: { one: 'ops.card.done.one', other: 'ops.card.done.other' },
-    remaining: { one: 'ops.card.remaining.one', other: 'ops.card.remaining.other' },
+    done: { one: 'ops.card.fields.done.one', other: 'ops.card.fields.done.other' },
+    remaining: { one: 'ops.card.fields.remaining.one', other: 'ops.card.fields.remaining.other' },
     pctLabelKey: null,
   }
 }

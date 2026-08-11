@@ -18,17 +18,17 @@ describe('etaParts — une estimation se lit, elle ne se déchiffre pas', () => 
 
 // L'écran affichait « 1 restants ».
 describe("plural — le libellé s'accorde avec son nombre", () => {
-  const keys = { one: 'ops.card.remaining.one', other: 'ops.card.remaining.other' } as const
+  const keys = { one: 'ops.card.fields.remaining.one', other: 'ops.card.fields.remaining.other' } as const
 
   it('met le singulier à un', () => {
-    expect(fr[plural(keys, 1)]).toBe('{n} restant')
+    expect(fr[plural(keys, 1)]).toBe('{n} champ restant')
   })
   it('met le pluriel au-delà', () => {
-    expect(fr[plural(keys, 12)]).toBe('{n} restants')
+    expect(fr[plural(keys, 12)]).toBe('{n} champs restants')
   })
   // Le seuil retenu partout ailleurs dans l'application : en français, zéro est singulier.
   it('met le singulier à zéro', () => {
-    expect(fr[plural(keys, 0)]).toBe('{n} restant')
+    expect(fr[plural(keys, 0)]).toBe('{n} champ restant')
   })
 })
 
@@ -66,7 +66,10 @@ describe('chantierUnitKeys — chaque chiffre dit ce qu’il compte', () => {
     for (const id of ['translate', 'improve', 'structure'] as const) {
       const u = chantierUnitKeys(id)
       expect(u.pctLabelKey).toBeNull()
-      expect(fr[u.done.other]).toBe('{n} faits')
+      // ⚠⚠ « champs », pas un nombre nu : 207 298 unités sur un catalogue de 115 814
+      // références se lisait comme une erreur de comptage. Une unité est un CHAMP.
+      expect(fr[u.done.other]).toBe('{n} champs traités')
+      expect(fr[u.remaining.other]).toBe('{n} champs restants')
     }
   })
 })

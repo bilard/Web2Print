@@ -20,8 +20,8 @@ import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { OpsConfirm } from './OpsConfirm'
-import { useResumeMode } from './useResumeMode'
 import { resumeModeKey } from './opsFormat'
+import type { ResumeMode } from './opsTypes'
 import type { RunView } from './buildWatchOps'
 import { duration } from '../dashboard/format'
 import { useTranslation } from '@/lib/i18n'
@@ -48,13 +48,17 @@ function Btn({ onClick, busy, disabled, title, icon: Icon, tone, children }: {
   )
 }
 
-export function OpsActions({ workflowId, run }: { workflowId: string | null; run: RunView | null }) {
+export function OpsActions({ workflowId, run, resumeMode }: {
+  workflowId: string | null; run: RunView | null
+  /** Lu une fois par l'écran, avec le plafond de la même carte — deux lectures du flux
+   *  pour les deux réglages de la MÊME carte n'auraient rien apporté. */
+  resumeMode: ResumeMode
+}) {
   const { t } = useTranslation()
   const uid = useWorkspaceUid()
   const canAct = useCan('priceWatch.opsAct')
   const [busy, setBusy] = useState<Kind | null>(null)
   const [confirmKind, setConfirmKind] = useState<ConfirmKind | null>(null)
-  const resumeMode = useResumeMode(workflowId)
   const guard = (kind: Kind, fn: () => Promise<void>) => {
     if (!canAct) return
     if (!uid || !workflowId) { toast.error(t('ops.actions.noWorkflow')); return }
