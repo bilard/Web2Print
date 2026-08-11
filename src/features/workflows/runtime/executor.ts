@@ -10,7 +10,7 @@ import { mergeInputValue } from './mergeInputs'
 import { persistClientRun, type RunStatus } from '../persistence/runHistoryClient'
 import { startClientRunBeat, stopClientRunBeat } from './publishClientRun'
 import { firstWatchId } from './firstWatchId'
-import { recordIncident } from '@/features/priceWatch/ops/incidents'
+import { recordIncident, pruneExpiredIncidents } from '@/features/priceWatch/ops/incidents'
 // Messages d'exécution hors composant : helper `t()` de module.
 import { t } from '@/lib/i18n'
 
@@ -320,6 +320,10 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
   // Suivi adressé par CE flux, une fois pour tout le run — `null` quand ce workflow n'en
   // adresse aucun : pas de suivi identifiable ⇒ pas d'incident consigné (cf. plus bas).
   const incidentWatchId = firstWatchId(wf)
+  // Un incident au moins a-t-il été consigné pendant CE run ? Sert à ne purger le journal
+  // qu'UNE fois par run (pas une fois par carte en erreur) — jumeau exact du serveur
+  // (`functions/src/workflow/execute.ts`, même variable, même raison).
+  let recordedIncident = false
   useProgressStore.getState().begin(runSet ? 'Exécution depuis le node…' : 'Exécution du workflow…')
   try {
     // Détection des loops avant tout topo
@@ -525,6 +529,7 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
           // doit jamais pouvoir ralentir ou faire échouer le run.
           const uid = getWorkspaceUid()
           if (uid && incidentWatchId) {
+            recordedIncident = true
             void recordIncident(uid, incidentWatchId, {
               ts: Date.now(), message: msg, nodeLabel: t(spec.labelKey), runId, origin: 'client',
             })
@@ -587,6 +592,15 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
   } finally {
     useRunContext.getState().endRun()
     useProgressStore.getState().end()
+  }
+  // Purge du journal des pannes — UNE fois par run, pas une fois par carte en erreur : sur
+  // un run qui échoue sur trente sites, l'ancienne version lisait jusqu'à 500 documents
+  // (PRUNE_SCAN_LIMIT) PAR incident, soit des milliers de lectures pour un seul run. Même
+  // garde que le serveur (`functions/src/workflow/execute.ts`) : attendue, pas
+  // fire-and-forget — un onglet fermé juste après ne doit pas la couper en plein vol.
+  if (incidentWatchId && recordedIncident) {
+    const pruneUid = getWorkspaceUid()
+    if (pruneUid) await pruneExpiredIncidents(pruneUid, incidentWatchId)
   }
   // Résumé calculé sur les SEULS nodes de ce run (sous-graphe si run partiel),
   // pour un message de fin fiable (≠ états résiduels d'un run précédent).

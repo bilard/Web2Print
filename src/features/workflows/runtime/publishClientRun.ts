@@ -11,9 +11,20 @@ import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useRunContext } from './runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
 
-/** Un battement toutes les cinq secondes au plus. Un run d'une heure écrirait sinon des
- *  milliers de fois pour un écran qui se lit à la seconde. */
-export const CLIENT_BEAT_INTERVAL_MS = 5_000
+/**
+ * Un battement toutes les dix secondes au plus — c'est le débit fixé par la spec (§D1.3).
+ *
+ * ⚠ Était à 5 s. Chaque battement réécrit l'INTÉGRALITÉ des journaux du run (200 lignes ×
+ * 600 caractères ≈ 120 Ko, cf. `buildLiveLogs`) : un run de six heures à 5 s représente
+ * ~4300 écritures lourdes, retéléchargées par chaque écran ouvert (`onSnapshot`). Ne pas
+ * envoyer les journaux dans les battements PÉRIODIQUES réglerait le volume sans toucher à
+ * l'intervalle, mais viderait la console en direct entre deux battements — aucun mécanisme
+ * de battement forcé sur changement d'état de carte n'existe aujourd'hui (seuls le
+ * démarrage et la fin du run forcent une écriture, cf. `startClientRunBeat` /
+ * `stopClientRunBeat`) : ce serait pire que le coût réseau visé. Revenir au débit de la
+ * spec, à défaut, DIVISE ce coût par deux sans rien changer d'autre.
+ */
+export const CLIENT_BEAT_INTERVAL_MS = 10_000
 
 export interface LiveDocHead {
   runId?: string

@@ -47,23 +47,36 @@ async function deleteIncidents(uid: string, watchId: string, ids: string[]): Pro
   await Promise.all(ids.map((id) => deleteDoc(doc(db, opsIncidentsCol(uid, watchId), id)).catch(() => {})))
 }
 
-/** Élague les incidents périmés. Déclenchée à l'ÉCRITURE (`recordIncident`), JAMAIS à la
- *  lecture : un écran qui s'ouvre ne doit pas payer le nettoyage de celui qui regarde.
- *  Isolée dans son propre échec : une purge ratée ne remet jamais en cause l'incident qui
- *  vient d'être consigné. */
-async function pruneExpiredIncidents(uid: string, watchId: string): Promise<void> {
-  // ⚠ ASCENDANT, pas `desc` : les périmés sont les PLUS VIEUX. Scanner les plus récents
-  // laisserait le vrai backlog hors fenêtre dès que le journal dépasse `PRUNE_SCAN_LIMIT`
-  // entrées — la rétention s'arrêterait en silence, pile quand elle devient utile.
-  const snap = await getDocs(
-    query(collection(db, opsIncidentsCol(uid, watchId)), orderBy('ts', 'asc'), limit(PRUNE_SCAN_LIMIT)),
-  )
-  const ids = expiredIncidents(snap.docs.map((d) => ({ id: d.id, ts: (d.data() as WatchIncident).ts })), Date.now())
-  if (ids.length > 0) await deleteIncidents(uid, watchId, ids)
+/**
+ * Élague les incidents périmés d'un suivi. Appelée une fois PAR RUN (pas une fois par
+ * incident) — jumeau exact de `pruneExpiredIncidents` côté serveur
+ * (`functions/src/priceWatch/opsIncidents.ts`).
+ *
+ * ⚠⚠ Appelée directement depuis `recordIncident` jusqu'ici : sur un run qui échoue sur
+ * trente sites, ça faisait trente lectures de `PRUNE_SCAN_LIMIT` (500) documents — jusqu'à
+ * 15 000 lectures pour UN run, pour une purge dont le résultat ne change pas d'une carte
+ * en erreur à la suivante. Isolée dans son propre échec : une purge ratée ne remet jamais
+ * en cause les incidents déjà consignés pendant ce run.
+ */
+export async function pruneExpiredIncidents(uid: string, watchId: string): Promise<void> {
+  try {
+    // ⚠ ASCENDANT, pas `desc` : les périmés sont les PLUS VIEUX. Scanner les plus récents
+    // laisserait le vrai backlog hors fenêtre dès que le journal dépasse `PRUNE_SCAN_LIMIT`
+    // entrées — la rétention s'arrêterait en silence, pile quand elle devient utile.
+    const snap = await getDocs(
+      query(collection(db, opsIncidentsCol(uid, watchId)), orderBy('ts', 'asc'), limit(PRUNE_SCAN_LIMIT)),
+    )
+    const ids = expiredIncidents(snap.docs.map((d) => ({ id: d.id, ts: (d.data() as WatchIncident).ts })), Date.now())
+    if (ids.length > 0) await deleteIncidents(uid, watchId, ids)
+  } catch (e) {
+    console.warn('[suivi] purge du journal échouée :', e)
+  }
 }
 
 /** Consigne une panne. Fire-and-forget ABSOLU : jamais bloquant, jamais lancé vers
- *  l'appelant — c'est le chemin d'exécution de TOUS les runs navigateur de l'app. */
+ *  l'appelant — c'est le chemin d'exécution de TOUS les runs navigateur de l'app.
+ *  ⚠ Ne purge PLUS ici — cf. `pruneExpiredIncidents`, appelée une fois par run par
+ *  l'appelant (`executor.ts`), pas une fois par incident. */
 export async function recordIncident(uid: string, watchId: string, incident: WatchIncident): Promise<void> {
   try {
     await addDoc(collection(db, opsIncidentsCol(uid, watchId)), {
@@ -71,9 +84,7 @@ export async function recordIncident(uid: string, watchId: string, incident: Wat
     })
   } catch (e) {
     console.warn('[suivi] incident non consigné :', e)
-    return
   }
-  await pruneExpiredIncidents(uid, watchId).catch((e) => console.warn('[suivi] purge du journal échouée :', e))
 }
 
 /** Abonnement aux derniers incidents. */

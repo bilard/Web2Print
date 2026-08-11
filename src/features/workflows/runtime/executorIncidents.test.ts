@@ -21,13 +21,14 @@ vi.mock('@/features/access/useWorkspaceUid', () => ({
 }))
 vi.mock('@/features/priceWatch/ops/incidents', () => ({
   recordIncident: vi.fn(async () => {}),
+  pruneExpiredIncidents: vi.fn(async () => {}),
 }))
 
 const { executeWorkflow } = await import('./executor')
 const { nodeRegistry } = await import('../registry')
 const { portTypeRegistry, registerBuiltinPorts } = await import('./ports')
 const { useRunContext } = await import('./runContext')
-const { recordIncident } = await import('@/features/priceWatch/ops/incidents')
+const { recordIncident, pruneExpiredIncidents } = await import('@/features/priceWatch/ops/incidents')
 const { deriveWatchId } = await import('@/features/priceWatch/sourceSites')
 const { t } = await import('@/lib/i18n')
 import type { NodeSpec, Workflow } from '../types'
@@ -69,9 +70,12 @@ describe('executeWorkflow — journal des incidents (navigateur)', () => {
         origin: 'client',
       }),
     )
+    // Purgée UNE fois pour tout le run — pas une fois par incident (cf. incidents.ts).
+    expect(pruneExpiredIncidents).toHaveBeenCalledTimes(1)
+    expect(pruneExpiredIncidents).toHaveBeenCalledWith('test-uid', deriveWatchId('', wf.id))
   })
 
-  it("une carte en erreur dans un flux SANS suivi ne consigne rien", async () => {
+  it("une carte en erreur dans un flux SANS suivi ne consigne rien, et ne purge rien", async () => {
     nodeRegistry.register(throwingSpec('send-gmail'))
     const wf = makeWorkflow(
       [{ id: 'n1', type: 'send-gmail', position: { x: 0, y: 0 }, config: {} }], [],
@@ -79,5 +83,22 @@ describe('executeWorkflow — journal des incidents (navigateur)', () => {
     await executeWorkflow(wf)
 
     expect(recordIncident).not.toHaveBeenCalled()
+    expect(pruneExpiredIncidents).not.toHaveBeenCalled()
+  })
+
+  it('plusieurs cartes en erreur dans le MÊME run ne purgent qu’une seule fois', async () => {
+    nodeRegistry.register(throwingSpec('harvest-competitor'))
+    nodeRegistry.register(throwingSpec('compare-catalog'))
+    const wf = makeWorkflow(
+      [
+        { id: 'n1', type: 'harvest-competitor', position: { x: 0, y: 0 }, config: {} },
+        { id: 'n2', type: 'compare-catalog', position: { x: 0, y: 0 }, config: {} },
+      ],
+      [],
+    )
+    await executeWorkflow(wf)
+
+    expect(recordIncident).toHaveBeenCalledTimes(2)
+    expect(pruneExpiredIncidents).toHaveBeenCalledTimes(1)
   })
 })
