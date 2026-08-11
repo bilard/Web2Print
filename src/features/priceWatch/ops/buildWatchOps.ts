@@ -41,8 +41,12 @@ export interface Chantier {
   perMin: number | null
   /** Ventilation par langue — traduction seulement. */
   byLang?: { lang: string | null; count: number }[]
-  /** Vrai si le travail s'est arrêté (inactif depuis plus de LIVE_BEAT_MS). */
+  /** Vrai si le travail s'est TU sans dire pourquoi (inactif depuis plus de LIVE_BEAT_MS,
+   *  et sans raison d'arrêt publiée) — la seule vraie anomalie. */
   stale?: boolean
+  /** Le passage a rendu la main pour une raison connue : budget, temps imparti, ou borne
+   *  du nombre de champs. Pas une panne. */
+  stoppedBy?: 'spend' | 'deadline' | 'units'
 }
 
 export interface WatchOpsView {
@@ -86,14 +90,15 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
   // ⚠ Le temps écoulé est borné par le dernier signe de vie : si l'écran reste ouvert
   // longtemps après l'arrêt du travail, l'estimation ne s'éternise pas.
   const elapsedMs = Math.max(0, Math.min(now, t.beatAt) - t.startedAt)
-  // ⚠⚠ « arrêté » ne distingue PAS un passage en panne d'un passage qui a rempli son quota
-  // et rendu la main. Mesuré en prod : le passage s'interrompt sur le plafond de DÉPENSE de
-  // sa carte (30 $ ici) après ~500 champs, et l'écran crie la panne sur un run parfaitement
-  // sain. Le distinguer demande la raison d'arrêt (`cappedBy`, trois valeurs dont
-  // `deadline`, qui EST une anomalie), et elle n'existe que dans le passage : ni le document
-  // d'avancement ni le flux ne la portent. Une tentative de la déduire du seul `maxUnits` du
-  // flux a été écrite, déployée, et retirée — inerte, ce flux ayant `maxUnits: 0`.
-  const isStalework = now - t.beatAt > LIVE_BEAT_MS
+  // ⚠⚠ Silence n'est pas panne. Le passage rend la main sur son budget, son temps imparti
+  // ou sa borne de champs — mesuré en prod : 504 champs sur 207 802, plafond de dépense
+  // atteint, à CHAQUE run. L'écran criait pourtant « passage arrêté » en orange sur un
+  // traitement parfaitement sain. La raison ne pouvait pas se déduire du flux (une première
+  // tentative via `maxUnits` fut inerte, ce flux le réglant à 0) : elle n'existe que dans le
+  // passage, qui la PUBLIE désormais (`stoppedBy`, cf. `textsSnapshot` et ses deux jumeaux).
+  // Reste `stale` pour ce qu'il aurait toujours dû désigner : un silence SANS explication.
+  const idle = now - t.beatAt > LIVE_BEAT_MS
+  const isStalework = idle && !t.stoppedBy
   const out: Chantier[] = []
   for (const [kind, remaining] of Object.entries(t.pending)) {
     if (!remaining) continue
@@ -106,8 +111,11 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
     out.push({
       id, done, remaining: effectiveRemaining,
       pct: pctOf(done, effectiveRemaining),
-      etaMs: isStalework ? null : eta(done, effectiveRemaining, elapsedMs),
-      perMin: isStalework || elapsedMs < 60_000 || done === 0 ? null : Math.round(done / (elapsedMs / 60_000)),
+      // ⚠ `idle` et non `isStalework` : un passage arrêté pour une BONNE raison n'écrit
+      // pas davantage qu'un passage en panne — extrapoler sa durée restante sur un débit
+      // figé annoncerait une fin qui ne viendra pas avant le prochain run.
+      etaMs: idle ? null : eta(done, effectiveRemaining, elapsedMs),
+      perMin: idle || elapsedMs < 60_000 || done === 0 ? null : Math.round(done / (elapsedMs / 60_000)),
       ...(id === 'translate' && t.byLang ? { byLang: t.byLang } : {}),
       // ⚠ « Arrêté » se lit « interrompu ». Un chantier TERMINÉ n'a plus rien à écrire :
       // trois minutes après sa dernière ligne, une carte à 100 % et 0 restant portait le
@@ -115,6 +123,7 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
       // plupart du temps rien ne tourne. On croyait à une panne là où le travail est fini.
       // Le silence n'est une anomalie que s'il reste quelque chose à faire.
       ...(isStalework && effectiveRemaining > 0 ? { stale: true } : {}),
+      ...(idle && t.stoppedBy && effectiveRemaining > 0 ? { stoppedBy: t.stoppedBy } : {}),
     })
   }
   return { chantiers: out, reasons: t.reasons }

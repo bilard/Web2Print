@@ -213,11 +213,16 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
     }).watchId
     const opsUid = getWorkspaceUid()
     const opsStartedAt = Date.now()
-    const publishOps = (doneUnits: number, force = false) => {
+    // Dernier avancement publié : la publication FINALE (celle qui porte la raison
+    // d'arrêt) doit reprendre ce chiffre, pas repartir de zéro.
+    let opsDone = 0
+    const publishOps = (doneUnits: number, force = false, stoppedBy?: 'spend' | 'deadline' | 'units') => {
       if (!opsUid || !opsWatchId) return
+      opsDone = doneUnits
       void publishTextsProgress(opsUid, opsWatchId, textsSnapshot({
         units, considered: counts.considered, alreadyDone: counts.skipped['already-done'],
         done: doneUnits, startedAt: opsStartedAt, now: Date.now(), origin: 'client',
+        ...(stoppedBy ? { stoppedBy } : {}),
         ...(memoryOn
           ? { reasons: {
               fresh: decisions.filter((d) => d.reason === 'new').length,
@@ -437,6 +442,11 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
 
     if (result.cappedBy === 'spend') ctx.log('warn', t('run.textEnrich.spendCapped', { cap: config.capUsd }))
     if (result.cappedBy === 'deadline') ctx.log('warn', t('run.textEnrich.deadline'))
+    // ⚠⚠ POURQUOI le passage s'arrête, publié pour l'écran « Suivi ». Sans cette écriture,
+    // il ne voit qu'un compteur qui cesse de bouger et crie la panne après trois minutes —
+    // à chaque run, sur un traitement sain. `cappedBy` prime sur la borne d'unités : un
+    // passage coupé par son budget n'a pas atteint sa borne, même si elle existe.
+    publishOps(opsDone, true, result.cappedBy ?? (capped.length < units.length ? 'units' : undefined))
     ctx.log('info', t('run.textEnrich.done', {
       revised: result.counts.revised, rejected: result.counts.rejected, passId,
     }))

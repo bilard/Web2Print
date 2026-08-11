@@ -13,6 +13,7 @@ export interface TextsProgress {
   pending: Partial<Record<EnrichKind, number>>
   byLang?: { lang: string | null; count: number }[]
   reasons?: { fresh: number; stale: number }
+  stoppedBy?: 'spend' | 'deadline' | 'units'
   done: number
   total: number
   startedAt: number

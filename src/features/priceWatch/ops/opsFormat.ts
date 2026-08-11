@@ -24,6 +24,21 @@ export function subPercentKey(pct: number, done: number): TranslationKey | null 
   return pct === 0 && done > 0 ? 'ops.card.pct.sub1' : null
 }
 
+/**
+ * Ce que l'écran dit d'un passage qui a rendu la main. PUR, et une CLÉ (cf.
+ * `chantierLabelKey`).
+ *
+ * ⚠ Ton NEUTRE, jamais l'orange de l'alerte : ces trois fins sont normales et attendues à
+ * chaque run. Seul le silence sans raison reste une anomalie, et il garde son badge.
+ */
+export function stoppedByKey(reason: 'spend' | 'deadline' | 'units'): TranslationKey {
+  return ({
+    spend: 'ops.card.stoppedBy.spend',
+    deadline: 'ops.card.stoppedBy.deadline',
+    units: 'ops.card.stoppedBy.units',
+  } as const)[reason]
+}
+
 /** Libellé d'un chantier. ⚠ La CLÉ, pas le texte : `t()` appelé ici, en constante de
  *  module, figerait la langue au chargement de l'application. */
 export function chantierLabelKey(id: ChantierId): TranslationKey {

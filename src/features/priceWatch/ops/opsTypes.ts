@@ -24,6 +24,16 @@ export interface TextsProgress {
    * l'écran dit alors « non ventilé » plutôt que d'afficher un faux zéro.
    */
   reasons?: { fresh: number; stale: number }
+  /**
+   * Pourquoi le passage a rendu la main en laissant du travail. Absent quand il a fini,
+   * ou quand il s'est tu sans rien dire — ce silence-là EST l'anomalie que l'écran doit
+   * crier, et lui seul.
+   *
+   * ⚠ Seul le passage le sait : ni le flux ni ce document ne pouvaient le déduire. Sans
+   * ce champ, l'écran affichait « passage arrêté » en orange après CHAQUE run, sur un
+   * traitement parfaitement sain qui s'était simplement arrêté sur son budget.
+   */
+  stoppedBy?: 'spend' | 'deadline' | 'units'
   /** Avancement du passage EN COURS. */
   done: number
   total: number

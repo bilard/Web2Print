@@ -15,6 +15,9 @@ export interface TextsSnapshotInput {
   /** Jamais traité / source modifiée depuis. Le mode PIM ne le rend pas : on l'omet
    *  plutôt que d'écrire deux zéros, qui se liraient comme « rien à faire ». */
   reasons?: { fresh: number; stale: number }
+  /** Ce qui a fait rendre la main au passage : son budget, son temps imparti, ou la borne
+   *  du nombre de champs. Omis tant que le passage tourne. */
+  stoppedBy?: 'spend' | 'deadline' | 'units'
 }
 
 export function textsSnapshot(input: TextsSnapshotInput): TextsProgress {
@@ -36,6 +39,7 @@ export function textsSnapshot(input: TextsSnapshotInput): TextsProgress {
     pending,
     ...(byLang ? { byLang } : {}),
     ...(input.reasons ? { reasons: input.reasons } : {}),
+    ...(input.stoppedBy ? { stoppedBy: input.stoppedBy } : {}),
     done: input.done,
     total: input.units.length,
     startedAt: input.startedAt,

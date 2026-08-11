@@ -90,6 +90,47 @@ describe("buildWatchOps — chantier textes", () => {
     expect(trad.etaMs).toBeNull()
   })
 
+  // ⚠⚠ Mesuré en prod : 504 champs sur 207 802, plafond de dépense atteint, à CHAQUE run.
+  // L'écran criait « PASSAGE ARRÊTÉ » en orange sur un traitement parfaitement sain. Le
+  // passage publie désormais POURQUOI il rend la main, et seul le silence inexpliqué reste
+  // une anomalie.
+  it("ne dit PAS « arrêté » d'un passage qui a dit pourquoi il s'arrête", () => {
+    const texts = {
+      considered: 300_000, alreadyDone: 90_000, pending: { translate: 207_802 },
+      done: 504, total: 207_802,
+      startedAt: NOW - 20 * 60_000, beatAt: NOW - 15 * 60_000, origin: 'server' as const,
+    }
+    const said = buildWatchOps({
+      progress: progress({ ...texts, stoppedBy: 'spend' }), cockpit: null, run: null, now: NOW,
+    }).chantiers.find((c) => c.id === 'translate')!
+    expect(said.stale).toBeUndefined()
+    expect(said.stoppedBy).toBe('spend')
+    // Pas d'estimation pour autant : rien n'écrit plus, la fin ne viendra qu'au prochain run.
+    expect(said.etaMs).toBeNull()
+    expect(said.perMin).toBeNull()
+
+    // Le MÊME silence, sans raison publiée, reste une panne à signaler.
+    const mute = buildWatchOps({
+      progress: progress(texts), cockpit: null, run: null, now: NOW,
+    }).chantiers.find((c) => c.id === 'translate')!
+    expect(mute.stale).toBe(true)
+    expect(mute.stoppedBy).toBeUndefined()
+  })
+
+  it("ne dit RIEN d'une raison d'arrêt sur un chantier qui n'a plus rien à faire", () => {
+    const v = buildWatchOps({
+      progress: progress({
+        considered: 3_000, alreadyDone: 0, pending: { translate: 3_000 },
+        done: 3_000, total: 3_000, stoppedBy: 'deadline',
+        startedAt: NOW - 3_600_000, beatAt: NOW - 30 * 60_000, origin: 'server',
+      }),
+      cockpit: null, run: null, now: NOW,
+    })
+    const trad = v.chantiers.find((c) => c.id === 'translate')!
+    expect(trad.stoppedBy).toBeUndefined()
+    expect(trad.stale).toBeUndefined()
+  })
+
   it("range l'indéterminé à part, jamais avec le français", () => {
     const v = buildWatchOps({
       progress: progress({

@@ -1,7 +1,7 @@
 // Une carte par chantier de l'écran « Suivi » : où il en est, ce qu'il reste, à quel
 // rythme. Aucun calcul ici — tout vient déjà tranché de `buildWatchOps` (PUR).
 import type { Chantier } from './buildWatchOps'
-import { chantierLabelKey, chantierUnitKeys, etaParts, plural, subPercentKey } from './opsFormat'
+import { chantierLabelKey, chantierUnitKeys, etaParts, plural, stoppedByKey, subPercentKey } from './opsFormat'
 import { useTranslation } from '@/lib/i18n'
 
 /**
@@ -18,6 +18,9 @@ import { useTranslation } from '@/lib/i18n'
 function EtaLabel({ chantier }: { chantier: Chantier }) {
   const { t } = useTranslation()
   if (chantier.stale) return <span className="text-amber-300/80">{t('ops.card.stopped')}</span>
+  // Une fin annoncée par le passage lui-même : elle se DIT, en ton neutre, et n'appelle
+  // aucune action — la suite part au prochain run.
+  if (chantier.stoppedBy) return <span className="text-white/50">{t(stoppedByKey(chantier.stoppedBy))}</span>
   if (chantier.etaMs == null) return null
   const { h, m } = etaParts(chantier.etaMs)
   return (
@@ -66,7 +69,7 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
 
       {/* Ligne du bas seulement quand elle porte quelque chose : ni durée restante, ni
           badge d'arrêt, ni débit ⇒ pas de ligne, plutôt qu'un aveu d'ignorance permanent. */}
-      {(c.stale || c.etaMs != null || c.perMin != null) && (
+      {(c.stale || c.stoppedBy || c.etaMs != null || c.perMin != null) && (
         <div className="flex items-center justify-between text-[11px]">
           <EtaLabel chantier={c} />
           {c.perMin != null && <span className="ml-auto text-white/40 tabular-nums">{t('ops.card.perMin', { n: c.perMin })}</span>}

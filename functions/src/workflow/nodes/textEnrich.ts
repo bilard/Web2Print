@@ -93,11 +93,16 @@ registerServerNode({
       workflowId: ctx.workflowId,
     }).watchId
     const opsStartedAt = Date.now()
-    const publishOps = (doneUnits: number, force = false) => {
+    // Dernier avancement publié : la publication FINALE (celle qui porte la raison
+    // d'arrêt) doit reprendre ce chiffre, pas repartir de zéro.
+    let opsDone = 0
+    const publishOps = (doneUnits: number, force = false, stoppedBy?: 'spend' | 'deadline' | 'units') => {
       if (!opsWatchId) return
+      opsDone = doneUnits
       void publishTextsProgress(ctx.uid, opsWatchId, textsSnapshot({
         units, considered: counts.considered, alreadyDone: counts.skipped['already-done'],
         done: doneUnits, startedAt: opsStartedAt, now: Date.now(), origin: 'server',
+        ...(stoppedBy ? { stoppedBy } : {}),
         ...(memoryOn
           ? { reasons: {
               fresh: decisions.filter((d) => d.reason === 'new').length,
@@ -218,6 +223,9 @@ registerServerNode({
       })
 
     if (result.cappedBy === 'deadline') ctx.log('warn', t(ctx.locale, 'run.textEnrich.deadline'))
+    // ⚠⚠ Jumeau de la publication finale du navigateur — cf. son commentaire. Un cron qui
+    // ne la ferait pas laisserait l'écran crier la panne toutes les nuits.
+    publishOps(opsDone, true, result.cappedBy ?? (capped.length < units.length ? 'units' : undefined))
     ctx.log('info', t(ctx.locale, 'run.textEnrich.done', { revised: result.counts.revised, rejected: result.counts.rejected, passId: '' }))
 
     // ⚠ La mémoire retient ce qui a été SOUMIS, pas ce qui a été retenu : une proposition
