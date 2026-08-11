@@ -2439,6 +2439,7 @@ export const en: Record<TranslationKey, string> = {
   'ops.chantier.structure': 'Structuring',
   'ops.card.stale': 'stalled',
   'ops.card.stopped': 'pass stalled',
+  'ops.card.queued': 'scheduled — starts once the previous wave finishes',
   'ops.card.stoppedBy.spend': 'run budget reached — the rest next run',
   'ops.card.stoppedBy.deadline': 'run time up — the rest next run',
   'ops.card.stoppedBy.units': 'field cap reached — the rest next run',

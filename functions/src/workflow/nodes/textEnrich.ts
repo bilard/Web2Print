@@ -103,6 +103,11 @@ registerServerNode({
         units, considered: counts.considered, alreadyDone: counts.skipped['already-done'],
         done: doneUnits, startedAt: opsStartedAt, now: Date.now(), origin: 'server',
         ...(stoppedBy ? { stoppedBy } : {}),
+        // Natures des vagues SUIVANTES : connues dès la planification, chiffrables
+        // seulement une fois la vague précédente passée. Sans elles, un chantier prévu
+        // n'existe nulle part à l'écran.
+        queued: [...new Set(waves.slice(1).flatMap((w) => w.map((p) => p.kind)))],
+
         ...(memoryOn
           ? { reasons: {
               fresh: decisions.filter((d) => d.reason === 'new').length,

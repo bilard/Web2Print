@@ -34,6 +34,16 @@ export interface TextsProgress {
    * traitement parfaitement sain qui s'était simplement arrêté sur son budget.
    */
   stoppedBy?: 'spend' | 'deadline' | 'units'
+  /**
+   * Natures de travail PRÉVUES dans une vague ultérieure, donc pas encore chiffrées.
+   *
+   * ⚠⚠ Sans elles, un chantier prévu par le flux est simplement ABSENT de l'écran.
+   * `runWaves` ne planifie la vague N+1 qu'une fois la vague N terminée — ses unités
+   * portent sur des textes qui n'existent pas encore. Quand la première vague épuise le
+   * budget du run, la suivante n'est jamais chiffrée : « Amélioration » n'apparaissait
+   * nulle part, et rien ne disait qu'elle était prévue.
+   */
+  queued?: EnrichKind[]
   /** Avancement du passage EN COURS. */
   done: number
   total: number

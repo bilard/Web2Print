@@ -2,6 +2,7 @@
 import { detectLanguage } from '@/features/textEnrich/detectLang'
 import { langBreakdown } from '../textEnrich/langBreakdown'
 import type { EnrichUnit } from '@/features/textEnrich/pass'
+import type { EnrichKind } from '@/features/textEnrich/revision'
 import type { TextsProgress } from './opsTypes'
 
 export interface TextsSnapshotInput {
@@ -18,6 +19,8 @@ export interface TextsSnapshotInput {
   /** Ce qui a fait rendre la main au passage : son budget, son temps imparti, ou la borne
    *  du nombre de champs. Omis tant que le passage tourne. */
   stoppedBy?: 'spend' | 'deadline' | 'units'
+  /** Natures des vagues suivantes — connues d'avance, chiffrables seulement plus tard. */
+  queued?: EnrichKind[]
 }
 
 export function textsSnapshot(input: TextsSnapshotInput): TextsProgress {
@@ -40,6 +43,7 @@ export function textsSnapshot(input: TextsSnapshotInput): TextsProgress {
     ...(byLang ? { byLang } : {}),
     ...(input.reasons ? { reasons: input.reasons } : {}),
     ...(input.stoppedBy ? { stoppedBy: input.stoppedBy } : {}),
+    ...(input.queued?.length ? { queued: input.queued } : {}),
     done: input.done,
     total: input.units.length,
     startedAt: input.startedAt,

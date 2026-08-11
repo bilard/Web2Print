@@ -2532,6 +2532,7 @@ export const fr = {
   'ops.chantier.structure': 'Structuration',
   'ops.card.stale': 'arrêté',
   'ops.card.stopped': 'passage arrêté',
+  'ops.card.queued': 'prévu — démarre quand la vague précédente a fini',
   'ops.card.stoppedBy.spend': 'budget du run atteint — la suite au prochain',
   'ops.card.stoppedBy.deadline': 'temps du run écoulé — la suite au prochain',
   'ops.card.stoppedBy.units': 'plafond de champs atteint — la suite au prochain',

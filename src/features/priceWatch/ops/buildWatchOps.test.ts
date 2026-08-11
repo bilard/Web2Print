@@ -131,6 +131,42 @@ describe("buildWatchOps — chantier textes", () => {
     expect(trad.stale).toBeUndefined()
   })
 
+  // ⚠⚠ « Amélioration » est configurée sur la carte « Textes » de ce flux, et n'apparaissait
+  // NULLE PART : `runWaves` ne chiffre la vague 2 qu'une fois la vague 1 passée, or la
+  // traduction épuise le budget du run avant d'y arriver. Une carte muette vaut mieux
+  // qu'une carte absente.
+  it("montre les chantiers PRÉVUS, même sans le moindre chiffre", () => {
+    const v = buildWatchOps({
+      progress: progress({
+        considered: 231_630, alreadyDone: 0, pending: { translate: 207_802 },
+        queued: ['improve'],
+        done: 504, total: 207_802, stoppedBy: 'spend',
+        startedAt: NOW - 20 * 60_000, beatAt: NOW - 15 * 60_000, origin: 'server',
+      }),
+      cockpit: null, run: null, now: NOW,
+    })
+    const impr = v.chantiers.find((c) => c.id === 'improve')!
+    expect(impr.queued).toBe(true)
+    // Aucun chiffre inventé : on ignore encore combien de champs il aura à traiter.
+    expect(impr.remaining).toBe(0)
+    expect(impr.pct).toBe(0)
+    expect(impr.facts).toBeUndefined()
+  })
+
+  it("ne DOUBLE pas un chantier déjà chiffré parce qu'il figure aussi dans la file", () => {
+    const v = buildWatchOps({
+      progress: progress({
+        considered: 100, alreadyDone: 0, pending: { improve: 40 },
+        queued: ['improve'],
+        done: 10, total: 40, startedAt: NOW - 60_000, beatAt: NOW, origin: 'client',
+      }),
+      cockpit: null, run: null, now: NOW,
+    })
+    const all = v.chantiers.filter((c) => c.id === 'improve')
+    expect(all).toHaveLength(1)
+    expect(all[0].queued).toBeUndefined()
+  })
+
   it("range l'indéterminé à part, jamais avec le français", () => {
     const v = buildWatchOps({
       progress: progress({

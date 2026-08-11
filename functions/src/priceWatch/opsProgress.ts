@@ -14,6 +14,7 @@ export interface TextsProgress {
   byLang?: { lang: string | null; count: number }[]
   reasons?: { fresh: number; stale: number }
   stoppedBy?: 'spend' | 'deadline' | 'units'
+  queued?: EnrichKind[]
   done: number
   total: number
   startedAt: number

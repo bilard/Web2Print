@@ -54,6 +54,12 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
         <div className={`h-full ${c.stale ? 'bg-white/25' : 'bg-indigo-400'}`} style={{ width: `${c.pct}%` }} />
       </div>
 
+      {/* ⚠ Un chantier PRÉVU s'arrête là : pas de compteurs, pas de pourcentage. Afficher
+          « 0 fait · 0 % · 0 restant » laisserait croire qu'il n'y a rien à faire, quand
+          on ignore simplement encore combien. */}
+      {c.queued && <p className="text-[11px] text-white/45">{t('ops.card.queued')}</p>}
+
+      {!c.queued && (
       <div className="flex items-start justify-between gap-2 text-[11px] text-white/50 tabular-nums">
         <span>{t(plural(unit.done, c.done), { n: c.done })}</span>
         {/* Le pourcentage porte SON étiquette quand il ne mesure pas ce que comptent ses
@@ -67,6 +73,7 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
         </span>
         <span>{t(plural(unit.remaining, c.remaining), { n: c.remaining })}</span>
       </div>
+      )}
 
       {/* Ligne du bas seulement quand elle porte quelque chose : ni durée restante, ni
           badge d'arrêt, ni débit ⇒ pas de ligne, plutôt qu'un aveu d'ignorance permanent. */}

@@ -30,6 +30,7 @@ const ADAPTED: [RegExp, string][] = [
   [/from '\.\.\/textEnrich\/detectLang'/g, "from '@/features/textEnrich/detectLang'"],
   [/from '\.\/langBreakdown'/g, "from '../textEnrich/langBreakdown'"],
   [/from '\.\.\/textEnrich\/pass'/g, "from '@/features/textEnrich/pass'"],
+  [/from '\.\.\/textEnrich\/revision'/g, "from '@/features/textEnrich/revision'"],
   [/from '\.\/opsProgress'/g, "from './opsTypes'"],
 ]
 

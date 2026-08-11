@@ -62,6 +62,9 @@ export interface Chantier {
   /** Le passage a rendu la main pour une raison connue : budget, temps imparti, ou borne
    *  du nombre de champs. Pas une panne. */
   stoppedBy?: 'spend' | 'deadline' | 'units'
+  /** Chantier PRÉVU par le flux mais pas encore chiffré : sa vague n'a pas commencé. Ni
+   *  volume, ni jauge — on ne sait rien de lui, sinon qu'il est au programme. */
+  queued?: boolean
 }
 
 export interface WatchOpsView {
@@ -152,6 +155,17 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
       ...(isStalework && effectiveRemaining > 0 ? { stale: true } : {}),
       ...(idle && t.stoppedBy && effectiveRemaining > 0 ? { stoppedBy: t.stoppedBy } : {}),
     })
+  }
+  // ⚠⚠ Les chantiers PRÉVUS mais pas encore chiffrés. `runWaves` ne planifie la vague N+1
+  // qu'une fois la vague N passée : sur ce flux, la traduction épuise le budget du run et
+  // « Amélioration » — pourtant configurée sur la carte « Textes » — n'était chiffrée
+  // JAMAIS, donc affichée nulle part. Une carte muette vaut mieux qu'une carte absente :
+  // l'utilisateur voit que le travail est au programme, et pourquoi il attend.
+  const known = new Set(out.map((c) => c.id))
+  for (const kind of t.queued ?? []) {
+    if (known.has(kind)) continue
+    known.add(kind)
+    out.push({ id: kind, done: 0, remaining: 0, pct: 0, etaMs: null, perMin: null, queued: true })
   }
   return { chantiers: out, reasons: t.reasons }
 }
