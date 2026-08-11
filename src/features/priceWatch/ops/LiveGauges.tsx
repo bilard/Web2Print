@@ -11,10 +11,18 @@ import type { HarvestMeta } from '../dashboard/opsMetrics'
 import type { LiveRate } from './liveRates'
 
 /** Témoin de vie : la couleur dit l'état, le texte dit depuis quand. */
-const PULSE: Record<LiveRate['pulse'], { dot: string; text: string }> = {
-  live: { dot: 'bg-emerald-400 animate-pulse', text: 'text-emerald-300' },
-  slow: { dot: 'bg-amber-400', text: 'text-amber-300' },
-  idle: { dot: 'bg-white/25', text: 'text-white/35' },
+/** Trois états, trois couleurs franches — on doit lire l'état à un mètre de l'écran, sans
+ *  chercher le chiffre. Vert : ça collecte. Ambre : ça ralentit. Gris : à l'arrêt. */
+const PULSE: Record<LiveRate['pulse'], { dot: string; text: string; card: string }> = {
+  live: {
+    dot: 'bg-emerald-400 animate-pulse', text: 'text-emerald-300',
+    card: 'bg-emerald-500/[0.09] border-emerald-400/30',
+  },
+  slow: {
+    dot: 'bg-amber-400', text: 'text-amber-300',
+    card: 'bg-amber-500/[0.07] border-amber-400/25',
+  },
+  idle: { dot: 'bg-white/25', text: 'text-white/35', card: 'bg-well border-transparent' },
 }
 
 /** « 12 s », « 4 min », « 2 h » — l'âge, pas une durée de travail. */
@@ -39,6 +47,11 @@ function Dial({ value, tone }: { value: number; tone: string }) {
   )
 }
 
+/** Au-delà, un site n'appartient plus au suivi courant : c'est un reste d'ancien essai.
+ *  ⚠ Vingt cadrans s'affichaient — castorama, amazon, cdiscount… — noyant les quatre
+ *  concurrents du flux. Un tableau de bord qui montre tout ne montre rien. */
+const STALE_SITE_MS = 24 * 60 * 60 * 1000
+
 export function LiveGauges({ meta, matchedBySite }: {
   meta: Map<string, HarvestMeta>
   /** Appariés par siteId, issus du dernier « Comparer » (`report.byCompetitor`).
@@ -55,8 +68,13 @@ export function LiveGauges({ meta, matchedBySite }: {
   // Le classement par régime avait l'air malin et ne l'était pas : les cadrans changeaient
   // de place à chaque battement, et on cherchait un site en le suivant des yeux au lieu de
   // le lire. Une position stable vaut mieux qu'un palmarès.
+  const now = Date.now()
   const rows = [...meta.entries()]
-    .filter(([, m]) => (m.productCount ?? 0) + (m.pageCount ?? 0) > 0)
+    .filter(([siteId, m]) => (m.productCount ?? 0) + (m.pageCount ?? 0) > 0
+      // Du suivi COURANT : soit il a travaillé dans les dernières vingt-quatre heures,
+      // soit le dernier « Comparer » l'a retenu. Les deux manquent = il n'est plus au flux.
+      && (now - Math.max(m.harvestBeatAt ?? 0, m.lastPassAt ?? 0) < STALE_SITE_MS
+        || matchedBySite.has(siteId)))
     .sort(([, ma], [, mb]) => {
       const active = (m: HarvestMeta) => (m.enabled !== false ? 0 : 1)
       return active(ma) - active(mb)
@@ -78,14 +96,10 @@ export function LiveGauges({ meta, matchedBySite }: {
           const tone = PULSE[r.pulse]
           const progress = Math.round((m.harvestProgress ?? 0) * 100)
           const matched = matchedBySite.get(siteId)
-          // Un site EN SERVICE se détache du fond : c'est là que le regard doit tomber.
-          // Les sites au repos gardent le fond neutre — présents, pas mis en avant.
-          const working = r.pulse !== 'idle'
+          // Le fond porte l'état : vert en collecte, ambre au ralenti, neutre à l'arrêt.
+          // Les sites au repos restent lisibles sans attirer l'œil.
           return (
-            <div key={siteId}
-              className={`rounded-lg px-3 py-2.5 transition-colors ${working
-                ? 'bg-indigo-500/[0.07] border border-indigo-400/20'
-                : 'bg-well border border-transparent'}`}>
+            <div key={siteId} className={`rounded-lg border px-3 py-2.5 transition-colors ${tone.card}`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
                 <span className="text-[12px] text-white/80 truncate">{m.domain ?? siteId}</span>

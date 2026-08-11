@@ -91,7 +91,11 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
         const m = new Map<string, HarvestMeta>()
         snap.forEach((d) => {
           const data = d.data() as Record<string, unknown>
-          if (data.domain === 'directed-cursor') return // doc curseur, pas un concurrent
+          // ⚠ TOUS les docs curseur, pas seulement le premier nommé : `directed-auth-cursor`
+          // s'affichait comme un concurrent à part entière sur le tableau de bord, avec sa
+          // jauge et ses 705 « fiches ». Un préfixe plutôt qu'une liste de noms — le
+          // prochain curseur ajouté n'aura pas à être déclaré ici.
+          if (typeof data.domain === 'string' && data.domain.startsWith('directed-')) return
           const upd = data.updatedAt
           m.set(d.id, {
             domain: typeof data.domain === 'string' ? data.domain : undefined,

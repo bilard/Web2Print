@@ -17,6 +17,15 @@ export interface RateSample {
   at: number
   products: number
   pages: number
+  /**
+   * Battement de moisson du serveur (`harvestBeatAt`).
+   *
+   * ⚠⚠ C'est LUI qui prouve qu'une passe travaille, pas `pages` : le compteur de pages
+   * n'est réécrit qu'à la FIN d'une passe, alors que le battement avance en cours de
+   * route. Se fier aux pages mettait tous les cadrans à zéro pendant la collecte — le
+   * contraire exact de ce que ce tableau de bord existe pour montrer.
+   */
+  beat?: number
 }
 
 /**
@@ -54,6 +63,7 @@ export interface LiveRate {
 export function pushSample(history: RateSample[], next: RateSample): RateSample[] {
   const last = history[history.length - 1]
   const changed = !last || last.products !== next.products || last.pages !== next.pages
+    || last.beat !== next.beat
   const kept = changed ? [...history, next] : history
   return kept.filter((s) => next.at - s.at <= RATE_WINDOW_MS * 2)
 }
@@ -74,12 +84,16 @@ export function rateOf(history: RateSample[], now: number, beatAt?: number): Liv
   const perMin = (delta: number): number => (spanMs > 0 ? Math.max(0, Math.round((delta / spanMs) * 60_000)) : 0)
   const pagesPerMin = first && last ? perMin(last.pages - first.pages) : 0
   const rawProducts = first && last ? perMin(last.products - first.products) : 0
-  // ⚠⚠ Des fiches SANS pages ne sont pas une collecte : c'est le « Comparer » qui vient de
-  // réécrire le compteur avec la valeur dédupliquée. Relevé à l'écran : « 2 507 fiches/min ·
-  // 0 p/min » sur un site au balayage terminé — un régime de course affiché par un moteur à
-  // l'arrêt. On ne collecte pas de fiche sans lire de page ; sans cette règle, le cadran
-  // ment précisément au moment où on le consulte pour vérifier qu'il ne ment pas.
-  const productsPerMin = pagesPerMin > 0 ? rawProducts : 0
+  // ⚠⚠ Des fiches apparues sans qu'une PASSE ait battu ne sont pas une collecte : c'est le
+  // « Comparer » qui vient de réécrire le compteur avec la valeur dédupliquée. Relevé à
+  // l'écran : « 2 507 fiches/min · 0 p/min » sur un site au balayage terminé — un régime de
+  // course affiché par un moteur à l'arrêt.
+  //
+  // ⚠ Le juge est le BATTEMENT, pas le compteur de pages : celui-ci n'est réécrit qu'en fin
+  // de passe, si bien qu'exiger des pages remettait TOUS les cadrans à zéro pendant la
+  // collecte. Deuxième erreur du même bandeau, symétrique de la première.
+  const beatMoved = !!first && !!last && (last.beat ?? 0) > (first.beat ?? 0)
+  const productsPerMin = beatMoved || pagesPerMin > 0 ? rawProducts : 0
 
   const lastChangeAt = history.length ? history[history.length - 1].at : undefined
   // Le plus récent des deux signaux : un battement serveur sans changement de compteur

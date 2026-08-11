@@ -24,7 +24,9 @@ export function useLiveRates(meta: Map<string, HarvestMeta>): Map<string, LiveRa
   const now = Date.now()
   const out = new Map<string, LiveRate>()
   for (const [siteId, m] of meta) {
-    const sample: RateSample = { at: now, products: m.productCount ?? 0, pages: m.pageCount ?? 0 }
+    const sample: RateSample = {
+      at: now, products: m.productCount ?? 0, pages: m.pageCount ?? 0, beat: m.harvestBeatAt,
+    }
     histories.current.set(siteId, pushSample(histories.current.get(siteId) ?? [], sample))
     out.set(siteId, rateOf(histories.current.get(siteId)!, now, m.harvestBeatAt))
   }

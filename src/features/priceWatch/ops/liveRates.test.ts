@@ -84,3 +84,23 @@ describe('⚠⚠ un saut de compteur n’est pas un régime', () => {
     expect(rateOf(h, T + 60_000).productsPerMin).toBe(90)
   })
 })
+
+describe('⚠⚠ le battement prouve la collecte, pas le compteur de pages', () => {
+  it('compte le régime pendant une passe, alors que `pages` n’a pas encore bougé', () => {
+    // `pageCount` n'est réécrit qu'à la FIN d'une passe. Exiger des pages remettait tous
+    // les cadrans à zéro pendant la collecte — le contraire de ce que ce bandeau montre.
+    const h: RateSample[] = [
+      { at: T, products: 1_000, pages: 120, beat: T },
+      { at: T + 60_000, products: 1_090, pages: 120, beat: T + 55_000 },
+    ]
+    expect(rateOf(h, T + 60_000).productsPerMin).toBe(90)
+  })
+
+  it('mais un recomptage SANS battement reste à zéro', () => {
+    const h: RateSample[] = [
+      { at: T, products: 1_000, pages: 120, beat: T },
+      { at: T + 60_000, products: 3_500, pages: 120, beat: T },
+    ]
+    expect(rateOf(h, T + 60_000).productsPerMin).toBe(0)
+  })
+})
