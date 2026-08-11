@@ -62,11 +62,23 @@ const toRfEdge = (e: WorkflowEdge, nodes: WorkflowNode[]): Edge => {
   }
 }
 
-const fromRfNode = (n: Node): WorkflowNode => ({
+/**
+ * Node ReactFlow → node du flux.
+ *
+ * ⚠⚠ Le node d'ORIGINE est repris tel quel, seule la position est écrasée. Reconstruire
+ * l'objet à partir de `n.data` perdait tout champ que `toRfNode` ne transporte pas : le
+ * ByPass s'effaçait au premier DÉPLACEMENT d'une carte, sans un mot, et le flux repartait
+ * en exécutant les étapes désactivées. Le même piège attend n'importe quel champ ajouté
+ * plus tard au node — la seule parade est de ne rien reconstruire.
+ */
+export const fromRfNode = (n: Node, prev?: WorkflowNode): WorkflowNode => ({
+  ...(prev ?? {
+    id: n.id,
+    type: (n.data as { type: string }).type,
+    config: (n.data as { config: unknown }).config,
+  }),
   id: n.id,
-  type: (n.data as { type: string }).type,
   position: n.position,
-  config: (n.data as { config: unknown }).config,
 })
 
 const fromRfEdge = (e: Edge): WorkflowEdge => ({
@@ -156,7 +168,10 @@ export function WorkflowEditor() {
         const next = applyNodeChanges(changes, prev)
         const shouldPersist = changes.some((c) => PERSIST_NODE_CHANGE.has(c.type))
         if (shouldPersist) {
-          queueMicrotask(() => setStoreNodes(next.map(fromRfNode)))
+          // Les nodes du STORE servent de base : c'est eux qui portent les champs que
+          // ReactFlow ne connaît pas (ByPass…).
+          const byId = new Map((useWorkflowStore.getState().current?.nodes ?? []).map((x) => [x.id, x]))
+          queueMicrotask(() => setStoreNodes(next.map((x) => fromRfNode(x, byId.get(x.id)))))
         }
         return next
       })
