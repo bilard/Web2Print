@@ -1,24 +1,32 @@
-// Actions du suivi : lancer, arrêter, suspendre, reprendre ce qui reste — sans quitter
-// l'écran. Les opérations vivent dans radarScheduleActions.ts (PWA mobile, clefées par le
-// WORKFLOW) ; on ne fait qu'orchestrer leur appel ici.
+// Actions du suivi : lancer, arrêter, suspendre — sans quitter l'écran. Les opérations
+// vivent dans radarScheduleActions.ts (PWA mobile, clefées par le WORKFLOW) ; on ne fait
+// qu'orchestrer leur appel ici.
+//
+// ⚠ TROIS boutons, plus quatre. « Relancer ce qui reste » appelait exactement le même
+// `runWorkflowNow(workflowId)` que « Lancer (serveur) » — aucun drapeau de reprise n'était
+// transmis nulle part, et il ne s'activait que lorsque la carte « Textes » était DÉJÀ
+// réglée en reprise incrémentale, cas où un lancement normal ne refait déjà que le reste.
+// Un doublon, donc, qui occupait la place en laissant croire à une action distincte. Ce
+// qu'il apportait vraiment — savoir ce qu'un lancement va faire — est désormais DIT, par
+// la phrase sous les boutons.
 // ⚠ La permission `priceWatch.opsAct` se vérifie ICI, pas seulement sur l'entrée de menu :
 // masquer un bouton n'interdit rien, l'intent (palette, URL) contourne le rendu — d'où la
 // garde répétée dans `guard` et dans le gestionnaire d'intent.
-import { useEffect, useState } from 'react'
-import { Play, Square, PauseCircle, RotateCcw, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { Play, Square, PauseCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { getWorkflow } from '@/features/workflows/persistence/workflowsApi'
 import { runWorkflowNow, stopServerRun, suspendWorkflow } from '../radar/radarScheduleActions'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { OpsConfirm } from './OpsConfirm'
+import { useResumeMode } from './useResumeMode'
+import { resumeModeKey } from './opsFormat'
 import type { RunView } from './buildWatchOps'
 import { duration } from '../dashboard/format'
 import { useTranslation } from '@/lib/i18n'
 
-type Kind = 'run' | 'stop' | 'suspend' | 'resume'
-type ResumeState = 'loading' | 'ready' | 'noNode' | 'off' | 'error' | 'noWorkflow'
+type Kind = 'run' | 'stop' | 'suspend'
 type ConfirmKind = 'stop' | 'suspend'
 
 function Btn({ onClick, busy, disabled, title, icon: Icon, tone, children }: {
@@ -45,23 +53,8 @@ export function OpsActions({ workflowId, run }: { workflowId: string | null; run
   const uid = useWorkspaceUid()
   const canAct = useCan('priceWatch.opsAct')
   const [busy, setBusy] = useState<Kind | null>(null)
-  const [resumeState, setResumeState] = useState<ResumeState>('loading')
   const [confirmKind, setConfirmKind] = useState<ConfirmKind | null>(null)
-
-  // Présence du node « Textes » dans CE flux. ⚠ Un échec de lecture reste EXPLICITE
-  // (`error`), jamais confondu avec `loading` — un bouton grisé sans raison est une énigme.
-  useEffect(() => {
-    if (!uid || !workflowId) { setResumeState('noWorkflow'); return }
-    let alive = true
-    setResumeState('loading')
-    getWorkflow(uid, workflowId).then((wf) => {
-      if (!alive) return
-      const node = wf?.nodes.find((n) => n.type === 'text-enrich')
-      if (!node) { setResumeState('noNode'); return }
-      setResumeState((node.config as { incremental?: boolean } | undefined)?.incremental === false ? 'off' : 'ready')
-    }).catch(() => { if (alive) setResumeState('error') })
-    return () => { alive = false }
-  }, [uid, workflowId])
+  const resumeMode = useResumeMode(workflowId)
   const guard = (kind: Kind, fn: () => Promise<void>) => {
     if (!canAct) return
     if (!uid || !workflowId) { toast.error(t('ops.actions.noWorkflow')); return }
@@ -81,10 +74,6 @@ export function OpsActions({ workflowId, run }: { workflowId: string | null; run
     if (done) toast.success(t('ops.actions.suspend.done'))
     else toast.info(t('ops.actions.suspend.noCron'))
   })
-  const onResume = () => guard('resume', async () => {
-    const r = await runWorkflowNow(workflowId!)
-    toast.success(t('ops.actions.resume.ok', { nodes: r.nodeCount }))
-  })
   const onConfirm = () => {
     const kind = confirmKind
     setConfirmKind(null)
@@ -97,29 +86,23 @@ export function OpsActions({ workflowId, run }: { workflowId: string | null; run
     if (action === 'action:run') onRun()
     else if (action === 'action:stop' && run?.alive) setConfirmKind('stop')
     else if (action === 'action:suspend') setConfirmKind('suspend')
-    else if (action === 'action:resume' && resumeState === 'ready' && !run?.alive) onResume()
   })
   if (!canAct) return null
-  // Chaque état grisé porte SA raison — jamais un bouton mort sans explication.
-  const resumeReason = run?.alive ? t('ops.actions.resume.running')
-    : resumeState === 'loading' ? t('ops.actions.resume.loading')
-    : resumeState === 'noWorkflow' ? t('ops.actions.noWorkflow')
-    : resumeState === 'error' ? t('ops.actions.resume.error')
-    : resumeState === 'noNode' ? t('ops.actions.resume.noNode')
-    : resumeState === 'off' ? t('ops.actions.resume.off') : undefined
+  const resumeKey = resumeModeKey(resumeMode)
 
   return (
-    <div className="flex flex-wrap items-center gap-2" data-pw-section="ops-actions">
-      {run?.alive ? (
-        <Btn onClick={() => setConfirmKind('stop')} busy={busy === 'stop'} icon={Square} tone="stop">{t('ops.actions.stop')}</Btn>
-      ) : (
-        <Btn onClick={onRun} busy={busy === 'run'} icon={Play} tone="go">{t('ops.actions.run')}</Btn>
-      )}
-      <Btn onClick={() => setConfirmKind('suspend')} busy={busy === 'suspend'} icon={PauseCircle} tone="warn">{t('ops.actions.suspend')}</Btn>
-      <Btn onClick={onResume} busy={busy === 'resume'} disabled={resumeState !== 'ready' || !!run?.alive} title={resumeReason}
-        icon={RotateCcw} tone="neutral">
-        {t('ops.actions.resume')}
-      </Btn>
+    <div className="space-y-2" data-pw-section="ops-actions">
+      <div className="flex flex-wrap items-center gap-2">
+        {run?.alive ? (
+          <Btn onClick={() => setConfirmKind('stop')} busy={busy === 'stop'} icon={Square} tone="stop">{t('ops.actions.stop')}</Btn>
+        ) : (
+          <Btn onClick={onRun} busy={busy === 'run'} icon={Play} tone="go">{t('ops.actions.run')}</Btn>
+        )}
+        <Btn onClick={() => setConfirmKind('suspend')} busy={busy === 'suspend'} icon={PauseCircle} tone="warn">{t('ops.actions.suspend')}</Btn>
+      </div>
+      {/* Ce qu'un lancement fera, dit AVANT de cliquer — le réglage vit sur la carte
+          « Textes » du flux et décidait jusqu'ici en silence. */}
+      {resumeKey && <p className="text-xs text-white/45">{t(resumeKey)}</p>}
       <OpsConfirm
         open={confirmKind !== null}
         onOpenChange={(o) => { if (!o) setConfirmKind(null) }}

@@ -52,5 +52,14 @@ export interface WatchIncident {
   origin: 'client' | 'server'
 }
 
+/**
+ * Ce qu'un lancement fera du catalogue de textes — lu sur la carte « Textes » du flux.
+ *
+ * ⚠ Le type vit ICI, dans le module de types, et pas dans le hook qui le produit : le
+ * formateur (`opsFormat`) en a besoin lui aussi, et l'exporter depuis un module de hook
+ * rouvrirait la porte aux dépendances circulaires (cf. la baseline à 0 de `npm run cycles`).
+ */
+export type ResumeMode = 'loading' | 'on' | 'off' | 'noNode' | 'error' | 'noWorkflow'
+
 /** Au-delà, un incident ne renseigne plus personne et encombre la collection. */
 export const OPS_INCIDENT_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000
