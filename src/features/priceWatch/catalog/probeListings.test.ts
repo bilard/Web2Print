@@ -189,3 +189,37 @@ describe('childListings — la tête du chemin peut changer, pas le rayon', () =
     expect(childListings(html, parent).some((u) => u.endsWith('/2'))).toBe(false)
   })
 })
+
+
+// ⚠⚠ « Le stop n'a pas d'effet » : le sondage est la phase la PLUS LONGUE d'une passe
+// (jusqu'à 24 fetchs, une minute chacun derrière Cloudflare) et il ignorait l'annulation.
+// La moisson n'était interruptible qu'une fois arrivée à la boucle des pages — soit,
+// concrètement, plusieurs minutes après le clic.
+describe('probeListingUrls — l’arrêt interrompt le SONDAGE', () => {
+  const html = '<div class="product-miniature"><a href="/p1.html">A</a><span class="price">10,00 €</span></div>'.repeat(5)
+
+  it('cesse de sonder dès que le signal est levé', async () => {
+    const ac = new AbortController()
+    let fetched = 0
+    await probeListingUrls(
+      ['/a', '/b', '/c', '/d'],
+      async () => { fetched++; ac.abort(); return html },
+      () => 9,
+      { signal: ac.signal },
+    )
+    // Une sonde est partie avant l'arrêt : c'est elle qui l'a déclenché. Aucune ensuite.
+    expect(fetched).toBe(1)
+  })
+
+  it('sonde normalement sans signal', async () => {
+    let fetched = 0
+    const found = await probeListingUrls(
+      ['/a', '/b'],
+      async () => { fetched++; return html },
+      () => 9,
+      {},
+    )
+    expect(fetched).toBe(2)
+    expect(found).toHaveLength(2)
+  })
+})

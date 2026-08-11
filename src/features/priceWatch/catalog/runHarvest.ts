@@ -112,7 +112,7 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   const children: string[] = []
   const confirmed = await probeListingUrls(
     candidates, deps.fetchHtml, (html, url) => extractListingProducts(html, url).length,
-    { log: deps.log, onListing: (url, html) => children.push(...childListings(html, url)) },
+    { log: deps.log, signal: deps.signal, onListing: (url, html) => children.push(...childListings(html, url)) },
   )
   if (confirmed.length === 0) return []
 
@@ -219,6 +219,12 @@ export async function harvestPass(
       return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: true, cursor }
     }
     const categories = await planCategories(cfg, deps)
+    // Arrêt demandé PENDANT la découverte : on ne poursuit pas sur un plan à moitié sondé,
+    // et surtout on n'écrit pas `planFailedAt` — la découverte n'a pas échoué, on l'a
+    // interrompue ; la marquer en échec imposerait un délai de garde avant le prochain essai.
+    if (deps.signal?.aborted) {
+      return { siteId: cfg.siteId, pagesFetched: 0, productsIndexed: 0, sweepComplete: false, cursor: cursor ?? initCursor([]) }
+    }
     if (categories.length === 0) {
       deps.log?.(t('run.harvest.noCategory', { domain: cfg.domain }))
       const empty = { ...(cursor ?? initCursor([])), planFailedAt: now }

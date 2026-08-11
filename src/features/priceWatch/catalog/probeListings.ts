@@ -215,6 +215,11 @@ export interface ProbeOptions {
   /** Appelé pour chaque page CONFIRMÉE comme liste, avec son HTML déjà en main. Permet
    *  d'en extraire les sous-rayons (`childListings`) sans une seule requête de plus. */
   onListing?: (url: string, html: string) => void
+  /** Arrêt demandé. ⚠⚠ Le sondage est la phase la PLUS LONGUE d'une passe — jusqu'à 24
+   *  fetchs, une minute chacun sur un site derrière Cloudflare — et il ignorait
+   *  l'annulation : le bouton « Arrêter » restait sans effet pendant des minutes, la
+   *  moisson n'étant interruptible qu'une fois arrivée à la boucle des pages. */
+  signal?: AbortSignal
   log?: (m: string) => void
 }
 
@@ -241,6 +246,7 @@ export async function probeListingUrls(
   let probes = 0
 
   for (const url of candidates) {
+    if (opts.signal?.aborted) break
     if (probes >= maxProbes || found.length >= enough) break
     probes++
     const html = await fetchHtml(url)
