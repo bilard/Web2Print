@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeComposedHtml } from './reportCompose'
+import { normalizeComposedHtml, reportFacts } from './reportCompose'
 
 
 // ⚠⚠ Sur téléphone, le mail composé sortait du cadre : le lecteur voyait la colonne des
@@ -43,5 +43,55 @@ describe('mise en page repliable', () => {
   it('déclare le thème sombre au client de messagerie', () => {
     expect(normalizeComposedHtml(`<table>${'x'.repeat(250)}</table>`))
       .toContain('color-scheme:dark')
+  })
+})
+
+
+// ⚠⚠ LA raison d'être de l'enrichissement du 2026-08-11 : on ne peut pas rédiger une
+// consigne sur des données que le modèle ne voit pas. Le rapport portait le stock et le
+// prix barré du concurrent depuis toujours ; le prompt n'en transmettait rien.
+describe('reportFacts — la distorsion, pas seulement l’écart', () => {
+  const cell = (o: Record<string, unknown>) => ({
+    siteId: 's', domain: 'www.rival.fr', priceTtc: 96, listPriceTtc: null,
+    gapPct: -20, stock: 'in-stock', match: 'exact', ...o,
+  })
+  const productWith = (cells: unknown[]) => ({
+    runAt: Date.now(),
+    kpis: { products: 1, comparisons: 1, productsUndercut: 1 },
+    byCompetitor: [], byFamily: [], sites: [], totalMatched: 1, truncated: false,
+    products: [{
+      id: 'p1', name: 'LAME 520MM', reference: 'X1', ean: null, famille: 'LAMES',
+      myPriceHt: 100, sourceUrl: null, bestGapPct: -20, undercut: true, competitors: cells,
+    }],
+  } as unknown as Parameters<typeof reportFacts>[0])
+
+  it('compte à part le sous-coté dont le moins cher est EN RUPTURE — il ne prend pas la vente', () => {
+    const f = reportFacts(productWith([cell({ stock: 'out-of-stock' })]))
+    expect(f.sous_cotes_dont_le_moins_cher_est_en_rupture).toBe(1)
+    expect(f.sous_cotes_dont_le_moins_cher_est_en_promo).toBe(0)
+  })
+
+  it('compte à part le sous-coté dont le moins cher affiche un PRIX BARRÉ — promo datée', () => {
+    const f = reportFacts(productWith([cell({ listPriceTtc: 140 })]))
+    expect(f.sous_cotes_dont_le_moins_cher_est_en_promo).toBe(1)
+    expect(f.sous_cotes_dont_le_moins_cher_est_en_rupture).toBe(0)
+  })
+
+  it('l’exemple porte QUI est moins cher, à quel prix et dans quel état', () => {
+    const f = reportFacts(productWith([
+      cell({ domain: 'www.cher.fr', gapPct: -5, priceTtc: 114 }),
+      cell({ domain: 'www.agressif.fr', gapPct: -30, priceTtc: 84, listPriceTtc: 120, stock: 'on-order' }),
+    ]))
+    // ⚠ Le MOINS cher, pas le premier de la liste.
+    expect((f.exemples_de_produits_sous_cotes as Record<string, unknown>[])[0]).toMatchObject({
+      moins_cher_chez: 'agressif.fr', son_prix_ttc: 84, son_stock: 'on-order',
+      en_promo: true, son_prix_barre_ttc: 120,
+    })
+  })
+
+  it('ne prétend rien quand aucun concurrent n’a de prix', () => {
+    const f = reportFacts(productWith([cell({ gapPct: null })]))
+    expect(f.sous_cotes_dont_le_moins_cher_est_en_rupture).toBe(0)
+    expect((f.exemples_de_produits_sous_cotes as Record<string, unknown>[])[0].moins_cher_chez).toBeNull()
   })
 })

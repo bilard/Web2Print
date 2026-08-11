@@ -72,6 +72,30 @@ export function movesFacts(moves: PriceEvent[]): Record<string, unknown> | null 
   }
 }
 
+/** La cellule du concurrent le MOINS CHER d'un produit — celle qui fixe `bestGapPct`. */
+function cheapestCell(p: StoredReport['products'][number]) {
+  let best: (typeof p.competitors)[number] | null = null
+  for (const c of p.competitors ?? []) {
+    if (c.gapPct == null) continue
+    if (!best || (c.gapPct as number) < (best.gapPct as number)) best = c
+  }
+  return best
+}
+
+/** Combien de produits sous-cotés dont le concurrent le moins cher vérifie `pred`. */
+function undercutBy(
+  report: StoredReport,
+  pred: (c: NonNullable<ReturnType<typeof cheapestCell>>) => boolean,
+): number {
+  let n = 0
+  for (const p of report.products ?? []) {
+    if (!p.undercut) continue
+    const best = cheapestCell(p)
+    if (best && pred(best)) n++
+  }
+  return n
+}
+
 /** Faits transmis au modèle : bornés, déjà agrégés, sans donnée brute à recalculer. */
 export function reportFacts(report: StoredReport): Record<string, unknown> {
   const k = report.kpis
@@ -105,16 +129,34 @@ export function reportFacts(report: StoredReport): Record<string, unknown> {
       }))
       .sort((a, b) => b.part_sous_cotes_pct - a.part_sous_cotes_pct)
       .slice(0, 25),
+    // ⚠⚠ LA DISTORSION, pas seulement l'écart. Un concurrent moins cher MAIS EN RUPTURE ne
+    // prend pas la vente ; un prix BARRÉ est une promotion datée, pas un prix de fond. Ces
+    // deux nombres existaient dans le rapport (`ProductRow.competitors[]` porte `stock` et
+    // `listPriceTtc`) et ne sortaient nulle part : on ne pouvait donc pas les demander, et
+    // le modèle — à qui il est interdit d'inventer — se taisait sans qu'on sache pourquoi.
+    sous_cotes_dont_le_moins_cher_est_en_rupture: undercutBy(report, (c) => c.stock === 'out-of-stock'),
+    sous_cotes_dont_le_moins_cher_est_en_promo: undercutBy(report, (c) => c.listPriceTtc != null),
     // ⚠ ÉCHANTILLON : rangé par écart le plus négatif et plafonné. Sert d'illustration,
     // jamais de base de calcul — le modèle en est averti dans la consigne technique.
     exemples_de_produits_sous_cotes: [...(report.products ?? [])]
       .filter((p) => p.bestGapPct != null)
       .sort((a, b) => (a.bestGapPct ?? 0) - (b.bestGapPct ?? 0))
       .slice(0, 20)
-      .map((p) => ({
-        produit: p.name, reference: p.reference, mon_prix_ht: p.myPriceHt,
-        meilleur_ecart_pct: p.bestGapPct,
-      })),
+      .map((p) => {
+        const best = cheapestCell(p)
+        return {
+          produit: p.name, reference: p.reference, mon_prix_ht: p.myPriceHt,
+          meilleur_ecart_pct: p.bestGapPct,
+          // Qui est moins cher, à quel prix, et dans quel état : sans ces trois-là, un
+          // écart de −30 % ne dit pas s'il faut s'aligner ou l'ignorer.
+          moins_cher_chez: best ? best.domain.replace(/^www\./, '') : null,
+          son_prix_ttc: best?.priceTtc ?? null,
+          son_stock: best?.stock ?? null,
+          en_promo: best ? best.listPriceTtc != null : null,
+          son_prix_barre_ttc: best?.listPriceTtc ?? null,
+          apparie_par: best?.match ?? null,
+        }
+      }),
   }
 }
 

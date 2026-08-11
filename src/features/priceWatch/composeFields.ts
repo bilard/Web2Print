@@ -33,6 +33,8 @@ export const COMPOSE_FIELDS: ComposeFieldGroup[] = [
       { key: 'indice_vs_meilleur_prix', labelKey: 'pw.compose.f.indice_best' },
       { key: 'comparaisons_ou_le_concurrent_est_moins_cher', labelKey: 'pw.compose.f.cheaper' },
       { key: 'ruptures_chez_les_concurrents', labelKey: 'pw.compose.f.ruptures' },
+      { key: 'sous_cotes_dont_le_moins_cher_est_en_rupture', labelKey: 'pw.compose.f.undercut_oos' },
+      { key: 'sous_cotes_dont_le_moins_cher_est_en_promo', labelKey: 'pw.compose.f.undercut_promo' },
       { key: 'concurrents', labelKey: 'pw.compose.f.concurrents' },
       { key: 'familles', labelKey: 'pw.compose.f.familles' },
       { key: 'exemples_de_produits_sous_cotes', labelKey: 'pw.compose.f.exemples' },
@@ -61,4 +63,12 @@ export const COMPOSE_PRESETS: { labelKey: TranslationKey; textKey: TranslationKe
   { labelKey: 'pw.compose.preset.short.label', textKey: 'pw.compose.preset.short.text' },
   { labelKey: 'pw.compose.preset.moves.label', textKey: 'pw.compose.preset.moves.text' },
   { labelKey: 'pw.compose.preset.family.label', textKey: 'pw.compose.preset.family.text' },
+  // ⚠ Les quatre suivants exploitent le stock et le prix barré du concurrent le moins
+  // cher, transmis depuis 2026-08-11 seulement. Écrits sur les clés RÉELLES du prompt :
+  // une consigne qui demanderait autre chose obtiendrait un silence, le modèle ayant
+  // interdiction d'inventer.
+  { labelKey: 'pw.compose.preset.distortion.label', textKey: 'pw.compose.preset.distortion.text' },
+  { labelKey: 'pw.compose.preset.react.label', textKey: 'pw.compose.preset.react.text' },
+  { labelKey: 'pw.compose.preset.competitor.label', textKey: 'pw.compose.preset.competitor.text' },
+  { labelKey: 'pw.compose.preset.pulse.label', textKey: 'pw.compose.preset.pulse.text' },
 ]
