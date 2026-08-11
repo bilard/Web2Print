@@ -162,11 +162,24 @@ registerServerNode({
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.rules', { summary: JSON.stringify(summarizeRules(rules)) }))
     }
     const pairing = createPairingRun(sourceProducts, { vatRate, rules })
+    /**
+     * Fiches réellement présentes dans l'index, par site.
+     *
+     * ⚠⚠ Le recalage du compteur live ne visait que `report.byCompetitor` — donc PAS les
+     * concurrents « sans aucun appariement », précisément ceux que le rapport écarte. Leur
+     * compteur cumulait alors les passes sans jamais être corrigé : granit-parts.fr
+     * affichait 1 752 fiches pour 900 réellement indexées, et l'écart doublait à chaque
+     * balayage. Le chiffre le plus regardé de l'écran était le plus faux.
+     */
+    const indexedBySite = new Map<string, number>()
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
       if (meta?.cumulHarvestMs != null) harvestBySite.set(s.siteId, { lastMs: meta.lastHarvestMs ?? 0, cumulMs: meta.cumulHarvestMs, progress: meta.harvestProgress ?? 0, sweeps: meta.harvestSweeps ?? 0 })
       const listings = await loadAllListings(ctx.uid, watchId, s.siteId)
+      // Compte RÉEL et dédupliqué de l'index, retenu pour recaler le compteur live plus
+      // bas — y compris pour les sites que le rapport écartera faute d'appariement.
+      indexedBySite.set(s.siteId, listings.length)
       readCount += listings.length
       pairing.addSite(s, listings)
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
@@ -233,9 +246,11 @@ registerServerNode({
         })))
         .catch((e) => ctx.log('warn', t(ctx.locale, 'run.sourceCatalogNotPersisted', { message: e instanceof Error ? e.message : String(e) })))
       // Recale le compteur live « Fiches collectées » sur le compte dédupliqué exact
-      // (annule la dérive de l'incrément live de la moisson).
-      await Promise.all(report.byCompetitor.map((c) =>
-        saveCompetitorMeta(ctx.uid, watchId, c.siteId, { productCount: c.audit.indexed })))
+      // (annule la dérive de l'incrément live de la moisson). ⚠ TOUS les sites lus, pas
+      // seulement ceux retenus au rapport : un concurrent sans appariement collecte quand
+      // même, et son compteur dérivait sans fin.
+      await Promise.all([...indexedBySite].map(([siteId, indexed]) =>
+        saveCompetitorMeta(ctx.uid, watchId, siteId, { productCount: indexed })))
       ctx.log('info', t(ctx.locale, 'run.dashboardSaved', { watchId }))
     } catch (err) {
       ctx.log('warn', t(ctx.locale, 'run.dashboardNotSaved', { message: err instanceof Error ? err.message : String(err) }))

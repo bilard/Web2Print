@@ -77,8 +77,13 @@ export async function recomputeReport(
   // raconterait la progression du scraping, pas le mouvement des prix.
   await saveCatalogReport(uid, watchId, report, siteRefs, Date.now(), { ...opts, trend: false })
   // Recale le compteur « fiches » sur le compte dédupliqué exact (comme le node Comparer).
-  await Promise.all(report.byCompetitor.map((c) =>
-    saveCompetitorMeta(uid, watchId, c.siteId, { productCount: c.audit.indexed })))
+  // ⚠⚠ Depuis `indexBySite`, donc pour TOUS les sites lus — pas seulement ceux retenus au
+  // rapport. Les concurrents « sans aucun appariement » en sont écartés, et leur compteur
+  // n'était donc jamais corrigé : il cumulait les passes sans fin. Relevé en production,
+  // granit-parts.fr annonçait 1 752 fiches pour 900 réellement indexées, l'écart doublant
+  // à chaque balayage — le chiffre le plus regardé de l'écran était le plus faux.
+  await Promise.all([...indexBySite].map(([siteId, listings]) =>
+    saveCompetitorMeta(uid, watchId, siteId, { productCount: listings.length })))
 
   return { matched: report.kpis.products, sites: siteRefs.length }
 }
