@@ -41,9 +41,20 @@ export interface HarvestCursor {
   planFailedAt?: number
 }
 
-/** Délai avant de re-tenter une planification qui n'a rien trouvé. Un site illisible ne
- *  redevient pas lisible en une minute ; une relance MANUELLE (▶) l'ignore. */
-export const PLAN_RETRY_COOLDOWN_MS = 2 * 60 * 60 * 1000
+/**
+ * Délai avant de re-tenter une planification qui n'a rien trouvé. Un site illisible ne
+ * redevient pas lisible en une minute ; une relance MANUELLE (▶) l'ignore.
+ *
+ * ⚠ Vingt minutes, pas deux heures.
+ *
+ * Le délai protège des sondages répétés (jusqu'à vingt-quatre requêtes) sur un site que la
+ * découverte ne sait pas lire. Mais il s'applique aussi APRÈS un correctif : mesuré ce
+ * soir, granit-parts.fr et swap-europe sont restés muets run après run alors que le bug de
+ * lecture était corrigé et déployé — deux heures d'attente pour une panne réparée depuis
+ * dix minutes. Vingt minutes gardent l'économie (trois sondages par heure au pire) sans
+ * transformer chaque correctif en demi-journée d'attente.
+ */
+export const PLAN_RETRY_COOLDOWN_MS = 20 * 60 * 1000
 
 /** Plafond de pages par catégorie : garde-fou contre une pagination sans fin
  *  (page inexistante renvoyant la page 1). Cohérent avec le node list-products. */
