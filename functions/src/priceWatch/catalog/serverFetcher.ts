@@ -126,6 +126,28 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
     if (challenge) { blocked = challenge; return null }
     return html ?? null
   }
+
+  /**
+   * Dernier recours d'un moteur FORCÉ : une protection anti-bot a répondu à la place du
+   * site.
+   *
+   * ⚠⚠ Un moteur forcé ne retombe pas sur la cascade — c'est voulu, et ça reste vrai pour
+   * une panne de service : l'utilisateur a désigné ce moteur, on n'en change pas dans son
+   * dos. Mais un DÉFI anti-bot n'est pas une panne du moteur : c'est le site qui refuse de
+   * répondre à ce canal-là, quel qu'il soit. Mesuré sur granit-parts.fr réglé sur Jina :
+   * toutes les grilles rendaient « Just a moment… », soit zéro fiche à chaque run, pendant
+   * que le Scraping Browser ramenait 33 723 caractères utiles sur des pages voisines. On a
+   * choisi un lecteur, pas une page de défi.
+   *
+   * Escalade réservée à ce cas précis, et payante : elle ne se déclenche que si une
+   * protection a été formellement reconnue.
+   */
+  const escalateIfBlocked = async (url: string): Promise<string | null> => {
+    if (!blocked) return null
+    const html = keep((await brightDataRead(url).catch(() => null))?.html)
+    if (html) { last = 'brightdata'; return html }
+    return null
+  }
   let jar: string | null = null
   let jarTried = false
 
@@ -196,7 +218,7 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
         // `scroll` : pages LISTE lazy-load — parité exacte avec `siteFetch` côté client.
         const html = keep(await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null))
         if (html) { last = 'firecrawl'; return html }
-        return null
+        return escalateIfBlocked(url)
       },
     }
   }
@@ -209,7 +231,7 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
       fetchHtml: async (url) => {
         const html = keep(await jinaOf(url))
         if (html) { last = 'jina'; return html }
-        return null
+        return escalateIfBlocked(url)
       },
     }
   }
