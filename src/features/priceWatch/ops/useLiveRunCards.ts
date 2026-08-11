@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase/config'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { getWorkflow } from '../../workflows/persistence/workflowsApi'
 import { nodeRegistry } from '../../workflows/registry'
+import { initWorkflowsRegistry } from '../../workflows/registry/builtin'
 import { runProgress, type RunProgress } from '../../workflows/runtime/runProgress'
 import type { Workflow, NodeRunState, NodeStatus } from '../../workflows/types'
 import { useTranslation } from '@/lib/i18n'
@@ -45,6 +46,16 @@ export function useLiveRunCards(workflowId: string | null): RunProgress | null {
   const uid = useWorkspaceUid()
   const [wf, setWf] = useState<Workflow | null>(null)
   const [runDoc, setRunDoc] = useState<RunLiveDoc | null>(null)
+
+  // ⚠⚠ SANS ceci, les cartes s'affichaient sous leur nom TECHNIQUE — `harvest-competitor`,
+  // `compare-catalog`, `gsheets-import`, `text-enrich` — là où l'éditeur montre des
+  // libellés lisibles. Le registre des nodes se remplit par EFFET DE BORD : les specs ne
+  // sont enregistrées que si `builtin.ts` a été importé, ce que font l'éditeur et l'écran
+  // Résultats mais que le module « Suivi » ne faisait pas. `nodeRegistry.get()` renvoyait
+  // donc `undefined` et le repli sur `node.type` prenait la main — un repli qui restait
+  // muet, puisqu'il produit une chaîne parfaitement affichable. Idempotent, sans coût au
+  // second appel.
+  useEffect(() => { initWorkflowsRegistry() }, [])
 
   useEffect(() => {
     if (!uid || !workflowId) { setWf(null); return }
