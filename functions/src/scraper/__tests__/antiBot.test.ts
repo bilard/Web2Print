@@ -13,7 +13,7 @@ describe('antiBotChallenge', () => {
   })
 
   it('reconnaît les autres protections par leur signature technique', () => {
-    expect(antiBotChallenge('<html><script src="/cdn-cgi/challenge-platform/h/b/x"></script>')).toBe('Cloudflare')
+    expect(antiBotChallenge('<html><script src="/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1"></script>')).toBe('Cloudflare')
     expect(antiBotChallenge('<html>…geo.captcha-delivery.com/captcha/…')).toBe('DataDome')
     expect(antiBotChallenge('<html>Incapsula incident ID: 1234-567')).toBe('Incapsula')
     expect(antiBotChallenge('<html><div id="px-captcha"></div>')).toBe('PerimeterX')
@@ -36,5 +36,23 @@ describe('antiBotChallenge', () => {
     expect(antiBotChallenge('')).toBeNull()
     expect(antiBotChallenge(null)).toBeNull()
     expect(antiBotChallenge(undefined)).toBeNull()
+  })
+})
+
+describe('⚠⚠ non-régression : une page SERVIE par Cloudflare n’est pas un défi', () => {
+  // Fixture RÉELLE : accueil de granit-parts.fr, servi normalement (123 ko, 84 rayons).
+  // Cloudflare y injecte `/cdn-cgi/challenge-platform/scripts/jsd/main.js` — sa détection
+  // de navigateur. Compter ce chemin comme un défi a fait jeter la page, d'où « accueil
+  // injoignable » puis zéro produit : le bug que ce module devait corriger, en pire.
+  const SERVED = readFileSync(join(__dirname, 'fixtures/cloudflare-served-ok.html'), 'utf-8')
+
+  it('laisse passer la page saine malgré le script de détection Cloudflare', () => {
+    expect(SERVED).toContain('/cdn-cgi/challenge-platform/scripts/jsd/main.js')
+    expect(antiBotChallenge(SERVED)).toBeNull()
+  })
+
+  it('distingue le chemin du DÉFI de celui de la détection', () => {
+    expect(antiBotChallenge('<html>…/cdn-cgi/challenge-platform/scripts/jsd/main.js')).toBeNull()
+    expect(antiBotChallenge('<html>…/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1?ray=x')).toBe('Cloudflare')
   })
 })

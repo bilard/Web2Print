@@ -21,9 +21,22 @@
 // Incapsula, PerimeterX), jamais le site. Signal absent → verdict `null` → comportement
 // strictement inchangé.
 
-/** Marqueurs NON AMBIGUS : ces chaînes n'apparaissent que dans une page de défi. */
+/**
+ * Marqueurs NON AMBIGUS : ces chaînes n'apparaissent que dans une page de défi.
+ *
+ * ⚠⚠ `/cdn-cgi/challenge-platform` N'EN FAIT PAS PARTIE, et l'y avoir mis a cassé
+ * exactement le site que ce module devait réparer. Cloudflare injecte
+ * `/cdn-cgi/challenge-platform/scripts/jsd/main.js` — sa détection de navigateur — dans
+ * les pages qu'il sert NORMALEMENT : la page d'accueil de granit-parts.fr, 123 ko de vrai
+ * contenu et quatre-vingt-quatre rayons, était déclarée « page de défi » et jetée. Résultat
+ * « accueil injoignable », zéro catégorie, zéro produit — le symptôme d'origine, aggravé.
+ *
+ * Seul le chemin `orchestrate/chl_page` est propre au défi lui-même ; `scripts/jsd` orne
+ * les pages saines. Leçon : un marqueur « fort » doit être vérifié sur une page SERVIE,
+ * pas seulement sur une page refusée.
+ */
 const STRONG: [RegExp, string][] = [
-  [/cf-browser-verification|\/cdn-cgi\/challenge-platform|window\._cf_chl_opt/i, 'Cloudflare'],
+  [/cf-browser-verification|challenge-platform\/[^"']*\/chl_page|window\._cf_chl_opt/i, 'Cloudflare'],
   [/geo\.captcha-delivery\.com|dd_cookie_test/i, 'DataDome'],
   [/_Incapsula_Resource|Incapsula incident ID/i, 'Incapsula'],
   [/px-captcha|\/px\/captcha|captcha\.px-cdn\.net/i, 'PerimeterX'],
