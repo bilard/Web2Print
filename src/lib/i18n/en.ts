@@ -1678,6 +1678,8 @@ export const en: Record<TranslationKey, string> = {
   'ss.scrape.start': 'Harvest this site now (this competitor only)',
   'ss.scrape.stop': 'Stop the harvest — pages already collected stay saved',
   'tst.ss.harvestStopped': 'Harvest of {domain} stopped · {products} listing(s) kept',
+  'tst.ss.groupActive': "In service",
+  'tst.ss.groupInactive': "Idle",
   'tst.ss.harvestNoProduct': 'No listing on {domain} — {reason}',
   'tst.ss.harvestNoReason': 'the engine said nothing more (check the console with debug=1)',
   'ss.reset.title': 'Reset the data collected for this site (erases everything, clean re-scrape)',

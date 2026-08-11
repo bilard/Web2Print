@@ -114,7 +114,9 @@ export function RadarScheduleBar({ sched, pulse, workflowId, now }: {
               // main quoi qu'il arrive (fin, pause ou crash).
               sched ? (
                 <p className="mt-0.5 radar-tnum" style={{ color: '#fbbf24' }}>
-                  reprise auto ≤ <b>{hhmm(sched.nextRunAt)}</b> {overdue ? <b>(imminente)</b> : <>(dans <b>{fmtCountdown(sched.nextRunAt - now)}</b>)</>}
+                  {/* Même formulation que le panneau du workflow : cette heure est
+                      l'échéance du VERROU, pas un délai d'attente imposé au run suivant. */}
+                  verrou levé au plus tard à <b>{hhmm(sched.nextRunAt)}</b> {overdue ? <b>(imminente)</b> : <>(dans <b>{fmtCountdown(sched.nextRunAt - now)}</b>)</>}
                 </p>
               ) : (
                 // Run lancé à la main sans planification : aucun verrou, aucune relance.

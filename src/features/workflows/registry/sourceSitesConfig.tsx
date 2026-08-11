@@ -408,8 +408,26 @@ export function SourceSitesConfig({ config, onChange }: {
         </p>
       ) : (
         <div className="flex flex-col gap-1">
-          {displayRows.map(({ r, i, stats }) => (
+          {displayRows.map(({ r, i, stats }, k) => (
             <div key={stableId(normalizeDomain(r.domain)) + i}>
+              {/* ⚠ Frontière EXPLICITE entre les sites en service et les autres. Le tri les
+                  séparait déjà, mais rien ne le disait : la liste se lisait comme un
+                  continuum, et deux sites voisins — l'un moissonné, l'autre au repos depuis
+                  huit heures — ne se distinguaient que par une nuance de gris. On nomme
+                  donc les deux groupes et on les compte. */}
+              {(k === 0 || displayRows[k - 1].r.enabled !== r.enabled) && (
+                <div className={`flex items-center gap-2 ${k === 0 ? 'mb-1.5' : 'mt-4 mb-1.5'}`}>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap ${
+                    r.enabled ? 'text-emerald-300/80' : 'text-white/30'
+                  }`}>
+                    {r.enabled ? t('tst.ss.groupActive') : t('tst.ss.groupInactive')}
+                    <span className="ml-1.5 tabular-nums opacity-70">
+                      {displayRows.filter((d) => d.r.enabled === r.enabled).length}
+                    </span>
+                  </span>
+                  <span className={`h-px flex-1 ${r.enabled ? 'bg-emerald-400/20' : 'bg-white/8'}`} />
+                </div>
+              )}
               <SourceSitesRowItem
                 domain={r.domain}
                 enabled={r.enabled}

@@ -1677,6 +1677,8 @@ export const es: Record<TranslationKey, string> = {
   'ss.scrape.start': 'Recolectar este sitio ahora (solo este competidor)',
   'ss.scrape.stop': 'Detener la recolección — las páginas ya recogidas se conservan',
   'tst.ss.harvestStopped': 'Recolección de {domain} detenida · {products} ficha(s) conservada(s)',
+  'tst.ss.groupActive': "En servicio",
+  'tst.ss.groupInactive': "En reposo",
   'tst.ss.harvestNoProduct': 'Ninguna ficha en {domain} — {reason}',
   'tst.ss.harvestNoReason': 'el motor no dijo nada más (consulta la consola con debug=1)',
   'ss.reset.title': 'Restablecer los datos recopilados de este sitio (borra todo, re-scrape limpio)',

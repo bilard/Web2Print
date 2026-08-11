@@ -140,9 +140,15 @@ export function CronStatusPanel({ workflowId, children }: { workflowId: string; 
           </span>
           {/* Pendant un run, nextRunAt = échéance du VERROU : l'heure à laquelle le
               scanner reprendra la main quoi qu'il arrive (fin, pause ou crash).
-              Décompte LIVE (tick 1 s du panneau) pour voir l'échéance approcher. */}
+              Décompte LIVE (tick 1 s du panneau) pour voir l'échéance approcher.
+
+              ⚠ Le libellé disait « reprise auto ≤ », ce qui se lisait comme un DÉLAI
+              IMPOSÉ — « pourquoi la reprise est-elle aussi loin ? ». Elle ne l'est pas :
+              si le run se termine dans deux minutes, le suivant part aussitôt. Cette heure
+              n'est qu'un filet, pour le cas où un run resterait coincé. « Verrou levé au
+              plus tard à » dit la garantie sans promettre une attente. */}
           <span className="pl-3 text-amber-300/90">
-            reprise auto ≤ <b className="text-amber-200">{hhmm(sched.nextRunAt)}</b>{' '}
+            verrou levé au plus tard à <b className="text-amber-200">{hhmm(sched.nextRunAt)}</b>{' '}
             {overdue ? <b className="text-amber-200">(imminente)</b> : <>(dans <b className="tabular-nums text-amber-200">{formatCountdown(sched.nextRunAt - now)}</b>)</>}
           </span>
         </span>
