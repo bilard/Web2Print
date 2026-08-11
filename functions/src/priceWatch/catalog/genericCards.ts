@@ -302,6 +302,84 @@ function parseDataPayloadProducts(html: string, baseUrl?: string): CompetitorLis
   return out
 }
 
+/**
+ * Clés qui, dans un JSON, désignent une RÉFÉRENCE d'article de façon non ambiguë.
+ *
+ * ⚠ Volontairement plus étroites que `KEY_REF` : ce palier lit des objets trouvés
+ * n'importe où dans la page, sans le contexte rassurant d'un attribut `data-*`. « code »
+ * ou « item_id » y attraperaient des objets de tracking, de menu ou de bannière.
+ */
+const KEY_ARTICLE_REF = ['articlenumber', 'artikelnummer', 'ordernumber', 'sku', 'productnumber', 'mpn']
+
+/** Libellés d'un produit dans ces mêmes payloads (`articleName` s'ajoute à `KEY_NAME`). */
+const KEY_ARTICLE_NAME = ['articlename', ...KEY_NAME]
+
+/** Lien vers la fiche (`detailsUrl` s'ajoute aux conventions de `KEY_URL`). */
+const KEY_ARTICLE_URL = ['detailsurl', ...KEY_URL]
+
+/** Objets examinés au plus par page : au-delà, on lit un fichier de données, pas une grille. */
+const MAX_JSON_CANDIDATES = 600
+
+/**
+ * Catalogue embarqué en JSON dans la page — dernier recours avant les cartes DOM.
+ *
+ * ⚠⚠ Le palier qui débloque les sites rendus côté serveur (Vue/Nuxt, Angular Universal,
+ * boutiques « maison ») : la grille visible est peinte par le JavaScript à partir d'un
+ * état embarqué, et le HTML livré ne contient AUCUNE carte — mais il contient les données.
+ * Mesuré sur granit-parts.fr : les pages de rayon portent vingt-quatre produits complets
+ * (référence, libellé, lien, image, caractéristiques) dans un état sérialisé, quand
+ * l'inspection DOM en trouvait zéro. Sans ce palier, on lisait la bonne page et on en
+ * ressortait les mains vides.
+ *
+ * ⚠ Le PRIX n'est pas exigé : ces catalogues le réservent souvent aux clients connectés
+ * (« netPrice: "–" »). Exiger un prix reviendrait à jeter le catalogue entier d'un
+ * grossiste B2B — cf. `pageHasNoPrice`, même raisonnement.
+ *
+ * GÉNÉRIQUE : reconnaît la FORME (un objet portant une référence d'article ET un libellé
+ * ET un lien), jamais un site. Moins de deux produits → palier suivant, comportement
+ * inchangé.
+ */
+function parseEmbeddedJsonProducts(html: string, baseUrl?: string): CompetitorListing[] {
+  // Ces payloads voyagent souvent HTML-encodés (attribut, ou état sérialisé dans un
+  // script) : sans décodage préalable, `"articleNumber"` s'écrit `&quot;articleNumber&quot;`
+  // et aucune clé ne se reconnaît.
+  const text = html.includes('&quot;') ? decode(html) : html
+  const out: CompetitorListing[] = []
+  const keyRe = new RegExp(`"(?:${KEY_ARTICLE_REF.join('|')})"\\s*:\\s*"`, 'gi')
+  let seen = 0
+  for (const m of text.matchAll(keyRe)) {
+    if (++seen > MAX_JSON_CANDIDATES) break
+    // Remonter à l'accolade ouvrante de l'objet qui PORTE cette clé. La fenêtre bornée
+    // évite de repartir à l'autre bout du document sur un JSON malformé.
+    const from = text.lastIndexOf('{', m.index ?? 0)
+    if (from < 0 || (m.index ?? 0) - from > 8000) continue
+    const raw = readJsonObject(text, from, 24_000)
+    if (!raw) continue
+    let obj: unknown
+    try { obj = JSON.parse(raw) } catch { continue }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) continue
+    const rec = obj as Record<string, unknown>
+    const ref = pick(rec, KEY_ARTICLE_REF)
+    const name = pick(rec, KEY_ARTICLE_NAME)
+    const url = pick(rec, KEY_ARTICLE_URL)
+    if (typeof ref !== 'string' || ref.trim().length < 3) continue
+    if (typeof name !== 'string' || name.trim().length < 3) continue
+    if (typeof url !== 'string' || !url.includes('/')) continue
+    const abs = absUrl(url, baseUrl)
+    if (!abs) continue
+    const image = pick(rec, KEY_IMAGE)
+    out.push({
+      url: abs,
+      name: decode(name.trim()).slice(0, 200),
+      ref: ref.trim(),
+      price: asNumber(pick(rec, KEY_PRICE)),
+      image: typeof image === 'string' ? absUrl(image, baseUrl) : undefined,
+      currency: 'EUR',
+    })
+  }
+  return out
+}
+
 /** Une carte par tranche, entre deux positions de découpe. */
 function cutCards(html: string, starts: number[], baseUrl?: string): CompetitorListing[] {
   const out: CompetitorListing[] = []
@@ -377,7 +455,8 @@ function dedupe(cards: CompetitorListing[]): CompetitorListing[] {
  * n'est pas une page liste, soit la techno n'est pas couverte.
  */
 export function parseListingDomCards(html: string, baseUrl?: string): CompetitorListing[] {
-  for (const tier of [parseMicrodataProducts, parseDataPayloadProducts, parseDataAttrProducts, parseDomCards]) {
+  for (const tier of [parseMicrodataProducts, parseDataPayloadProducts, parseDataAttrProducts,
+    parseEmbeddedJsonProducts, parseDomCards]) {
     const cards = dedupe(tier(html, baseUrl))
     if (cards.length >= 2) return cards
   }

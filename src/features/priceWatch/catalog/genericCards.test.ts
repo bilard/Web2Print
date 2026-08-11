@@ -248,3 +248,26 @@ describe('cartes décrites par des ATTRIBUTS data-* (plateforme maison, prix non
     expect(rows).toHaveLength(0)
   })
 })
+
+describe('catalogue embarqué en JSON (grille peinte par le JavaScript)', () => {
+  // Fixture RÉELLE : page de rayon de granit-parts.fr lue via Jina le 2026-08-11. La
+  // grille visible n'existe pas dans le HTML — elle est peinte à partir d'un état
+  // sérialisé. L'inspection DOM y trouvait ZÉRO produit sur une page qui en porte 24.
+  const html = readFileSync(join(__dirname, '__fixtures__/granit-category-embedded.html'), 'utf-8')
+
+  it('sort les produits que le DOM ne montre pas', () => {
+    const cards = parseListingDomCards(html, 'https://www.granit-parts.fr/e/category/Filtres')
+    expect(cards.length).toBeGreaterThanOrEqual(10)
+    const donaldson = cards.find((c) => c.ref === '566P526410')
+    expect(donaldson).toBeDefined()
+    expect(donaldson!.name).toContain('Filtre à air')
+    expect(donaldson!.url).toBe('https://www.granit-parts.fr/e/product/566P526410?id=59514336')
+  })
+
+  it('⚠ n’exige PAS de prix : ce grossiste les réserve aux clients connectés', () => {
+    const cards = parseListingDomCards(html, 'https://www.granit-parts.fr/e/category/Filtres')
+    // Exiger un prix ici jetterait le catalogue entier — c'est exactement ce qui rendait
+    // « 82 pages · 0 produit ». Les références et les libellés, eux, sont publics.
+    expect(cards.every((c) => c.ref && c.name)).toBe(true)
+  })
+})
