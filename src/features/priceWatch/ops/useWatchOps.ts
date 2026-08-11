@@ -64,10 +64,15 @@ export function useWatchOps(
         setRun(d?.startedAt
           ? {
               status: d.status ?? 'running', startedAt: d.startedAt,
-              // ⚠ Repli quand `beatAt` manque : seul le run NAVIGATEUR l'écrit à ce jour
-              // (`publishClientRun.ts`) — un run SERVEUR n'en porte encore aucun (jumeau côté
-              // Functions non aligné). Sans repli, tout run cron passerait pour mort au bout
-              // de trois minutes alors qu'il tourne — même repli que `useServerRunLive`.
+              // ⚠ Le repli RESTE, bien que les deux origines estampillent désormais `beatAt`
+              // (navigateur : `publishClientRun.ts` ; serveur : `writeRunLive`). Raison : les
+              // documents ÉCRITS AVANT ce correctif n'ont pas de `beatAt` et ne se soignent
+              // pas rétroactivement — il n'y a qu'un document par flux, écrasé au run suivant,
+              // donc un flux qui ne tourne plus garde son doc muet indéfiniment. Sans repli, il
+              // s'afficherait « démarré à l'instant » (`beatAt` absent ⇒ 0 ⇒ écart énorme…
+              // ou pire, `now - 0` le dirait mort d'un âge absurde). Même repli, aux mêmes
+              // sources, que `useServerRunLive` — surtout ne pas raconter deux versions de
+              // « depuis quand ce run est muet ».
               beatAt: d.beatAt ?? Math.max(d.startedAt, d.endedAt ?? 0, ...(d.logs ?? []).map((l) => l.ts)),
               trigger: d.trigger ?? null,
             }

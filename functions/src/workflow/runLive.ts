@@ -13,6 +13,10 @@ export interface RunLiveDoc {
   trigger: string
   startedAt: number
   endedAt?: number
+  /** Dernière écriture, quelle qu'elle soit. Estampillé par `writeRunLive` à CHAQUE appel :
+   *  c'est la seule preuve qu'un run vit. Jumeau du champ écrit par le run navigateur
+   *  (`publishClientRun.ts`), et lu par `useServerRunLive` / `useWatchOps` / la PWA. */
+  beatAt?: number
   status: 'running' | 'success' | 'partial' | 'error'
   nodeStates: Record<string, LiveNodeStatus>
   logs: RunLog[]
@@ -39,13 +43,22 @@ export interface RunLiveDoc {
  * ⚠ try/catch ENGLOBANT (pas seulement `.catch`) : Firestore `.set()` valide ses données
  * de façon SYNCHRONE et LÈVE (pas une promesse rejetée) sur un `undefined` imbriqué —
  * un `.catch` seul laisserait ce throw remonter et crasher le run.
+ *
+ * ⚠⚠ `beatAt` estampillé à CHAQUE écriture, quelle qu'elle soit. Sans lui, le serveur
+ * n'horodatait jamais rien et deux écrans se contredisaient sur « est-ce que ça tourne » :
+ * un run cron silencieux (le node « Textes » ne journalise que tous les 500 champs)
+ * s'affichait « Interrompu » alors qu'il tournait, et un run abandonné restait « en cours »
+ * pour l'un pendant que l'autre le disait mort. Le statut ne prouve rien — une Function
+ * tuée laisse `running` pour toujours ; ce qui prouve qu'un run vit, c'est qu'il ÉCRIT.
+ * Posé APRÈS `...data` pour qu'un `beatAt` d'appelant ne le périme jamais.
  */
 export async function writeRunLive(
   uid: string, workflowId: string, data: Partial<RunLiveDoc>, opts: { replace?: boolean } = {},
 ): Promise<void> {
   try {
     const ref = getFirestore().doc(`users/${uid}/workflowRunsLive/${workflowId}`)
-    await (opts.replace ? ref.set(data) : ref.set(data, { merge: true }))
+    const stamped: Partial<RunLiveDoc> = { ...data, beatAt: Date.now() }
+    await (opts.replace ? ref.set(stamped) : ref.set(stamped, { merge: true }))
   } catch { /* état live best-effort — ne bloque jamais l'exécution */ }
 }
 
@@ -81,7 +94,13 @@ export async function appendRunLiveError(
   try {
     await getFirestore()
       .doc(`users/${uid}/workflowRunsLive/${workflowId}`)
-      .set({ logs: FieldValue.arrayUnion({ ts: Date.now(), level: 'error', msg: fr }) }, { merge: true })
+      // `beatAt` ici AUSSI, bien que cette écriture ne passe pas par `writeRunLive` :
+      // signaler une erreur prouve que le run était vivant à cet instant précis. L'omettre
+      // laisserait un run qui n'écrit QUE des erreurs paraître mort entre deux d'entre elles.
+      .set({
+        beatAt: Date.now(),
+        logs: FieldValue.arrayUnion({ ts: Date.now(), level: 'error', msg: fr }),
+      }, { merge: true })
   } catch { /* best-effort */ }
   if (opts.watchId) {
     // ⚠ Pas de clé `runId: undefined` : Firestore valide `.set()` de façon SYNCHRONE et
