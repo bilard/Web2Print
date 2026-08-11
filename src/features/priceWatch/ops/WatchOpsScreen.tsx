@@ -10,6 +10,7 @@ import { OpsHeader } from './OpsHeader'
 import { OpsActions } from './OpsActions'
 import { ChantierCard } from './ChantierCard'
 import { RunCardsStrip } from './RunCardsStrip'
+import { LiveGauges } from './LiveGauges'
 import { IncidentLog } from './IncidentLog'
 import { RunHistory } from './RunHistory'
 import { OpsLlmCosts } from './OpsLlmCosts'
@@ -98,6 +99,11 @@ export function WatchOpsScreen() {
           <OpsLlmCosts />
         </div>
       </div>
+
+      {/* Le tableau de bord AVANT les chantiers : on vient d'abord voir si ça tourne, on
+          regarde le détail ensuite. Il se masque tout seul quand aucun site n'a rien
+          collecté — un cadran à zéro sur un écran vide se lit comme une panne. */}
+      <LiveGauges meta={meta} />
 
       {view.chantiers.length === 0 ? (
         <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.noChantier')}</p>
