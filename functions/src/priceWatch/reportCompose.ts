@@ -274,20 +274,26 @@ export function kpiBannerHtml(report: StoredReport, locale: 'fr' | 'en' | 'es' =
   const hold = k.comparisons > 0 ? ((k.aligned + k.dearerThanMe) / k.comparisons) * 100 : null
   const exposed = k.products > 0 ? (k.productsUndercut / k.products) * 100 : null
   const tiles: KpiTile[] = [
-    { label: L.hold, value: pct(hold), sub: L.holdSub, tone: hold != null && hold >= 50 ? '#34d399' : '#f87171' },
+    { label: L.hold, value: pct(hold), sub: L.holdSub, tone: hold != null && hold >= 50 ? '#4ade80' : '#f87171' },
     { label: L.exposed, value: pct(exposed), sub: `${num(k.productsUndercut)}/${num(k.products)}`, tone: exposed != null && exposed >= 50 ? '#f87171' : '#fbbf24' },
-    { label: L.index, value: k.priceIndex == null ? '—' : String(Math.round(k.priceIndex)), sub: k.priceIndexBest == null ? L.indexSub : `${Math.round(k.priceIndexBest)} ${L.vsBest}`, tone: (k.priceIndex ?? 100) > 100 ? '#f87171' : '#34d399' },
-    { label: L.matched, value: num(k.products), sub: `${num(k.matchedExact)} ${L.exact}`, tone: '#e5e7eb' },
+    { label: L.index, value: k.priceIndex == null ? '—' : String(Math.round(k.priceIndex)), sub: k.priceIndexBest == null ? L.indexSub : `${Math.round(k.priceIndexBest)} ${L.vsBest}`, tone: (k.priceIndex ?? 100) > 100 ? '#f87171' : '#4ade80' },
+    { label: L.matched, value: num(k.products), sub: `${num(k.matchedExact)} ${L.exact}`, tone: '#f8fafc' },
     { label: L.cheaper, value: num(k.cheaperThanMe), sub: L.cheaperSub, tone: '#f87171' },
     { label: L.ruptures, value: num(k.ruptures), sub: L.rupturesSub, tone: '#fbbf24' },
   ]
   // ⚠ Tableau et styles INLINE : c'est le seul assemblage qu'un client de messagerie rende
   // partout. Une grille CSS s'effondrerait en colonne unique chez Outlook.
-  const cells = tiles.map((t) => `<td style="padding:8px 10px;background:#f6f7f9;border-radius:8px;vertical-align:top">`
-    + `<div style="font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#6b7280">${t.label}</div>`
-    + `<div style="font-size:20px;font-weight:700;color:${t.tone};line-height:1.2">${t.value}</div>`
-    + `<div style="font-size:10px;color:#9ca3af">${t.sub}</div></td>`).join('<td style="width:6px"></td>')
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;margin:0 0 16px"><tr>${cells}</tr></table>`
+  //
+  // ⚠⚠ Fond SOMBRE. Sur le gris très clair d'origine, un chiffre neutre (« 21 966 produits
+  // appariés ») disparaissait purement et simplement, et les teintes vives passaient pâles.
+  // Un bandeau sombre porte du texte clair : le contraste ne dépend plus de la teinte de
+  // chaque valeur, et le cartouche se détache du corps du mail au lieu de s'y fondre.
+  const cells = tiles.map((t) => `<td style="padding:10px 12px;background:#1b2130;border-radius:8px;vertical-align:top">`
+    + `<div style="font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#94a3b8">${t.label}</div>`
+    + `<div style="font-size:20px;font-weight:700;color:${t.tone};line-height:1.25">${t.value}</div>`
+    + `<div style="font-size:10px;color:#8b96a8">${t.sub}</div></td>`).join('<td style="width:6px"></td>')
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;`
+    + `background:#0f1420;border-radius:10px;padding:8px;margin:0 0 16px"><tr>${cells}</tr></table>`
 }
 
 const BANNER_LABELS = {
