@@ -301,6 +301,7 @@ export async function harvestPass(
             ...cursor,
             categories: [...cursor.categories, ...kids].slice(0, MAX_PLAN),
           }
+          deps.log?.(`[descente] ${cfg.domain} : +${kids.length} sous-rayon(s) depuis ${url} → plan ${cursor.categories.length}`)
         }
       }
       const next = nextListingUrl(html, url)
