@@ -12,6 +12,7 @@ import { ChantierCard } from './ChantierCard'
 import { RunCardsStrip } from './RunCardsStrip'
 import { IncidentLog } from './IncidentLog'
 import { RunHistory } from './RunHistory'
+import { OpsLlmCosts } from './OpsLlmCosts'
 import { useRunHistory } from './useRunHistory'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
@@ -68,15 +69,24 @@ export function WatchOpsScreen() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-white">{t('ops.screen.title')}</h1>
-          <p className="text-sm text-white/50">{t('ops.screen.intro')}</p>
-        </div>
-        <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
-      </header>
+      {/* ⚠ COLLANT au défilement : sur un écran qui se lit de haut en bas (cartes, bande du
+          run, historique, journal), l'état du run et le sélecteur de suivi sont ce qu'on
+          garde sous les yeux — sans eux, on ne sait plus DE QUOI on lit les chiffres.
+          `-mx-8 px-8` : le conteneur de la page porte un `px-8`, le bandeau doit couvrir
+          toute la largeur pour que le contenu qui défile ne se voie pas sur ses côtés.
+          `top-0` sur le conteneur défilant de `DashboardPage`, et un fond OPAQUE (le
+          contenu passe DESSOUS, il ne doit pas transparaître). */}
+      <div className="sticky top-0 z-20 -mx-8 px-8 pt-4 pb-3 bg-background border-b border-white/[0.06] space-y-3">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-white">{t('ops.screen.title')}</h1>
+            <p className="text-sm text-white/50">{t('ops.screen.intro')}</p>
+          </div>
+          <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
+        </header>
 
-      <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
+        <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
+      </div>
       <OpsActions workflowId={workflowId} run={view.run} />
 
       {view.chantiers.length === 0 ? (
@@ -101,6 +111,7 @@ export function WatchOpsScreen() {
       )}
 
       <RunCardsStrip workflowId={workflowId} />
+      <OpsLlmCosts />
       <RunHistory runs={runs} />
       <IncidentLog incidents={incidents} />
     </div>

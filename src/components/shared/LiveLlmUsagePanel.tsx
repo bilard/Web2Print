@@ -11,21 +11,11 @@ import { getBadgeKind, formatTokens, formatBillingDate, type BadgeKind } from '@
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
+// ⚠ Partagés avec l'écran « Suivi », qui liste les mêmes fournisseurs.
+import { PROVIDER_META, PROVIDERS } from '@/features/stats/providerMeta'
 import { recordAudit } from '@/lib/auditLog'
 import { useTranslation } from '@/lib/i18n'
 
-const PROVIDER_META: Record<AiProvider, { label: string; dot: string; topup: string }> = {
-  claude:     { label: 'Claude (Anthropic)', dot: 'bg-orange-400',  topup: 'https://console.anthropic.com/settings/billing' },
-  gemini:     { label: 'Gemini (Google)',    dot: 'bg-sky-400',     topup: 'https://aistudio.google.com/app/plan_information' },
-  openai:     { label: 'OpenAI',             dot: 'bg-emerald-400', topup: 'https://platform.openai.com/settings/organization/billing/overview' },
-  deepseek:   { label: 'DeepSeek',           dot: 'bg-indigo-400',  topup: 'https://platform.deepseek.com/top_up' },
-  qwen:       { label: 'Qwen',               dot: 'bg-violet-400',  topup: 'https://bailian.console.aliyun.com/?productCode=p_efm#/expense-center' },
-  kimi:       { label: 'Kimi',               dot: 'bg-amber-400',   topup: 'https://platform.moonshot.cn/console/account' },
-  glm:        { label: 'GLM (Z.ai)',         dot: 'bg-blue-400',    topup: 'https://z.ai/manage-apikey/apikey-list' },
-  openrouter: { label: 'OpenRouter',         dot: 'bg-fuchsia-400', topup: 'https://openrouter.ai/settings/credits' },
-}
-
-const PROVIDERS: AiProvider[] = ['claude', 'gemini', 'openai', 'deepseek', 'qwen', 'kimi', 'glm', 'openrouter']
 
 /** Modèle image Gemini (Image IA). Affiché sur sa propre ligne sous le
  *  modèle texte Gemini sélectionné — il a son propre pricing ($30 / 1M output)
