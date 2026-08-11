@@ -79,14 +79,24 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
 
       {/* ⚠⚠ CE QUE LE CHANTIER A RÉELLEMENT TRAITÉ. La jauge dit « où on en est », ces
           nombres disent « combien » — et c'est eux qui manquaient : la moisson collecte
-          des milliers de fiches par run, l'écran n'en montrait aucune. */}
+          des milliers de fiches par run, l'écran n'en montrait aucune.
+
+          ⚠ En GRILLE, pas en ligne de texte. Quatre volumes à la file (« 447 313 fiches
+          indexées 30 910 pages 6 867 fiches à la dernière passe 14 en collecte ») se
+          lisent comme une phrase et se confondent : chiffre et libellé se télescopent,
+          rien ne s'aligne d'une carte à l'autre. Une colonne par volume, le nombre
+          au-dessus de ce qu'il compte. */}
       {c.facts && c.facts.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1.5 border-t border-white/5 text-[11px]">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2.5 border-t border-white/5">
           {c.facts.map((f) => (
-            <span key={f.key} className="text-white/45">
-              <span className="text-white/75 font-medium tabular-nums">{f.value.toLocaleString(locale)}</span>
-              {' '}{t(factLabelKey(f.key))}
-            </span>
+            <div key={f.key} className="min-w-0">
+              <div className="text-[13px] font-semibold text-white tabular-nums leading-tight">
+                {f.value.toLocaleString(locale)}
+              </div>
+              <div className="text-[10px] text-white/40 leading-tight truncate" title={t(factLabelKey(f.key))}>
+                {t(factLabelKey(f.key))}
+              </div>
+            </div>
           ))}
         </div>
       )}

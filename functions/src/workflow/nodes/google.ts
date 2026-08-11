@@ -669,6 +669,8 @@ registerServerNode({
       throw new Error(t(ctx.locale, 'run.gs.emptySheetInput'))
     }
     const name = String(config.name ?? '').trim() || 'Workflow Export'
+    // Chiffre de la carte sur l'écran « Suivi » : sans lui, le badge reste muet.
+    ctx.reportCount?.(sheet.rows.length)
     const token = await getGoogleAccessToken(ctx.uid)
 
     // Matrice de valeurs TYPÉE : nombres en number, reste en string. On écrit via
@@ -1083,6 +1085,8 @@ registerServerNode({
       for (let c = 0; c < keys.length; c++) row[keys[c]] = cells[c] ?? null
       rows.push(row)
     }
+    // Chiffre de la carte sur l'écran « Suivi » : sans lui, le badge reste muet.
+    ctx.reportCount?.(rows.length)
     ctx.log('info', t(ctx.locale, 'run.gs.imported', { rows: rows.length, columns: keys.length, title }))
     return { sheet: { name: title, columns, rows, taxonomy: [] } }
   },

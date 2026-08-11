@@ -447,6 +447,10 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
     // à chaque run, sur un traitement sain. `cappedBy` prime sur la borne d'unités : un
     // passage coupé par son budget n'a pas atteint sa borne, même si elle existe.
     publishOps(opsDone, true, result.cappedBy ?? (capped.length < units.length ? 'units' : undefined))
+    // Chiffre de la carte sur l'écran « Suivi » — jumeau du node serveur.
+    // ⚠ Les champs RÉVISÉS, pas les champs tentés : un run dont tous les appels au modèle
+    // échouent (crédits épuisés) doit afficher zéro, pas 504.
+    ctx.reportCount?.(revisions.length)
     ctx.log('info', t('run.textEnrich.done', {
       revised: result.counts.revised, rejected: result.counts.rejected, passId,
     }))

@@ -31,6 +31,8 @@ registerServerNode({
         .set({ enabled: active.has(stableId(domain)) }, { merge: true })
         .catch(() => undefined)
     }))
+    // Chiffre de la carte sur l'écran « Suivi » : sans lui, le badge reste muet.
+    ctx.reportCount?.(sites.length)
     return { sites: { watchId, sites } }
   },
 })

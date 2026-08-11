@@ -30,6 +30,8 @@ registerServerNode({
       : deriveWatchId(String(config.watchId ?? ''), ctx.workflowId)
 
     const rules = configToRules(config as Parameters<typeof configToRules>[0])
+    // Chiffre de la carte sur l'écran « Suivi » : sans lui, le badge reste muet.
+    ctx.reportCount?.(Object.keys(summarizeRules(rules)).length)
     await getFirestore().doc(pairingRulesDoc(ctx.uid, watchId)).set({
       rules, updatedAt: Date.now(), updatedBy: 'node', touchedAt: FieldValue.serverTimestamp(),
     }, { merge: true })

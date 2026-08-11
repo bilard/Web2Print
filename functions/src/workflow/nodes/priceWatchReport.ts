@@ -90,6 +90,8 @@ registerServerNode({
     }))
 
     // Consigne libre : c'est ELLE qui compose le mail. Le rapport standard reste le repli.
+    // Chiffre de la carte sur l'écran « Suivi » : sans lui, le badge reste muet.
+    ctx.reportCount?.(report.kpis?.products ?? 0)
     const prompt = String(config.prompt ?? '').trim()
     if (prompt) {
       ctx.log('info', t(ctx.locale, 'run.pwReport.composing'))

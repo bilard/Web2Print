@@ -76,6 +76,8 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
 
     // Consigne libre : c'est ELLE qui compose le mail. Le rapport standard reste le repli —
     // un modèle indisponible ou un JSON invalide ne doit pas priver du mail du matin.
+    // Chiffre de la carte sur l'écran « Suivi » — jumeau du node serveur.
+    ctx.reportCount?.(report.kpis?.products ?? 0)
     const prompt = (config.prompt ?? '').trim()
     if (prompt) {
       ctx.log('info', t('run.pwReport.composing'))

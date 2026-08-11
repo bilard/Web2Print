@@ -266,6 +266,10 @@ registerServerNode({
     const applied = applySheetRevisions(allRows, revisions.map((r) => ({
       productId: r.productId, field: r.field, before: r.before, after: r.after,
     })))
+    // Chiffre de la carte sur l'écran « Suivi » : sans lui, le badge reste muet.
+    // ⚠ Les champs RÉVISÉS, pas les champs tentés : un run dont tous les appels au modèle
+    // échouent (crédits épuisés) doit afficher zéro, pas 504.
+    ctx.reportCount?.(revisions.length)
     return {
       enriched: {
         name: sheet?.name ?? 'sheet',

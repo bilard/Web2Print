@@ -345,6 +345,8 @@ const gsheetsImportNode: NodeSpec<
     try {
       const sheets = await importGoogleSheetById(config.fileId, token)
       const idx = Math.max(0, Math.min(config.sheetIndex ?? 0, sheets.length - 1))
+      // Chiffre de la carte sur l'écran « Suivi » — jumeau du node serveur.
+      ctx.reportCount?.(sheets[idx].rows.length)
       ctx.log('info', t('run.gs.tabsRead', { count: sheets.length, index: idx, name: sheets[idx].name }))
       return { sheet: sheets[idx] }
     } catch (e) {
@@ -646,6 +648,8 @@ const gsheetsExportNode: NodeSpec<
     }
     const name = config.name?.trim() || 'Workflow Export'
     const sheet = coerceToExcelSheet(inputs.sheet, name)
+    // Chiffre de la carte sur l'écran « Suivi » — jumeau du node serveur.
+    ctx.reportCount?.(sheet.rows.length)
     const formulas = parseFormulaColumns(config.formulaColumns)
     if (sheet.rows.length === 0) {
       if (formulas.length > 0) {

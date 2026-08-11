@@ -106,6 +106,8 @@ const pairingRulesNode: NodeSpec<PairingRulesConfig, RulesInputs, RulesOutputs> 
     } else {
       ctx.log('info', t('run.pairingRules.savedDefault', { watchId }))
     }
+    // Chiffre de la carte sur l'écran « Suivi » — jumeau du node serveur.
+    ctx.reportCount?.(Object.keys(summarizeRules(rules)).length)
     return { rules: { watchId } }
   },
 }
