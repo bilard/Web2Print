@@ -8,7 +8,7 @@ import { getServerNode } from '../registry'
 // côté serveur ET absents de SERVER_UNSUPPORTED. Cf. execute.ts:197+ (la liste court-
 // circuite getServerNode).
 describe('jumeaux serveur cron', () => {
-  for (const type of ['cost-report', 'gdrive-export', 'analytics-report', 'harvest-competitor', 'compare-catalog', 'source-sites', 'directed-search', 'pairing-rules']) {
+  for (const type of ['cost-report', 'gdrive-export', 'analytics-report', 'harvest-competitor', 'compare-catalog', 'source-sites', 'directed-search', 'pairing-rules', 'text-enrich']) {
     it(`${type} est enregistré et exécutable côté serveur`, () => {
       expect(getServerNode(type)).toBeDefined()
       expect(SERVER_UNSUPPORTED.has(type)).toBe(false)
@@ -16,19 +16,13 @@ describe('jumeaux serveur cron', () => {
   }
 })
 
-describe('enrichissement de textes — non exécutable, mais transparent', () => {
-  it('est déclaré non exécutable côté serveur', () => {
-    // Son moteur n'est pas encore porté. Tant qu'il ne l'est pas, le cron doit le dire.
-    expect(SERVER_UNSUPPORTED.has('text-enrich')).toBe(true)
-  })
-
-  it('⚠ LAISSE PASSER la donnée au lieu de casser l’aval', () => {
-    // Il était marqué en erreur pour qu'un run planifié ne réussisse pas sans avoir
-    // enrichi. Le remède était pire : posée au milieu d'une chaîne de veille, la carte
-    // faisait sauter tout l'aval (« Recherche dirigée : aucune donnée produit en entrée »)
-    // et la veille entière restait muette, pour une réécriture de textes qui se fait
-    // désormais dans l'écran « Traduire (IA) », hors workflow.
-    expect(SERVER_PASS_THROUGH.has('text-enrich')).toBe(true)
+describe('enrichissement de textes — moteur serveur depuis le 9 août (429ad1b1)', () => {
+  it('n’est plus une simple passe-through : il porte désormais son propre moteur', () => {
+    // Avant le 9 août, la carte n'avait pas de jumeau serveur et devait LAISSER PASSER
+    // sa donnée pour ne pas casser l'aval d'un run planifié. Elle est maintenant
+    // enregistrée (cf. describe ci-dessus) : la faire figurer ICI EN PLUS mentirait sur
+    // ce qui l'exécute réellement — un run planifié n'a plus besoin d'un contournement.
+    expect(SERVER_PASS_THROUGH.has('text-enrich')).toBe(false)
   })
 
   it('n’est pas un node VISUEL : sa sortie porte la donnée reçue, pas du vide', () => {

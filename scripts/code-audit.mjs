@@ -104,6 +104,16 @@ const testLine = (tests.out.match(/Tests\s+.*$/m) || [''])[0].trim()
 // Un exit 0 sans récapitulatif = vitest n'a rien exécuté : ce n'est pas un succès.
 gate('Tests', tests.ok && !!testLine, testLine || `aucun récapitulatif — ${firstLines(tests.out)}`)
 
+// `vitest.config.ts` à la racine ne couvre que `src/**` : la suite de `functions/`
+// (Cloud Functions) est un projet Vitest à part, avec son propre vitest.config.ts.
+// Sans cette barrière, un garde-fou aussi critique que
+// `functions/src/priceWatch/textsSnapshotParity.test.ts` (parité des jumeaux
+// client/serveur) peut être rouge sans que `npm run audit` ne le voie jamais.
+log('▸ Tests Cloud Functions (functions/, vitest run)…')
+const testsFn = sh('cd functions && npx vitest run --reporter=dot')
+const testLineFn = (testsFn.out.match(/Tests\s+.*$/m) || [''])[0].trim()
+gate('Tests (functions/)', testsFn.ok && !!testLineFn, testLineFn || `aucun récapitulatif — ${firstLines(testsFn.out)}`)
+
 log('▸ Code mort (knip)…')
 const knip = sh('npx knip --no-exit-code --reporter json')
 // Format réel : { issues: [ { file, exports: [...], types: [...], … }, … ] }.

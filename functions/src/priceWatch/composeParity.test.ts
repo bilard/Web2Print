@@ -58,18 +58,23 @@ describe('buildComposePrompt (parité serveur)', () => {
 
 describe('normalizeComposedHtml (parité serveur)', () => {
   const body = `<table style="width:100%">${'<tr><td>ligne</td></tr>'.repeat(20)}</table>`
+  // `normalizeComposedHtml` préfixe désormais le mail par une déclaration de thème sombre
+  // (`makeResponsive`) : sans elle, iOS Mail recolorait le texte pour son propre mode sombre
+  // sur un fond déjà sombre — gris foncé sur noir, constaté en production le 2026-08-10.
+  // Le corps n'est donc plus rendu « intact », il est rendu intact PLUS ce préfixe.
+  const scheme = '<style>:root{color-scheme:dark;supported-color-schemes:dark;}</style>'
 
-  it('accepte un corps de mail et le rend intact', () => {
-    expect(normalizeComposedHtml(body)).toBe(body)
+  it('accepte un corps de mail et lui ajoute la déclaration de thème sombre', () => {
+    expect(normalizeComposedHtml(body)).toBe(scheme + body)
   })
 
   it('retire le bloc de code dont le modèle enrobe sa réponse', () => {
-    expect(normalizeComposedHtml('```html\n' + body + '\n```')).toBe(body)
+    expect(normalizeComposedHtml('```html\n' + body + '\n```')).toBe(scheme + body)
   })
 
   it('retire les scripts — rien d\'exécutable dans un mail ni dans une archive', () => {
     const out = normalizeComposedHtml(`<script>alert(1)</script>${body}`)
-    expect(out).toBe(body)
+    expect(out).toBe(scheme + body)
   })
 
   it('refuse le vide, la prose et les réponses trop courtes', () => {
