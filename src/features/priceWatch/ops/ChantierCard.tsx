@@ -97,7 +97,11 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
         <div className="grid grid-cols-2 gap-x-3 gap-y-2 pt-2.5 border-t border-white/5">
           {c.facts.map((f) => (
             <div key={f.key} className="min-w-0">
-              <div className="text-[13px] font-semibold text-white tabular-nums leading-tight">
+              {/* ⚠ Le JAUNE des volumes, le même que les compteurs de la bande du run : sur
+                  cet écran, un nombre en jaune veut dire « voilà ce qui a été traité ». La
+                  jauge et ses trois chiffres restent en gris — ils disent « où on en est »,
+                  pas « combien ». Deux registres, deux traitements. */}
+              <div className="text-[13px] font-semibold text-amber-300 tabular-nums leading-tight">
                 {f.value.toLocaleString(locale)}
               </div>
               <div className="text-[10px] text-white/40 leading-tight truncate" title={t(factLabelKey(f.key))}>
