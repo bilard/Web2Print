@@ -75,9 +75,13 @@ export function RunCardsStrip({ workflowId }: { workflowId: string | null }) {
               <Icon className={`w-3 h-3 shrink-0 ${TINT[c.status]} ${c.status === 'running' ? 'animate-spin' : ''}`} />
               <span className={c.status === 'pending' ? 'text-white/30' : 'text-white/70'}>{c.label}</span>
               {/* Le chiffre de la carte, détaché du libellé : collé, il se lisait comme la
-                  fin du nom (« Moisson concurrents 138 »). */}
+                  fin du nom (« Moisson concurrents 138 »).
+                  ⚠ En JAUNE, la seule couleur libre de la bande : le vert dit « terminée »,
+                  l'indigo « en cours », le rouge « en erreur », le blanc porte les libellés.
+                  C'est CE nombre qu'on vient chercher — il ne doit pas se fondre dans son
+                  étiquette. */}
               {typeof c.count === 'number' && c.count > 0 && (
-                <span className="tabular-nums font-semibold text-white/80 bg-white/[0.07] rounded px-1 py-px">
+                <span className="tabular-nums font-semibold text-amber-300 bg-amber-400/10 rounded px-1 py-px">
                   {c.count.toLocaleString(intlLocale(locale))}
                 </span>
               )}
