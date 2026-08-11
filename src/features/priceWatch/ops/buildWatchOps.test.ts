@@ -68,6 +68,28 @@ describe("buildWatchOps — chantier textes", () => {
     expect(trad.stale).toBe(true)
   })
 
+  // ⚠ L'état le plus FRÉQUENT de l'écran : la plupart du temps, rien ne tourne. Un
+  // chantier fini portait quand même « passage arrêté » trois minutes après sa dernière
+  // ligne — et « arrêté » se lit « interrompu » : on croyait à une panne.
+  it("ne dit PAS « arrêté » d'un chantier terminé, même silencieux depuis longtemps", () => {
+    const v = buildWatchOps({
+      progress: progress({
+        considered: 3_000, alreadyDone: 0, pending: { translate: 3_000 },
+        // Tout le travail est fait : done ≥ pending ⇒ il ne reste rien.
+        done: 3_000, total: 3_000,
+        startedAt: NOW - 3_600_000, beatAt: NOW - 30 * 60_000, origin: 'server',
+      }),
+      cockpit: null, run: null, now: NOW,
+    })
+    const trad = v.chantiers.find((c) => c.id === 'translate')!
+    expect(trad.remaining).toBe(0)
+    expect(trad.pct).toBe(100)
+    expect(trad.stale).toBeUndefined()
+    // Et pas d'estimation FANTÔME à la place du badge : zéro restant plancherait à
+    // « 1 min restantes » (cf. `etaParts`), ce qui ne vaudrait pas mieux que « arrêté ».
+    expect(trad.etaMs).toBeNull()
+  })
+
   it("range l'indéterminé à part, jamais avec le français", () => {
     const v = buildWatchOps({
       progress: progress({

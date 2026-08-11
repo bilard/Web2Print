@@ -74,6 +74,10 @@ export interface WatchOpsInput {
  *  en cours — celle-ci annoncerait « restant = écoulé » à mi-parcours. */
 function eta(done: number, remaining: number, elapsedMs: number): number | null {
   const total = done + remaining
+  // ⚠ Rien à faire ⇒ AUCUNE estimation, et surtout pas zéro : `etaParts` plancherait ce
+  // zéro à la minute (« au moins une minute tant qu'il reste du travail ») et la carte
+  // terminée annoncerait « 1 min restantes » pour toujours.
+  if (remaining <= 0) return null
   if (total === 0 || elapsedMs <= 0) return null
   if (done / total < ETA_FLOOR) return null
   const perMs = done / elapsedMs
@@ -107,7 +111,12 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
       etaMs: isStalework ? null : eta(done, effectiveRemaining, elapsedMs),
       perMin: isStalework || elapsedMs < 60_000 || done === 0 ? null : Math.round(done / (elapsedMs / 60_000)),
       ...(id === 'translate' && t.byLang ? { byLang: t.byLang } : {}),
-      ...(isStalework ? { stale: true } : {}),
+      // ⚠ « Arrêté » se lit « interrompu ». Un chantier TERMINÉ n'a plus rien à écrire :
+      // trois minutes après sa dernière ligne, une carte à 100 % et 0 restant portait le
+      // badge « passage arrêté » — et c'est l'état le plus fréquent de l'écran, puisque la
+      // plupart du temps rien ne tourne. On croyait à une panne là où le travail est fini.
+      // Le silence n'est une anomalie que s'il reste quelque chose à faire.
+      ...(isStalework && effectiveRemaining > 0 ? { stale: true } : {}),
     })
   }
   return { chantiers: out, reasons: t.reasons }
