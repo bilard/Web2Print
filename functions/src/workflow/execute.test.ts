@@ -58,6 +58,35 @@ describe('executeWorkflowHeadless', () => {
     expect(peak).toBeGreaterThanOrEqual(2) // a et b ont tourné simultanément
   })
 
+  // ⚠⚠ ByPass ≠ skip. Un skip fait sauter tout l'aval (c'est ce que fait la cadence
+  // d'envoi, et c'est voulu là-bas) ; désactiver une carte doit au contraire laisser la
+  // chaîne tourner en retirant UNE étape — sinon écarter l'enrichissement d'un flux de
+  // veille couperait le comparatif et le mail.
+  it('une carte en ByPass ne s’exécute pas, laisse passer la donnée, et n’arrête PAS l’aval', async () => {
+    const chain: ServerWorkflow = {
+      id: 'w6', name: 'ByPass', ownerId: 'u',
+      nodes: [
+        { id: 'a', type: 'text-input', config: { text: 'Bonjour' } },
+        // Une carte qui, exécutée, produirait tout autre chose — et qui ne doit PAS tourner.
+        { id: 'b', type: 'text-input', config: { text: 'ÉCRASÉ' }, bypass: true },
+        { id: 'c', type: 'if-else', config: { expression: "value === 'Bonjour'" } },
+      ],
+      edges: [
+        { id: 'e1', source: 'a', sourceHandle: 'text', target: 'b', targetHandle: 'in' },
+        { id: 'e2', source: 'b', sourceHandle: 'text', target: 'c', targetHandle: 'value' },
+      ],
+    }
+    const res = await executeWorkflowHeadless(chain, { uid: 'u', signal: new AbortController().signal })
+    expect(res.status).toBe('success')
+    // La carte désactivée a REPOSÉ l'entrée sur son port de sortie, sans rien produire d'elle-même.
+    expect(res.nodeOutputs.b).toEqual({ text: 'Bonjour' })
+    // L'aval a bien tourné SUR CETTE DONNÉE — c'est tout l'enjeu.
+    expect(res.nodeOutputs.c).toEqual({ then: 'Bonjour' })
+    expect(res.nodeStates.b).toBe('skipped')
+    expect(res.nodeStates.c).toBe('success')
+    expect(res.logs.some((l) => l.node === 'b' && /ByPass/i.test(l.msg))).toBe(true)
+  })
+
   it('ignore proprement un node visuel client-only (chart) sans faire échouer le run', async () => {
     const wf2: ServerWorkflow = {
       id: 'w5', name: 'Chart', ownerId: 'u',

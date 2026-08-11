@@ -127,6 +127,16 @@ export interface WorkflowNode {
   type: string
   position: { x: number; y: number }
   config: unknown
+  /**
+   * Carte DÉSACTIVÉE : elle ne s'exécute pas, et ce qui arrive ressort tel quel.
+   *
+   * ⚠⚠ Ce n'est PAS un `skip`. Un skip fait sauter tout l'aval (c'est ce que fait la
+   * cadence d'envoi, et c'est voulu là-bas) ; un ByPass laisse la chaîne entière tourner
+   * en retirant UNE étape. Sans lui, écarter l'enrichissement d'un flux de veille
+   * obligeait à supprimer la carte — donc à perdre sa configuration — ou à débrancher
+   * ses liens à la main puis à les refaire.
+   */
+  bypass?: boolean
 }
 
 export interface WorkflowEdge {

@@ -209,7 +209,7 @@ export async function executeWorkflowHeadless(
     for (const n of wf.nodes) {
       s[n.id] = running?.has(n.id) ? 'running'
         : errored.has(n.id) ? 'error'
-          : skipped.has(n.id) ? 'skipped'
+          : bypassed.has(n.id) || skipped.has(n.id) ? 'skipped'
             : outputs.has(n.id) || internalIds.has(n.id) ? 'success'
               : 'pending'
     }
@@ -227,6 +227,9 @@ export async function executeWorkflowHeadless(
 
   // Reprise : réinjecte les sorties des nodes déjà terminés (run précédent interrompu).
   // Ils sont marqués « done » → non ré-exécutés, mais disponibles pour câbler l'aval.
+  /** Cartes désactivées à la main. ⚠ Séparé de `skipped` : celui-ci fait sauter tout
+   *  l'aval, alors qu'un ByPass doit au contraire le laisser tourner. */
+  const bypassed = new Set<string>()
   const done = new Set<string>()
   if (opts.resume) {
     for (const [id, out] of Object.entries(opts.resume.outputs)) {
@@ -245,6 +248,20 @@ export async function executeWorkflowHeadless(
     }
     // Abort (STOP volontaire ou timeout) = pas un échec : node « arrêté » (neutre), pas erreur.
     if (opts.signal.aborted) { skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id); return }
+    // ByPass : la carte ne travaille pas, mais ce qui entre ressort — l'aval continue.
+    if (node.bypass) {
+      const passed: Record<string, unknown> = {}
+      const incoming = upstream
+        .map((e) => outputs.get(e.source)?.[e.sourceHandle])
+        .find((v) => v !== undefined)
+      // Reposé sur CHAQUE port de sortie branché : l'aval réclame un nom de port précis,
+      // et publier sur le mauvais revient à ne rien publier.
+      for (const e of wf.edges.filter((x) => x.source === node.id)) passed[e.sourceHandle] = incoming
+      outputs.set(node.id, passed); nodeOutputs[node.id] = passed
+      bypassed.add(node.id)
+      log('info', t(locale, 'run.node.bypassed'), node.id)
+      return
+    }
     if (node.type === 'cron') { outputs.set(node.id, { tick: { at: new Date().toISOString() } }); return }
     if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) { nodeCount++; return }
 

@@ -1,6 +1,10 @@
 import type { Locale } from '../i18n'
 // functions/src/workflow/types.ts
-export interface ServerNode { id: string; type: string; position?: unknown; config: unknown }
+export interface ServerNode {
+  id: string; type: string; position?: unknown; config: unknown
+  /** Carte désactivée : non exécutée, la donnée passe. Jumeau de `WorkflowNode.bypass`. */
+  bypass?: boolean
+}
 export interface ServerEdge {
   id: string; source: string; sourceHandle: string; target: string; targetHandle: string
 }

@@ -396,6 +396,23 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         return
       }
 
+      // ByPass : la carte ne travaille pas, mais ce qui entre ressort — l'aval continue.
+      // ⚠⚠ On n'ajoute PAS à `skipped` : ce set fait sauter tout l'aval (cascade), alors
+      // qu'un ByPass retire UNE étape d'une chaîne qui doit continuer de tourner. Jumeau
+      // de `execute.ts` côté serveur.
+      if (node.bypass) {
+        const passed: Record<string, unknown> = {}
+        const incoming = upstream
+          .map((e) => outputs.get(e.source)?.[e.sourceHandle])
+          .find((v) => v !== undefined)
+        for (const e of wf.edges.filter((x) => x.source === node.id)) passed[e.sourceHandle] = incoming
+        outputs.set(node.id, passed)
+        useRunContext.getState().startNode(node.id)
+        useRunContext.getState().appendLog(node.id, 'info', t('run.node.bypassed'))
+        useRunContext.getState().setNodeStatus(node.id, 'skipped')
+        return
+      }
+
       const spec = nodeRegistry.get(node.type)
       if (!spec) {
         useRunContext.getState().endNode(node.id, 'error', t('run.unknownType', { type: node.type }))

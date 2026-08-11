@@ -1487,6 +1487,10 @@ export const es: Record<TranslationKey, string> = {
   'wfe.template': 'Plantilla',
   'wfe.stepByStep.label': 'Paso a paso',
   'wfn.selectNode': 'Seleccionar un nodo o una conexión para ver sus detalles.',
+  'wfn.bypass': 'ByPass',
+  'wfn.bypass.on': 'Tarjeta desactivada: no se ejecuta y deja pasar los datos. Haz clic para reactivarla.',
+  'wfn.bypass.off': 'Desactivar esta tarjeta: dejará de ejecutarse y los datos pasarán sin procesar. El flujo queda intacto.',
+  'wfn.bypass.badge': 'DESACTIVADA',
   'wfp.blocks': 'Bloques',
   'wfp.optional': 'opcional',
   'wfp.intro': 'Construir su flujo de trabajo paso a paso — arrastrar sobre el lienzo o hacer clic para generarlo en el centro.',
@@ -2900,6 +2904,7 @@ export const es: Record<TranslationKey, string> = {
   'run.outcome.success': '✅ «{label}» finalizado',
   'run.outcome.successBody': '{count} nodo(s) ejecutado(s) con éxito.',
   'run.stopped': 'Ejecución detenida',
+  'run.node.bypassed': 'Tarjeta desactivada (ByPass): los datos pasan sin procesar.',
   'run.unknownType': 'Tipo desconocido: {type}',
   'run.unknownTypeInLoop': 'Tipo desconocido en el cuerpo del bucle: {type}',
   // Logique / transformations / réseau — lot 18

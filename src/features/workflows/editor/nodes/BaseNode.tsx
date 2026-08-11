@@ -191,6 +191,10 @@ export function BaseNode({ id, data, selected }: NodeProps) {
   const canRun = useCan('workflows.run')
   // Config live du node (réactive) — alimente `spec.cardSummary` (ex. planning cron).
   const liveConfig = useWorkflowStore((s) => s.current?.nodes.find((n) => n.id === id)?.config)
+  // ⚠ Carte DÉSACTIVÉE (ByPass) : elle reste dans le flux, à sa place, avec sa config et
+  // ses liens — mais elle ne travaille plus. Elle doit donc se voir au premier coup d'œil,
+  // sinon on cherche pendant une heure pourquoi une étape « ne fait rien ».
+  const bypass = useWorkflowStore((s) => !!s.current?.nodes.find((n) => n.id === id)?.bypass)
   // Le node a-t-il au moins une connexion ? Sans lien, on n'offre pas le RUN par carte.
   const hasLink = useWorkflowStore(
     (s) => s.current?.edges.some((e) => e.source === id || e.target === id) ?? false,
@@ -257,8 +261,18 @@ export function BaseNode({ id, data, selected }: NodeProps) {
     <div className={`relative group`}>
       {/* Card */}
       <div
-        className={`relative w-[130px] rounded-xl ${cat.bg} backdrop-blur-sm border ${cat.border} ${ringCls} shadow-lg ${cat.glow} transition-all group-hover:scale-[1.02]`}
+        className={`relative w-[130px] rounded-xl ${cat.bg} backdrop-blur-sm border ${cat.border} ${ringCls} shadow-lg ${cat.glow} transition-all group-hover:scale-[1.02] ${
+          bypass ? 'opacity-45 grayscale' : ''
+        }`}
       >
+        {/* Le bandeau plutôt qu'un simple grisé : une carte pâle peut passer pour une carte
+            en attente. Là, elle DIT qu'elle est hors circuit. */}
+        {bypass && (
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 text-[8px] font-bold tracking-wide
+            px-1.5 py-0.5 rounded bg-amber-500 text-[#1b1b1b] whitespace-nowrap">
+            {t('wfn.bypass.badge')}
+          </div>
+        )}
         {/* Icon block */}
         <div className="flex flex-col items-center justify-center px-3 pt-4 pb-2">
           <div

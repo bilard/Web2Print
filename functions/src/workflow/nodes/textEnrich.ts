@@ -122,6 +122,23 @@ registerServerNode({
       return { enriched: { name: sheet?.name ?? 'sheet', columns: sheet?.columns ?? [], rows: allRows }, revisions: { name: 'revisions', columns: [], rows: [] } }
     }
 
+    // ⚠⚠ SIMULATION — le jumeau serveur l'IGNORAIT. La case « chiffrer sans rien écrire »
+    // coupait la dépense au navigateur et pas du tout au cron : l'utilisateur croyait avoir
+    // arrêté l'enrichissement, et il continuait de payer les modèles toutes les nuits, en
+    // silence. C'est la divergence de jumeaux la plus coûteuse qu'on puisse écrire.
+    //
+    // La feuille repart INCHANGÉE plutôt que vide : une simulation ne doit pas assécher
+    // l'aval du graphe, sinon on ne peut simuler qu'en bout de chaîne — ici, « Comparer
+    // catalogue » doit continuer de recevoir le catalogue entier.
+    if (cfg.dryRun) {
+      ctx.log('info', t(ctx.locale, 'run.textEnrich.dryRun'))
+      publishOps(0, true)
+      return {
+        enriched: { name: sheet?.name ?? 'sheet', columns: sheet?.columns ?? [], rows: allRows },
+        revisions: { name: 'revisions', columns: [], rows: [] },
+      }
+    }
+
     const limit = Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : units.length
     const capped = units.slice(0, limit)
     const notes: Record<string, string> = {}

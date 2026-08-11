@@ -1488,6 +1488,10 @@ export const en: Record<TranslationKey, string> = {
   'wfe.template': 'Template',
   'wfe.stepByStep.label': 'Step by step',
   'wfn.selectNode': 'Select a node or a connection to see its details.',
+  'wfn.bypass': 'Bypass',
+  'wfn.bypass.on': 'Card disabled: it does not run and lets data through. Click to re-enable it.',
+  'wfn.bypass.off': 'Disable this card: it will no longer run, data will pass through untouched. The flow stays intact.',
+  'wfn.bypass.badge': 'DISABLED',
   'wfp.blocks': 'Blocks',
   'wfp.optional': 'optional',
   'wfp.intro': 'Build your workflow step by step — drag onto the canvas, or click to spawn it in the centre.',
@@ -2901,6 +2905,7 @@ export const en: Record<TranslationKey, string> = {
   'run.outcome.success': '✅ "{label}" finished',
   'run.outcome.successBody': '{count} node(s) ran successfully.',
   'run.stopped': 'Run stopped',
+  'run.node.bypassed': 'Card disabled (bypass): data passes through untouched.',
   'run.unknownType': 'Unknown type: {type}',
   'run.unknownTypeInLoop': 'Unknown type in the loop body: {type}',
   // Logique / transformations / réseau — lot 18

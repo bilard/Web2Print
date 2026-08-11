@@ -1565,6 +1565,10 @@ export const fr = {
   'wfe.template': 'Modèle',
   'wfe.stepByStep.label': 'Pas à pas',
   'wfn.selectNode': 'Sélectionnez un node ou une connexion pour voir ses détails.',
+  'wfn.bypass': 'ByPass',
+  'wfn.bypass.on': 'Carte désactivée : elle ne s’exécute pas et laisse passer les données. Cliquer pour la réactiver.',
+  'wfn.bypass.off': 'Désactiver cette carte : elle ne s’exécutera plus, les données la traverseront sans être traitées. Le flux reste intact.',
+  'wfn.bypass.badge': 'DÉSACTIVÉE',
   'wfp.blocks': 'Blocs',
   'wfp.optional': 'optionnel',
   'wfp.intro': 'Construisez votre workflow étape par étape — glissez sur le canvas ou cliquez pour spawn au centre.',
@@ -3027,6 +3031,7 @@ export const fr = {
   'run.outcome.success': '✅ « {label} » terminé',
   'run.outcome.successBody': '{count} node(s) exécuté(s) avec succès.',
   'run.stopped': 'Run arrêté',
+  'run.node.bypassed': 'Carte désactivée (ByPass) : les données passent sans traitement.',
   'run.unknownType': 'Type inconnu : {type}',
   'run.unknownTypeInLoop': 'Type inconnu dans le body de loop : {type}',
   // Logique / transformations / réseau — lot 18

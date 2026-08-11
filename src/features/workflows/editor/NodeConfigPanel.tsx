@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@xyflow/react'
-import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertTriangle } from 'lucide-react'
+import { ArrowRight, ArrowLeft, X, Link2, Trash2, AlertTriangle, Power } from 'lucide-react'
 import { useWorkflowStore } from '../persistence/workflow.store'
 import { useRunContext } from '../runtime/runContext'
 import { nodeRegistry } from '../registry'
@@ -479,7 +479,28 @@ export function NodeConfigPanel() {
         </p>
       ) : (
         <div className="flex flex-col min-h-0 flex-1 space-y-3">
-          <div className="text-sm font-medium text-white shrink-0">{t(spec.labelKey)}</div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="text-sm font-medium text-white truncate flex-1">{t(spec.labelKey)}</div>
+            {/* ⚠⚠ ByPass : écarter une étape SANS toucher au flux. Jusqu'ici, ne plus vouloir
+                d'enrichissement dans une chaîne de veille imposait de supprimer la carte —
+                donc de perdre sa configuration — ou de débrancher ses liens à la main puis
+                de les refaire. Le drapeau vit sur le NODE, pas dans sa config : il vaut pour
+                tous les types, y compris ceux qui n'ont aucun réglage. */}
+            <button
+              type="button"
+              onClick={() => upsertNode({ ...node, bypass: !node.bypass })}
+              aria-pressed={!!node.bypass}
+              title={t(node.bypass ? 'wfn.bypass.on' : 'wfn.bypass.off')}
+              className={`shrink-0 text-[11px] rounded px-2 py-1 border transition-colors flex items-center gap-1 ${
+                node.bypass
+                  ? 'border-amber-400/50 bg-amber-500/15 text-amber-200'
+                  : 'border-white/10 text-white/50 hover:text-white hover:border-white/25'
+              }`}
+            >
+              <Power className="w-3 h-3" />
+              {t('wfn.bypass')}
+            </button>
+          </div>
 
           {/* Onglets Config / Logs */}
           <div className="flex items-center gap-1 border-b border-white/10 shrink-0">

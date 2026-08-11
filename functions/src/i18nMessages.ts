@@ -223,6 +223,14 @@ const MESSAGES = {
     fr: 'Déjà envoyé pour cette période ({key}).',
     en: 'Already sent for this period ({key}).',
   },
+  'run.textEnrich.dryRun': {
+    fr: 'Simulation : rien n’a été écrit ni appelé.',
+    en: 'Dry run: nothing was written or called.',
+  },
+  'run.node.bypassed': {
+    fr: 'Carte désactivée (ByPass) : les données passent sans traitement.',
+    en: 'Card disabled (bypass): data passes through untouched.',
+  },
   'run.textEnrich.planned': {
     fr: '{units} champs à traiter sur {considered} examinés ({done} déjà faits).',
     en: '{units} fields to process out of {considered} examined ({done} already done).',
