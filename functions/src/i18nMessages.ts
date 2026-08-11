@@ -115,8 +115,8 @@ const MESSAGES = {
     en: '{domain}: +{indexed} product(s) over {pages} page(s) (index: {total} pages).',
   },
   'run.harvest.antiBotBlocked': {
-    fr: '{domain} : bloqué par une protection anti-bot ({protection}) — la page de défi remplace le catalogue sur toutes les grilles. Forcer le moteur sur Bright Data pour ce site.',
-    en: '{domain}: blocked by an anti-bot protection ({protection}) — the challenge page replaces the catalogue on every grid. Force the engine to Bright Data for this site.',
+    fr: '{domain} : aucune page lue — une protection anti-bot ({protection}) a répondu à la place du site. Essayer un autre moteur (Bright Data passe les défis durs).',
+    en: '{domain}: no page read — an anti-bot protection ({protection}) answered instead of the site. Try another engine (Bright Data gets through hard challenges).',
   },
   'run.harvest.engineSilent': {
     fr: "{domain} : aucune page n'est arrivée — {asked} lecture(s) refusée(s) par le moteur « {engine} ». Service en panne, clé absente ou budget épuisé : ce n'est pas un catalogue vide.",

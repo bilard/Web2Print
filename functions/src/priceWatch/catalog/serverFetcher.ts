@@ -36,13 +36,27 @@ export interface ServerFetcher {
   stats: () => { asked: number; got: number }
 }
 
-/** Jina Reader en mode HTML — mêmes en-têtes que le client. */
-async function jinaHtml(url: string, timeoutMs: number): Promise<string | null> {
+/**
+ * Jina Reader en mode HTML — mêmes en-têtes que le client, **clé comprise**.
+ *
+ * ⚠⚠ Elle manquait. Le navigateur envoie `Authorization: Bearer …` depuis toujours ; le
+ * serveur appelait Jina en ANONYME, c'est-à-dire sous une limite de débit partagée par
+ * tout l'Internet. Avec quatre sites moissonnés de front, les refus arrivent vite — et un
+ * refus rend `null`, donc « accueil injoignable », donc « aucune catégorie cible
+ * trouvée », donc un site à zéro fiche dont plus rien ne dit qu'il a simplement été
+ * rationné. Le même compte, la même clé, deux comportements : encore une divergence
+ * client/serveur, la troisième de la soirée.
+ */
+async function jinaHtml(url: string, timeoutMs: number, key?: string): Promise<string | null> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), timeoutMs)
   try {
     const res = await fetch(`https://r.jina.ai/${url}`, {
-      headers: { 'X-Return-Format': 'html', Accept: 'text/html' },
+      headers: {
+        'X-Return-Format': 'html',
+        Accept: 'text/html',
+        ...(key ? { Authorization: `Bearer ${key}` } : {}),
+      },
       signal: ctrl.signal,
     })
     if (!res.ok) return null
@@ -115,6 +129,19 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
   let jar: string | null = null
   let jarTried = false
 
+  // Clé Jina lue UNE fois par passe puis mémoïsée : une lecture Firestore par page
+  // coûterait plus cher que la page elle-même. `null` = pas de clé configurée, on
+  // continue en anonyme plutôt que d'abandonner le site.
+  let jinaKey: string | null | undefined
+  const jinaOf = async (url: string): Promise<string | null> => {
+    // try/catch plutôt que `.catch` sur le retour : la clé absente ne doit jamais faire
+    // tomber une moisson, y compris si le lecteur de clés rend autre chose qu'une promesse.
+    if (jinaKey === undefined) {
+      try { jinaKey = (await getUserApiKey(uid, 'jina')) || null } catch { jinaKey = null }
+    }
+    return jinaHtml(url, timeoutMs, jinaKey ?? undefined)
+  }
+
   if (site.auth) {
     return {
       lastEngine: () => last,
@@ -180,7 +207,7 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
       blockedBy: () => blocked,
       stats: () => ({ asked: 0, got: 0 }),
       fetchHtml: async (url) => {
-        const html = keep(await jinaHtml(url, timeoutMs))
+        const html = keep(await jinaOf(url))
         if (html) { last = 'jina'; return html }
         return null
       },
@@ -211,7 +238,7 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
       if (!sticky || retry) {
         const direct = keep(await fetchHtml(url, timeoutMs).catch(() => null))
         if (direct) { last = 'cloudFunction'; sinceRetry = 0; return direct }
-        const viaJina = keep(await jinaHtml(url, timeoutMs))
+        const viaJina = keep(await jinaOf(url))
         if (viaJina) { last = 'jina'; sinceRetry = 0; return viaJina }
       }
 

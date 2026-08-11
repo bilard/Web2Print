@@ -211,8 +211,13 @@ registerServerNode({
       // message qu'un catalogue vide ou qu'un extracteur cassé, alors que la cause et le
       // remède n'ont rien à voir. Mesuré sur granit-parts.fr : Cloudflare répondait à la
       // place du site sur toutes les grilles, et pas une ligne ne le disait.
+      // ⚠ Condition sur `got === 0`, PAS sur « 0 produit » : swap-europe, qui indexe des
+      // milliers de fiches, rencontre un défi de temps en temps et se voyait annoncé
+      // « bloqué » dès qu'une passe finissait sans produit (fenêtre de run atteinte). Un
+      // avertissement qui crie au loup sur un site sain fait ignorer les vrais.
+      const { asked, got } = fetcher.stats()
       const blocker = fetcher.blockedBy()
-      if (blocker && res.productsIndexed === 0) {
+      if (blocker && got === 0 && asked > 0) {
         ctx.log('warn', t(ctx.locale, 'run.harvest.antiBotBlocked', { domain: site.domain, protection: blocker }))
       }
       // ⚠⚠ Aucune page N'EST ARRIVÉE. Distinct du cas précédent : là, une protection a
@@ -220,7 +225,6 @@ registerServerNode({
       // budget épuisé. Mesuré sur granit-parts.fr forcé sur Firecrawl pendant une avarie
       // de ce service : « +0 produit(s) sur 82 page(s) », et pas un mot sur les
       // quatre-vingt-deux lectures refusées.
-      const { asked, got } = fetcher.stats()
       if (!blocker && asked > 0 && got === 0) {
         ctx.log('warn', t(ctx.locale, 'run.harvest.engineSilent', {
           domain: site.domain, engine: site.engine ?? 'auto', asked,
