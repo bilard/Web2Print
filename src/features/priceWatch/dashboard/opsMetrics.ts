@@ -8,8 +8,14 @@
 // `cumulHarvestMs / sweeps`. Un « débit fiches/min » (Σindexed / ΣcumulMs) serait
 // TROMPEUR car `indexed` est dédupliqué/courant tandis que `cumulMs` s'accumule à
 // chaque re-balayage → il décroîtrait à 1/N après N cycles. On ne le calcule pas.
+import { LIVE_BEAT_MS } from '@/lib/liveRun'
 import type { StoredReport } from '../reportStore'
 import type { CompetitorStat } from '../catalog/report'
+
+/** Un site « collecte maintenant » si sa méta a battu dans la fenêtre du run vivant. Le
+ *  MÊME seuil que partout ailleurs (`LIVE_BEAT_MS`) : trois copies d'un seuil de vie ont
+ *  déjà divergé une fois dans ce module. */
+const HARVEST_LIVE_MS = LIVE_BEAT_MS
 
 /** Méta de moisson LIVE d'un concurrent (doc `competitors/{siteId}`), lue en onSnapshot.
  *  Se met à jour à CHAQUE passe de moisson → prime sur le snapshot figé du rapport. */
@@ -74,6 +80,17 @@ export interface OpsCockpit {
   lastCollectDomain: string | null
   /** true dès qu'au moins un concurrent a collecté des fiches (sinon : en attente). */
   hasData: boolean
+  /** Pages indexées, tous concurrents — le second volume réel de la moisson, à côté des
+   *  fiches. L'écran « Suivi » ne comptait que des SITES : il taisait les 14 000 fiches
+   *  qu'un run collecte réellement. */
+  totalPages: number
+  /** Fiches et pages de la DERNIÈRE passe de chaque site. Σ honnête (contrairement à un
+   *  débit calculé sur `cumulMs`, qui décroît à 1/N après N cycles — cf. l'en-tête) :
+   *  c'est ce que le dernier passage a rapporté. */
+  lastPassProducts: number
+  lastPassPages: number
+  /** Concurrents dont la moisson bat MAINTENANT (`harvestBeatAt` récent). */
+  sitesCollecting: number
   competitors: OpsCompetitor[] // triés par fiches décroissantes
 }
 
@@ -190,8 +207,22 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     }
   }
 
+  // Volumes RÉELS de la moisson, lus sur les métas live (elles tiquent toutes les quinze
+  // pages pendant la passe). Un run collecte de l'ordre de quatorze mille fiches — l'écran
+  // « Suivi » n'en montrait aucune, il ne comptait que des sites bouclés.
+  const liveOf = (siteId: string) => liveMeta?.get(siteId)
+  const kept = competitors.filter((c) => !disabled.has(c.siteId))
+  const totalPages = kept.reduce((n, c) => n + (liveOf(c.siteId)?.pageCount ?? 0), 0)
+  const lastPassProducts = kept.reduce((n, c) => n + (liveOf(c.siteId)?.lastPassProducts ?? 0), 0)
+  const lastPassPages = kept.reduce((n, c) => n + (liveOf(c.siteId)?.lastPassPages ?? 0), 0)
+  const sitesCollecting = kept.filter((c) => {
+    const beat = liveOf(c.siteId)?.harvestBeatAt
+    return beat != null && report.runAt >= 0 && Date.now() - beat < HARVEST_LIVE_MS
+  }).length
+
   return {
     totalIndexed, totalCumulMs, avgProgress,
+    totalPages, lastPassProducts, lastPassPages, sitesCollecting,
     sitesActive: active.length,
     sitesTotal: competitors.filter((c) => !disabled.has(c.siteId)).length,
     // ⚠ Repli sur les sites AYANT DES DONNÉES quand le rapport ne porte pas sa liste :

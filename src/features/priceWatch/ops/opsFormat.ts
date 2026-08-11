@@ -1,5 +1,5 @@
 // Mise en forme des durées de l'écran « Suivi ». PUR.
-import type { ChantierId } from './buildWatchOps'
+import type { ChantierId, FactKey } from './buildWatchOps'
 import type { ResumeMode } from './opsTypes'
 import type { TranslationKey } from '@/lib/i18n'
 
@@ -37,6 +37,18 @@ export function stoppedByKey(reason: 'spend' | 'deadline' | 'units'): Translatio
     deadline: 'ops.card.stoppedBy.deadline',
     units: 'ops.card.stoppedBy.units',
   } as const)[reason]
+}
+
+/** Libellé d'un volume affiché à côté de la jauge. ⚠ La CLÉ (cf. `chantierLabelKey`). */
+export function factLabelKey(key: FactKey): TranslationKey {
+  return ({
+    indexed: 'ops.fact.indexed',
+    pages: 'ops.fact.pages',
+    lastPassProducts: 'ops.fact.lastPassProducts',
+    collecting: 'ops.fact.collecting',
+    considered: 'ops.fact.considered',
+    alreadyDone: 'ops.fact.alreadyDone',
+  } as const)[key]
 }
 
 /** Libellé d'un chantier. ⚠ La CLÉ, pas le texte : `t()` appelé ici, en constante de

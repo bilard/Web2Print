@@ -27,6 +27,11 @@ export interface RunView {
 
 export type ChantierId = 'harvest' | 'translate' | 'improve' | 'structure'
 
+/** Les volumes qu'une carte sait dire. Une clé = un libellé i18n (cf. `factLabelKey`). */
+export type FactKey =
+  | 'indexed' | 'pages' | 'lastPassProducts' | 'collecting'
+  | 'considered' | 'alreadyDone'
+
 export interface Chantier {
   id: ChantierId
   /** Ce qui est fait — fiches, champs ou sites selon le chantier. */
@@ -39,6 +44,16 @@ export interface Chantier {
   etaMs: number | null
   /** Débit mesuré (unités/minute), null avant la première minute ou si le travail s'est arrêté. */
   perMin: number | null
+  /**
+   * Ce que le chantier a réellement produit, en volumes. PAS une jauge : des nombres.
+   *
+   * ⚠⚠ Le manque le plus criant de l'écran. Un run collecte ~14 000 fiches sur une dizaine
+   * de sites (mesuré dans les traces : « +3 500 produit(s) sur 35 page(s) ») et la carte
+   * Moisson n'affichait que « 21 sites bouclés · 63 % · 1 en cours » — trois nombres qui
+   * ne bougent pas d'un run à l'autre. Toute la matière était déjà en base, live, et
+   * personne ne la montrait.
+   */
+  facts?: { key: FactKey; value: number }[]
   /** Ventilation par langue — traduction seulement. */
   byLang?: { lang: string | null; count: number }[]
   /** Vrai si le travail s'est TU sans dire pourquoi (inactif depuis plus de LIVE_BEAT_MS,
@@ -84,6 +99,15 @@ function pctOf(done: number, remaining: number): number {
   return total === 0 ? 0 : Math.round((done / total) * 100)
 }
 
+/** Volumes du passage de textes — les mêmes pour tous ses chantiers : ils décrivent le
+ *  passage, pas une nature de travail en particulier. */
+function factsOfTexts(t: NonNullable<WatchOpsProgress['texts']>): { key: FactKey; value: number }[] {
+  const out: { key: FactKey; value: number }[] = []
+  if (t.considered > 0) out.push({ key: 'considered', value: t.considered })
+  if (t.alreadyDone > 0) out.push({ key: 'alreadyDone', value: t.alreadyDone })
+  return out
+}
+
 function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[]; reasons?: { fresh: number; stale: number } } {
   const t = p.texts
   if (!t) return { chantiers: [] }
@@ -116,6 +140,9 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
       // figé annoncerait une fin qui ne viendra pas avant le prochain run.
       etaMs: idle ? null : eta(done, effectiveRemaining, elapsedMs),
       perMin: idle || elapsedMs < 60_000 || done === 0 ? null : Math.round(done / (elapsedMs / 60_000)),
+      // ⚠ Publiés par le passage depuis l'origine (`TextsProgress`), jamais montrés : le
+      // dénominateur honnête (« examinés ») et ce que la mémoire a épargné (« déjà faits »).
+      ...(factsOfTexts(t).length ? { facts: factsOfTexts(t) } : {}),
       ...(id === 'translate' && t.byLang ? { byLang: t.byLang } : {}),
       // ⚠ « Arrêté » se lit « interrompu ». Un chantier TERMINÉ n'a plus rien à écrire :
       // trois minutes après sa dernière ligne, une carte à 100 % et 0 restant portait le
@@ -133,8 +160,14 @@ function harvestChantier(c: OpsCockpit): Chantier | null {
   if (!c.hasData && c.sitesActive === 0) return null
   const done = c.sitesComplete
   const remaining = Math.max(0, c.sitesActive - c.sitesComplete)
+  const facts: { key: FactKey; value: number }[] = []
+  if (c.totalIndexed > 0) facts.push({ key: 'indexed', value: c.totalIndexed })
+  if (c.totalPages > 0) facts.push({ key: 'pages', value: c.totalPages })
+  if (c.lastPassProducts > 0) facts.push({ key: 'lastPassProducts', value: c.lastPassProducts })
+  if (c.sitesCollecting > 0) facts.push({ key: 'collecting', value: c.sitesCollecting })
   return {
     id: 'harvest', done, remaining,
+    ...(facts.length ? { facts } : {}),
     // ⚠ Le pourcentage vient du BALAYAGE moyen, pas du compte de sites : un site à moitié
     // moissonné avance, et un écran qui reste à 0 % pendant vingt minutes fait croire à
     // un blocage.

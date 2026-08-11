@@ -87,7 +87,19 @@ export async function executeWorkflowHeadless(
     signal: AbortSignal
     /** Notifié à chaque node avec l'état COURANT de tous les nodes + les sorties des
      *  nodes déjà terminés (progression + aperçu données live). */
-    onProgress?: (states: Record<string, LiveNodeStatus>, outputs: Record<string, Record<string, unknown>>) => void | Promise<void>
+    onProgress?: (states: Record<string, LiveNodeStatus>, outputs: Record<string, Record<string, unknown>>,
+      counts: Record<string, number>, cycles: Record<string, number>) => void | Promise<void>
+    /**
+     * Reçoit une sonde qui rend l'état courant À TOUT MOMENT. Le battement périodique du
+     * planificateur s'en sert : `onProgress` ne se déclenche qu'aux frontières de niveau,
+     * donc pendant les vingt minutes d'un node de moisson, RIEN n'était publié — aucun
+     * compteur ne bougeait à l'écran, et c'est précisément ce qu'on venait y voir.
+     */
+    onHeartbeat?: (probe: () => {
+      states: Record<string, LiveNodeStatus>
+      counts: Record<string, number>
+      cycles: Record<string, number>
+    }) => void
     /** Notifié à chaque log (throttlé côté appelant) — streaming des logs en direct. */
     onLog?: (logs: RunLog[]) => void
     /** Reprise : sorties des nodes déjà terminés lors d'un run précédent interrompu
@@ -203,6 +215,13 @@ export async function executeWorkflowHeadless(
     }
     return s
   }
+
+  // Nodes du niveau en cours d'exécution — la sonde de battement en a besoin pour rendre
+  // le MÊME état que `onProgress` publierait à cet instant.
+  let levelRunning: ReadonlySet<string> | undefined
+  opts.onHeartbeat?.(() => ({
+    states: deriveStates(levelRunning), counts: nodeCounts, cycles: nodeCycles,
+  }))
 
   let nodeCount = 0
 
@@ -391,9 +410,11 @@ export async function executeWorkflowHeadless(
   // soit marqué « arrêté » (skipped + log) comme avant — runNode le fait sans rien exécuter.
   for (const lvl of [...byLevel.keys()].sort((a, b) => a - b)) {
     const group = byLevel.get(lvl)!
-    await opts.onProgress?.(deriveStates(new Set(group.map((n) => n.id))), nodeOutputs)
+    levelRunning = new Set(group.map((n) => n.id))
+    await opts.onProgress?.(deriveStates(levelRunning), nodeOutputs, nodeCounts, nodeCycles)
     await runConcurrent(group, MAX_NODE_CONCURRENCY, runNode)
-    await opts.onProgress?.(deriveStates(), nodeOutputs)
+    levelRunning = undefined
+    await opts.onProgress?.(deriveStates(), nodeOutputs, nodeCounts, nodeCycles)
   }
 
   // Purge du journal des pannes — UNE fois par run, pas une fois par carte en erreur : la

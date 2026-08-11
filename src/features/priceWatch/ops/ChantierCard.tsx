@@ -1,8 +1,8 @@
 // Une carte par chantier de l'écran « Suivi » : où il en est, ce qu'il reste, à quel
 // rythme. Aucun calcul ici — tout vient déjà tranché de `buildWatchOps` (PUR).
 import type { Chantier } from './buildWatchOps'
-import { chantierLabelKey, chantierUnitKeys, etaParts, plural, stoppedByKey, subPercentKey } from './opsFormat'
-import { useTranslation } from '@/lib/i18n'
+import { chantierLabelKey, chantierUnitKeys, etaParts, factLabelKey, plural, stoppedByKey, subPercentKey } from './opsFormat'
+import { intlLocale, useTranslation } from '@/lib/i18n'
 
 /**
  * Texte de durée restante, ou `null` quand il n'y a rien à dire — le chantier arrêté
@@ -31,7 +31,8 @@ function EtaLabel({ chantier }: { chantier: Chantier }) {
 }
 
 export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
-  const { t } = useTranslation()
+  const { t, locale: uiLocale } = useTranslation()
+  const locale = intlLocale(uiLocale)
   // Ce que comptent les trois chiffres — l'unité change d'un chantier à l'autre, et le
   // pourcentage de la moisson ne mesure pas la même chose que les compteurs qui l'encadrent.
   const unit = chantierUnitKeys(c.id)
@@ -73,6 +74,20 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
         <div className="flex items-center justify-between text-[11px]">
           <EtaLabel chantier={c} />
           {c.perMin != null && <span className="ml-auto text-white/40 tabular-nums">{t('ops.card.perMin', { n: c.perMin })}</span>}
+        </div>
+      )}
+
+      {/* ⚠⚠ CE QUE LE CHANTIER A RÉELLEMENT TRAITÉ. La jauge dit « où on en est », ces
+          nombres disent « combien » — et c'est eux qui manquaient : la moisson collecte
+          des milliers de fiches par run, l'écran n'en montrait aucune. */}
+      {c.facts && c.facts.length > 0 && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1.5 border-t border-white/5 text-[11px]">
+          {c.facts.map((f) => (
+            <span key={f.key} className="text-white/45">
+              <span className="text-white/75 font-medium tabular-nums">{f.value.toLocaleString(locale)}</span>
+              {' '}{t(factLabelKey(f.key))}
+            </span>
+          ))}
         </div>
       )}
 

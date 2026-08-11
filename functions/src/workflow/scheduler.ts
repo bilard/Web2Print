@@ -23,6 +23,17 @@ if (!getApps().length) initializeApp()
  * 1000 pages × 17 sites) + le Comparer dépassaient les 500s → run « interrompu » avant
  * l'écriture du rapport (dashboard figé). Le vrai plafond reste le timeout de la Function. */
 const RUN_TIMEOUT_MS = 1_700_000
+
+/** Cadence du battement d'état live. ⚠ Jumeau de `CLIENT_BEAT_INTERVAL_MS`
+ *  (`src/features/workflows/runtime/publishClientRun.ts`) : le navigateur publie son état
+ *  toutes les dix secondes, le cron ne le faisait qu'aux frontières de niveau — donc jamais
+ *  pendant les vingt minutes d'une moisson. Bien plus court que le seuil « run mort » de
+ *  trois minutes, qui dépend de ce battement. */
+const LIVE_HEARTBEAT_MS = 10_000
+
+/** Miroir du type local de `runLive.ts` — il n'y est pas exporté, et l'exporter pour ce
+ *  seul usage élargirait la surface d'un module d'écriture. */
+type LiveNodeStatus = 'running' | 'success' | 'error' | 'skipped' | 'pending'
 /** Plafond de plannings traités par tick du scanner (les autres repassent au tick suivant,
  * ordonnés par échéance). Évite qu'un lot massif fasse expirer toute la Function. */
 const MAX_SCHEDULES_PER_TICK = 25
@@ -132,6 +143,20 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     await writeRunLive(uid, wf.id, { logs: preflight.map((msg) => ({ ts: Date.now(), level: 'warn' as const, msg })) })
   }
 
+  /** Sonde de l'état courant, posée par le moteur dès le démarrage (cf. `onHeartbeat`). */
+  let liveProbe: (() => {
+    states: Record<string, LiveNodeStatus>
+    counts: Record<string, number>
+    cycles: Record<string, number>
+  }) | null = null
+  const heartbeat = setInterval(() => {
+    const snap = liveProbe?.()
+    if (!snap) return
+    void writeRunLive(uid, wf.id, {
+      nodeStates: snap.states, nodeCounts: snap.counts, nodeCycles: snap.cycles,
+    })
+  }, LIVE_HEARTBEAT_MS)
+
   try {
     // Streaming des logs : écriture throttlée (≥ 2 s) pour que l'onglet Logs se
     // remplisse PENDANT le run (sinon « En cours… Aucun log » jusqu'à la fin).
@@ -149,8 +174,23 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       onNodeDone: trigger === 'cron'
         ? async (nodeId, output) => { if (await saveNodeOutput(uid, wf.id, nodeId, output)) completed.add(nodeId) }
         : undefined,
-      onProgress: (nodeStates, nodeOutputs) =>
-        writeRunLive(uid, wf.id, { nodeStates, nodeOutputs: capOutputsForPreview(nodeOutputs) }),
+      onProgress: (nodeStates, nodeOutputs, nodeCounts, nodeCycles) =>
+        // ⚠ `nodeCounts`/`nodeCycles` VOYAGENT ici aussi. Ils n'étaient écrits qu'à la
+        // pause et à la fin : pendant tout le run, les cartes de l'écran « Suivi »
+        // n'affichaient aucun chiffre, puis tout apparaissait d'un coup, terminé. Le
+        // jumeau navigateur les publie à chaque battement depuis toujours.
+        writeRunLive(uid, wf.id, {
+          nodeStates, nodeOutputs: capOutputsForPreview(nodeOutputs), nodeCounts, nodeCycles,
+        }),
+      // ⚠⚠ Battement PÉRIODIQUE, indépendant des nodes. `onProgress` ne se déclenche qu'aux
+      // frontières de niveau : un node de moisson qui tourne vingt minutes ne publiait rien
+      // entre-temps, et l'écran semblait figé alors que le run collectait des milliers de
+      // fiches. Même cadence que le jumeau navigateur (`CLIENT_BEAT_INTERVAL_MS`), dont
+      // dépend aussi le seuil « run mort ». Écriture en MERGE : surtout pas `replace`, qui
+      // écraserait runId/startedAt/trigger à chaque tick.
+      onHeartbeat: (probe) => {
+        liveProbe = probe
+      },
       onLog: (logs) => {
         const now = Date.now()
         if (now - lastLogWrite < 2000) return
@@ -179,6 +219,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
       // Aperçu en pause : les nodes faits = success, le reste = pending (reprise au tick suivant).
       const pausedStates: Record<string, 'success' | 'pending'> = {}
       for (const n of wf.nodes) pausedStates[n.id] = completed.has(n.id) ? 'success' : 'pending'
+      clearInterval(heartbeat)
       await writeRunLive(uid, wf.id, {
         runId, trigger, startedAt, status: 'running', nodeStates: pausedStates,
         logs: result.logs.slice(-200), nodeOutputs: capOutputsForPreview(result.nodeOutputs),
@@ -190,6 +231,7 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     }
 
     // Sinon, run terminé : succès/partiel, STOP volontaire, ou reprise impossible/épuisée.
+    clearInterval(heartbeat)
     if (trigger === 'cron') await clearCheckpoint(uid, wf.id)
     // Run interrompu (STOP/timeout non reprenable) : statut global « error » (n'a pas abouti),
     // même si les nodes individuels sont « arrêtés » (skipped) et non en échec.
@@ -221,6 +263,8 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   } finally {
     clearTimeout(timer)
     clearInterval(abortPoll)
+    // Idempotent : déjà arrêté sur les deux sorties normales, il reste le jet d'exception.
+    clearInterval(heartbeat)
     await abortRef.delete().catch(() => {})
   }
 }

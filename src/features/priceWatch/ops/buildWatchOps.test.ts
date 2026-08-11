@@ -179,6 +179,7 @@ describe("buildWatchOps — chantier moisson", () => {
         counts: { active: 4, inactive: 0, total: 4 },
         sitesComplete: 1, cyclesDone: 0, slowestCycle: null,
         runAt: NOW, lastCollectAt: NOW, lastCollectDomain: 'a.fr', hasData: true,
+        totalPages: 3_400, lastPassProducts: 814, lastPassPages: 35, sitesCollecting: 2,
         competitors: [],
       },
       run: null, now: NOW,
@@ -186,6 +187,63 @@ describe("buildWatchOps — chantier moisson", () => {
     const m = v.chantiers.find((c) => c.id === 'harvest')!
     expect(m.remaining).toBe(3)      // 4 sites actifs − 1 bouclé
     expect(m.pct).toBe(50)           // avgProgress
+  })
+
+  // ⚠⚠ Mesuré dans les traces d'un run réel : « +3 500 produit(s) sur 35 page(s) »,
+  // « +2 030 », « +1 641 »… ~14 000 fiches collectées. La carte n'affichait que
+  // « 21 sites bouclés · 63 % · 1 en cours » — trois nombres identiques d'un run à l'autre,
+  // d'où « on ne voit rien avancer ». Les volumes existaient en base, live, non affichés.
+  it("dit les VOLUMES réels de la moisson, pas seulement des sites", () => {
+    const v = buildWatchOps({
+      progress: null,
+      cockpit: {
+        totalIndexed: 440_173, totalCumulMs: 0, avgProgress: 0.63,
+        sitesActive: 14, sitesTotal: 23,
+        counts: { active: 14, inactive: 9, total: 23 },
+        sitesComplete: 21, cyclesDone: 1, slowestCycle: null,
+        runAt: NOW, lastCollectAt: NOW, lastCollectDomain: 'a.fr', hasData: true,
+        totalPages: 26_038, lastPassProducts: 14_040, lastPassPages: 350, sitesCollecting: 3,
+        competitors: [],
+      },
+      run: null, now: NOW,
+    })
+    const facts = v.chantiers.find((c) => c.id === 'harvest')!.facts!
+    expect(facts).toEqual([
+      { key: 'indexed', value: 440_173 },
+      { key: 'pages', value: 26_038 },
+      { key: 'lastPassProducts', value: 14_040 },
+      { key: 'collecting', value: 3 },
+    ])
+  })
+
+  it("ne fabrique pas de volume à zéro — un chiffre nul n'apprend rien", () => {
+    const v = buildWatchOps({
+      progress: null,
+      cockpit: {
+        totalIndexed: 12, totalCumulMs: 0, avgProgress: 0, sitesActive: 1, sitesTotal: 1,
+        counts: { active: 1, inactive: 0, total: 1 },
+        sitesComplete: 0, cyclesDone: 0, slowestCycle: null,
+        runAt: NOW, lastCollectAt: NOW, lastCollectDomain: null, hasData: true,
+        totalPages: 0, lastPassProducts: 0, lastPassPages: 0, sitesCollecting: 0,
+        competitors: [],
+      },
+      run: null, now: NOW,
+    })
+    expect(v.chantiers.find((c) => c.id === 'harvest')!.facts).toEqual([{ key: 'indexed', value: 12 }])
+  })
+
+  it("montre ce que le passage de textes a EXAMINÉ et ce que la mémoire a épargné", () => {
+    const v = buildWatchOps({
+      progress: progress({
+        considered: 231_630, alreadyDone: 23_828, pending: { translate: 207_802 },
+        done: 504, total: 207_802, startedAt: NOW - 60_000, beatAt: NOW, origin: 'server',
+      }),
+      cockpit: null, run: null, now: NOW,
+    })
+    expect(v.chantiers.find((c) => c.id === 'translate')!.facts).toEqual([
+      { key: 'considered', value: 231_630 },
+      { key: 'alreadyDone', value: 23_828 },
+    ])
   })
 
   it("n'affiche aucun chantier quand rien n'a jamais tourné", () => {
