@@ -4,16 +4,7 @@
 // saturé la mémoire du cron. On n'agrège que de petits documents de méta.
 import type { OpsCockpit } from '../dashboard/opsMetrics'
 import type { WatchOpsProgress } from './opsTypes'
-
-/**
- * Silence au-delà duquel un run n'est plus vivant.
- *
- * ⚠ Le statut ne prouve rien : une Cloud Function tuée laisse `running` pour toujours.
- * Ce qui prouve qu'un run vit, c'est qu'il ÉCRIT. Même valeur que `LIVE_BEAT_MS` de
- * `workflows/runtime/useServerRunLive` — surtout ne pas inventer un troisième seuil, deux
- * écrans se contrediraient sur « est-ce que ça tourne ».
- */
-const OPS_BEAT_MS = 3 * 60_000
+import { LIVE_BEAT_MS } from '@/lib/liveRun'
 
 /** Sous ce niveau d'avancement, toute estimation de durée est une invention. */
 const ETA_FLOOR = 0.1
@@ -50,7 +41,7 @@ export interface Chantier {
   perMin: number | null
   /** Ventilation par langue — traduction seulement. */
   byLang?: { lang: string | null; count: number }[]
-  /** Vrai si le travail s'est arrêté (inactif depuis plus de OPS_BEAT_MS). */
+  /** Vrai si le travail s'est arrêté (inactif depuis plus de LIVE_BEAT_MS). */
   stale?: boolean
 }
 
@@ -95,7 +86,7 @@ function textChantiers(p: WatchOpsProgress, now: number): { chantiers: Chantier[
   // ⚠ Le temps écoulé est borné par le dernier signe de vie : si l'écran reste ouvert
   // longtemps après l'arrêt du travail, l'estimation ne s'éternise pas.
   const elapsedMs = Math.max(0, Math.min(now, t.beatAt) - t.startedAt)
-  const isStalework = now - t.beatAt > OPS_BEAT_MS
+  const isStalework = now - t.beatAt > LIVE_BEAT_MS
   const out: Chantier[] = []
   for (const [kind, remaining] of Object.entries(t.pending)) {
     if (!remaining) continue
@@ -157,7 +148,7 @@ export function buildWatchOps(input: WatchOpsInput): WatchOpsView {
 
   const runView: RunView | null = run
     ? (() => {
-        const alive = run.status === 'running' && now - run.beatAt <= OPS_BEAT_MS
+        const alive = run.status === 'running' && now - run.beatAt <= LIVE_BEAT_MS
         return {
           // Un run périmé n'est ni un succès ni un échec : interrompu.
           status: run.status === 'running' && !alive ? 'stopped' : run.status,

@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { STALE_RUN_MS } from '@/features/priceWatch/radar/scrapeState'
+import { LIVE_BEAT_MS } from '@/lib/liveRun'
 import { useRunContext } from './runContext'
 import { activeClientRunId, isOwnEcho } from './publishClientRun'
 import type { NodeStatus } from '../types'
@@ -28,17 +29,6 @@ interface RunLiveDoc {
   nodeCounts?: Record<string, number>
   nodeCycles?: Record<string, number>
 }
-
-/**
- * Silence au-delà duquel un run serveur est considéré comme MORT.
- *
- * ⚠⚠ Le statut du document ne suffit pas : une Cloud Function tuée (délai dépassé, mémoire
- * saturée) laisse `status: 'running'` pour toujours. Se fier à ce champ faisait tourner les
- * rouages à l'écran des heures après l'arrêt. Ce qui prouve qu'un run vit, c'est qu'il
- * ÉCRIT — un log, un état de carte, un compteur. Trois minutes : les nodes à curseur
- * battent bien plus souvent que ça, et un vrai run n'est jamais muet si longtemps.
- */
-const LIVE_BEAT_MS = 3 * 60_000
 
 export function useServerRunLive(workflowId: string | undefined): void {
   const lastRunId = useRef<string | undefined>(undefined)

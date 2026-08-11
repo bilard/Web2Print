@@ -6,6 +6,7 @@
 // le mobile s'y abonnent déjà.
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
+import { LIVE_BEAT_MS } from '@/lib/liveRun'
 import { getWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useRunContext } from './runContext'
 import { useWorkflowStore } from '../persistence/workflow.store'
@@ -13,10 +14,6 @@ import { useWorkflowStore } from '../persistence/workflow.store'
 /** Un battement toutes les cinq secondes au plus. Un run d'une heure écrirait sinon des
  *  milliers de fois pour un écran qui se lit à la seconde. */
 export const CLIENT_BEAT_INTERVAL_MS = 5_000
-
-/** Au-delà de ce silence, un run n'est plus vivant : sa place est prenable. Même valeur
- *  que `LIVE_BEAT_MS` (useServerRunLive) et `OPS_BEAT_MS` (buildWatchOps). */
-const LIVE_BEAT_MS = 3 * 60_000
 
 export interface LiveDocHead {
   runId?: string
