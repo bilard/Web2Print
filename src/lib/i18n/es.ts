@@ -2620,6 +2620,7 @@ export const es: Record<TranslationKey, string> = {
   'run.harvest.siteEngine': '{domain}: motor forzado «{engine}».',
   'run.harvest.siteIndexed': '{domain}: +{indexed} producto(s) en {pages} página(s) (índice: {total} páginas).',
   'run.harvest.antiBotBlocked': "{domain}: bloqueado por una protección antibot ({protection}) — la página de desafío sustituye al catálogo en todas las cuadrículas. Fuerza el motor a Bright Data para este sitio.",
+  'run.harvest.engineSilent': "{domain}: no llegó ninguna página — {asked} lectura(s) rechazada(s) por el motor «{engine}». Servicio caído, clave ausente o presupuesto agotado: no es un catálogo vacío.",
   'run.harvest.budgetReserved': 'Presupuesto reservado para la comparativa — {skipped} sitio(s) no iniciado(s) en este run, el resto en el próximo tick.',
   'run.harvest.cycleComplete': 'Ciclo completo: {count} sitio(s) al 100 % — próximo inicio en la fecha de vencimiento del calendario.',
   // Moteur de moisson et sondes (`priceWatch/catalog/`) — émis via `deps.log`,

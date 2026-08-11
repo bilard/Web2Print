@@ -215,6 +215,17 @@ registerServerNode({
       if (blocker && res.productsIndexed === 0) {
         ctx.log('warn', t(ctx.locale, 'run.harvest.antiBotBlocked', { domain: site.domain, protection: blocker }))
       }
+      // ⚠⚠ Aucune page N'EST ARRIVÉE. Distinct du cas précédent : là, une protection a
+      // répondu ; ici le moteur n'a rien rendu du tout — clé absente, service en panne,
+      // budget épuisé. Mesuré sur granit-parts.fr forcé sur Firecrawl pendant une avarie
+      // de ce service : « +0 produit(s) sur 82 page(s) », et pas un mot sur les
+      // quatre-vingt-deux lectures refusées.
+      const { asked, got } = fetcher.stats()
+      if (!blocker && asked > 0 && got === 0) {
+        ctx.log('warn', t(ctx.locale, 'run.harvest.engineSilent', {
+          domain: site.domain, engine: site.engine ?? 'auto', asked,
+        }))
+      }
       return {
         site: site.domain,
         pagesFetched: res.pagesFetched,

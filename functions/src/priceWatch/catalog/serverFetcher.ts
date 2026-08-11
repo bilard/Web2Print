@@ -32,6 +32,8 @@ export interface ServerFetcher {
    * différentes, et une seule se corrige en changeant de moteur.
    */
   blockedBy: () => string | undefined
+  /** Pages demandées / réellement rendues sur la passe (cf. `counting`). */
+  stats: () => { asked: number; got: number }
 }
 
 /** Jina Reader en mode HTML — mêmes en-têtes que le client. */
@@ -62,7 +64,38 @@ async function jinaHtml(url: string, timeoutMs: number): Promise<string | null> 
  * que d'abandonner le site — un catalogue sans prix vaut mieux qu'aucun catalogue.
  */
 
+/**
+ * Compte les pages DEMANDÉES et RENDUES, autour de n'importe quel lecteur.
+ *
+ * ⚠⚠ Un moteur forcé qui échoue est totalement muet. Mesuré sur granit-parts.fr réglé sur
+ * Firecrawl pendant une panne de ce service : « +0 produit(s) sur 82 page(s) » —
+ * quatre-vingt-deux lectures REFUSÉES présentées comme quatre-vingt-deux pages lues. Sans
+ * ce compte, rien ne distingue « le catalogue est vide » de « aucune page n'est arrivée »,
+ * et ce sont deux pannes qui ne se réparent pas du tout de la même façon.
+ *
+ * Enveloppé ICI, autour du fetcher complet : une garde par branche finirait par en oublier
+ * une, et c'est précisément ce genre d'oubli qui a créé le trou qu'on vient de boucher.
+ */
+function counting(f: ServerFetcher): ServerFetcher {
+  let asked = 0
+  let got = 0
+  return {
+    ...f,
+    stats: () => ({ asked, got }),
+    fetchHtml: async (url) => {
+      asked++
+      const html = await f.fetchHtml(url)
+      if (html) got++
+      return html
+    },
+  }
+}
+
 export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs = 20_000): ServerFetcher {
+  return counting(buildRawFetcher(uid, site, timeoutMs))
+}
+
+function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): ServerFetcher {
   let last: string | undefined
   let blocked: string | undefined
 
@@ -86,6 +119,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
     return {
       lastEngine: () => last,
       blockedBy: () => blocked,
+      stats: () => ({ asked: 0, got: 0 }),
       fetchHtml: async (url) => {
         if (!jarTried) {
           jarTried = true
@@ -109,6 +143,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
     return {
       lastEngine: () => last,
       blockedBy: () => blocked,
+      stats: () => ({ asked: 0, got: 0 }),
       fetchHtml: async (url) => {
         // `brightDataRead` porte déjà le token/zone Firestore, l'escalade Web Unlocker →
         // Scraping Browser et le circuit-breaker crédits : rien à réimplémenter ici.
@@ -124,6 +159,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
     return {
       lastEngine: () => last,
       blockedBy: () => blocked,
+      stats: () => ({ asked: 0, got: 0 }),
       fetchHtml: async (url) => {
         // Clé PAR UTILISATEUR (comme le client) : pas de clé = pas de lecture. On ne
         // retombe PAS en direct — un site réglé sur Firecrawl l'est parce que le direct
@@ -142,6 +178,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
     return {
       lastEngine: () => last,
       blockedBy: () => blocked,
+      stats: () => ({ asked: 0, got: 0 }),
       fetchHtml: async (url) => {
         const html = keep(await jinaHtml(url, timeoutMs))
         if (html) { last = 'jina'; return html }
@@ -161,6 +198,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
   return {
     lastEngine: () => last,
     blockedBy: () => blocked,
+    stats: () => ({ asked: 0, got: 0 }),
     fetchHtml: async (url) => {
       // Collant sur le moteur payant qui a fonctionné : repayer l'échec des paliers
       // gratuits à chaque page coûterait une seconde et demie pour rien. On re-teste

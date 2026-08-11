@@ -2738,6 +2738,7 @@ export const fr = {
   'run.harvest.siteEngine': '{domain} : moteur forcé « {engine} ».',
   'run.harvest.siteIndexed': '{domain} : +{indexed} produit(s) sur {pages} page(s) (index : {total} pages).',
   'run.harvest.antiBotBlocked': "{domain} : bloqué par une protection anti-bot ({protection}) — la page de défi remplace le catalogue sur toutes les grilles. Forcer le moteur sur Bright Data pour ce site.",
+  'run.harvest.engineSilent': "{domain} : aucune page n'est arrivée — {asked} lecture(s) refusée(s) par le moteur « {engine} ». Service en panne, clé absente ou budget épuisé : ce n'est pas un catalogue vide.",
   'run.harvest.budgetReserved': 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',
   'run.harvest.cycleComplete': "Cycle complet : {count} site(s) à 100 % — prochaine relance à l'échéance calendaire.",
 

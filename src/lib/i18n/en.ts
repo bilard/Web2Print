@@ -2621,6 +2621,7 @@ export const en: Record<TranslationKey, string> = {
   'run.harvest.siteEngine': '{domain}: engine forced to "{engine}".',
   'run.harvest.siteIndexed': '{domain}: +{indexed} product(s) over {pages} page(s) (index: {total} pages).',
   'run.harvest.antiBotBlocked': "{domain}: blocked by an anti-bot protection ({protection}) — the challenge page replaces the catalogue on every grid. Force the engine to Bright Data for this site.",
+  'run.harvest.engineSilent': "{domain}: not a single page arrived — {asked} read(s) refused by the “{engine}” engine. Service down, missing key or exhausted budget: this is not an empty catalogue.",
   'run.harvest.budgetReserved': 'Budget reserved for the comparison — {skipped} site(s) not started on this run, the rest on the next tick.',
   'run.harvest.cycleComplete': 'Cycle complete: {count} site(s) at 100% — next start on the calendar due date.',
   // Moteur de moisson et sondes (`priceWatch/catalog/`) — émis via `deps.log`,
