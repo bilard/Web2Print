@@ -298,6 +298,9 @@ describe('⚠⚠ descente dans les sous-rayons pendant la moisson', () => {
     const last = cursors[cursors.length - 1]
     expect(last.categories).toContain('https://shop.fr/c/moteur/filtres')
     expect(last.categories).toContain('https://shop.fr/c/moteur/courroies')
+    // ⚠ Insérés JUSTE APRÈS leur parent : en queue de plan, le budget de pages s'épuise
+    // avant de les atteindre et la descente ne sert à rien.
+    expect(last.categories[1]).toBe('https://shop.fr/c/moteur/filtres')
     // ⚠ Le plan ne PERD jamais rien : le curseur progresse par index, un retrait le
     // ferait sauter des rayons en silence.
     expect(last.categories[0]).toBe('https://shop.fr/c/moteur')

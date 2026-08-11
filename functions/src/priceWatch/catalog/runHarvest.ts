@@ -313,9 +313,21 @@ export async function harvestPass(
         const known = new Set(cursor.categories)
         const kids = childListings(html, url, 12).filter((u) => !known.has(u))
         if (kids.length > 0) {
+          // ⚠⚠ Insérés JUSTE APRÈS le rayon courant, pas en fin de plan. En queue, ils
+          // n'étaient jamais atteints : le budget de pages s'épuisait dans la pagination
+          // des rayons principaux, run après run, et la descente ne servait à rien.
+          //
+          // Sûr pour le curseur, qui progresse par index : tout ce qui est inséré APRÈS
+          // `catIndex` décale des rayons pas encore visités — aucun n'est sauté. Insérer
+          // AVANT, en revanche, ferait manquer silencieusement tout ce qui a déjà défilé.
+          const at = cursor.catIndex + 1
           cursor = {
             ...cursor,
-            categories: [...cursor.categories, ...kids].slice(0, MAX_PLAN),
+            categories: [
+              ...cursor.categories.slice(0, at),
+              ...kids,
+              ...cursor.categories.slice(at),
+            ].slice(0, MAX_PLAN),
           }
           deps.log?.(`[descente] ${cfg.domain} : +${kids.length} sous-rayon(s) depuis ${url} → plan ${cursor.categories.length}`)
         }
