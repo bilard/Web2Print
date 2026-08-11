@@ -142,7 +142,14 @@ export async function callBrightData(
     // vide passe pour un succès et le client escalade pour rien vers le
     // Scraping Browser (qui répond alors 403 « Account is suspended »).
     if (html.length === 0) {
-      tripCredits('brightdata', 'réponse vide — compte suspendu ou zone inactive')
+      // ⚠⚠ On NE coupe PAS le disjoncteur ici. Mesuré en production le 2026-08-11 : le Web
+      // Unlocker rend du vide pendant que le Scraping Browser, lui, ramène 33 723
+      // caractères utiles sur la même URL. Le vide du palier 1 suspendait pourtant TOUT
+      // Bright Data pendant quinze minutes — palier 2 compris — sur la seule foi du palier
+      // qui échoue. Le seul moteur capable de passer les anti-bot durs était mis à l'arrêt
+      // par son propre repli. L'appelant escalade ; c'est à lui, après échec des DEUX
+      // paliers, de conclure. Un 402 explicite, lui, reste un motif de coupure : il vient
+      // de la facturation, pas d'un palier.
       throw new HttpsError(
         'failed-precondition',
         'Bright Data a renvoyé une réponse vide — compte suspendu ou zone inactive (vérifier le dashboard Bright Data : solde/facturation).',
