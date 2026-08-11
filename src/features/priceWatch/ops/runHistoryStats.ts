@@ -32,15 +32,24 @@ function didWork(r: RunRow): boolean {
  * sauté : il a « travaillé » au sens strict, mais il n'a pas moissonné. Comparer sa durée
  * à celle d'un run complet n'a aucun sens et fabriquait « +2251 % — les runs s'allongent ».
  *
- * On ne compare donc que les runs de même ampleur. Pas de seuil de durée arbitraire : la
- * référence est le meilleur run OBSERVÉ, elle suit le flux quand il gagne ou perd une
- * carte. Un historique où un seul run est complet ne rend aucune tendance — c'est
- * préférable à une tendance inventée.
+ * On ne compare donc que les runs de même ampleur, et l'étalon est la MÉDIANE des cartes
+ * abouties — pas le maximum. Mesuré à l'écran : avec « égal au meilleur », un seul run
+ * exceptionnel (celui qui a aussi envoyé le mail, donc deux cartes de plus) disqualifiait
+ * tous les runs normaux, et l'en-tête perdait jusqu'à sa durée typique. La médiane retient
+ * la moitié la plus complète de l'historique et résiste aux deux extrêmes.
+ *
+ * Pas de seuil de durée arbitraire non plus : un plancher à une minute aurait encore
+ * comparé les runs partiels de deux minutes aux runs complets de vingt-cinq.
  */
 function comparable(runs: RunRow[]): RunRow[] {
   const worked = runs.filter(didWork)
-  const best = Math.max(0, ...worked.map((r) => r.succeeded ?? 0))
-  return best > 0 ? worked.filter((r) => (r.succeeded ?? best) >= best) : worked
+  const scores = worked.map((r) => r.succeeded).filter((n): n is number => typeof n === 'number')
+  if (scores.length === 0) return worked
+  const sorted = [...scores].sort((a, b) => a - b)
+  const floor = sorted[Math.floor(sorted.length / 2)]
+  // ⚠ Un run sans le compte des cartes abouties (écrit avant que l'écran ne le publie)
+  // passe le filtre : on n'invente pas son ampleur.
+  return worked.filter((r) => (r.succeeded ?? floor) >= floor)
 }
 
 /** Combien de runs récents servent la durée typique. */
