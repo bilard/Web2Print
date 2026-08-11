@@ -253,7 +253,9 @@ export async function harvestPass(
       ? dedupeUrls([...categories, ...cursor.categories]).slice(0, MAX_PLAN)
       : categories
     cursor = cursor ? { ...openSweep(cursor, merged), planFailedAt: undefined } : initCursor(categories)
-    deps.log?.(t('run.harvest.sweepingCategories', { domain: cfg.domain, count: categories.length }))
+    // ⚠ Le plan RÉELLEMENT balayé (fusion des rayons acquis), pas le plan fraîchement
+    // découvert : afficher le second laissait croire que la fusion ne prenait pas.
+    deps.log?.(t('run.harvest.sweepingCategories', { domain: cfg.domain, count: cursor.categories.length }))
   }
 
   let pagesFetched = 0
