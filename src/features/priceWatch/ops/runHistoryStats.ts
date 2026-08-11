@@ -1,5 +1,5 @@
 // Tendance et ordre de grandeur des durées de run. PUR.
-export interface RunRow { startedAt: number; endedAt?: number }
+export interface RunRow { startedAt: number; endedAt?: number; status?: string }
 
 /** Combien de runs récents servent la durée typique. */
 const TYPICAL_SAMPLE = 5
@@ -15,10 +15,15 @@ const TYPICAL_SAMPLE = 5
  *
  * ⚠ Les runs arrivent du plus récent au plus ancien (tri `endedAt desc` de Firestore) :
  * l'échantillon se prend en tête de liste.
+ *
+ * ⚠ Les runs EN ERREUR sont écartés, pas seulement absorbés par la médiane : celle-ci
+ * protège d'un accident isolé, pas d'une série. Cinq échecs de quatre secondes d'affilée
+ * annonceraient « runs récents : ~4 s » pendant qu'un vrai run d'une demi-heure tourne —
+ * un run avorté ne mesure pas la durée du travail.
  */
 export function typicalDuration(runs: RunRow[]): number | null {
   const durations = runs
-    .filter((r) => typeof r.endedAt === 'number')
+    .filter((r) => typeof r.endedAt === 'number' && r.status !== 'error')
     .slice(0, TYPICAL_SAMPLE)
     .map((r) => (r.endedAt as number) - r.startedAt)
     .sort((a, b) => a - b)

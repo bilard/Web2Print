@@ -45,6 +45,12 @@ describe('typicalDuration — la seule estimation honnête de l’écran', () =>
     expect(typicalDuration([...recent, ...ancient])).toBe(20 * MIN)
   })
 
+  it('écarte les runs en erreur — la médiane absorbe un accident, pas une série', () => {
+    const crash = (i: number) => ({ startedAt: i, endedAt: i + 4_000, status: 'error' })
+    const runs = [crash(7), crash(6), crash(5), run(25, 4), run(26, 3), run(24, 2)]
+    expect(typicalDuration(runs)).toBe(25 * MIN)
+  })
+
   it('se tait sous trois runs terminés, et ignore les runs en cours', () => {
     expect(typicalDuration([run(10, 2), run(10, 1)])).toBeNull()
     expect(typicalDuration([run(10, 3), run(10, 2), { startedAt: 1 }])).toBeNull()
