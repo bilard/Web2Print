@@ -1,7 +1,7 @@
 // Une carte par chantier de l'écran « Suivi » : où il en est, ce qu'il reste, à quel
 // rythme. Aucun calcul ici — tout vient déjà tranché de `buildWatchOps` (PUR).
 import type { Chantier } from './buildWatchOps'
-import { chantierLabelKey, etaParts } from './opsFormat'
+import { chantierLabelKey, chantierUnitKeys, etaParts, plural } from './opsFormat'
 import { useTranslation } from '@/lib/i18n'
 
 /** Texte de durée restante, ou `null` quand aucune estimation ne vaudrait rien — le
@@ -21,6 +21,9 @@ function EtaLabel({ chantier }: { chantier: Chantier }) {
 
 export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
   const { t } = useTranslation()
+  // Ce que comptent les trois chiffres — l'unité change d'un chantier à l'autre, et le
+  // pourcentage de la moisson ne mesure pas la même chose que les compteurs qui l'encadrent.
+  const unit = chantierUnitKeys(c.id)
 
   return (
     <div className="bg-surface rounded-lg p-4 space-y-2.5" data-pw-chantier={c.id}>
@@ -38,10 +41,18 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
         <div className={`h-full ${c.stale ? 'bg-white/25' : 'bg-indigo-400'}`} style={{ width: `${c.pct}%` }} />
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-white/50 tabular-nums">
-        <span>{t('ops.card.done', { n: c.done })}</span>
-        <span className="text-white/70 font-medium">{c.pct}%</span>
-        <span>{t('ops.card.remaining', { n: c.remaining })}</span>
+      <div className="flex items-start justify-between gap-2 text-[11px] text-white/50 tabular-nums">
+        <span>{t(plural(unit.done, c.done), { n: c.done })}</span>
+        {/* Le pourcentage porte SON étiquette quand il ne mesure pas ce que comptent ses
+            voisins — sans elle, les trois nombres de la moisson passaient pour une erreur
+            de calcul. */}
+        <span className="flex flex-col items-center leading-tight text-center">
+          <span className="text-white/70 font-medium">{c.pct}%</span>
+          {unit.pctLabelKey && (
+            <span className="text-[9px] font-normal text-white/35">{t(unit.pctLabelKey)}</span>
+          )}
+        </span>
+        <span>{t(plural(unit.remaining, c.remaining), { n: c.remaining })}</span>
       </div>
 
       <div className="flex items-center justify-between text-[11px]">
