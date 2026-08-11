@@ -214,6 +214,16 @@ export interface ProbeOptions {
   /** Appelé pour chaque page CONFIRMÉE comme liste, avec son HTML déjà en main. Permet
    *  d'en extraire les sous-rayons (`childListings`) sans une seule requête de plus. */
   onListing?: (url: string, html: string) => void
+  /**
+   * Enfants d'une page sondée SANS produit — un rayon intermédiaire, dont les vraies
+   * listes sont un cran plus bas.
+   *
+   * ⚠⚠ Sans cette descente, un catalogue dont les pages de navigation ne portent AUCUN
+   * produit ne rend jamais rien : aucune page n'est confirmée, `onListing` n'est donc
+   * jamais appelé, et la descente existante — qui part des pages confirmées — ne démarre
+   * pas. Bornée par `maxProbes` : la file s'allonge, le budget de fetchs ne bouge pas.
+   */
+  expand?: (html: string, url: string) => string[]
   /** Arrêt demandé. ⚠⚠ Le sondage est la phase la PLUS LONGUE d'une passe — jusqu'à 24
    *  fetchs, une minute chacun sur un site derrière Cloudflare — et il ignorait
    *  l'annulation : le bouton « Arrêter » restait sans effet pendant des minutes, la
@@ -246,9 +256,15 @@ export async function probeListingUrls(
   const found: string[] = []
   let probes = 0
 
-  for (const url of candidates) {
+  // File OUVERTE : une page sondée sans produit peut y ajouter ses enfants (cf. `expand`).
+  // ⚠ Dédupliquée dès l'entrée : un candidat proposé deux fois par la page d'accueil
+  // (menu + pied de page, cas courant) coûtait deux sondes pour le même HTML.
+  const queue = [...new Set(candidates)]
+  const queued = new Set(queue)
+  for (let i = 0; i < queue.length; i++) {
     if (opts.signal?.aborted) break
     if (probes >= maxProbes || found.length >= enough) break
+    const url = queue[i]
     probes++
     const html = await fetchHtml(url)
     if (!html) continue
@@ -257,7 +273,24 @@ export async function probeListingUrls(
       found.push(url)
       opts.onListing?.(url, html)
       opts.log?.(t(opts.locale ?? DEFAULT_LOCALE, 'run.probe.listingFound', { url, count: n }))
+      continue
     }
+    // Page sans produit : rayon intermédiaire, ou page hors sujet. On tente ses enfants
+    // — c'est gratuit ici (le HTML est déjà en main) et le budget de sondes tranchera.
+    //
+    // ⚠⚠ En PROFONDEUR (insérés juste après la page courante), jamais en fin de file.
+    // Mesuré sur granit-parts.fr : les grilles sont au QUATRIÈME niveau, sous vingt-quatre
+    // racines. En largeur, le budget de sondes s'épuise sur des pages de navigation sans
+    // jamais atteindre un produit ; en profondeur, quatre sondes suffisent — et la
+    // première grille trouvée donne sa FORME d'URL, dont `shapeMates` déduit toutes les
+    // sœurs du site.
+    const kids: string[] = []
+    for (const kid of opts.expand?.(html, url) ?? []) {
+      if (queued.has(kid)) continue
+      queued.add(kid)
+      kids.push(kid)
+    }
+    if (kids.length > 0) queue.splice(i + 1, 0, ...kids)
   }
   if (found.length === 0) opts.log?.(t(opts.locale ?? DEFAULT_LOCALE, 'run.probe.noListing', { probes }))
   return found

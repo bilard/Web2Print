@@ -223,3 +223,53 @@ describe('probeListingUrls — l’arrêt interrompt le SONDAGE', () => {
     expect(found).toHaveLength(2)
   })
 })
+
+
+// ⚠⚠ granit-parts.fr : 24 racines de navigation, aucune ne porte de produit, et les
+// grilles sont au QUATRIÈME niveau. Deux blocages en un : la descente ne partait que des
+// pages CONFIRMÉES (donc jamais), et une exploration en largeur aurait épuisé son budget
+// sur des pages de menu. Résultat mesuré : 0 → 7 grilles confirmées.
+describe('probeListingUrls — descendre sous une page sans produit', () => {
+  const grid = '<div class="product-miniature"><a href="/p1.html">A</a><span class="price">10,00 €</span></div>'.repeat(6)
+  /** Trois racines stériles ; la grille est SOUS la première, deux crans plus bas. */
+  const pages: Record<string, string> = {
+    '/r1': '<a href="/r1/enfant">enfant</a>',
+    '/r1/enfant': '<a href="/r1/enfant/grille">g</a>',
+    '/r1/enfant/grille': grid,
+    '/r2': '', '/r3': '', '/r4': '',
+  }
+  const fetchHtml = async (u: string) => pages[new URL(u).pathname] ?? ''
+  const count = (html: string) => (html.match(/product-miniature/g) ?? []).length
+  const expand = (html: string, url: string) =>
+    [...html.matchAll(/href="([^"]+)"/g)].map((m) => new URL(m[1], url).href)
+
+  it('trouve la grille cachée sous deux niveaux de menu', async () => {
+    const found = await probeListingUrls(
+      ['https://x.fr/r1', 'https://x.fr/r2', 'https://x.fr/r3', 'https://x.fr/r4'],
+      fetchHtml, count, { minProducts: 4, expand },
+    )
+    expect(found).toEqual(['https://x.fr/r1/enfant/grille'])
+  })
+
+  it('⚠ descend en PROFONDEUR : la grille est sondée avant les racines suivantes', async () => {
+    const order: string[] = []
+    await probeListingUrls(
+      ['https://x.fr/r1', 'https://x.fr/r2', 'https://x.fr/r3', 'https://x.fr/r4'],
+      async (u) => { order.push(new URL(u).pathname); return fetchHtml(u) },
+      count, { minProducts: 4, expand },
+    )
+    // En largeur, /r2 /r3 /r4 passeraient avant l'enfant — et sur un vrai site, le budget
+    // de sondes serait épuisé avant d'avoir atteint le moindre produit.
+    expect(order.slice(0, 3)).toEqual(['/r1', '/r1/enfant', '/r1/enfant/grille'])
+  })
+
+  it('⚠ ne sonde jamais deux fois la même page, malgré les liens croisés', async () => {
+    let n = 0
+    await probeListingUrls(
+      ['https://x.fr/r1', 'https://x.fr/r1'],
+      async (u) => { n++; return fetchHtml(u) },
+      count, { minProducts: 4, expand },
+    )
+    expect(n).toBeLessThanOrEqual(3) // r1, son enfant, la grille — pas de doublon
+  })
+})

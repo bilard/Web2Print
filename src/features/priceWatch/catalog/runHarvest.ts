@@ -112,7 +112,12 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   const children: string[] = []
   const confirmed = await probeListingUrls(
     candidates, deps.fetchHtml, (html, url) => extractListingProducts(html, url).length,
-    { log: deps.log, signal: deps.signal, onListing: (url, html) => children.push(...childListings(html, url)) },
+    {
+      log: deps.log, signal: deps.signal,
+      onListing: (url, html) => children.push(...childListings(html, url)),
+      // Rayon intermédiaire : on descend d'un cran plutôt que d'abandonner le site.
+      expand: (html, url) => childListings(html, url, 12),
+    },
   )
   if (confirmed.length === 0) return []
 
