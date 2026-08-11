@@ -281,6 +281,28 @@ export async function harvestPass(
       // cartes DOM génériques (garde-fous stricts : [] plutôt qu'un prix douteux).
       const products = extractListingProducts(html, url)
       hadItems = products.length > 0
+      // ⚠⚠ DESCENTE en cours de moisson. Le plan ne contient que les rayons visibles
+      // depuis l'accueil ; les sous-rayons, eux, ne se découvrent qu'en OUVRANT un rayon —
+      // et la découverte ne les sonde jamais quand l'étage précédent a suffi. Mesuré sur
+      // granit-parts.fr : 82 rayons, 900 fiches, balayage annoncé « 100 % » — cent pour
+      // cent de ce qu'on savait chercher, une fraction du catalogue. Les liens sont
+      // pourtant DANS la page qu'on vient de payer : les ignorer, c'est jeter la carte
+      // avec l'emballage.
+      //
+      // Page 1 seulement (les suivantes répètent le même menu), plan plafonné, dédup à
+      // l'entrée, et jamais de retrait : le balayage en cours ne peut que s'étendre, ce qui
+      // laisse le curseur valide — il progresse par index dans une liste qui ne se
+      // réordonne pas.
+      if (target.page === 1 && cursor.categories.length < MAX_PLAN) {
+        const known = new Set(cursor.categories)
+        const kids = childListings(html, url, 12).filter((u) => !known.has(u))
+        if (kids.length > 0) {
+          cursor = {
+            ...cursor,
+            categories: [...cursor.categories, ...kids].slice(0, MAX_PLAN),
+          }
+        }
+      }
       const next = nextListingUrl(html, url)
       // Un `rel="next"` pointant sur la page courante est une boucle : pas de suivante.
       nextUrl = next && next !== url ? next : undefined

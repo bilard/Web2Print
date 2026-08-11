@@ -271,3 +271,36 @@ describe('restitution sur échéance', () => {
     expect(r.pagesFetched).toBe(4)
   })
 })
+
+describe('⚠⚠ descente dans les sous-rayons pendant la moisson', () => {
+  it('ajoute au plan les sous-rayons vus dans une page déjà payée', async () => {
+    // granit-parts.fr : 82 rayons visibles depuis l'accueil, 900 fiches, balayage annoncé
+    // « 100 % » — cent pour cent de ce qu'on savait chercher, une fraction du catalogue.
+    // Les sous-rayons ne se découvrent qu'en ouvrant un rayon.
+    const page = (kids: string[]) => `<html>${kids.map((k) => `<a href="${k}">x</a>`).join('')}
+      <div class="product-miniature"><a href="/p/a.html">Article A</a><span class="price">10 €</span></div>
+      <div class="product-miniature"><a href="/p/b.html">Article B</a><span class="price">12 €</span></div></html>`
+    let saved: string[] = []
+    const cursors: HarvestCursor[] = []
+    await harvestPass(
+      { siteId: 's', domain: 'shop.fr', families: [] },
+      {
+        force: true,
+        fetchHtml: async () => page(['/c/moteur/filtres', '/c/moteur/courroies']),
+        loadCursor: async () => ({
+          categories: ['https://shop.fr/c/moteur'], catIndex: 0, page: 1, sweeps: 0, done: false,
+        }),
+        saveCursor: async (_id, c) => { cursors.push(c) },
+        savePage: async (_id, _p, url) => { saved.push(url) },
+      },
+      1,
+    )
+    const last = cursors[cursors.length - 1]
+    expect(last.categories).toContain('https://shop.fr/c/moteur/filtres')
+    expect(last.categories).toContain('https://shop.fr/c/moteur/courroies')
+    // ⚠ Le plan ne PERD jamais rien : le curseur progresse par index, un retrait le
+    // ferait sauter des rayons en silence.
+    expect(last.categories[0]).toBe('https://shop.fr/c/moteur')
+    expect(saved).toHaveLength(1)
+  })
+})
