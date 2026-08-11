@@ -62,4 +62,39 @@ describe('krampAuthPass', () => {
     expect(hits).toHaveLength(0)
     expect(scrape.calls).toHaveLength(0)
   })
+
+  // ⚠⚠ Relevé en production : kramp répondait « Aucun résultat n'a été trouvé pour
+  // 1108421 » à chaque produit, run après run. On ne l'interrogeait qu'avec des codes
+  // INTERNES au distributeur (réf, réf2, EAN) — que par construction aucun concurrent ne
+  // porte. Les références d'origine étaient extraites depuis toujours (« Remplace
+  // origine: … ») mais ne servaient qu'à l'appariement : on savait reconnaître le bon
+  // produit sans jamais savoir le chercher.
+  it('cherche par référence d’ORIGINE en priorité — la seule clé qu’un concurrent porte', async () => {
+    const products: DirectedSourceProduct[] = [
+      { id: 'p1', ref: '1108421', ean: '3582329980494', originRefs: ['113438160/1', '516747'] },
+    ]
+    const asked: string[] = []
+    const scrape = async (urls: string[]) => {
+      asked.push(...urls)
+      return new Map(urls.map((u) => [u, u === searchUrl('113438160/1') ? SEARCH_MD : '']))
+    }
+    const hits = await krampAuthPass(products, { scrape })
+    // La première requête est la réf d'origine, pas le code interne.
+    expect(asked[0]).toBe(searchUrl('113438160/1'))
+    expect(hits).toHaveLength(1)
+  })
+
+  it('⚠ borne les références d’origine : chaque requête est un appel Firecrawl de 20 s', async () => {
+    const products: DirectedSourceProduct[] = [
+      { id: 'p1', ref: '1108421', originRefs: ['516747', '344769', '117720', '106103', '999123'] },
+    ]
+    const asked: string[] = []
+    const scrape = async (urls: string[]) => {
+      asked.push(...urls)
+      return new Map(urls.map((u) => [u, '']))
+    }
+    await krampAuthPass(products, { scrape })
+    // Deux origines au plus, puis les clés internes en repli.
+    expect(asked).toEqual([searchUrl('516747'), searchUrl('344769'), searchUrl('1108421')])
+  })
 })

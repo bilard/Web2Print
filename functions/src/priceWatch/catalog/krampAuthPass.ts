@@ -29,11 +29,25 @@ export interface KrampHit {
 
 const searchUrl = (q: string): string => `https://www.kramp.com/shop-fr/fr/search/${encodeURIComponent(q)}`
 
-/** Requêtes de recherche kramp d'un produit : réf(s) BRUTE(S) d'abord, EAN en repli.
- *  On cherche par la valeur AFFICHÉE (kramp l'indexe telle quelle), pas la forme normalisée. */
+/** Au plus deux références d'origine par produit : chaque requête kramp est un appel
+ *  Firecrawl d'une vingtaine de secondes, et les suivantes désignent le même produit. */
+const MAX_ORIGIN_QUERIES = 2
+
+/**
+ * Requêtes de recherche kramp d'un produit. On cherche par la valeur AFFICHÉE (kramp
+ * l'indexe telle quelle), pas la forme normalisée.
+ *
+ * ⚠⚠ Les références d'ORIGINE passent EN PREMIER, et c'est tout l'enjeu sur un catalogue
+ * de pièces adaptables. Relevé en production : la recherche n'interrogeait que `ref`,
+ * `ref2` et `ean` — trois codes INTERNES au distributeur — et kramp répondait « Aucun
+ * résultat n'a été trouvé pour 1108421 » à chaque produit, run après run. Les références
+ * d'origine étaient pourtant extraites depuis toujours (« Remplace origine: 516747, … »),
+ * mais elles ne servaient qu'à l'APPARIEMENT : on savait reconnaître le bon produit sans
+ * jamais savoir le chercher. Ce sont les seules clés qu'un concurrent puisse porter.
+ */
 function searchQueries(p: DirectedSourceProduct): string[] {
   const out: string[] = []
-  for (const v of [p.ref, p.ref2, p.ean]) {
+  for (const v of [...(p.originRefs ?? []).slice(0, MAX_ORIGIN_QUERIES), p.ref, p.ref2, p.ean]) {
     const q = String(v ?? '').trim()
     if (q && !out.includes(q)) out.push(q)
   }
