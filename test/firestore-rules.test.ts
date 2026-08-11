@@ -12,7 +12,7 @@ import {
   assertSucceeds,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 const PROJECT = 'web2print-rules-test'
 const RULES = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../firestore.rules'), 'utf8')
@@ -112,5 +112,57 @@ describe('excel_data — plafond de taille démo', () => {
   })
   it('AUTORISE un compte normal sans limite de taille', async () => {
     await assertSucceeds(setDoc(doc(normalDb(), 'excel_data', 'e3'), { userId: NORMAL_UID, totalRows: 9999 }))
+  })
+})
+
+// ⚠ Ces deux collections n'étaient couvertes par AUCUN test, et `workflowRunsLive` portait
+// un `write: false` qui refusait en silence chaque battement d'un run NAVIGATEUR : le
+// client n'en fait qu'un `console.warn`, et la LECTURE passant, rien ne le signalait. Un
+// test d'écriture, lui, l'aurait vu tout de suite — d'où ces cas.
+describe('workflowRunsLive — battement publié par le navigateur', () => {
+  const beat = { runId: 'r1', origin: 'client', status: 'running', beatAt: 1, startedAt: 0 }
+
+  it('AUTORISE le propriétaire à publier son battement (création)', async () => {
+    await assertSucceeds(setDoc(doc(normalDb(), 'users', NORMAL_UID, 'workflowRunsLive', 'wf1'), beat))
+  })
+  // Le battement des cinq secondes est un `merge` sur un document EXISTANT, donc un
+  // UPDATE : une règle en `create` seul laisserait passer le premier puis refuserait tous
+  // les suivants — le run paraîtrait figé à son démarrage.
+  it('AUTORISE le propriétaire à METTRE À JOUR son battement (merge)', async () => {
+    await setDoc(doc(normalDb(), 'users', NORMAL_UID, 'workflowRunsLive', 'wf1'), beat)
+    await assertSucceeds(
+      setDoc(doc(normalDb(), 'users', NORMAL_UID, 'workflowRunsLive', 'wf1'), { beatAt: 2 }, { merge: true }),
+    )
+  })
+  it('REFUSE un tiers en écriture', async () => {
+    await assertFails(setDoc(doc(demoDb(), 'users', NORMAL_UID, 'workflowRunsLive', 'wf1'), beat))
+  })
+  it('REFUSE un tiers en lecture', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', NORMAL_UID, 'workflowRunsLive', 'wf1'), beat)
+    })
+    await assertFails(getDoc(doc(demoDb(), 'users', NORMAL_UID, 'workflowRunsLive', 'wf1')))
+  })
+})
+
+describe('priceWatch — suivi de veille tarifaire et ses sous-collections', () => {
+  it('AUTORISE le propriétaire sur le doc de suivi', async () => {
+    await assertSucceeds(setDoc(doc(normalDb(), 'users', NORMAL_UID, 'priceWatch', 'w1'), { updatedAt: 1 }))
+  })
+  // Le wildcard récursif est ce qui rend les sous-collections accessibles : les règles ne
+  // cascadent pas toutes seules. Un avancement écrit sous `.../ops/progress` le prouve.
+  it('AUTORISE le propriétaire sur une SOUS-collection (avancement du suivi)', async () => {
+    await assertSucceeds(
+      setDoc(doc(normalDb(), 'users', NORMAL_UID, 'priceWatch', 'w1', 'ops', 'progress'), { updatedAt: 1 }),
+    )
+  })
+  it('REFUSE un tiers en écriture', async () => {
+    await assertFails(setDoc(doc(demoDb(), 'users', NORMAL_UID, 'priceWatch', 'w1'), { updatedAt: 1 }))
+  })
+  it('REFUSE un tiers en lecture', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', NORMAL_UID, 'priceWatch', 'w1'), { updatedAt: 1 })
+    })
+    await assertFails(getDoc(doc(demoDb(), 'users', NORMAL_UID, 'priceWatch', 'w1')))
   })
 })

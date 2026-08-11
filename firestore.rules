@@ -431,11 +431,26 @@ service cloud.firestore {
       allow create, delete: if isAuthenticated() && inMyWorkspace(uid);
     }
 
-    // État LIVE du dernier run serveur par workflow (progression affichée sur les
-    // cartes de l'éditeur). Écrit par les Functions, lu par le propriétaire.
+    // État LIVE du dernier run par workflow (progression affichée sur les cartes de
+    // l'éditeur, l'écran « Suivi » et la PWA).
+    //
+    // ⚠️ L'écriture N'EST PLUS réservée aux Functions : depuis le module « Suivi », un run
+    // lancé dans le NAVIGATEUR publie lui aussi son battement dans ce document
+    // (`workflows/runtime/publishClientRun.ts`), sans quoi il n'existe nulle part ailleurs
+    // — ni dans un autre onglet, ni sur un autre poste, ni sur mobile. Un `write: false`
+    // refusait chaque battement en silence (le client n'en fait qu'un `console.warn`),
+    // et la LECTURE passant, rien ne le signalait.
+    //
+    // Pas de permission dédiée, et c'est délibéré : ce document est un miroir d'exécution,
+    // pas une donnée métier — le déclenchement d'un run, lui, reste gardé ailleurs
+    // (`priceWatch.opsAct`, la Function `runWorkflowNow`). Même prédicat que la lecture
+    // voisine, et que les collections comparables déjà écrites par le client
+    // (`workflowAbort` juste dessous, `priceWatch`). `write` et non `create` seul : un
+    // battement est un `set(..., { merge: true })` sur un document existant, c'est-à-dire
+    // un UPDATE — la forme de `workflowRuns` (create/delete) laisserait passer le premier
+    // battement puis refuserait tous les suivants.
     match /users/{uid}/workflowRunsLive/{workflowId} {
-      allow read: if isAuthenticated() && inMyWorkspace(uid);
-      allow write: if false; // écrit uniquement par les Functions (admin)
+      allow read, write: if isAuthenticated() && inMyWorkspace(uid);
     }
 
     // Flag d'abandon d'un run serveur en cours : le propriétaire l'écrit (bouton STOP),
