@@ -87,6 +87,26 @@ describe('executeWorkflowHeadless', () => {
     expect(res.logs.some((l) => l.node === 'b' && /ByPass/i.test(l.msg))).toBe(true)
   })
 
+  it('une carte en ByPass n’apparaît JAMAIS « en cours », même pendant son niveau', async () => {
+    // Au démarrage d'un niveau, toutes ses cartes passent en `running` : les cartes
+    // désactivées tournaient donc à l'écran, spinner compris, pendant toute sa durée.
+    const states: Record<string, string>[] = []
+    const wf3: ServerWorkflow = {
+      id: 'w7', name: 'ByPass live', ownerId: 'u',
+      nodes: [
+        { id: 'a', type: 'text-input', config: { text: 'x' } },
+        { id: 'b', type: 'text-input', config: { text: 'y' }, bypass: true },
+      ],
+      edges: [],
+    }
+    await executeWorkflowHeadless(wf3, {
+      uid: 'u', signal: new AbortController().signal,
+      onProgress: (s) => { states.push({ ...s }) },
+    })
+    expect(states.some((s) => s.b === 'running')).toBe(false)
+    expect(states.at(-1)?.b).toBe('skipped')
+  })
+
   it('ignore proprement un node visuel client-only (chart) sans faire échouer le run', async () => {
     const wf2: ServerWorkflow = {
       id: 'w5', name: 'Chart', ownerId: 'u',

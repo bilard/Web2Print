@@ -37,6 +37,11 @@ export function RunHistory({ runs }: { runs: RunHistoryEntry[] }) {
             <span className={`w-20 shrink-0 ${STATUS_TONE[r.status] ?? 'text-white/50'}`}>
               {t(`rd.wf.status.${r.status}` as 'rd.wf.status.running')}
             </span>
+            {/* ⚠ Le DÉCLENCHEUR, à côté de l'issue : « 4 s · Terminé » ne se lit pas
+                pareil selon qu'un cron est passé à vide ou qu'on a cliqué pour essayer. */}
+            <span className="w-28 shrink-0 text-white/35 truncate">
+              {r.trigger ? t(`rd.wf.trigger.${r.trigger}` as 'rd.wf.trigger.cron') : '—'}
+            </span>
             <span className="text-white/35 flex-1 truncate text-right">
               {t('ops.history.nodes', { n: r.nodesTotal })}
               {r.nodesError > 0 ? ` · ${t('ops.history.errors', { n: r.nodesError })}` : ''}

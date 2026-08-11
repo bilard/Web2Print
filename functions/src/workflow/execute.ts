@@ -207,9 +207,14 @@ export async function executeWorkflowHeadless(
   const deriveStates = (running?: ReadonlySet<string>): Record<string, LiveNodeStatus> => {
     const s: Record<string, LiveNodeStatus> = {}
     for (const n of wf.nodes) {
-      s[n.id] = running?.has(n.id) ? 'running'
-        : errored.has(n.id) ? 'error'
-          : bypassed.has(n.id) || skipped.has(n.id) ? 'skipped'
+      // ⚠⚠ Le ByPass se teste AVANT « en cours ». Au démarrage d'un niveau, TOUTES ses
+      // cartes passent en `running` — y compris celles qu'on a désactivées : elles
+      // tournaient à l'écran, spinner compris, pendant toute la durée du niveau, alors
+      // qu'elles ne font rien. Une carte désactivée ne travaille jamais, à aucun instant.
+      s[n.id] = n.bypass ? 'skipped'
+        : running?.has(n.id) ? 'running'
+          : errored.has(n.id) ? 'error'
+            : bypassed.has(n.id) || skipped.has(n.id) ? 'skipped'
             : outputs.has(n.id) || internalIds.has(n.id) ? 'success'
               : 'pending'
     }
@@ -427,7 +432,7 @@ export async function executeWorkflowHeadless(
   // soit marqué « arrêté » (skipped + log) comme avant — runNode le fait sans rien exécuter.
   for (const lvl of [...byLevel.keys()].sort((a, b) => a - b)) {
     const group = byLevel.get(lvl)!
-    levelRunning = new Set(group.map((n) => n.id))
+    levelRunning = new Set(group.filter((n) => !n.bypass).map((n) => n.id))
     await opts.onProgress?.(deriveStates(levelRunning), nodeOutputs, nodeCounts, nodeCycles)
     await runConcurrent(group, MAX_NODE_CONCURRENCY, runNode)
     levelRunning = undefined

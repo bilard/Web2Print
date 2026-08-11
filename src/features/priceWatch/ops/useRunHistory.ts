@@ -27,6 +27,10 @@ export interface RunHistoryEntry extends RunRow {
    *  côtés). */
   nodesTotal: number
   nodesError: number
+  /** Ce qui a déclenché le run : le cron, un clic, un webhook… Persisté depuis toujours
+   *  par les deux jumeaux, jamais montré — or « 4 s / Terminé » ne veut pas dire la même
+   *  chose selon qu'il s'agit d'un passage planifié ou d'un essai lancé à la main. */
+  trigger?: string
 }
 
 export interface RunHistoryView {
@@ -52,7 +56,7 @@ export function useRunHistory(workflowId: string | null): RunHistoryView {
       ),
       (snap) => setRuns(snap.docs.map((d) => {
         const data = d.data() as {
-          startedAt: number; endedAt?: number; status?: string
+          startedAt: number; endedAt?: number; status?: string; trigger?: string
           nodeStates?: Record<string, NodeStatus>
         }
         const states = Object.values(data.nodeStates ?? {})
@@ -62,6 +66,7 @@ export function useRunHistory(workflowId: string | null): RunHistoryView {
           // Cartes ABOUTIES : un run où tout a été sauté n'a rien fait, et ne doit peser
           // ni sur la durée typique ni sur la tendance (cf. `didWork`).
           succeeded: states.filter((s) => s === 'success').length,
+          ...(data.trigger ? { trigger: data.trigger } : {}),
         }
       })),
       (e) => console.warn('[suivi] historique des runs illisible :', e),
