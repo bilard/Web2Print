@@ -87,7 +87,17 @@ export function WatchOpsScreen() {
 
         <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
       </div>
-      <OpsActions workflowId={workflowId} run={view.run} />
+      {/* ⚠ Les actions et les coûts partagent la rangée : la moitié droite restait vide sur
+          toute la largeur de l'écran, pendant que le bloc des coûts occupait une rangée
+          entière plus bas pour deux lignes de texte. Ils s'empilent sous `lg`. */}
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex-1 min-w-[18rem]">
+          <OpsActions workflowId={workflowId} run={view.run} />
+        </div>
+        <div className="w-full lg:w-auto lg:min-w-[26rem] lg:max-w-[38rem]">
+          <OpsLlmCosts />
+        </div>
+      </div>
 
       {view.chantiers.length === 0 ? (
         <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.noChantier')}</p>
@@ -111,7 +121,6 @@ export function WatchOpsScreen() {
       )}
 
       <RunCardsStrip workflowId={workflowId} />
-      <OpsLlmCosts />
       <RunHistory runs={runs} />
       <IncidentLog incidents={incidents} />
     </div>
