@@ -182,7 +182,18 @@ export function childListings(html: string, parentUrl: string, max = 40): string
   for (const u of internalLinks(html, base.hostname, parentUrl)) {
     const segs = u.pathname.split('/').filter(Boolean)
     if (segs.length !== parentSegs.length + 1) continue
-    if (parentSegs.some((s, i) => s.toLowerCase() !== segs[i].toLowerCase())) continue
+    // ⚠⚠ La TÊTE du chemin peut changer : beaucoup de plateformes séparent l'arborescence
+    // de navigation de la vue LISTE en gardant le même chemin de rayon
+    // (`/e/category/A/B` → `/e/productlist/A/B/C`). En exigeant l'égalité de TOUS les
+    // segments, on ne descendait que dans les catégories — et sur un catalogue dont les
+    // produits ne vivent QUE sous l'autre tête, la moisson rendait 0 fiche sans rien dire.
+    //
+    // AU PLUS UN segment peut différer, et JAMAIS le dernier du parent — celui-là nomme
+    // le rayon. Sans cette seconde borne, `/fr/pieces/tondeuse` passait pour un enfant de
+    // `/fr/debroussailleuse` : un rayon FRÈRE, et la descente partait dans tout le site.
+    const drift = parentSegs.filter((s, i) => s.toLowerCase() !== segs[i].toLowerCase())
+    if (drift.length > 1) continue
+    if (drift.length === 1 && drift[0].toLowerCase() === parentSegs[parentSegs.length - 1].toLowerCase()) continue
     if (/^\d+$/.test(segs[segs.length - 1])) continue // pagination, pas un sous-rayon
     const clean = `${u.origin}${u.pathname}`
     if (seen.has(clean)) continue

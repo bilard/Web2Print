@@ -157,3 +157,35 @@ describe('childListings — descente hiérarchique', () => {
     expect(childListings('<a href="/fr/autre">x</a>', parent)).toEqual([])
   })
 })
+
+
+// ⚠⚠ Mesuré sur granit-parts.fr : la navigation vit sous `/e/category/`, les grilles de
+// produits sous `/e/productlist/`, avec le MÊME chemin de rayon. En exigeant l'égalité de
+// tous les segments de tête, la descente ne visitait que des catégories — 0 fiche, sans
+// que rien n'explique pourquoi.
+describe('childListings — la tête du chemin peut changer, pas le rayon', () => {
+  const html = `
+    <a href="/e/productlist/Attelages/Pieces-attelage/Attelage-bras">grille</a>
+    <a href="/e/category/Attelages/Pieces-attelage/Technique-de-securite">sous-rayon</a>
+    <a href="/e/category/Attelages/Pieces-attelage/2">page 2</a>
+    <a href="/e/category/Freinage/Disques/Autre-chose">autre rayon</a>
+    <a href="/e/service/contact">service</a>`
+  const parent = 'https://x.fr/e/category/Attelages/Pieces-attelage'
+
+  it('suit la vue LISTE d’un même rayon malgré un segment de tête différent', () => {
+    expect(childListings(html, parent)).toContain('https://x.fr/e/productlist/Attelages/Pieces-attelage/Attelage-bras')
+  })
+
+  it('garde les sous-rayons classiques', () => {
+    expect(childListings(html, parent)).toContain('https://x.fr/e/category/Attelages/Pieces-attelage/Technique-de-securite')
+  })
+
+  it('⚠ n’avale pas un AUTRE rayon : la queue du chemin doit coïncider', () => {
+    // Sans cette borne, deux segments changent et la descente partirait dans tout le site.
+    expect(childListings(html, parent).some((u) => u.includes('Freinage'))).toBe(false)
+  })
+
+  it('⚠ ignore toujours la pagination numérique', () => {
+    expect(childListings(html, parent).some((u) => u.endsWith('/2'))).toBe(false)
+  })
+})
