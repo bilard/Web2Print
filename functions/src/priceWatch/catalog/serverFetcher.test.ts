@@ -68,3 +68,53 @@ describe('buildServerFetcher', () => {
     expect(plainMock).not.toHaveBeenCalled()
   })
 })
+
+
+// ⚠⚠ Le cron rendait 0 fiche sur tout site derrière un anti-bot, pendant que le même
+// site se moissonnait sans peine depuis l'onglet : en mode AUTO, le serveur tentait UN
+// fetch direct et abandonnait, là où le navigateur enchaîne direct → Jina → Firecrawl →
+// Bright Data. Mesuré sur granit-parts.fr (Cloudflare) : « via Jina, 12 pages » à la
+// main, rien du tout la nuit.
+describe('mode AUTO — cascade complète, comme au navigateur', () => {
+  beforeEach(() => {
+    plainMock.mockReset(); fcMock.mockReset(); bdMock.mockReset(); keyMock.mockReset()
+    global.fetch = vi.fn(async () => ({ ok: false })) as unknown as typeof fetch
+  })
+
+  it('se rabat sur Jina quand le fetch direct est bloqué', async () => {
+    plainMock.mockResolvedValue(null)
+    global.fetch = vi.fn(async () => ({ ok: true, text: async () => '<html>' + 'x'.repeat(900) + '</html>' })) as unknown as typeof fetch
+    const f = buildServerFetcher('u', { id: 's', domain: 'granit-parts.fr' } as never)
+    expect(await f.fetchHtml('https://granit-parts.fr/p')).toContain('<html>')
+    expect(f.lastEngine()).toBe('jina')
+  })
+
+  it('descend jusqu’à Bright Data quand tout le gratuit échoue', async () => {
+    plainMock.mockResolvedValue(null)
+    keyMock.mockResolvedValue('')            // pas de clé Firecrawl
+    bdMock.mockResolvedValue({ html: '<html>bd</html>' })
+    const f = buildServerFetcher('u', { id: 's', domain: 'granit-parts.fr' } as never)
+    expect(await f.fetchHtml('https://granit-parts.fr/p')).toBe('<html>bd</html>')
+    expect(f.lastEngine()).toBe('brightdata')
+  })
+
+  it('⚠ ne paie pas un moteur payant quand le direct répond', async () => {
+    plainMock.mockResolvedValue('<html>direct</html>')
+    const f = buildServerFetcher('u', { id: 's', domain: 'exemple.fr' } as never)
+    await f.fetchHtml('https://exemple.fr/p')
+    expect(f.lastEngine()).toBe('cloudFunction')
+    expect(fcMock).not.toHaveBeenCalled()
+    expect(bdMock).not.toHaveBeenCalled()
+  })
+
+  it('reste COLLANT sur le moteur payant retenu — sans repayer le gratuit à chaque page', async () => {
+    plainMock.mockResolvedValue(null)
+    keyMock.mockResolvedValue('')
+    bdMock.mockResolvedValue({ html: '<html>bd</html>' })
+    const f = buildServerFetcher('u', { id: 's', domain: 'granit-parts.fr' } as never)
+    await f.fetchHtml('https://granit-parts.fr/1')
+    plainMock.mockClear()
+    await f.fetchHtml('https://granit-parts.fr/2')
+    expect(plainMock).not.toHaveBeenCalled()
+  })
+})

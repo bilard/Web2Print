@@ -117,12 +117,47 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
     }
   }
 
+  // ⚠⚠ Mode AUTO : une vraie CASCADE, comme au navigateur. Le serveur se contentait d'UN
+  // fetch direct et abandonnait — donc tout site derrière un anti-bot (Cloudflare et
+  // consorts) rendait 0 fiche au cron, pendant que le même site se moissonnait sans peine
+  // depuis l'onglet. Mesuré sur granit-parts.fr : « via Jina, 12 pages » à la main, rien
+  // du tout la nuit. Le cron est pourtant le seul chemin qui tourne tout seul.
+  //
+  // Ordre = du GRATUIT au PAYANT : direct → Jina → Firecrawl → Bright Data.
+  let sinceRetry = 0
   return {
     lastEngine: () => last,
     fetchHtml: async (url) => {
-      const html = await fetchHtml(url, timeoutMs).catch(() => null)
-      if (html) last = 'cloudFunction'
-      return html ?? null
+      // Collant sur le moteur payant qui a fonctionné : repayer l'échec des paliers
+      // gratuits à chaque page coûterait une seconde et demie pour rien. On re-teste
+      // quand même périodiquement — un site redevenu accessible ne doit pas rester sur
+      // un moteur soixante-dix fois plus lent.
+      const sticky = last === 'firecrawl' || last === 'brightdata'
+      const retry = sticky && sinceRetry >= FREE_RETRY_EVERY
+      if (retry) sinceRetry = 0
+
+      if (!sticky || retry) {
+        const direct = await fetchHtml(url, timeoutMs).catch(() => null)
+        if (direct) { last = 'cloudFunction'; sinceRetry = 0; return direct }
+        const viaJina = await jinaHtml(url, timeoutMs)
+        if (viaJina) { last = 'jina'; sinceRetry = 0; return viaJina }
+      }
+
+      const key = await getUserApiKey(uid, 'firecrawl').catch(() => '')
+      if (key) {
+        const viaFirecrawl = await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null)
+        if (viaFirecrawl) { last = 'firecrawl'; sinceRetry++; return viaFirecrawl }
+      }
+      const viaBd = await brightDataRead(url).catch(() => null)
+      if (viaBd?.html) { last = 'brightdata'; sinceRetry++; return viaBd.html }
+
+      // Tous les paliers ont échoué : on le DIT dans le canal, sinon le tableau affiche
+      // « via cloudFunction » pour une page qui n'a jamais été lue.
+      return null
     },
   }
 }
+
+/** Pages servies par un moteur payant avant de re-tenter les paliers gratuits. Même
+ *  valeur qu'au navigateur (`siteFetch.ts`) : les deux doivent facturer pareil. */
+const FREE_RETRY_EVERY = 25
