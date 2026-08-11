@@ -69,7 +69,7 @@ function LastIncident({ incident }: { incident: (WatchIncident & { id: string })
       {incident ? (
         <p className="min-w-0 flex-1 truncate">
           <span style={{ color: 'var(--radar-text-2)' }}>{timeAgo(incident.ts)}</span>
-          {incident.domain && <> · {incident.domain}</>} — {incident.message}
+          {' — '}{incident.message}
         </p>
       ) : (
         <p>Aucun incident récent</p>

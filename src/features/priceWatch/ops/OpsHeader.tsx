@@ -6,7 +6,7 @@ import { Radio } from 'lucide-react'
 import type { RunView } from './buildWatchOps'
 import { useWorkflowSchedule } from '../dashboard/useWorkflowSchedule'
 import { duration } from '../dashboard/format'
-import { useTranslation } from '@/lib/i18n'
+import { intlLocale, useTranslation } from '@/lib/i18n'
 
 const TONE: Record<string, string> = {
   running: 'text-emerald-300 bg-emerald-500/12 border-emerald-500/30',
@@ -17,11 +17,13 @@ const TONE: Record<string, string> = {
 }
 
 export function OpsHeader({ run, workflowId }: { run: RunView | null; workflowId: string | null }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const sched = useWorkflowSchedule(workflowId)
   const cronOn = !!sched?.enabled
   const overdue = cronOn && sched!.nextRunAt <= Date.now()
-  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  // Écran trilingue : la langue de l'heure suit celle de l'interface, pas un « fr-FR » en
+  // dur — même helper que `RunCardsStrip.tsx`.
+  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString(intlLocale(locale), { hour: '2-digit', minute: '2-digit' })
 
   return (
     <div className="bg-surface rounded-lg p-4 flex items-center gap-3 flex-wrap" data-pw-section="ops-header">

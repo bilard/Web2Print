@@ -40,11 +40,23 @@ export interface WatchOpsProgress {
   texts?: TextsProgress
 }
 
-/** Une panne, telle qu'on veut la relire des semaines plus tard. */
+/**
+ * Une panne, telle qu'on veut la relire des semaines plus tard.
+ *
+ * ⚠ PAS de champ « domaine du concurrent en cause » : une carte en erreur (moisson,
+ * recherche dirigée…) traite plusieurs sites en parallèle borné
+ * (`mapWithConcurrency`, sans rattrapage par site) — la PREMIÈRE erreur à remonter
+ * annule les fetchs des autres sites encore en vol sans que leurs propres erreurs ne
+ * soient jamais capturées. Attribuer l'incident à UN domaine serait donc au mieux
+ * partiel, au pire trompeur (« c'est CE site qui a cassé » quand deux ou trois
+ * tournaient encore). Le champ existait, n'a jamais été renseigné par aucun
+ * producteur, et rendait donc une promesse que l'écran ne tenait pas — retiré plutôt
+ * que rafistolé. Le fiabiliser demanderait de faire remonter le site en cause depuis
+ * CHAQUE type de carte de veille, client ET serveur — hors de proportion pour cette
+ * seule case.
+ */
 export interface WatchIncident {
   ts: number
-  /** Domaine du concurrent en cause, quand l'incident en désigne un. */
-  domain?: string
   /** Carte du flux qui a signalé la panne. */
   nodeLabel?: string
   message: string

@@ -30,8 +30,10 @@ export function useWatchOps(
   const [run, setRun] = useState<RunSnapshot | null>(null)
   const [incidents, setIncidents] = useState<(WatchIncident & { id: string })[]>([])
   const [now, setNow] = useState(() => Date.now())
-  // Plancher de l'alerte : un incident antérieur au montage ne notifie jamais (cf. l'effet
-  // ci-dessous). Figé une seule fois, jamais recalculé au fil des rendus.
+  // Plancher de l'alerte : un incident antérieur à ce plancher ne notifie jamais (cf.
+  // l'effet ci-dessous). Initialisé ici pour le tout premier rendu (avant qu'aucun effet
+  // n'ait tourné) ; l'effet d'abonnement aux incidents le REMET À JOUR à chaque changement
+  // de `watchId` — cf. son commentaire.
   const mountedAtRef = useRef<number | null>(null)
   if (mountedAtRef.current === null) mountedAtRef.current = Date.now()
   const prevIncidentsRef = useRef<(WatchIncident & { id: string })[]>([])
@@ -83,7 +85,18 @@ export function useWatchOps(
   }, [uid, workflowId])
 
   useEffect(() => {
-    if (!uid || !watchId) { setIncidents([]); return }
+    // Changement de SUIVI : on repart comme un nouveau montage. Sans ce reset, les
+    // incidents déjà connus du suivi qu'on vient d'ouvrir n'étaient simplement pas dans la
+    // liste « précédente » du suivi qu'on vient de quitter — `newIncidentsSince` les
+    // prenait donc tous pour des pannes fraîches et déclenchait une volée de notifications
+    // pour l'historique de l'AUTRE suivi, à chaque bascule.
+    prevIncidentsRef.current = []
+    mountedAtRef.current = Date.now()
+    // Sans ce reset, l'écran affiche le journal du suivi PRÉCÉDENT (encore en state) sous
+    // le nom du nouveau, le temps que le premier instantané Firestore du nouveau suivi
+    // arrive — des pannes de l'autre suivi, faussement attribuées à celui-ci.
+    setIncidents([])
+    if (!uid || !watchId) return
     return watchIncidents(uid, watchId, setIncidents)
   }, [uid, watchId])
 
@@ -93,8 +106,7 @@ export function useWatchOps(
     const fresh = newIncidentsSince(prevIncidentsRef.current, incidents, mountedAtRef.current ?? 0)
     prevIncidentsRef.current = incidents
     for (const incident of fresh) {
-      const body = incident.domain ? `${incident.domain} — ${incident.message}` : incident.message
-      notify.error(t('ops.incident.alert.title'), body.slice(0, 160))
+      notify.error(t('ops.incident.alert.title'), incident.message.slice(0, 160))
     }
   }, [incidents])
 

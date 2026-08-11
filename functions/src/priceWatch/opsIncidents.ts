@@ -14,11 +14,10 @@ import { opsIncidentsCol } from './paths'
 
 /** Une panne — mêmes champs que WatchIncident (src/features/priceWatch/ops/opsTypes.ts),
  *  redéfinis ici : le serveur ne peut pas importer depuis src/ (functions/tsconfig.json a
- *  rootDir: "src", mur de compilation entre les deux SDK Firestore). */
+ *  rootDir: "src", mur de compilation entre les deux SDK Firestore).
+ *  ⚠ PAS de champ « domaine » : cf. le commentaire de WatchIncident côté navigateur. */
 export interface WatchIncident {
   ts: number
-  /** Domaine du concurrent en cause, quand l'incident en désigne un. */
-  domain?: string
   /** Carte du flux qui a signalé la panne. */
   nodeLabel?: string
   message: string
