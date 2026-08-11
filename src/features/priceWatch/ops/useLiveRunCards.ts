@@ -20,6 +20,27 @@ interface RunLiveDoc {
   nodeStates?: Record<string, NodeStatus>
   nodeCounts?: Record<string, number>
   nodeCycles?: Record<string, number>
+  /** Journal du run, tel que le moteur l'écrit — porte le POURQUOI d'une carte sautée. */
+  logs?: { ts: number; level: string; node?: string; msg: string }[]
+}
+
+/**
+ * Pourquoi chaque carte SAUTÉE l'a été, dans ses propres mots. PUR.
+ *
+ * ⚠⚠ Le trou constaté en production : la cadence d'envoi suspend l'aval (« Déjà envoyé
+ * pour cette période »), donc le rapport n'est pas recomposé et le mail ne part pas. Sur
+ * l'écran, trois cartes passaient simplement en gris — et l'utilisateur, relisant le mail
+ * de la veille, croyait que sa consigne était ignorée. La raison EXISTAIT, dans le journal
+ * du run ; personne ne la rapprochait de la carte.
+ */
+export function skipReasons(d: RunLiveDoc): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const l of d.logs ?? []) {
+    if (!l.node || d.nodeStates?.[l.node] !== 'skipped') continue
+    // Le DERNIER message de la carte : c'est celui qui a décidé du saut.
+    out[l.node] = l.msg
+  }
+  return out
 }
 
 /** États des cartes reconstruits depuis le doc live. PUR.
@@ -41,7 +62,7 @@ function nodeStatesFromLiveDoc(d: RunLiveDoc): Record<string, NodeRunState> {
 
 /** `null` tant que le graphe ou le doc live n'ont pas répondu — jamais un avancement à 0
  *  inventé entre-temps. */
-export function useLiveRunCards(workflowId: string | null): RunProgress | null {
+export function useLiveRunCards(workflowId: string | null): (RunProgress & { skipped_: Record<string, string> }) | null {
   const { t } = useTranslation()
   const uid = useWorkspaceUid()
   const [wf, setWf] = useState<Workflow | null>(null)
@@ -74,9 +95,10 @@ export function useLiveRunCards(workflowId: string | null): RunProgress | null {
   }, [uid, workflowId])
 
   if (!wf || !runDoc) return null
-  return runProgress(wf, nodeStatesFromLiveDoc(runDoc), (id) => {
+  const progress = runProgress(wf, nodeStatesFromLiveDoc(runDoc), (id) => {
     const node = wf.nodes.find((n) => n.id === id)
     const spec = node && nodeRegistry.get(node.type)
     return spec ? t(spec.labelKey) : (node?.type ?? id)
   })
+  return { ...progress, skipped_: skipReasons(runDoc) }
 }

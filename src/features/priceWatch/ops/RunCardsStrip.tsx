@@ -70,7 +70,7 @@ export function RunCardsStrip({ workflowId }: { workflowId: string | null }) {
           const Icon = ICON[c.status]
           return (
             <button key={c.id} type="button" onClick={() => openCard(c.id)}
-              title={t('ops.cards.open')}
+              title={progress.skipped_[c.id] ?? t('ops.cards.open')}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded px-2 py-1 text-[11px] transition-colors hover:bg-white/[0.08] ${WEIGHT[c.status]}`}>
               <Icon className={`w-3 h-3 shrink-0 ${TINT[c.status]} ${c.status === 'running' ? 'animate-spin' : ''}`} />
               <span className={c.status === 'pending' ? 'text-white/30' : 'text-white/70'}>{c.label}</span>
@@ -93,6 +93,23 @@ export function RunCardsStrip({ workflowId }: { workflowId: string | null }) {
           )
         })}
       </div>
+
+      {/* ⚠⚠ POURQUOI une carte a été sautée, en clair sous la bande. Mesuré en production :
+          la cadence d'envoi suspend l'aval (« Déjà envoyé pour cette période »), donc le
+          rapport n'est pas recomposé ni le mail envoyé — et l'utilisateur, relisant le mail
+          de la veille, concluait que sa consigne était ignorée. Trois cartes en gris ne
+          disaient rien ; la raison dormait dans le journal du run. */}
+      {Object.keys(progress.skipped_).length > 0 && (
+        <ul className="mt-2 pt-2 border-t border-white/5 space-y-0.5">
+          {progress.cards.filter((c) => progress.skipped_[c.id]).map((c) => (
+            <li key={c.id} className="text-[11px] text-amber-300/70 flex gap-1.5">
+              <MinusCircle className="w-3 h-3 shrink-0 mt-0.5" />
+              <span className="text-white/60 shrink-0">{c.label} :</span>
+              <span className="min-w-0 truncate" title={progress.skipped_[c.id]}>{progress.skipped_[c.id]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
