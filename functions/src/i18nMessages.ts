@@ -114,6 +114,10 @@ const MESSAGES = {
     fr: '{domain} : +{indexed} produit(s) sur {pages} page(s) (index : {total} pages).',
     en: '{domain}: +{indexed} product(s) over {pages} page(s) (index: {total} pages).',
   },
+  'run.harvest.antiBotBlocked': {
+    fr: '{domain} : bloqué par une protection anti-bot ({protection}) — la page de défi remplace le catalogue sur toutes les grilles. Forcer le moteur sur Bright Data pour ce site.',
+    en: '{domain}: blocked by an anti-bot protection ({protection}) — the challenge page replaces the catalogue on every grid. Force the engine to Bright Data for this site.',
+  },
   'run.harvest.budgetReserved': {
     fr: 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',
     en: 'Budget reserved for the comparison — {skipped} site(s) not started on this run, the rest on the next tick.',

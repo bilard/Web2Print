@@ -159,9 +159,16 @@ export function RunProgressBar() {
   const rest = p.cards.filter((c) => c.status !== 'success')
 
   return (
-    // ⚠ UNE seule ligne : sur deux, la bande mangeait le haut du canvas et le regard
-    // devait faire l'aller-retour entre le résumé et les cartes qu'il résume.
-    <div className="border-b border-neutral-800 bg-well px-3 py-1.5 flex items-center gap-3 text-[11px] overflow-x-auto">
+    // DEUX rangées : le résumé chiffré, puis les cartes.
+    //
+    // ⚠ Elles ont d'abord tenu sur UNE ligne défilante, pour ne pas manger le haut du
+    // canvas. Mesuré à l'usage : dès une dizaine de cartes, la moitié d'entre elles
+    // sortaient du cadre à droite — dont, systématiquement, les dernières lancées, donc
+    // exactement celles qu'on vient lire. Un débordement horizontal ne s'annonce pas : rien
+    // ne distingue « il n'y a que ça » de « la suite est hors champ ». Une seconde rangée
+    // coûte vingt pixels et rend tout visible d'un coup d'œil.
+    <div className="border-b border-neutral-800 bg-well px-3 py-1.5 flex flex-col gap-1 text-[11px]">
+      <div className="flex items-center gap-3">
       <div className="flex items-center gap-2 shrink-0">
         <span className={`text-xs font-semibold tabular-nums ${p.failed > 0 ? 'text-rose-300' : 'text-indigo-300'}`}>
           {pct} %
@@ -197,10 +204,10 @@ export function RunProgressBar() {
         {p.failed > 0 && <Stat label={t('wfe.progress.lbl.failed')} value={n(p.failed)} tone="text-rose-300" />}
         {p.skipped > 0 && <Stat label={t('wfe.progress.lbl.skipped')} value={n(p.skipped)} tone="text-amber-300/70" />}
       </div>
+      </div>
 
-      <span className="h-3 w-px bg-white/10 shrink-0" />
-
-      <div className="flex items-center gap-1.5">
+      {/* Rangée 2 : les cartes. `flex-wrap` plutôt que défilement — cf. en-tête. */}
+      <div className="flex flex-wrap items-center gap-1.5">
         {done.length > 0 && (
           <button type="button" onClick={() => focusCard(done[done.length - 1].id)}
             className="flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-emerald-400/70 transition-colors hover:bg-white/[0.08]"

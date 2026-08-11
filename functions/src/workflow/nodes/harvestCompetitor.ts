@@ -207,6 +207,14 @@ registerServerNode({
       ctx.log('info', t(ctx.locale, 'run.harvest.siteIndexed', {
         domain: site.domain, indexed: res.productsIndexed, pages: res.pagesFetched, total: pagesTotal,
       }))
+      // ⚠⚠ Un site entièrement protégé rendait « 50 page(s) · 0 produit » — le même
+      // message qu'un catalogue vide ou qu'un extracteur cassé, alors que la cause et le
+      // remède n'ont rien à voir. Mesuré sur granit-parts.fr : Cloudflare répondait à la
+      // place du site sur toutes les grilles, et pas une ligne ne le disait.
+      const blocker = fetcher.blockedBy()
+      if (blocker && res.productsIndexed === 0) {
+        ctx.log('warn', t(ctx.locale, 'run.harvest.antiBotBlocked', { domain: site.domain, protection: blocker }))
+      }
       return {
         site: site.domain,
         pagesFetched: res.pagesFetched,

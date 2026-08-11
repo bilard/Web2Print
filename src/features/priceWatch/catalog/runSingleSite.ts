@@ -7,6 +7,7 @@ import { buildSiteFetcher } from './siteFetch'
 import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, loadAllListings } from './store'
 import { harvestProgress } from './harvest'
 import { stableId } from '../core'
+import { debugLog } from '@/lib/debugLog'
 import type { CompetitorSite } from '../types'
 
 export interface SingleHarvestResult {
@@ -15,6 +16,17 @@ export interface SingleHarvestResult {
   engine?: string
   /** % de fiches avec prix dans l'index (diagnostic immédiat des prix). */
   pctPrice: number
+  /**
+   * Ce que la passe a raconté, dans l'ordre.
+   *
+   * ⚠ `harvestPass` émet neuf diagnostics — « aucune catégorie trouvée », « découverte
+   * en veille », « mode catalogue, ce site n'affiche pas de prix », « fenêtre de run
+   * atteinte »… — et AUCUN appelant ne lui passait de canal : la relance ▶ d'un site
+   * était muette, y compris quand elle rendait 0 produit. Diagnostiquer un site depuis
+   * l'extérieur, sans une ligne de journal, coûte des heures pour une information que
+   * le moteur connaissait déjà.
+   */
+  log: string[]
 }
 
 /**
@@ -36,6 +48,20 @@ export async function harvestOneSite(
   const prevMeta = await loadCompetitorMeta(uid, watchId, siteId)
   const t0 = Date.now()
 
+  // Canal de journalisation TOUJOURS ouvert : retenu dans le résultat (l'appelant peut
+  // l'afficher), écho console gaté par `debugLog`, et chaîné au canal de l'appelant s'il
+  // en fournit un. Trois destinations, un seul point de branchement.
+  const lines: string[] = []
+  const log = (m: string): void => {
+    lines.push(m)
+    debugLog(`[moisson][${site.domain}] ${m}`)
+    opts.log?.(m)
+  }
+  const prev = prevMeta?.cursor
+  log(`▶ moteur ${site.engine ?? 'auto'} · budget ${pageBudget} p · ${prev
+    ? `reprise cat. ${prev.catIndex + 1}/${prev.categories.length} p.${prev.page}${prev.done ? ' (balayage terminé)' : ''}`
+    : 'premier passage'}`)
+
   const cfg: CompetitorConfig = { siteId, domain: site.domain, families }
   const res = await harvestPass(cfg, {
     // Relance MANUELLE : ignore la mise en veille de la découverte — l'utilisateur vient
@@ -46,7 +72,9 @@ export async function harvestOneSite(
     saveCursor: (id, cursor) => saveCompetitorMeta(uid, watchId, id, { domain: site.domain, cursor }),
     savePage: (id, pageId, url, page, products) => savePage(uid, watchId, id, pageId, url, page, products),
     // Remontée LIVE à CHAQUE page (progressEvery: 1) : le tableau bouge en direct.
-    onProgress: (pagesFetched, productsIndexed, cursor) => saveCompetitorMeta(uid, watchId, siteId, {
+    onProgress: (pagesFetched, productsIndexed, cursor) => {
+      log(`p.${pagesFetched} → ${productsIndexed} fiche(s) cumulée(s) · cat. ${cursor.catIndex + 1}/${cursor.categories.length}`)
+      return saveCompetitorMeta(uid, watchId, siteId, {
       domain: site.domain,
       harvestBeatAt: Date.now(), // battement de MOISSON (le « Comparer » ne l'écrit jamais)
       productCount: (prevMeta?.productCount ?? 0) + productsIndexed,
@@ -54,8 +82,9 @@ export async function harvestOneSite(
       harvestSweeps: cursor.sweeps,
       lastPassPages: pagesFetched,
       lastPassProducts: productsIndexed,
-    }),
-    log: opts.log,
+      })
+    },
+    log,
     signal: opts.signal,
   }, pageBudget, 1)
 
@@ -80,5 +109,12 @@ export async function harvestOneSite(
     lastPassAt: Date.now(),
     pctPrice,
   })
-  return { productsIndexed: res.productsIndexed, pagesFetched: res.pagesFetched, engine: fetcher.lastEngine(), pctPrice }
+  log(`■ ${res.pagesFetched} page(s) · ${res.productsIndexed} fiche(s) · ${pctPrice} % avec prix · moteur retenu ${fetcher.lastEngine() ?? '—'} · ${Math.round(elapsedMs / 1000)} s${res.sweepComplete ? ' · balayage terminé' : ''}`)
+  return {
+    productsIndexed: res.productsIndexed,
+    pagesFetched: res.pagesFetched,
+    engine: fetcher.lastEngine(),
+    pctPrice,
+    log: lines,
+  }
 }

@@ -94,10 +94,18 @@ export function SourceSitesConfig({ config, onChange }: {
         setScrapingId(null)
         return
       }
-      toast.success(t('tst.rd.harvestResult', {
-        host: domain, products: res.productsIndexed, pct: res.pctPrice,
-        engine: res.engine ? t('tst.rd.harvestEngine', { engine: res.engine }) : '',
-      }))
+      // 0 fiche : le moteur SAIT presque toujours pourquoi (« aucune catégorie trouvée »,
+      // « découverte en veille », « mode catalogue »…). Sans cette remontée, la relance
+      // rendait un « 0 produit » muet et le diagnostic repartait de zéro.
+      if (res.productsIndexed === 0) {
+        const reason = res.log.filter((l) => !/^[▶■]|^p\./.test(l)).pop()
+        toast.warning(t('tst.ss.harvestNoProduct', { domain, reason: reason ?? t('tst.ss.harvestNoReason') }))
+      } else {
+        toast.success(t('tst.rd.harvestResult', {
+          host: domain, products: res.productsIndexed, pct: res.pctPrice,
+          engine: res.engine ? t('tst.rd.harvestEngine', { engine: res.engine }) : '',
+        }))
+      }
     } catch (e) {
       toast.error(t('tst.ss.harvestFailed', { domain, message: e instanceof Error ? e.message : t('tst.ss.harvestFailedDefault') }))
       setScrapingId(null)

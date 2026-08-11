@@ -1756,6 +1756,8 @@ export const fr = {
   'ss.scrape.start': 'Scraper ce site maintenant (moisson de ce concurrent seul)',
   'ss.scrape.stop': 'Arrêter la moisson — les pages déjà collectées restent enregistrées',
   'tst.ss.harvestStopped': 'Moisson de {domain} arrêtée · {products} fiche(s) conservée(s)',
+  'tst.ss.harvestNoProduct': 'Aucune fiche sur {domain} — {reason}',
+  'tst.ss.harvestNoReason': 'le moteur n\u2019a rien dit de plus (voir la console avec debug=1)',
   'ss.reset.title': 'Réinitialiser les données collectées de ce site (efface tout, re-scrape propre)',
   'ss.pages.title': 'Pages par run réservées à ce site. Vide = part du budget commun.',
   'wfn.download': 'Télécharger {filename}',
@@ -2735,6 +2737,7 @@ export const fr = {
   'run.harvest.siteAuth': '{domain} : accès authentifié (login cookie).',
   'run.harvest.siteEngine': '{domain} : moteur forcé « {engine} ».',
   'run.harvest.siteIndexed': '{domain} : +{indexed} produit(s) sur {pages} page(s) (index : {total} pages).',
+  'run.harvest.antiBotBlocked': "{domain} : bloqué par une protection anti-bot ({protection}) — la page de défi remplace le catalogue sur toutes les grilles. Forcer le moteur sur Bright Data pour ce site.",
   'run.harvest.budgetReserved': 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',
   'run.harvest.cycleComplete': "Cycle complet : {count} site(s) à 100 % — prochaine relance à l'échéance calendaire.",
 

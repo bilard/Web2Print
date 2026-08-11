@@ -15,12 +15,23 @@ import { brightDataRead } from '../../workflow/brightData'
 import { firecrawlScrapeHtml } from '../../scraper/firecrawlHtml'
 import { getUserApiKey } from '../../workflow/apiKeys'
 import { fetchHtml } from '../../scraper/fetchHtml'
+import { antiBotChallenge } from '../../scraper/antiBot'
 import type { CompetitorSite } from '../helpers'
 
 export interface ServerFetcher {
   fetchHtml: (url: string) => Promise<string | null>
   /** Canal ayant réellement fourni le HTML (chip « via … » du tableau des sites). */
   lastEngine: () => string | undefined
+  /**
+   * Protection anti-bot ayant répondu à la place du site, quand TOUS les paliers ont été
+   * refusés (« Cloudflare », « DataDome »…). `undefined` tant qu'aucune page n'a été
+   * bloquée.
+   *
+   * ⚠ Sans cette remontée, un site entièrement protégé se lit « 50 pages · 0 produit » —
+   * indiscernable d'un catalogue vide ou d'un extracteur cassé. Ce sont trois pannes très
+   * différentes, et une seule se corrige en changeant de moteur.
+   */
+  blockedBy: () => string | undefined
 }
 
 /** Jina Reader en mode HTML — mêmes en-têtes que le client. */
@@ -34,6 +45,8 @@ async function jinaHtml(url: string, timeoutMs: number): Promise<string | null> 
     })
     if (!res.ok) return null
     const html = await res.text()
+    // ⚠ Le tri « défi ou contenu » est fait par l'appelant (`keep`), pour qu'il puisse
+    // RETENIR le nom de la protection : ici, on ne saurait à qui le dire.
     return html.length > 500 ? html : null
   } catch {
     return null
@@ -51,12 +64,28 @@ async function jinaHtml(url: string, timeoutMs: number): Promise<string | null> 
 
 export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs = 20_000): ServerFetcher {
   let last: string | undefined
+  let blocked: string | undefined
+
+  /**
+   * Garde d'entrée de CHAQUE palier : rend le HTML s'il est exploitable, `null` si c'est
+   * une page de défi — et retient au passage le nom de la protection.
+   *
+   * Un seul point de passage, parce qu'un palier oublié rouvrirait exactement le trou
+   * qu'on bouche : il suffit d'un lecteur qui accepte un défi pour que la cascade
+   * s'arrête net en croyant avoir réussi.
+   */
+  const keep = (html: string | null | undefined): string | null => {
+    const challenge = antiBotChallenge(html)
+    if (challenge) { blocked = challenge; return null }
+    return html ?? null
+  }
   let jar: string | null = null
   let jarTried = false
 
   if (site.auth) {
     return {
       lastEngine: () => last,
+      blockedBy: () => blocked,
       fetchHtml: async (url) => {
         if (!jarTried) {
           jarTried = true
@@ -66,12 +95,12 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
           } catch { jar = null }
         }
         if (jar) {
-          const html = await fetchWithJar(url, jar, timeoutMs).catch(() => null)
+          const html = keep(await fetchWithJar(url, jar, timeoutMs).catch(() => null))
           if (html) { last = 'authenticated'; return html }
         }
-        const plain = await fetchHtml(url, timeoutMs).catch(() => null)
+        const plain = keep(await fetchHtml(url, timeoutMs).catch(() => null))
         if (plain) last = 'cloudFunction'
-        return plain ?? null
+        return plain
       },
     }
   }
@@ -79,11 +108,13 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
   if (site.engine === 'brightdata') {
     return {
       lastEngine: () => last,
+      blockedBy: () => blocked,
       fetchHtml: async (url) => {
         // `brightDataRead` porte déjà le token/zone Firestore, l'escalade Web Unlocker →
         // Scraping Browser et le circuit-breaker crédits : rien à réimplémenter ici.
         const res = await brightDataRead(url).catch(() => null)
-        if (res?.html) { last = 'brightdata'; return res.html }
+        const html = keep(res?.html)
+        if (html) { last = 'brightdata'; return html }
         return null
       },
     }
@@ -92,6 +123,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
   if (site.engine === 'firecrawl') {
     return {
       lastEngine: () => last,
+      blockedBy: () => blocked,
       fetchHtml: async (url) => {
         // Clé PAR UTILISATEUR (comme le client) : pas de clé = pas de lecture. On ne
         // retombe PAS en direct — un site réglé sur Firecrawl l'est parce que le direct
@@ -99,7 +131,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
         const key = await getUserApiKey(uid, 'firecrawl').catch(() => '')
         if (!key) return null
         // `scroll` : pages LISTE lazy-load — parité exacte avec `siteFetch` côté client.
-        const html = await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null)
+        const html = keep(await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null))
         if (html) { last = 'firecrawl'; return html }
         return null
       },
@@ -109,8 +141,9 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
   if (site.engine === 'jina') {
     return {
       lastEngine: () => last,
+      blockedBy: () => blocked,
       fetchHtml: async (url) => {
-        const html = await jinaHtml(url, timeoutMs)
+        const html = keep(await jinaHtml(url, timeoutMs))
         if (html) { last = 'jina'; return html }
         return null
       },
@@ -127,6 +160,7 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
   let sinceRetry = 0
   return {
     lastEngine: () => last,
+    blockedBy: () => blocked,
     fetchHtml: async (url) => {
       // Collant sur le moteur payant qui a fonctionné : repayer l'échec des paliers
       // gratuits à chaque page coûterait une seconde et demie pour rien. On re-teste
@@ -137,19 +171,19 @@ export function buildServerFetcher(uid: string, site: CompetitorSite, timeoutMs 
       if (retry) sinceRetry = 0
 
       if (!sticky || retry) {
-        const direct = await fetchHtml(url, timeoutMs).catch(() => null)
+        const direct = keep(await fetchHtml(url, timeoutMs).catch(() => null))
         if (direct) { last = 'cloudFunction'; sinceRetry = 0; return direct }
-        const viaJina = await jinaHtml(url, timeoutMs)
+        const viaJina = keep(await jinaHtml(url, timeoutMs))
         if (viaJina) { last = 'jina'; sinceRetry = 0; return viaJina }
       }
 
       const key = await getUserApiKey(uid, 'firecrawl').catch(() => '')
       if (key) {
-        const viaFirecrawl = await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null)
+        const viaFirecrawl = keep(await firecrawlScrapeHtml(url, key, { scroll: true }).catch(() => null))
         if (viaFirecrawl) { last = 'firecrawl'; sinceRetry++; return viaFirecrawl }
       }
-      const viaBd = await brightDataRead(url).catch(() => null)
-      if (viaBd?.html) { last = 'brightdata'; sinceRetry++; return viaBd.html }
+      const bdHtml = keep((await brightDataRead(url).catch(() => null))?.html)
+      if (bdHtml) { last = 'brightdata'; sinceRetry++; return bdHtml }
 
       // Tous les paliers ont échoué : on le DIT dans le canal, sinon le tableau affiche
       // « via cloudFunction » pour une page qui n'a jamais été lue.
