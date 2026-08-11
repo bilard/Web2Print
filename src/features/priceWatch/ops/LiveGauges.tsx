@@ -133,6 +133,11 @@ export function LiveGauges({ meta, matchedBySite }: {
               comme autant de pannes, et noie les quatre concurrents qui travaillent. Il se
               réduit donc à une ligne dense : ce qu'il a en réserve, où il en est, ce qu'il
               rapporte. Trois fois moins haut, et rien d'inventé.
+
+              ⚠ À l'inverse, la carte qui TRAVAILLE doit se voir au premier regard, pas se
+              deviner : un liseré de deux pixels et un halo diffus se perdaient dans une
+              grille de seize cartes. Bord épais, anneau franc, fond teinté et ombre portée
+              qui la décolle — quitte à être appuyé, puisque c'est la seule qu'on cherche.
             */}
             {r.pulse === 'idle' ? (
               <div className={`flex items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-[11px] ${tone.edge} ${
@@ -148,16 +153,20 @@ export function LiveGauges({ meta, matchedBySite }: {
                 </span>
               </div>
             ) : (
-            <div className={`rounded-lg border-l-2 px-3 py-2.5 transition-colors ${tone.edge} ${
-              active ? 'bg-surface-2' : 'bg-well opacity-70'
-            } ${r.pulse === 'live' ? 'ring-1 ring-emerald-400/30 shadow-[0_0_20px_-8px] shadow-emerald-400/40' : ''}`}>
+            <div className={`rounded-lg px-3 py-2.5 transition-all ${
+              r.pulse === 'live'
+                ? 'border-l-4 border-l-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-950/25 shadow-lg shadow-emerald-500/10'
+                : `border-l-2 ${tone.edge} ${active ? 'bg-surface-2' : 'bg-well opacity-70'}`
+            }`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
-                <span className={`text-[12px] truncate ${r.pulse === 'live' ? 'text-white font-medium' : 'text-white/80'}`}>
+                <span className={`truncate ${r.pulse === 'live' ? 'text-[13px] text-white font-semibold' : 'text-[12px] text-white/80'}`}>
                   {m.domain ?? siteId}
                 </span>
                 {r.pulse === 'live' && (
-                  <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-emerald-300 bg-emerald-500/12 border border-emerald-500/30 rounded-full px-1.5 py-px">
+                  // Badge PLEIN, pas un contour : sur fond sombre, un contour fin se lit de
+                  // moins loin qu'un aplat.
+                  <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide text-[#062b1c] bg-emerald-400 rounded-full px-1.5 py-px">
                     {t('ops.gauges.running')}
                   </span>
                 )}
@@ -170,7 +179,9 @@ export function LiveGauges({ meta, matchedBySite }: {
               {/* LE compte-tours : le seul chiffre qui répond à « ça avance ? ». En jaune,
                   comme tous les volumes de cet écran. */}
               <div className="flex items-baseline gap-1.5">
-                <span className={`text-lg font-semibold tabular-nums ${r.productsPerMin > 0 ? 'text-amber-300' : 'text-white/30'}`}>
+                <span className={`font-bold tabular-nums ${
+                  r.productsPerMin > 0 ? 'text-2xl text-amber-300' : 'text-lg text-white/30'
+                }`}>
                   {n(r.productsPerMin)}
                 </span>
                 {/* ⚠ « 0 fiches/min » sur une carte qui travaille se lit comme une panne.
