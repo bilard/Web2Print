@@ -121,8 +121,16 @@ export function WatchOpsScreen() {
       )}
 
       <RunCardsStrip workflowId={workflowId} />
-      <RunHistory runs={runs} />
-      <IncidentLog incidents={incidents} />
+
+      {/* ⚠ CÔTE À CÔTE. Chacun n'utilisait qu'un tiers de la largeur — l'historique aligne
+          quatre colonnes étroites, le journal une ligne par panne — et prenait une rangée
+          entière : il fallait défiler pour passer de l'un à l'autre alors qu'on les lit
+          ensemble (« ce run a duré 1 min et fini en erreur » ↔ « voici pourquoi »).
+          `items-start` : sans lui, le plus court s'étire à la hauteur du plus long. */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+        <RunHistory runs={runs} />
+        <IncidentLog incidents={incidents} />
+      </div>
     </div>
   )
 }

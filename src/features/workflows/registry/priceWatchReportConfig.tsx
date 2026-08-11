@@ -12,6 +12,7 @@ import { ChevronRight, Wand2 } from 'lucide-react'
 import type { ConfigField } from '../types'
 import { ConfigFieldRenderer } from '../editor/configFields'
 import { COMPOSE_FIELDS, COMPOSE_PRESETS } from '@/features/priceWatch/composeFields'
+import { PriceWatchReportPreview } from './priceWatchReportPreview'
 import type { PwReportConfig } from './priceWatchReportTypes'
 import { useTranslation } from '@/lib/i18n'
 
@@ -67,6 +68,10 @@ export function PriceWatchReportConfig({ config, onChange, availableColumns }: {
           ))}
         </div>
       </div>
+
+      {/* L'aperçu vient APRÈS les exemples : on part d'un exemple, on l'adapte, puis on
+          regarde ce qu'il donne. */}
+      <PriceWatchReportPreview prompt={prompt} watchIdRaw={String(config.watchId ?? '')} />
 
       {/* La liste des données transmises. Repliée par défaut — elle est longue, et on ne la
           consulte qu'au moment d'écrire. Couverte par `composeFields.test.ts` : elle ne
