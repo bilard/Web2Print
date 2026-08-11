@@ -11,18 +11,19 @@ import type { HarvestMeta } from '../dashboard/opsMetrics'
 import type { LiveRate } from './liveRates'
 
 /** Témoin de vie : la couleur dit l'état, le texte dit depuis quand. */
-/** Trois états, trois couleurs franches — on doit lire l'état à un mètre de l'écran, sans
- *  chercher le chiffre. Vert : ça collecte. Ambre : ça ralentit. Gris : à l'arrêt. */
-const PULSE: Record<LiveRate['pulse'], { dot: string; text: string; card: string }> = {
-  live: {
-    dot: 'bg-emerald-400 animate-pulse', text: 'text-emerald-300',
-    card: 'bg-emerald-500/[0.09] border-emerald-400/30',
-  },
-  slow: {
-    dot: 'bg-amber-400', text: 'text-amber-300',
-    card: 'bg-amber-500/[0.07] border-amber-400/25',
-  },
-  idle: { dot: 'bg-white/25', text: 'text-white/35', card: 'bg-well border-transparent' },
+/**
+ * Trois états, portés par un LISERÉ latéral — pas par le fond.
+ *
+ * ⚠ Un voile de couleur sur le fond sombre de l'application vire au kaki : l'émeraude
+ * teintait la carte entière en vert olive, et l'ambre en brun. Sur un tableau de bord où
+ * quatre cartes se touchent, ces aplats sales sautaient aux yeux avant l'information.
+ * Le fond reste donc neutre et thémable ; la couleur se concentre sur un trait de deux
+ * pixels, le témoin et le compteur — assez pour lire l'état à un mètre, sans salir.
+ */
+const PULSE: Record<LiveRate['pulse'], { dot: string; text: string; edge: string }> = {
+  live: { dot: 'bg-emerald-400 animate-pulse', text: 'text-emerald-300', edge: 'border-l-emerald-400' },
+  slow: { dot: 'bg-amber-400', text: 'text-amber-300', edge: 'border-l-amber-400/70' },
+  idle: { dot: 'bg-white/25', text: 'text-white/35', edge: 'border-l-white/10' },
 }
 
 /** « 12 s », « 4 min », « 2 h » — l'âge, pas une durée de travail. */
@@ -122,7 +123,11 @@ export function LiveGauges({ meta, matchedBySite }: {
                   <span className={`h-px flex-1 ${active ? 'bg-emerald-400/20' : 'bg-white/10'}`} />
                 </div>
               )}
-            <div className={`rounded-lg border px-3 py-2.5 transition-colors ${tone.card}`}>
+            {/* Fond selon l'APPARTENANCE (au flux ou au repos), liseré selon l'ACTIVITÉ :
+                deux informations distinctes, deux canaux visuels distincts. */}
+            <div className={`rounded-lg border-l-2 px-3 py-2.5 transition-colors ${tone.edge} ${
+              active ? 'bg-surface-2' : 'bg-well opacity-70'
+            }`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
                 <span className="text-[12px] text-white/80 truncate">{m.domain ?? siteId}</span>
