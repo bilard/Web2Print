@@ -1,6 +1,9 @@
-// Les vingt derniers runs (début, durée, issue, volume) et la tendance des durées, en clair.
+// Les vingt derniers runs : début, durée, issue, volume.
+// ⚠ La tendance des durées ne s'affiche plus ici mais dans l'en-tête (`OpsHeader`) : en bas
+// de page et en petit, elle passait inaperçue alors que c'est l'information d'exploitation
+// la plus utile de l'écran. Elle n'est pas dupliquée — un seul endroit la porte.
 import { Clock } from 'lucide-react'
-import { useRunHistory } from './useRunHistory'
+import type { RunHistoryEntry } from './useRunHistory'
 import { when, duration } from '../dashboard/format'
 import { useTranslation } from '@/lib/i18n'
 
@@ -8,9 +11,8 @@ const STATUS_TONE: Record<string, string> = {
   success: 'text-emerald-400/80', partial: 'text-amber-300/80', error: 'text-rose-400', stopped: 'text-white/40',
 }
 
-export function RunHistory({ workflowId }: { workflowId: string | null }) {
+export function RunHistory({ runs }: { runs: RunHistoryEntry[] }) {
   const { t } = useTranslation()
-  const { runs, trend } = useRunHistory(workflowId)
 
   // Aucun run persisté encore : rien à raconter, pas de tableau vide muet.
   if (runs.length === 0) return null
@@ -20,13 +22,6 @@ export function RunHistory({ workflowId }: { workflowId: string | null }) {
       <div className="flex items-center gap-2 mb-2">
         <Clock className="w-3.5 h-3.5 text-white/40" />
         <h3 className="text-sm font-semibold text-white">{t('ops.history.title')}</h3>
-        {/* La tendance ne se prononce qu'à partir de quatre runs terminés (durationTrend) —
-            en dessous, `trend` est `null` et rien ne s'affiche plutôt qu'un chiffre inventé. */}
-        {trend != null && (
-          <span className={`text-[11px] tabular-nums ml-auto ${trend > 0 ? 'text-amber-300' : 'text-emerald-300'}`}>
-            {trend > 0 ? t('ops.history.trend.up', { pct: trend }) : t('ops.history.trend.down', { pct: Math.abs(trend) })}
-          </span>
-        )}
       </div>
       <ul className="space-y-1 max-h-64 overflow-y-auto">
         {runs.map((r) => (

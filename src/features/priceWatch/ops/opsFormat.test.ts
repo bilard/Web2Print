@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { chantierUnitKeys, etaParts, plural } from './opsFormat'
+import { chantierUnitKeys, etaParts, plural, subPercentKey } from './opsFormat'
 import { fr } from '@/lib/i18n/fr'
 
 describe('etaParts — une estimation se lit, elle ne se déchiffre pas', () => {
@@ -34,6 +34,25 @@ describe("plural — le libellé s'accorde avec son nombre", () => {
 
 // « 21 faits · 64 % · 1 restants » : 21 et 1 comptaient des SITES, 64 % l'avancement du
 // balayage EN COURS. Rien de faux dans le calcul — tout de faux dans ce qu'on en disait.
+// 504 champs traduits sur 207 802 : la carte affichait « 0 % » pendant des heures, entre
+// deux compteurs qui, eux, bougeaient.
+describe('subPercentKey — un travail commencé ne s’affiche pas « 0 % »', () => {
+  it('bascule sur « < 1 % » quand l’arrondi écrase un travail réel', () => {
+    const key = subPercentKey(0, 504)
+    expect(key).not.toBeNull()
+    expect(fr[key!]).toBe('< 1 %')
+  })
+
+  it('laisse le pourcentage tel quel dès qu’il vaut au moins un point', () => {
+    expect(subPercentKey(1, 3_000)).toBeNull()
+    expect(subPercentKey(62, 21)).toBeNull()
+  })
+
+  it('ne dit pas « < 1 % » d’un chantier qui n’a rien fait — zéro reste zéro', () => {
+    expect(subPercentKey(0, 0)).toBeNull()
+  })
+})
+
 describe('chantierUnitKeys — chaque chiffre dit ce qu’il compte', () => {
   it('nomme les SITES pour la moisson, et étiquette son pourcentage', () => {
     const u = chantierUnitKeys('harvest')

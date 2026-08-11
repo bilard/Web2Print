@@ -1,5 +1,33 @@
-// Tendance des durées de run. PUR.
+// Tendance et ordre de grandeur des durées de run. PUR.
 export interface RunRow { startedAt: number; endedAt?: number }
+
+/** Combien de runs récents servent la durée typique. */
+const TYPICAL_SAMPLE = 5
+
+/**
+ * Durée MÉDIANE des derniers runs terminés — la seule estimation honnête que cet écran
+ * puisse donner. `null` sous trois runs : deux points ne fixent pas un ordre de grandeur.
+ *
+ * ⚠ Médiane et non moyenne : l'historique mêle des runs de quelques secondes (échec
+ * immédiat, flux suspendu) et des runs d'une demi-heure. Une moyenne suivrait l'extrême,
+ * la médiane le traverse — même raison qu'ailleurs dans la veille, où « son écart » est
+ * une médiane.
+ *
+ * ⚠ Les runs arrivent du plus récent au plus ancien (tri `endedAt desc` de Firestore) :
+ * l'échantillon se prend en tête de liste.
+ */
+export function typicalDuration(runs: RunRow[]): number | null {
+  const durations = runs
+    .filter((r) => typeof r.endedAt === 'number')
+    .slice(0, TYPICAL_SAMPLE)
+    .map((r) => (r.endedAt as number) - r.startedAt)
+    .sort((a, b) => a - b)
+  if (durations.length < 3) return null
+  const mid = Math.floor(durations.length / 2)
+  return durations.length % 2 === 1
+    ? durations[mid]
+    : Math.round((durations[mid - 1] + durations[mid]) / 2)
+}
 
 /**
  * Écart en pourcentage entre la durée moyenne des runs RÉCENTS et celle des anciens.

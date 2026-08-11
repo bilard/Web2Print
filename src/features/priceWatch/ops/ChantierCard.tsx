@@ -1,16 +1,24 @@
 // Une carte par chantier de l'écran « Suivi » : où il en est, ce qu'il reste, à quel
 // rythme. Aucun calcul ici — tout vient déjà tranché de `buildWatchOps` (PUR).
 import type { Chantier } from './buildWatchOps'
-import { chantierLabelKey, chantierUnitKeys, etaParts, plural } from './opsFormat'
+import { chantierLabelKey, chantierUnitKeys, etaParts, plural, subPercentKey } from './opsFormat'
 import { useTranslation } from '@/lib/i18n'
 
-/** Texte de durée restante, ou `null` quand aucune estimation ne vaudrait rien — le
- *  chantier arrêté (`stale`) masque la sienne, elle gonflerait tant que l'écran reste
- *  ouvert sans qu'un octet n'ait bougé. */
+/**
+ * Texte de durée restante, ou `null` quand il n'y a rien à dire — le chantier arrêté
+ * (`stale`) masque la sienne, elle gonflerait tant que l'écran reste ouvert sans qu'un
+ * octet n'ait bougé.
+ *
+ * ⚠⚠ Plus de « estimation indisponible ». La moisson n'a JAMAIS d'estimation (`etaMs` y est
+ * `null` en dur : le battement à chaque site ferait exploser le débit), et la traduction
+ * reste sous le plancher `ETA_FLOOR` pendant des heures sur une file de 200 000 champs. La
+ * phrase s'affichait donc en permanence, sur tous les suivis, pour ne rien apprendre. Une
+ * ligne absente dit exactement la même chose sans occuper la place.
+ */
 function EtaLabel({ chantier }: { chantier: Chantier }) {
   const { t } = useTranslation()
   if (chantier.stale) return <span className="text-amber-300/80">{t('ops.card.stopped')}</span>
-  if (chantier.etaMs == null) return <span className="text-white/40">{t('ops.card.eta.unavailable')}</span>
+  if (chantier.etaMs == null) return null
   const { h, m } = etaParts(chantier.etaMs)
   return (
     <span className="text-white/50 tabular-nums">
@@ -24,6 +32,7 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
   // Ce que comptent les trois chiffres — l'unité change d'un chantier à l'autre, et le
   // pourcentage de la moisson ne mesure pas la même chose que les compteurs qui l'encadrent.
   const unit = chantierUnitKeys(c.id)
+  const sub1 = subPercentKey(c.pct, c.done)
 
   return (
     <div className="bg-surface rounded-lg p-4 space-y-2.5" data-pw-chantier={c.id}>
@@ -47,7 +56,7 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
             voisins — sans elle, les trois nombres de la moisson passaient pour une erreur
             de calcul. */}
         <span className="flex flex-col items-center leading-tight text-center">
-          <span className="text-white/70 font-medium">{c.pct}%</span>
+          <span className="text-white/70 font-medium">{sub1 ? t(sub1) : `${c.pct}%`}</span>
           {unit.pctLabelKey && (
             <span className="text-[9px] font-normal text-white/35">{t(unit.pctLabelKey)}</span>
           )}
@@ -55,10 +64,14 @@ export function ChantierCard({ chantier: c }: { chantier: Chantier }) {
         <span>{t(plural(unit.remaining, c.remaining), { n: c.remaining })}</span>
       </div>
 
-      <div className="flex items-center justify-between text-[11px]">
-        <EtaLabel chantier={c} />
-        {c.perMin != null && <span className="text-white/40 tabular-nums">{t('ops.card.perMin', { n: c.perMin })}</span>}
-      </div>
+      {/* Ligne du bas seulement quand elle porte quelque chose : ni durée restante, ni
+          badge d'arrêt, ni débit ⇒ pas de ligne, plutôt qu'un aveu d'ignorance permanent. */}
+      {(c.stale || c.etaMs != null || c.perMin != null) && (
+        <div className="flex items-center justify-between text-[11px]">
+          <EtaLabel chantier={c} />
+          {c.perMin != null && <span className="ml-auto text-white/40 tabular-nums">{t('ops.card.perMin', { n: c.perMin })}</span>}
+        </div>
+      )}
 
       {/* Ventilation par langue — traduction seulement, et seulement si le passage en fournit une. */}
       {c.byLang && c.byLang.length > 0 && (

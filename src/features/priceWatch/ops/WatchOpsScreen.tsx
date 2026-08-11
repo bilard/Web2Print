@@ -12,6 +12,7 @@ import { ChantierCard } from './ChantierCard'
 import { RunCardsStrip } from './RunCardsStrip'
 import { IncidentLog } from './IncidentLog'
 import { RunHistory } from './RunHistory'
+import { useRunHistory } from './useRunHistory'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useTranslation } from '@/lib/i18n'
@@ -40,6 +41,9 @@ export function WatchOpsScreen() {
   const meta = useCompetitorMeta(watchId)
   const cockpit = useMemo(() => (report ? buildOpsCockpit(report, meta) : null), [report, meta])
   const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
+  // ⚠ Lu ICI et pas dans les deux composants : l'en-tête montre la durée typique et la
+  // tendance, l'historique montre les lignes — même liste, un seul abonnement Firestore.
+  const { runs, trend, typical } = useRunHistory(workflowId)
 
   // ⚠ Défilement INSTANTANÉ, jamais `behavior: 'smooth'` : sur un écran qui se repeint en
   // continu (tick de l'horloge, abonnements Firestore), `smooth` reste bloqué à 0 — cf.
@@ -62,10 +66,6 @@ export function WatchOpsScreen() {
     return <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.empty')}</p>
   }
 
-  // La ventilation « jamais traité / source modifiée depuis » est globale au passage de
-  // textes : elle n'a rien à dire sur un suivi qui ne fait QUE de la moisson.
-  const hasTextChantiers = view.chantiers.some((c) => c.id !== 'harvest')
-
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -76,7 +76,7 @@ export function WatchOpsScreen() {
         <WatchSelector watches={watches} value={watchId ?? ''} onChange={setWatchId} />
       </header>
 
-      <OpsHeader run={view.run} workflowId={workflowId} />
+      <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
       <OpsActions workflowId={workflowId} run={view.run} />
 
       {view.chantiers.length === 0 ? (
@@ -87,21 +87,21 @@ export function WatchOpsScreen() {
         </div>
       )}
 
-      {hasTextChantiers && (
+      {/* ⚠⚠ Le bloc n'existe que s'il a une ventilation à donner. Le mode PIM omet
+          délibérément `reasons` (cf. `textsSnapshot`) : on affichait donc un titre de
+          section suivi de « non ventilé » — deux lignes pour dire qu'on n'avait rien à
+          dire, sur le cas le plus courant. */}
+      {view.textsReasons && (
         <div className="bg-surface rounded-lg p-4">
           <h3 className="text-sm font-semibold text-white mb-2">{t('ops.reasons.title')}</h3>
-          {view.textsReasons ? (
-            <p className="text-sm text-white/60">
-              {t('ops.reasons.detail', { fresh: view.textsReasons.fresh, stale: view.textsReasons.stale })}
-            </p>
-          ) : (
-            <p className="text-sm text-white/45">{t('ops.reasons.unknown')}</p>
-          )}
+          <p className="text-sm text-white/60">
+            {t('ops.reasons.detail', { fresh: view.textsReasons.fresh, stale: view.textsReasons.stale })}
+          </p>
         </div>
       )}
 
       <RunCardsStrip workflowId={workflowId} />
-      <RunHistory workflowId={workflowId} />
+      <RunHistory runs={runs} />
       <IncidentLog incidents={incidents} />
     </div>
   )

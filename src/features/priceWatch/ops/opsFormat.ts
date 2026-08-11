@@ -10,6 +10,20 @@ export function etaParts(ms: number): { h: number; m: number } {
   return { h: Math.floor(total / 60), m: total % 60 }
 }
 
+/**
+ * Clé du pourcentage quand l'arrondi le trahit, `null` pour l'afficher tel quel.
+ *
+ * ⚠ Un travail commencé ne s'affiche pas « 0 % ». Sur une file de 200 000 champs, franchir
+ * le premier pour cent demande des heures : la carte annonçait « 0 % » pendant tout ce
+ * temps alors que ses deux compteurs bougeaient — le pourcentage semblait cassé, ou le
+ * traitement bloqué. « < 1 % » dit la même mesure sans ce malentendu.
+ *
+ * ⚠ La CLÉ, pas le texte (cf. `chantierLabelKey`).
+ */
+export function subPercentKey(pct: number, done: number): TranslationKey | null {
+  return pct === 0 && done > 0 ? 'ops.card.pct.sub1' : null
+}
+
 /** Libellé d'un chantier. ⚠ La CLÉ, pas le texte : `t()` appelé ici, en constante de
  *  module, figerait la langue au chargement de l'application. */
 export function chantierLabelKey(id: ChantierId): TranslationKey {

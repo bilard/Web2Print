@@ -16,7 +16,14 @@ const TONE: Record<string, string> = {
   stopped: 'text-white/55 bg-white/[0.05] border-white/10',
 }
 
-export function OpsHeader({ run, workflowId }: { run: RunView | null; workflowId: string | null }) {
+export function OpsHeader({ run, workflowId, typical, trend }: {
+  run: RunView | null; workflowId: string | null
+  /** Durée médiane des derniers runs, ou `null` quand l'historique est trop court. */
+  typical: number | null
+  /** Écart des durées récentes vs anciennes — l'information d'exploitation la plus utile
+   *  de l'écran, et elle vivait tout en bas, en petit, à droite de l'historique. */
+  trend: number | null
+}) {
   const { t, locale } = useTranslation()
   const sched = useWorkflowSchedule(workflowId)
   const cronOn = !!sched?.enabled
@@ -42,6 +49,19 @@ export function OpsHeader({ run, workflowId }: { run: RunView | null; workflowId
 
       {run && (
         <span className="text-[11px] text-white/45 tabular-nums">{t('ops.header.elapsed', { duration: duration(run.elapsedMs) })}</span>
+      )}
+
+      {/* La seule estimation que cet écran puisse tenir : ce que les derniers runs ont
+          RÉELLEMENT duré. Les chantiers, eux, ne peuvent pas l'extrapoler — la moisson bat
+          à chaque site (débit faux), la traduction reste sous le plancher d'estimation
+          pendant des heures. */}
+      {typical != null && (
+        <span className="text-[11px] text-white/40 tabular-nums">{t('ops.header.typical', { duration: duration(typical) })}</span>
+      )}
+      {trend != null && (
+        <span className={`text-[11px] tabular-nums ${trend > 0 ? 'text-amber-300' : 'text-emerald-300'}`}>
+          {trend > 0 ? t('ops.history.trend.up', { pct: trend }) : t('ops.history.trend.down', { pct: Math.abs(trend) })}
+        </span>
       )}
 
       <span className="ml-auto text-[11px] text-white/40">

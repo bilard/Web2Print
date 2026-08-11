@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
-import { durationTrend, type RunRow } from './runHistoryStats'
+import { durationTrend, typicalDuration, type RunRow } from './runHistoryStats'
 import type { NodeStatus } from '../../workflows/types'
 
 /** Nombre de runs conservés à l'écriture (cf. `MAX_RUNS` des deux jumeaux) — même page ici. */
@@ -29,7 +29,17 @@ export interface RunHistoryEntry extends RunRow {
   nodesError: number
 }
 
-export function useRunHistory(workflowId: string | null): { runs: RunHistoryEntry[]; trend: number | null } {
+export interface RunHistoryView {
+  runs: RunHistoryEntry[]
+  /** Écart des durées récentes vs anciennes, en pourcentage. */
+  trend: number | null
+  /** Durée médiane des derniers runs — l'estimation que l'en-tête affiche. */
+  typical: number | null
+}
+
+/** ⚠ Un seul appel par écran : l'en-tête ET l'historique lisent la même liste. Deux appels
+ *  ouvriraient deux abonnements Firestore sur la même requête. */
+export function useRunHistory(workflowId: string | null): RunHistoryView {
   const uid = useWorkspaceUid()
   const [runs, setRuns] = useState<RunHistoryEntry[]>([])
 
@@ -55,5 +65,5 @@ export function useRunHistory(workflowId: string | null): { runs: RunHistoryEntr
     )
   }, [uid, workflowId])
 
-  return { runs, trend: durationTrend(runs) }
+  return { runs, trend: durationTrend(runs), typical: typicalDuration(runs) }
 }
