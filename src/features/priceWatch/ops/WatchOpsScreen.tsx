@@ -126,8 +126,11 @@ export function WatchOpsScreen() {
           quatre colonnes étroites, le journal une ligne par panne — et prenait une rangée
           entière : il fallait défiler pour passer de l'un à l'autre alors qu'on les lit
           ensemble (« ce run a duré 1 min et fini en erreur » ↔ « voici pourquoi »).
-          `items-start` : sans lui, le plus court s'étire à la hauteur du plus long. */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+          ⚠ Hauteur de rangée FIXE sur grand écran, et chaque panneau la remplit : sans
+          elle, l'historique se coupait à seize lignes au milieu d'une page à moitié vide,
+          et le journal des pannes dictait la hauteur des deux. Le débordement scrolle DANS
+          le panneau — la page, elle, ne s'allonge pas. */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:h-[30rem]">
         <RunHistory runs={runs} />
         <IncidentLog incidents={incidents} />
       </div>

@@ -12,7 +12,7 @@ import { registerServerNode } from '../registry'
 import { makeServerFile } from './serverFile'
 import { reportLatestDoc, priceEventsDoc } from '../../priceWatch/paths'
 import { renderPriceWatchReport, DEFAULT_PW_REPORT } from '../../priceWatch/reportHtml'
-import { buildComposePrompt, normalizeComposedHtml } from '../../priceWatch/reportCompose'
+import { buildComposePrompt, normalizeComposedHtml, withKpiBanner } from '../../priceWatch/reportCompose'
 import { eventsOfLastRun, type PriceEvent } from '../../priceWatch/priceEvents'
 import type { StoredReport } from '../../priceWatch/reportStore'
 import type { ServerRunCtx } from '../types'
@@ -56,7 +56,11 @@ async function composeServerSide(
     const html = normalizeComposedHtml(parsed?.html) ?? normalizeComposedHtml(r.text)
     if (html) {
       ctx.log('info', t(ctx.locale, 'run.pwReport.composedBy', { provider: r.provider, model: r.model }))
-      return html
+      // ⚠ Jumeau du navigateur : les indices du cockpit en tête, quelle que soit la
+      // consigne. Le mail du matin et un aperçu de l'après-midi doivent s'ouvrir pareil.
+      // ⚠ Le cron ne connaît que deux locales (`Locale` = 'fr' | 'en') là où le cartouche
+      // en gère trois : l'espagnol n'existe que côté navigateur, on ne le fabrique pas ici.
+      return withKpiBanner(html, report, ctx.locale)
     }
     // Un `stopReason` de troncature (`max_tokens`, `MAX_TOKENS`, `length`) dit tout autre
     // chose qu'un modèle injoignable : c'est la réponse qui était trop longue.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeComposedHtml, reportFacts } from './reportCompose'
+import { kpiBannerHtml, normalizeComposedHtml, reportFacts, withKpiBanner } from './reportCompose'
 
 
 // ⚠⚠ Sur téléphone, le mail composé sortait du cadre : le lecteur voyait la colonne des
@@ -93,5 +93,51 @@ describe('reportFacts — la distorsion, pas seulement l’écart', () => {
     const f = reportFacts(productWith([cell({ gapPct: null })]))
     expect(f.sous_cotes_dont_le_moins_cher_est_en_rupture).toBe(0)
     expect((f.exemples_de_produits_sous_cotes as Record<string, unknown>[])[0].moins_cher_chez).toBeNull()
+  })
+})
+
+
+// ⚠⚠ Le cartouche ne passe PAS par le modèle : une consigne libre ne doit pas pouvoir
+// faire disparaître les indices, ni les recopier de travers. Deux mails de deux semaines
+// s'ouvrent pareil ou ne se comparent pas.
+describe('kpiBannerHtml — les indices, quelle que soit la consigne', () => {
+  const report = {
+    runAt: Date.now(),
+    kpis: {
+      products: 21_966, matchedExact: 17_565, matchedOriginOnly: 4_401, sites: 14,
+      comparisons: 48_000, cheaperThanMe: 16_000, aligned: 12_000, dearerThanMe: 20_000,
+      ruptures: 213, productsUndercut: 9_338, priceIndex: 86, priceIndexBest: 93,
+    },
+    byCompetitor: [], byFamily: [], sites: [], products: [], totalMatched: 0, truncated: false,
+  } as unknown as Parameters<typeof kpiBannerHtml>[0]
+
+  it('rend les six indices depuis les KPI du catalogue COMPLET', () => {
+    const html = kpiBannerHtml(report)
+    expect(html).toContain('67\u202f%')      // tenue prix : (12 000 + 20 000) / 48 000
+    expect(html).toContain('43\u202f%')      // exposés : 9 338 / 21 966
+    expect(html).toContain('>86<')            // indice tarif
+    expect(html).toContain('93 vs le + bas')  // indice face au meilleur prix
+    expect(html).toContain('21\u202f966')    // produits appariés
+    expect(html).toContain('213')             // ruptures
+  })
+
+  it('se glisse APRÈS l’ouverture du body quand le modèle rend un document complet', () => {
+    const out = withKpiBanner('<html><body><h1>Rapport</h1></body></html>', report)!
+    expect(out.indexOf('<table')).toBeGreaterThan(out.indexOf('<body>'))
+    expect(out.indexOf('<table')).toBeLessThan(out.indexOf('<h1>'))
+  })
+
+  it('précède simplement un fragment sans body', () => {
+    expect(withKpiBanner('<h1>Rapport</h1>', report)!.startsWith('<table')).toBe(true)
+  })
+
+  it('ne fabrique pas un cartouche seul quand la composition a échoué', () => {
+    // `null` = le run retombe sur le rapport standard, qui a déjà ses propres indices.
+    expect(withKpiBanner(null, report)).toBeNull()
+  })
+
+  it('ne prétend pas connaître un indice absent', () => {
+    const bare = { ...report, kpis: { ...report.kpis, priceIndex: null, comparisons: 0 } } as typeof report
+    expect(kpiBannerHtml(bare)).toContain('—')
   })
 })

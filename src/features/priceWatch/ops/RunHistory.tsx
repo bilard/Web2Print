@@ -18,12 +18,15 @@ export function RunHistory({ runs }: { runs: RunHistoryEntry[] }) {
   if (runs.length === 0) return null
 
   return (
-    <div className="bg-surface rounded-lg p-4" data-pw-section="ops-history">
+    <div className="bg-surface rounded-lg p-4 flex flex-col h-full min-h-0" data-pw-section="ops-history">
       <div className="flex items-center gap-2 mb-2">
         <Clock className="w-3.5 h-3.5 text-white/40" />
         <h3 className="text-sm font-semibold text-white">{t('ops.history.title')}</h3>
       </div>
-      <ul className="space-y-1 max-h-64 overflow-y-auto">
+      {/* `flex-1 min-h-0` : la liste prend toute la hauteur restante du panneau et scrolle
+          seule. Sans `min-h-0`, un enfant flex refuse de rétrécir sous son contenu et
+          c'est la PAGE qui s'allonge. */}
+      <ul className="space-y-1 flex-1 min-h-0 overflow-y-auto">
         {runs.map((r) => (
           <li key={r.id} className="flex items-center gap-2 text-[12px] tabular-nums">
             <span className="text-white/50 w-32 shrink-0">{when(r.startedAt)}</span>

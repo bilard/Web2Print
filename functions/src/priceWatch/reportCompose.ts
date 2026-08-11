@@ -247,6 +247,64 @@ function makeResponsive(html: string): string {
     .replace(/padding\s*:\s*(\d+)px\s+(\d{2,})px/gi, (_m, v: string, h: string) => `padding:${v}px ${Math.min(12, Number(h))}px`)
 }
 
+/** Une tuile du cartouche : valeur, libellé, sous-titre, teinte. PUR. */
+interface KpiTile { label: string; value: string; sub: string; tone: string }
+
+/** Formatage court d'un entier, séparateur d'espace fine — un mail ne dépend pas d'`Intl`. */
+function num(n: number): string {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f')
+}
+
+/**
+ * Les indices du cockpit, EN TÊTE du mail, quelle que soit la consigne. PUR.
+ *
+ * ⚠⚠ Hors de portée du modèle, et c'est le but. La consigne décide de la rédaction ; ces
+ * six chiffres, eux, doivent être là à chaque envoi et toujours dire la même chose —
+ * sinon deux mails de deux semaines ne se comparent pas. Le modèle ne les recopie pas
+ * (il les recopierait mal) : ils sont rendus ici, en HTML, et collés devant sa sortie.
+ *
+ * ⚠ Tous viennent de `kpis`, calculés sur le catalogue COMPLET. L'écart unitaire cumulé du
+ * tableau de bord n'y est PAS : il se calcule sur `products[]`, plafonné et rangé par écart
+ * le plus creusé — dans un mail, ce serait un montant faux présenté comme un total.
+ */
+export function kpiBannerHtml(report: StoredReport, locale: 'fr' | 'en' | 'es' = 'fr'): string {
+  const k = report.kpis
+  const L = BANNER_LABELS[locale] ?? BANNER_LABELS.fr
+  const pct = (n: number | null) => (n == null ? '—' : `${Math.round(n)}\u202f%`)
+  const hold = k.comparisons > 0 ? ((k.aligned + k.dearerThanMe) / k.comparisons) * 100 : null
+  const exposed = k.products > 0 ? (k.productsUndercut / k.products) * 100 : null
+  const tiles: KpiTile[] = [
+    { label: L.hold, value: pct(hold), sub: L.holdSub, tone: hold != null && hold >= 50 ? '#34d399' : '#f87171' },
+    { label: L.exposed, value: pct(exposed), sub: `${num(k.productsUndercut)}/${num(k.products)}`, tone: exposed != null && exposed >= 50 ? '#f87171' : '#fbbf24' },
+    { label: L.index, value: k.priceIndex == null ? '—' : String(Math.round(k.priceIndex)), sub: k.priceIndexBest == null ? L.indexSub : `${Math.round(k.priceIndexBest)} ${L.vsBest}`, tone: (k.priceIndex ?? 100) > 100 ? '#f87171' : '#34d399' },
+    { label: L.matched, value: num(k.products), sub: `${num(k.matchedExact)} ${L.exact}`, tone: '#e5e7eb' },
+    { label: L.cheaper, value: num(k.cheaperThanMe), sub: L.cheaperSub, tone: '#f87171' },
+    { label: L.ruptures, value: num(k.ruptures), sub: L.rupturesSub, tone: '#fbbf24' },
+  ]
+  // ⚠ Tableau et styles INLINE : c'est le seul assemblage qu'un client de messagerie rende
+  // partout. Une grille CSS s'effondrerait en colonne unique chez Outlook.
+  const cells = tiles.map((t) => `<td style="padding:8px 10px;background:#f6f7f9;border-radius:8px;vertical-align:top">`
+    + `<div style="font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#6b7280">${t.label}</div>`
+    + `<div style="font-size:20px;font-weight:700;color:${t.tone};line-height:1.2">${t.value}</div>`
+    + `<div style="font-size:10px;color:#9ca3af">${t.sub}</div></td>`).join('<td style="width:6px"></td>')
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;margin:0 0 16px"><tr>${cells}</tr></table>`
+}
+
+const BANNER_LABELS = {
+  fr: { hold: 'Tenue prix', holdSub: 'aligné ou + bas', exposed: 'Exposés', index: 'Indice tarif', indexSub: 'base 100', vsBest: 'vs le + bas', matched: 'Produits appariés', exact: 'exacts', cheaper: 'Comparaisons perdues', cheaperSub: 'il est moins cher', ruptures: 'Ruptures', rupturesSub: 'opportunités' },
+  en: { hold: 'Price hold', holdSub: 'aligned or lower', exposed: 'Exposed', index: 'Price index', indexSub: 'base 100', vsBest: 'vs lowest', matched: 'Matched products', exact: 'exact', cheaper: 'Comparisons lost', cheaperSub: 'they are cheaper', ruptures: 'Out of stock', rupturesSub: 'opportunities' },
+  es: { hold: 'Sostén de precio', holdSub: 'alineado o menor', exposed: 'Expuestos', index: 'Índice tarifario', indexSub: 'base 100', vsBest: 'vs el más bajo', matched: 'Productos emparejados', exact: 'exactos', cheaper: 'Comparaciones perdidas', cheaperSub: 'él es más barato', ruptures: 'Sin stock', rupturesSub: 'oportunidades' },
+} as const
+
+/** Le mail composé, précédé de ses indices. `null` reste `null` : pas de cartouche seul. */
+export function withKpiBanner(html: string | null, report: StoredReport, locale: 'fr' | 'en' | 'es' = 'fr'): string | null {
+  if (!html) return null
+  // Insertion APRÈS l'ouverture du body quand le modèle a rendu un document complet —
+  // coller le tableau avant `<html>` produirait un fragment que certains clients ignorent.
+  const m = html.match(/<body[^>]*>/i)
+  return m ? html.replace(m[0], `${m[0]}\n${kpiBannerHtml(report, locale)}`) : kpiBannerHtml(report, locale) + html
+}
+
 /**
  * Accepte — ou refuse — le HTML rendu par le modèle. Partagé, parce qu'un mail accepté
  * côté navigateur et refusé par le cron (ou l'inverse) donnerait deux rapports différents

@@ -6,7 +6,7 @@
 // le navigateur (cascade `generateJson`, clés de l'utilisateur connecté) et le cron.
 import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
-import { buildComposePrompt, normalizeComposedHtml } from '@/features/priceWatch/reportCompose'
+import { buildComposePrompt, normalizeComposedHtml, withKpiBanner } from '@/features/priceWatch/reportCompose'
 import type { StoredReport } from '@/features/priceWatch/reportStore'
 import type { PriceEvent } from '@/features/priceWatch/priceEvents'
 
@@ -43,7 +43,9 @@ export async function composeReportHtml(
       maxTokens: 32_000,
       onProviderUsed: onProvider ? (i) => onProvider({ provider: i.provider, model: i.model }) : undefined,
     })
-    return normalizeComposedHtml(out.html)
+    // ⚠ Les indices du cockpit, TOUJOURS, quelle que soit la consigne : deux mails de deux
+    // semaines doivent se comparer d'un coup d'œil. Ils ne passent pas par le modèle.
+    return withKpiBanner(normalizeComposedHtml(out.html), report)
   } catch {
     return null
   }
