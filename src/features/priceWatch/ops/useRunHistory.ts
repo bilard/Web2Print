@@ -59,6 +59,9 @@ export function useRunHistory(workflowId: string | null): RunHistoryView {
         return {
           id: d.id, startedAt: data.startedAt, endedAt: data.endedAt, status: data.status ?? 'success',
           nodesTotal: states.length, nodesError: states.filter((s) => s === 'error').length,
+          // Cartes ABOUTIES : un run où tout a été sauté n'a rien fait, et ne doit peser
+          // ni sur la durée typique ni sur la tendance (cf. `didWork`).
+          succeeded: states.filter((s) => s === 'success').length,
         }
       })),
       (e) => console.warn('[suivi] historique des runs illisible :', e),

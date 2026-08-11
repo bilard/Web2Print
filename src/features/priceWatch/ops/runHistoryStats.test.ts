@@ -3,7 +3,9 @@ import { durationTrend, typicalDuration } from './runHistoryStats'
 
 const MIN = 60_000
 /** Un run terminé de `m` minutes, indexé pour rester distinct. */
-const run = (m: number, i = 0) => ({ startedAt: i, endedAt: i + m * MIN })
+const run = (m: number, i = 0) => ({ startedAt: i, endedAt: i + m * MIN, succeeded: 6 })
+/** Un run où la cadence d'envoi a TOUT suspendu : « Terminé », une seconde, rien d'abouti. */
+const idle = (i: number) => ({ startedAt: i, endedAt: i + 1_000, succeeded: 0 })
 
 describe('durationTrend — « la moisson s’allonge » est une information d’exploitation', () => {
   it('compare la moitié récente à la moitié ancienne', () => {
@@ -21,6 +23,11 @@ describe('durationTrend — « la moisson s’allonge » est une information d�
     const crash = (i: number) => ({ startedAt: i, endedAt: i + 1_000, status: 'error' })
     const runs = [crash(8), crash(7), run(20, 6), run(20, 5), run(10, 4), run(10, 3)]
     expect(durationTrend(runs)).toBe(100)
+  })
+
+  it('écarte les runs qui n’ont RIEN abouti — « +2251 % » venait de runs tout sautés', () => {
+    // Six runs : trois d'une seconde sans une seule carte aboutie, trois vrais.
+    expect(durationTrend([idle(9), idle(8), idle(7), run(20, 6), run(20, 5), run(10, 4), run(10, 3)])).toBe(100)
   })
 
   it('ne se prononce pas sous quatre runs — deux points ne font pas une tendance', () => {
@@ -43,6 +50,10 @@ describe('typicalDuration — la seule estimation honnête de l’écran', () =>
     const withCrash = [run(25, 4), { startedAt: 3, endedAt: 3 + 4_000 }, run(26, 2), run(24, 1)]
     // Moyenne : ~19 min. Médiane des quatre : (24 + 25) / 2 = 24,5 min.
     expect(typicalDuration(withCrash)).toBe(Math.round(24.5 * MIN))
+  })
+
+  it('écarte aussi les runs tout sautés, « Terminé » mais sans travail', () => {
+    expect(typicalDuration([idle(9), idle(8), run(25, 7), run(26, 6), run(24, 5)])).toBe(25 * MIN)
   })
 
   it('ne compte que l’échantillon récent : un passé lointain rapide ne rajeunit pas les runs d’aujourd’hui', () => {

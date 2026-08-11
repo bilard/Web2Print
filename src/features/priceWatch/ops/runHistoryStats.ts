@@ -1,5 +1,26 @@
 // Tendance et ordre de grandeur des durées de run. PUR.
-export interface RunRow { startedAt: number; endedAt?: number; status?: string }
+export interface RunRow {
+  startedAt: number
+  endedAt?: number
+  status?: string
+  /** Cartes réellement abouties. `undefined` pour les runs écrits avant que l'écran ne le
+   *  compte — traités comme ayant travaillé, faute de mieux. */
+  succeeded?: number
+}
+
+/**
+ * Ce run mesure-t-il une durée de TRAVAIL ? PUR.
+ *
+ * ⚠⚠ Le filtre « pas en erreur » ne suffisait pas, et l'écran l'a montré : l'historique de
+ * F1 contient des runs « Terminé » de 1 s, 3 s, 5 s — des runs où la cadence d'envoi a tout
+ * suspendu, donc où AUCUNE carte n'a abouti. Comparés à des runs de vingt-cinq minutes, ils
+ * produisaient « +2251 % — les runs s'allongent » : une dérive inventée de toutes pièces,
+ * affichée en tête d'écran. Une seconde de rien ne se compare pas à une demi-heure de
+ * travail.
+ */
+function didWork(r: RunRow): boolean {
+  return typeof r.endedAt === 'number' && r.status !== 'error' && (r.succeeded ?? 1) > 0
+}
 
 /** Combien de runs récents servent la durée typique. */
 const TYPICAL_SAMPLE = 5
@@ -23,7 +44,7 @@ const TYPICAL_SAMPLE = 5
  */
 export function typicalDuration(runs: RunRow[]): number | null {
   const durations = runs
-    .filter((r) => typeof r.endedAt === 'number' && r.status !== 'error')
+    .filter(didWork)
     .slice(0, TYPICAL_SAMPLE)
     .map((r) => (r.endedAt as number) - r.startedAt)
     .sort((a, b) => a - b)
@@ -43,11 +64,10 @@ export function typicalDuration(runs: RunRow[]): number | null {
  * la première moitié est la récente.
  */
 export function durationTrend(runs: RunRow[]): number | null {
-  // ⚠ Mêmes exclusions que `typicalDuration`, et pour la même raison, constatée à
-  // l'écran : une série de runs avortés en une seconde faisait annoncer « +2276 % — les
-  // runs s'allongent ». Un run qui n'a pas tourné ne mesure aucune durée, et il fausse
-  // d'autant plus une tendance qu'elle compare deux moyennes.
-  const done = runs.filter((r) => typeof r.endedAt === 'number' && r.status !== 'error')
+  // ⚠ Mêmes exclusions que `typicalDuration` (cf. `didWork`), et la tendance y est encore
+  // plus sensible : elle compare deux MOYENNES, qu'un seul run d'une seconde suffit à
+  // écraser.
+  const done = runs.filter(didWork)
   if (done.length < 4) return null
   const half = Math.floor(done.length / 2)
   const avg = (rows: RunRow[]) =>
