@@ -120,6 +120,16 @@ export interface RunPassDeps {
    * n'était jamais atteint. Une boucle parfaite, sans le moindre message.
    */
   deadlineAt?: number
+  /**
+   * Arrêt demandé par l'utilisateur (bouton STOP du run).
+   *
+   * ⚠⚠ Le passage l'ignorait complètement : un STOP laissait la carte « Textes » appeler
+   * les modèles jusqu'à épuiser son budget — on demandait l'arrêt et on continuait de
+   * PAYER, sans qu'aucun message ne le dise. Consulté au même endroit que le plafond de
+   * dépense et l'échéance : entre deux lots, le seul point où s'arrêter ne perd rien de
+   * déjà réglé.
+   */
+  signal?: AbortSignal
   onChunkDone?: (done: number, total: number) => void
   now?: () => number
   passId: string
@@ -231,6 +241,10 @@ export async function runPass(
           capped = 'deadline'
           abortRef.current = true
         }
+        // ⚠ Arrêt MANUEL : on lève le drapeau sans renseigner `capped`. Le passage n'a
+        // pas atteint une limite, il a été interrompu — et l'écran « Suivi » le dira
+        // comme tel (« passage arrêté »), ce qui est exactement ce qui s'est produit.
+        if (deps.signal?.aborted) abortRef.current = true
       },
       abortRef,
       concurrency: deps.concurrency,

@@ -360,6 +360,8 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
           product: unit.productId, field: unit.field,
           kinds: [...new Set(violations.map((v) => v.kind))].join(', '),
         })),
+        // ⚠ STOP du run : sans lui, la carte continuait d'appeler — et de payer.
+        signal: ctx.signal,
         spentUsd: () => spentUsd,
         capUsd: config.capUsd > 0 ? config.capUsd : undefined,
         // ⚠ Une ligne tous les 500 champs, pas à chaque lot. Le journal ne garde que
@@ -371,7 +373,7 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
           publishOps(done, done >= total)
         },
         now: () => at,
-      }), { limit: Number(config.maxUnits) > 0 ? Number(config.maxUnits) : undefined })
+      }), { limit: Number(config.maxUnits) > 0 ? Number(config.maxUnits) : undefined, signal: ctx.signal })
     } finally {
       popUsage()
     }

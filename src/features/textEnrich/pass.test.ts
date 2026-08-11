@@ -213,3 +213,50 @@ vi.mock('@/features/excel/ai-completion/columnCompletionEngine', async (orig) =>
       mod.runCompletionBatches(rows, prompt, cols, { ...(deps as object), rateLimitMs: 0 } as never, size),
   }
 })
+
+
+// ⚠⚠ Un STOP laissait la carte « Textes » appeler les modèles jusqu'à épuiser son budget :
+// on demandait l'arrêt et on continuait de PAYER, sans qu'aucun message ne le dise.
+describe('runPass — le STOP interrompt le passage entre deux lots', () => {
+  const unit = (i: number) => ({
+    productId: `p${i}`, field: 'description', text: 'Bremsscheibe aus Stahl, sehr robust',
+    plan: { key: 'description', kind: 'translate' as const, minLength: 0, prompt: '', promptVersion: 'v1' },
+    row: {},
+  })
+
+  it('cesse d’appeler dès que le signal est levé', async () => {
+    const ac = new AbortController()
+    let lots = 0
+    const res = await runPass(Array.from({ length: 60 }, (_, i) => unit(i)), newPassCounts(), {
+      callBatch: async (chunk) => {
+        lots++
+        ac.abort() // arrêt demandé pendant le premier lot
+        return Object.fromEntries(chunk.map((u) => [unitKey(u), 'Disque de frein en acier, très robuste']))
+      },
+      protectedOf: () => ({}),
+      onRevision: () => {},
+      passId: 'test',
+      signal: ac.signal,
+      chunkSize: 10,
+    })
+    // Le lot en cours va au bout — il est déjà payé — mais aucun autre ne part.
+    expect(lots).toBe(1)
+    // ⚠ Pas de `cappedBy` : le passage n'a atteint aucune limite, il a été interrompu.
+    expect(res.cappedBy).toBeUndefined()
+  })
+
+  it('traite tout quand rien n’interrompt', async () => {
+    let lots = 0
+    await runPass(Array.from({ length: 30 }, (_, i) => unit(i)), newPassCounts(), {
+      callBatch: async (chunk) => {
+        lots++
+        return Object.fromEntries(chunk.map((u) => [unitKey(u), 'Disque de frein en acier, très robuste']))
+      },
+      protectedOf: () => ({}),
+      onRevision: () => {},
+      passId: 'test',
+      chunkSize: 10,
+    })
+    expect(lots).toBe(3)
+  })
+})

@@ -222,6 +222,8 @@ registerServerNode({
           product: unit.productId, field: unit.field,
           kinds: [...new Set(violations.map((v) => v.kind))].join(', '),
         })),
+        // ⚠ STOP du run : sans lui, la carte continuait d'appeler — et de payer.
+        signal: ctx.signal,
         spentUsd: () => 0,
         // ⚠ L'échéance de la VAGUE, pas celle du segment : la première rend la main aux
         // deux tiers du temps pour que l'amélioration ait sa part. Sans elle, la carte
@@ -242,6 +244,7 @@ registerServerNode({
       {
         limit: Number(cfg.maxUnits) > 0 ? Number(cfg.maxUnits) : undefined,
         deadlineAt: ctx.deadlineAt,
+        signal: ctx.signal,
       })
 
     if (result.cappedBy === 'deadline') ctx.log('warn', t(ctx.locale, 'run.textEnrich.deadline'))

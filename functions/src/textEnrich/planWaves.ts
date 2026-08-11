@@ -55,7 +55,7 @@ export async function runWaves(
   firstUnits: EnrichUnit[],
   baseCounts: EnrichPass['counts'],
   run: (units: EnrichUnit[], counts: EnrichPass['counts'], deadlineAt?: number) => Promise<RunPassResult>,
-  opts: { limit?: number; deadlineAt?: number; now?: () => number } = {},
+  opts: { limit?: number; deadlineAt?: number; now?: () => number; signal?: AbortSignal } = {},
 ): Promise<RunPassResult> {
   // ⚠⚠ Le TEMPS est PARTAGÉ entre les vagues, il ne revient pas à la première.
   //
@@ -77,6 +77,7 @@ export async function runWaves(
     // ⚠ Le plafond de DÉPENSE arrête tout : enchaîner le dépasserait. L'échéance de la
     // vague, elle, n'est pas celle du passage — c'est justement le partage ci-dessus, et
     // s'arrêter là rendrait l'amélioration inatteignable.
+    if (opts.signal?.aborted) break
     if (result.cappedBy === 'spend') break
     if (result.cappedBy === 'deadline' && opts.deadlineAt != null && now() >= opts.deadlineAt) break
     if (budget <= 0) break
