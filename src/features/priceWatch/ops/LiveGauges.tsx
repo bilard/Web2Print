@@ -125,11 +125,29 @@ export function LiveGauges({ meta, matchedBySite }: {
               )}
             {/* Fond selon l'APPARTENANCE (au flux ou au repos), liseré selon l'ACTIVITÉ :
                 deux informations distinctes, deux canaux visuels distincts. */}
-            {/* ⚠ Une carte QUI TRAVAILLE doit se voir de loin, comme le badge « En cours »
-                de l'écran Sites sources. Le liseré seul ne suffisait pas : quatre cartes
-                identiques au fond près, et il fallait lire le compteur pour savoir
-                laquelle tournait. On ajoute donc un halo complet et un badge nommé —
-                réservés au régime LIVE, sinon ils ne distingueraient plus rien. */}
+            {/*
+              Deux rendus, parce qu'il y a deux choses à montrer.
+
+              ⚠ Un site AU REPOS n'a pas de régime : afficher « 0 · MESURE EN COURS… » et
+              une aiguille vide sur douze cartes remplit l'écran de zéros qui se lisent
+              comme autant de pannes, et noie les quatre concurrents qui travaillent. Il se
+              réduit donc à une ligne dense : ce qu'il a en réserve, où il en est, ce qu'il
+              rapporte. Trois fois moins haut, et rien d'inventé.
+            */}
+            {r.pulse === 'idle' ? (
+              <div className={`flex items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-[11px] ${tone.edge} ${
+                active ? 'bg-surface-2/60' : 'bg-well/60'
+              }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-white/20 shrink-0" />
+                <span className="text-white/55 truncate">{m.domain ?? siteId}</span>
+                <span className="ml-auto tabular-nums text-amber-300/60 shrink-0">{n(m.productCount ?? 0)}</span>
+                <span className="tabular-nums text-white/30 shrink-0 w-10 text-right">{progress} %</span>
+                <span className={`tabular-nums shrink-0 w-12 text-right ${matched ? 'text-emerald-300/70' : 'text-white/25'}`}
+                  title={t('ops.gauges.matched')}>
+                  {matched == null ? '—' : n(matched)}
+                </span>
+              </div>
+            ) : (
             <div className={`rounded-lg border-l-2 px-3 py-2.5 transition-colors ${tone.edge} ${
               active ? 'bg-surface-2' : 'bg-well opacity-70'
             } ${r.pulse === 'live' ? 'ring-1 ring-emerald-400/30 shadow-[0_0_20px_-8px] shadow-emerald-400/40' : ''}`}>
@@ -189,6 +207,7 @@ export function LiveGauges({ meta, matchedBySite }: {
                 </span>
               </div>
             </div>
+            )}
             </div>
           )
         })}
