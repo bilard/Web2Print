@@ -11,6 +11,7 @@
 // horodaté et empilé ; le régime est la pente sur la fenêtre récente. Rien à changer côté
 // serveur, et aucune valeur inventée — deux échos identiques donnent zéro, ce qui est la
 // vérité.
+import { HARVEST_LIVE_WINDOW_MS } from '../sourceSites'
 
 /** Un relevé : ce que le site affichait à cet instant. */
 export interface RateSample {
@@ -35,11 +36,18 @@ export interface RateSample {
  */
 export const RATE_WINDOW_MS = 90_000
 
-/** Au-delà, plus rien n'écrit : le site est à l'arrêt, quoi qu'en disent les cumuls. */
-export const IDLE_AFTER_MS = 180_000
+/**
+ * Sous ce délai, le site travaille sous nos yeux.
+ *
+ * ⚠ MÊME seuil que le badge « En cours » de l'écran Sites sources
+ * (`HARVEST_LIVE_WINDOW_MS`) : deux écrans qui décrivent le même site ne doivent pas se
+ * contredire. Une définition locale, forcément plus laxiste ou plus stricte, produirait
+ * « En cours » ici et « OK » là-bas pour le même concurrent au même instant.
+ */
+const FRESH_MS = HARVEST_LIVE_WINDOW_MS
 
-/** Sous ce délai, le site travaille sous nos yeux. */
-const FRESH_MS = 45_000
+/** Au-delà, plus rien n'écrit : le site est à l'arrêt, quoi qu'en disent les cumuls. */
+export const IDLE_AFTER_MS = FRESH_MS * 2
 
 type Pulse = 'live' | 'slow' | 'idle'
 
@@ -95,10 +103,15 @@ export function rateOf(history: RateSample[], now: number, beatAt?: number): Liv
   const beatMoved = !!first && !!last && (last.beat ?? 0) > (first.beat ?? 0)
   const productsPerMin = beatMoved || pagesPerMin > 0 ? rawProducts : 0
 
-  const lastChangeAt = history.length ? history[history.length - 1].at : undefined
+  // ⚠⚠ Le PREMIER relevé n'est pas un changement : il date de l'ouverture de l'écran, pas
+  // du site. Le compter comme un signe de vie déclarait TOUS les concurrents « en cours »
+  // au chargement de la page — kramp, dont la dernière moisson remontait à dix-sept jours,
+  // s'affichait « EN COURS · 35 s », les trente-cinq secondes n'étant que le temps écoulé
+  // depuis l'ouverture de l'onglet. Il faut deux relevés pour qu'un changement soit observé.
+  const observedChangeAt = history.length >= 2 ? history[history.length - 1].at : undefined
   // Le plus récent des deux signaux : un battement serveur sans changement de compteur
   // reste la preuve que quelqu'un travaille (une page lue sans produit, par exemple).
-  const seenAt = Math.max(lastChangeAt ?? 0, beatAt ?? 0)
+  const seenAt = Math.max(observedChangeAt ?? 0, beatAt ?? 0)
   const sinceChangeMs = seenAt > 0 ? Math.max(0, now - seenAt) : null
 
   const pulse: Pulse = sinceChangeMs == null || sinceChangeMs > IDLE_AFTER_MS

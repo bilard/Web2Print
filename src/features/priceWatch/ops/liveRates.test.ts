@@ -57,8 +57,10 @@ describe('régime instantané de la collecte', () => {
   })
 
   it('passe en régime ralenti entre travail et arrêt', () => {
-    const r = rateOf([{ at: T, products: 10, pages: 1 }], T + 60_000)
-    expect(r.pulse).toBe('slow')
+    // Le battement date d'entre les deux seuils : le site a travaillé, mais plus
+    // récemment. Ni « en cours » (ce serait mentir), ni « à l'arrêt » (pas encore sûr).
+    const beat = T - (IDLE_AFTER_MS + 60_000) / 2
+    expect(rateOf([{ at: T, products: 10, pages: 1, beat }], T, beat).pulse).toBe('slow')
   })
 })
 
@@ -102,5 +104,24 @@ describe('⚠⚠ le battement prouve la collecte, pas le compteur de pages', () 
       { at: T + 60_000, products: 3_500, pages: 120, beat: T },
     ]
     expect(rateOf(h, T + 60_000).productsPerMin).toBe(0)
+  })
+})
+
+describe('⚠⚠ le premier relevé n’est pas un signe de vie', () => {
+  it('un site inactif depuis 17 jours ne s’affiche pas « en cours » au chargement', () => {
+    // Relevé en production : kramp, dernière moisson dix-sept jours plus tôt, annoncé
+    // « EN COURS · 35 s » — les trente-cinq secondes étant le temps depuis l'ouverture de
+    // l'onglet, pas depuis un travail du site.
+    const beat = T - 17 * 24 * 3_600_000
+    const r = rateOf([{ at: T, products: 88, pages: 12, beat }], T, beat)
+    expect(r.pulse).toBe('idle')
+  })
+
+  it('mais un deuxième relevé qui bouge le rend vivant', () => {
+    const h: RateSample[] = [
+      { at: T, products: 88, pages: 12, beat: T },
+      { at: T + 20_000, products: 100, pages: 13, beat: T + 20_000 },
+    ]
+    expect(rateOf(h, T + 20_000, T + 20_000).pulse).toBe('live')
   })
 })
