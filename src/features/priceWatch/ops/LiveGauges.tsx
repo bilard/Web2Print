@@ -73,7 +73,11 @@ export function LiveGauges({ meta, matchedBySite }: {
     .filter(([siteId, m]) => (m.productCount ?? 0) + (m.pageCount ?? 0) > 0
       // Du suivi COURANT : soit il a travaillé dans les dernières vingt-quatre heures,
       // soit le dernier « Comparer » l'a retenu. Les deux manquent = il n'est plus au flux.
-      && (now - Math.max(m.harvestBeatAt ?? 0, m.lastPassAt ?? 0) < STALE_SITE_MS
+      // Un site COCHÉ a toujours sa place : il fait partie du flux, même au repos. Un site
+      // décoché n'apparaît que s'il a travaillé récemment ou compte dans le dernier
+      // comparatif — sinon c'est un reste d'essai, pas un concurrent suivi.
+      && (m.enabled !== false
+        || now - Math.max(m.harvestBeatAt ?? 0, m.lastPassAt ?? 0) < STALE_SITE_MS
         || matchedBySite.has(siteId)))
     .sort(([, ma], [, mb]) => {
       const active = (m: HarvestMeta) => (m.enabled !== false ? 0 : 1)
@@ -91,15 +95,34 @@ export function LiveGauges({ meta, matchedBySite }: {
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {rows.map(([siteId, m]) => {
+        {rows.map(([siteId, m], k) => {
           const r = rates.get(siteId)!
           const tone = PULSE[r.pulse]
           const progress = Math.round((m.harvestProgress ?? 0) * 100)
           const matched = matchedBySite.get(siteId)
           // Le fond porte l'état : vert en collecte, ambre au ralenti, neutre à l'arrêt.
           // Les sites au repos restent lisibles sans attirer l'œil.
+          const active = m.enabled !== false
+          // ⚠ Frontière EXPLICITE, sur toute la largeur de la grille. Les deux groupes
+          // étaient déjà triés mais se suivaient sans rupture : rien ne disait où
+          // s'arrêtaient les concurrents du flux et où commençaient les sites au repos.
+          const opensGroup = k === 0 || (rows[k - 1][1].enabled !== false) !== active
           return (
-            <div key={siteId} className={`rounded-lg border px-3 py-2.5 transition-colors ${tone.card}`}>
+            <div key={siteId} className="contents">
+              {opensGroup && (
+                <div className={`col-span-full flex items-center gap-2 ${k === 0 ? '' : 'mt-3'}`}>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap ${
+                    active ? 'text-emerald-300/80' : 'text-white/30'
+                  }`}>
+                    {active ? t('ops.gauges.groupActive') : t('ops.gauges.groupInactive')}
+                    <span className="ml-1.5 tabular-nums opacity-70">
+                      {rows.filter(([, x]) => (x.enabled !== false) === active).length}
+                    </span>
+                  </span>
+                  <span className={`h-px flex-1 ${active ? 'bg-emerald-400/20' : 'bg-white/10'}`} />
+                </div>
+              )}
+            <div className={`rounded-lg border px-3 py-2.5 transition-colors ${tone.card}`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
                 <span className="text-[12px] text-white/80 truncate">{m.domain ?? siteId}</span>
@@ -143,6 +166,7 @@ export function LiveGauges({ meta, matchedBySite }: {
                   {matched == null ? '—' : n(matched)}
                 </span>
               </div>
+            </div>
             </div>
           )
         })}

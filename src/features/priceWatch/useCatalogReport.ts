@@ -99,6 +99,11 @@ export function useCompetitorMeta(watchId: string | null): Map<string, HarvestMe
           const upd = data.updatedAt
           m.set(d.id, {
             domain: typeof data.domain === 'string' ? data.domain : undefined,
+            // ⚠ Jamais mappé jusqu'ici : `HarvestMeta.enabled` restait `undefined` pour
+            // tout le monde, donc « site coché » était indiscernable de « site retiré du
+            // flux ». Tout ce qui s'appuyait dessus — tri, séparation, filtrage — se
+            // fondait sur une valeur qui n'arrivait jamais.
+            enabled: typeof data.enabled === 'boolean' ? data.enabled : undefined,
             productCount: typeof data.productCount === 'number' ? data.productCount : undefined,
             pageCount: typeof data.pageCount === 'number' ? data.pageCount : undefined,
             harvestBeatAt: typeof data.harvestBeatAt === 'number' ? data.harvestBeatAt : undefined,
