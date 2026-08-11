@@ -43,7 +43,11 @@ export function typicalDuration(runs: RunRow[]): number | null {
  * la première moitié est la récente.
  */
 export function durationTrend(runs: RunRow[]): number | null {
-  const done = runs.filter((r) => typeof r.endedAt === 'number')
+  // ⚠ Mêmes exclusions que `typicalDuration`, et pour la même raison, constatée à
+  // l'écran : une série de runs avortés en une seconde faisait annoncer « +2276 % — les
+  // runs s'allongent ». Un run qui n'a pas tourné ne mesure aucune durée, et il fausse
+  // d'autant plus une tendance qu'elle compare deux moyennes.
+  const done = runs.filter((r) => typeof r.endedAt === 'number' && r.status !== 'error')
   if (done.length < 4) return null
   const half = Math.floor(done.length / 2)
   const avg = (rows: RunRow[]) =>

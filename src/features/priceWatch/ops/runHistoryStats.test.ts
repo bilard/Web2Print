@@ -17,6 +17,12 @@ describe('durationTrend — « la moisson s’allonge » est une information d�
     expect(durationTrend(runs)).toBe(100)
   })
 
+  it('écarte les runs en erreur — « +2276 % » venait de runs d’une seconde', () => {
+    const crash = (i: number) => ({ startedAt: i, endedAt: i + 1_000, status: 'error' })
+    const runs = [crash(8), crash(7), run(20, 6), run(20, 5), run(10, 4), run(10, 3)]
+    expect(durationTrend(runs)).toBe(100)
+  })
+
   it('ne se prononce pas sous quatre runs — deux points ne font pas une tendance', () => {
     expect(durationTrend([{ startedAt: 1, endedAt: 2 }, { startedAt: 3, endedAt: 4 }])).toBeNull()
   })
