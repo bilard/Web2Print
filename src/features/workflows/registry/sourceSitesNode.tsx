@@ -39,12 +39,15 @@ const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, So
   run: async (ctx, config) => {
     const watchId = deriveWatchId(config.watchId, ctx.workflowId)
     const sites = rowsToCompetitorSites(config.sites ?? [])
-    if (sites.length === 0) {
+    // « Aucun site » se juge sur les COCHÉS : émettre vingt-quatre lignes dont aucune n'est
+    // collectée n'est pas un flux qui travaille.
+    if (sites.filter((s) => s.enabled !== false).length === 0) {
       ctx.log('warn', t('run.ss.noActiveSite'))
     } else {
-      const forced = sites.filter((s) => s.engine).length
+      const collected = sites.filter((s) => s.enabled !== false)
+      const forced = collected.filter((s) => s.engine).length
       ctx.log('info', t('run.ss.emitted', {
-        count: sites.length,
+        count: collected.length,
         watchId,
         suffix: forced ? t('run.ss.forcedEngine', { count: forced }) : '.',
       }))
@@ -56,7 +59,13 @@ const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, So
     // workflow ; ces écrans lisent Firestore — il faut donc l'y déposer.
     const uid = getWorkspaceUid()
     if (uid) {
-      const active = new Set(sites.map((s) => s.id))
+      // ⚠⚠ Les sites COCHÉS, pas tous les émis. Depuis que les décochés voyagent eux aussi
+      // dans le flux (pour que « Comparer » lise leur index d'hier), `sites` les contient :
+      // les marquer tous actifs écrivait `enabled: true` sur les vingt-quatre concurrents.
+      // L'écran Suivi annonçait alors « EN SERVICE 22 » en face de « 3/24 ACTIFS » dans la
+      // carte, le filet « Au repos » disparaissait et le tri « cochés d'abord » n'avait plus
+      // rien à trier. Un drapeau qui vaut « vrai » pour tout le monde ne distingue plus rien.
+      const active = new Set(sites.filter((s) => s.enabled !== false).map((s) => s.id))
       await Promise.all((config.sites ?? []).map((row) => {
         const domain = normalizeDomain(row.domain ?? '')
         if (!domain) return Promise.resolve()
@@ -64,7 +73,8 @@ const sourceSitesNode: NodeSpec<SourceSitesNodeConfig, Record<string, never>, So
           .catch(() => { /* méta non écrite : le cockpit retombe sur son ancien comportement */ })
       }))
     }
-    ctx.reportCount?.(sites.length)
+    // Le compteur de la carte annonce ce qui est COLLECTÉ, pas ce qui transite.
+    ctx.reportCount?.(sites.filter((s) => s.enabled !== false).length)
     return { sites: { watchId, sites } }
   },
   ConfigComponent: SourceSitesConfig,
