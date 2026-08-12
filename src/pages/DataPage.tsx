@@ -69,6 +69,25 @@ import { useTranslation, intlLocale } from '@/lib/i18n'
 
 type RightTab = 'fields' | 'taxonomy'
 
+/** Préférence « l'explorateur Concurrents s'ouvre avec le PIM ». */
+const COMPETITORS_OPEN_KEY = 'pim:competitorsOpen'
+
+/**
+ * Ouvert par DÉFAUT — c'est la vue de travail du module, et la chercher à chaque venue
+ * était le geste le plus répété de la journée. N'est refermé au démarrage que si
+ * l'utilisateur l'a explicitement fermé la dernière fois : la valeur absente vaut
+ * « ouvert », si bien qu'un navigateur neuf, une session privée ou un stockage bloqué
+ * donnent tous le même écran d'arrivée.
+ */
+function readCompetitorsOpenPref(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    return window.localStorage.getItem(COMPETITORS_OPEN_KEY) !== 'false'
+  } catch {
+    return true
+  }
+}
+
 export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -118,10 +137,22 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
   )
   const { open: syncPromptOpen, close: closeSyncPrompt } = useSourceSyncPrompt(sourceIdent)
 
+  // ⚠ Lue UNE seule fois par montage : quatre états d'ouverture en dépendent et doivent
+  // partir de la MÊME valeur. Une relecture après coup les désaccorderait — l'explorateur
+  // ouvert par-dessus des panneaux déployés, ou l'inverse.
+  const [competitorsOpenPref] = useState(readCompetitorsOpenPref)
   const [rightTab, setRightTab] = useState<RightTab>('fields')
-  const [showRight, setShowRight] = useState(true)
   // Explorateur concurrents : occupe la zone centrale, comme la fiche produit.
-  const [competitorsOpen, setCompetitorsOpen] = useState(false)
+  //
+  // Il s'ouvre AVEC le PIM. C'est la vue de travail au quotidien — la comparaison
+  // F1 ↔ concurrent — et l'atteindre coûtait un clic à chaque venue, plus le repli des
+  // trois panneaux qu'elle demande pour respirer. Le choix est MÉMORISÉ : le refermer une
+  // fois suffit à retrouver le PIM nu aux arrivées suivantes, sans réglage à chercher.
+  const [competitorsOpen, setCompetitorsOpen] = useState(competitorsOpenPref)
+  // Les trois panneaux suivent l'état d'arrivée : ouvrir l'explorateur les replie
+  // (`openCompetitors`), donc démarrer avec lui ouvert ET eux déployés afficherait une
+  // disposition que le premier clic aurait corrigée.
+  const [showRight, setShowRight] = useState(!competitorsOpenPref)
   /** Vue sur laquelle l'explorateur s'ouvre — `null` = son choix habituel. */
   const [explorerMode, setExplorerMode] = useState<ExplorerMode>(null)
   /** Ouvre l'explorateur en dégageant la place : colonnes du PIM repliées et menu du
@@ -138,6 +169,19 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       return !open
     })
   }, [])
+  // Le choix survit à la session : c'est ce qui fait de l'ouverture par défaut une
+  // commodité et non une contrainte — refermer l'explorateur suffit à ne plus l'avoir.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COMPETITORS_OPEN_KEY, String(competitorsOpen))
+    } catch { /* stockage refusé : le défaut reprend la main au prochain montage */ }
+  }, [competitorsOpen])
+  // Arriver avec l'explorateur ouvert doit donner la MÊME largeur qu'après un clic sur
+  // « Concurrents » : les trois panneaux partent repliés (ci-dessus), le menu du tableau
+  // de bord se replie ici — il appartient à un autre composant, seul l'évènement l'atteint.
+  useEffect(() => {
+    if (competitorsOpenPref) window.dispatchEvent(new CustomEvent('dashboard:collapse-sidebar'))
+  }, [competitorsOpenPref])
   /** Ouvre l'explorateur SUR une vue précise. `openCompetitors` seul est un bascule :
    *  appelé alors que l'explorateur est déjà ouvert sur un concurrent, il le refermait —
    *  le bouton « Traduire » aurait donc fait disparaître l'écran une fois sur deux. */
@@ -152,8 +196,8 @@ export default function DataPage({ embedded = false }: { embedded?: boolean }) {
       return true
     })
   }, [])
-  const [showBdd, setShowBdd] = useState(true)
-  const [showNav, setShowNav] = useState(true)
+  const [showBdd, setShowBdd] = useState(!competitorsOpenPref)
+  const [showNav, setShowNav] = useState(!competitorsOpenPref)
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
   const [savedFiles, setSavedFiles] = useState<SavedFileEntry[]>([])
