@@ -14,7 +14,7 @@ import { registerServerNode } from '../registry'
 import { stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput, sitesForRole, splitPageBudget } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
-import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch } from '../../priceWatch/catalog/store'
+import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch, loadSourceFamilies } from '../../priceWatch/catalog/store'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
 import { mapWithConcurrency, HARVEST_CONCURRENCY } from '../../priceWatch/concurrency'
 import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
@@ -83,8 +83,13 @@ registerServerNode({
     // filtre existait, l'écran l'annonçait, et il ne s'appliquait jamais faute d'un nom de
     // colonne saisi à la main.
     const familyColumn = String(config.familyColumn ?? '').trim() || detectFamilyColumn(sourceRows)
-    const families = typedFamilies.length ? typedFamilies : familiesFromRows(sourceRows, familyColumn)
-    if (!typedFamilies.length && families.length) ctx.log('info', t(ctx.locale, 'run.harvest.familiesRead', { count: families.length, column: familyColumn }))
+    let families = typedFamilies.length ? typedFamilies : familiesFromRows(sourceRows, familyColumn)
+    // ⚠⚠ Dernier recours : les familles publiées par le dernier « Comparer ». Le port
+    // `products` de CE node n'est pas toujours branché — il ne l'était pas dans le flux de
+    // production — et sans feuille en entrée, aucune famille n'est lue : la moisson balayait
+    // le catalogue entier de chaque concurrent, rayons que la source ne vend pas compris.
+    if (families.length === 0) families = await loadSourceFamilies(ctx.uid, watchId)
+    if (!typedFamilies.length && families.length) ctx.log('info', t(ctx.locale, 'run.harvest.familiesRead', { count: families.length, column: familyColumn || '—' }))
     const pageBudget = Math.max(1, Number(config.pageBudget) || 160)
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste

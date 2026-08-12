@@ -66,6 +66,28 @@ export async function touchWatch(uid: string, watchId: string, label?: string): 
   ).catch(() => {})
 }
 
+/**
+ * Publie les familles du catalogue source sur le doc du suivi.
+ *
+ * ⚠⚠ Elles ne sont connues QUE du node « Comparer », qui lit la feuille et sait quelle
+ * colonne porte la famille. Le node « Moisson », lui, ne reçoit la feuille que si son port
+ * `products` est branché — et quand il ne l'est pas, il balaie le catalogue ENTIER de
+ * chaque concurrent, rayons que la source ne vend pas compris. Publier la liste ici évite à
+ * la moisson de recharger cent quinze mille produits pour en extraire quarante libellés.
+ */
+export async function saveSourceFamilies(uid: string, watchId: string, families: string[]): Promise<void> {
+  await getFirestore().doc(watchRootDoc(uid, watchId)).set(
+    { sourceFamilies: families.slice(0, 40) }, { merge: true },
+  ).catch(() => {})
+}
+
+/** Familles du catalogue source publiées par le dernier « Comparer ». [] si jamais écrites. */
+export async function loadSourceFamilies(uid: string, watchId: string): Promise<string[]> {
+  const snap = await getFirestore().doc(watchRootDoc(uid, watchId)).get().catch(() => null)
+  const raw = snap?.data()?.sourceFamilies
+  return Array.isArray(raw) ? raw.filter((f): f is string => typeof f === 'string') : []
+}
+
 /** Lit la méta + le curseur d'un concurrent. null si jamais moissonné. */
 export async function loadCompetitorMeta(
   uid: string, watchId: string, siteId: string,

@@ -10,7 +10,8 @@
 import { registerServerNode } from '../registry'
 import { parsePrice, stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
-import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta } from '../../priceWatch/catalog/store'
+import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta, saveSourceFamilies } from '../../priceWatch/catalog/store'
+import { familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
 import { reportFromPairing } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
 import { loadPairingRules } from '../../priceWatch/pairingRulesStore'
@@ -251,6 +252,9 @@ registerServerNode({
       // même, et son compteur dérivait sans fin.
       await Promise.all([...indexedBySite].map(([siteId, indexed]) =>
         saveCompetitorMeta(ctx.uid, watchId, siteId, { productCount: indexed })))
+      // Familles du catalogue source, pour que la MOISSON cible les bons rayons — elle ne
+      // les connaît pas autrement (cf. `saveSourceFamilies`).
+      await saveSourceFamilies(ctx.uid, watchId, familiesFromRows(rawRows, familyColumn ?? ''))
       ctx.log('info', t(ctx.locale, 'run.dashboardSaved', { watchId }))
     } catch (err) {
       ctx.log('warn', t(ctx.locale, 'run.dashboardNotSaved', { message: err instanceof Error ? err.message : String(err) }))
