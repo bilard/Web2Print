@@ -22,7 +22,7 @@ import { loadAllListings } from '../../priceWatch/catalog/store'
 import { loadSourceCatalog, saveCatalogReport } from '../../priceWatch/reportStore'
 import { buildReport } from '../../priceWatch/catalog/report'
 import type { CompetitorListing } from '../../priceWatch/catalog/competitorListing'
-import { applyTargeting, buildTargetingPrompt, familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
+import { applyTargeting, buildTargetingPrompt, familiesFromRows, detectFamilyColumn } from '../../priceWatch/catalog/categoryTargeting'
 import { callLlm } from '../llm'
 import { t } from '../../i18n'
 
@@ -77,7 +77,12 @@ registerServerNode({
     // dérivées de la feuille source branchée (colonne Famille) — parité client.
     const typedFamilies = String(config.families ?? '').split(',').map((f) => f.trim()).filter(Boolean)
     const sourceRows = ((inputs.products ?? {}) as { rows?: Record<string, unknown>[] }).rows ?? []
-    const familyColumn = String(config.familyColumn ?? '').trim()
+    // ⚠⚠ Colonne DÉDUITE quand elle n'est pas saisie. Sans elle, `familiesFromRows` rendait
+    // [] et la moisson balayait le catalogue ENTIER de chaque concurrent — outillage,
+    // vêtements, consommables — pendant que la source ne vend que quelques familles. Le
+    // filtre existait, l'écran l'annonçait, et il ne s'appliquait jamais faute d'un nom de
+    // colonne saisi à la main.
+    const familyColumn = String(config.familyColumn ?? '').trim() || detectFamilyColumn(sourceRows)
     const families = typedFamilies.length ? typedFamilies : familiesFromRows(sourceRows, familyColumn)
     if (!typedFamilies.length && families.length) ctx.log('info', t(ctx.locale, 'run.harvest.familiesRead', { count: families.length, column: familyColumn }))
     const pageBudget = Math.max(1, Number(config.pageBudget) || 160)

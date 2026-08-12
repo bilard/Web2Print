@@ -114,6 +114,38 @@ function parseJsonLoose(text: string): unknown {
 }
 
 /**
+ * Noms de colonne qui désignent une famille de produits, du plus précis au plus large.
+ *
+ * ⚠ Ordre significatif : « FAMILLE » cible mieux que « UNIVERS », qui regroupe des rayons
+ * entiers. Une sous-famille serait trop fine — les rayons d'un concurrent ne descendent
+ * pas à ce niveau, et le filtre ne retiendrait plus rien.
+ */
+const FAMILY_COLUMN_HINTS = ['famille', 'family', 'rayon', 'categorie', 'catégorie', 'category', 'gamme', 'univers']
+
+/**
+ * Retrouve la colonne de famille quand elle n'a pas été désignée à la main.
+ *
+ * ⚠⚠ Sans elle, `familiesFromRows` rendait [] et la moisson balayait le catalogue ENTIER
+ * de chaque concurrent — y compris des rayons que la source ne vend pas. Le filtre existait,
+ * l'écran l'annonçait, et il ne s'appliquait jamais faute d'un nom de colonne saisi.
+ *
+ * PUR. Rend `''` si aucune colonne ne correspond : comportement strictement inchangé.
+ */
+export function detectFamilyColumn(rows: Record<string, unknown>[]): string {
+  const keys = Object.keys(rows?.[0] ?? {})
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-zà-ÿ]/g, '')
+  for (const hint of FAMILY_COLUMN_HINTS) {
+    // Égalité d'abord (« FAMILLE »), puis inclusion (« F1_FAMILLE », « Famille produit ») :
+    // sans ce second passage, une colonne préfixée par un code interne échappe au filtre.
+    const exact = keys.find((k) => norm(k) === hint)
+    if (exact) return exact
+    const loose = keys.find((k) => norm(k).includes(hint) && !norm(k).includes('sous'))
+    if (loose) return loose
+  }
+  return ''
+}
+
+/**
  * Familles DISTINCTES d'une feuille source, triées par nombre de produits décroissant.
  * Le node Moisson n'a ainsi rien à saisir : le vocabulaire vient de la source elle-même,
  * et il reste juste (une famille marginale ne pèse pas autant qu'une famille massive).

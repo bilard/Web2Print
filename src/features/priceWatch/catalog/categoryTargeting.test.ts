@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   applyTargeting, applyTargetingBuckets, buildTargetingPrompt, familiesFromRows, pathOf,
+  detectFamilyColumn,
 } from './categoryTargeting'
 
 const URLS = [
@@ -76,5 +77,33 @@ describe('familiesFromRows', () => {
 
   it('sans colonne configurée, ne devine rien', () => {
     expect(familiesFromRows(rows, '')).toEqual([])
+  })
+})
+
+describe('⚠⚠ colonne de famille déduite quand elle n’est pas saisie', () => {
+  it('trouve FAMILLE, et cible donc le scraping sans réglage manuel', () => {
+    // La colonne est renseignée dans « Comparer catalogue », mais celui-là ne cible PAS le
+    // scraping — son aide le dit. Le node « Moisson » a son propre champ, resté vide : le
+    // filtre existait, l'écran l'annonçait, et la moisson balayait le catalogue entier de
+    // chaque concurrent, rayons que la source ne vend pas compris.
+    const rows = [{ REF: 'a', UNIVERS: 'JARDIN', FAMILLE: 'FILTRES', SOUS_FAMILLE: 'À AIR' }]
+    expect(detectFamilyColumn(rows)).toBe('FAMILLE')
+  })
+
+  it('préfère la famille à l’univers, et ignore la sous-famille', () => {
+    // « UNIVERS » regroupe des rayons entiers : trop large. « SOUS_FAMILLE » est trop fine —
+    // les rayons d'un concurrent ne descendent pas à ce niveau et le filtre ne retiendrait
+    // plus rien.
+    expect(detectFamilyColumn([{ UNIVERS: 'x', SOUS_FAMILLE: 'y', FAMILLE: 'z' }])).toBe('FAMILLE')
+    expect(detectFamilyColumn([{ UNIVERS: 'x', SOUS_FAMILLE: 'y' }])).toBe('UNIVERS')
+  })
+
+  it('reconnaît une colonne préfixée par un code interne', () => {
+    expect(detectFamilyColumn([{ 'F1_Famille produit': 'FILTRES' }])).toBe('F1_Famille produit')
+  })
+
+  it('rend vide si rien ne correspond — comportement strictement inchangé', () => {
+    expect(detectFamilyColumn([{ REF: 'a', LIBELLE: 'b' }])).toBe('')
+    expect(detectFamilyColumn([])).toBe('')
   })
 })
