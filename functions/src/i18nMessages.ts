@@ -397,6 +397,10 @@ const MESSAGES = {
     fr: 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
     en: 'Budget reserved for the comparison — directed search postponed to the next tick.',
   },
+  'run.directed.authBudgetReserved': {
+    fr: 'Budget réservé au comparatif — passe authentifiée repoussée au prochain tick (son curseur avance quand même).',
+    en: 'Budget reserved for the comparison — authenticated pass postponed to the next tick (its cursor still advances).',
+  },
   'run.directed.originColumnMissing': {
     fr: "Colonne « Description (réf. d’origine) » NON RENSEIGNÉE dans ce node : aucune référence d’origine ne peut être extraite, et sur des pièces adaptables ce sont les SEULES clés qu’un concurrent puisse porter. Renseignez-la (colonne du texte commercial), puis remettez le curseur à zéro.",
     en: "The “Description (original reference)” column is NOT SET on this node: no original reference can be extracted, and on adaptable parts those are the ONLY keys a competitor can carry. Set it (the sales text column), then reset the cursor.",

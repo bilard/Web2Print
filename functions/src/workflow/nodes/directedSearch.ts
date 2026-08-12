@@ -244,12 +244,28 @@ registerServerNode({
       const authSlice = products.slice(authStart, authStart + authBudget)
       const key = firecrawlKey || (await getUserApiKey(ctx.uid, 'firecrawl'))
       for (const [siteId, cred] of authByDomain) {
-        if (ctx.signal?.aborted) break
+        // ⚠⚠ `timedSignal`, PAS `ctx.signal` — c'est-à-dire l'ÉCHÉANCE de restitution, pas
+        // seulement l'arrêt d'urgence du run. Cette boucle a longtemps regardé le seul
+        // `ctx.signal` : elle ne s'arrêtait donc qu'à l'abort global (28 min), et mangeait
+        // la réserve que le scheduler garde pour l'aval. Vécu le 2026-08-12 : trois sites
+        // authentifiés × un fournisseur Firecrawl en `402` × 90 s de délai par lot ont tenu
+        // la fenêtre de 18:47 à 19:14, et « Comparer catalogue » n'a jamais eu son tour —
+        // le rapport de veille est resté figé toute la journée. Le budget réservé ne vaut
+        // que si TOUS les chemins le regardent.
+        if (timedSignal.aborted) {
+          ctx.log('info', t(ctx.locale, 'run.directed.authBudgetReserved'))
+          break
+        }
         if (!key) { ctx.log('warn', t(ctx.locale, 'run.directed.authNoFirecrawlKey', { host: cred!.host })); break }
         const authHits = await krampAuthPass(authSlice, {
           rules,
+          // ⚠ Deux signaux, et ce n'est pas une inattention. `krampBatchScrape` interrompt
+          // un fetch EN VOL : il lui faut un vrai `AbortSignal` (il s'abonne à `abort`), et
+          // seul celui du run en est un — un lot déjà parti va donc au bout de ses 90 s.
+          // `krampAuthPass`, lui, consulte `{ aborted }` entre deux produits : c'est là que
+          // l'échéance se fait respecter, au prix d'un lot de dépassement au pire.
           scrape: (urls) => krampBatchScrape(urls, cred!, key, 90_000, ctx.signal),
-          signal: ctx.signal,
+          signal: timedSignal,
           log: (m) => ctx.log('info', m),
           locale: ctx.locale,
         })
