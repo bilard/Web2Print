@@ -5,6 +5,7 @@ import { useModuleViewStore } from '@/stores/moduleView.store'
 import { useAccessStore } from '@/stores/access.store'
 import { groupModules, type ModuleItem, type ModuleChild, type Section } from './modules'
 import { useTranslation } from '@/lib/i18n'
+import { isPlainClick } from '@/lib/plainClick'
 
 const STORE_KEY = 'nav:tree:expanded'
 
@@ -18,14 +19,14 @@ function readExpanded(): Record<string, boolean> {
 
 interface ModuleRowExtras {
   id?: string
-  ref?: React.Ref<HTMLButtonElement>
+  ref?: React.Ref<HTMLAnchorElement>
   className?: string
   tabIndex?: number
   title?: string
   role?: string
   'data-help-id'?: string
   'aria-label'?: string
-  onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>
+  onKeyDown?: React.KeyboardEventHandler<HTMLAnchorElement>
   'aria-current'?: 'page' | 'step' | 'location' | 'date' | 'time' | boolean
 }
 
@@ -35,9 +36,13 @@ interface ModuleTreeProps {
   onOpen: (section: Section) => void
   onOpenChild: (section: Section, intent: string, routeTo?: string) => void
   moduleRowExtras?: (m: ModuleItem) => ModuleRowExtras | undefined
+  /** Adresse de cette entrée, pour que la rangée soit un VRAI lien. Sans elle, l'entrée
+   *  reste cliquable mais le ⌘-clic ne peut rien ouvrir : le navigateur n'a pas de
+   *  destination. Cf. `isPlainClick`. */
+  linkFor?: (section: Section, intent?: string, routeTo?: string) => string | undefined
 }
 
-export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, moduleRowExtras }: ModuleTreeProps) {
+export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, moduleRowExtras, linkFor }: ModuleTreeProps) {
   const isAdmin = useIsAdmin()
   const permissions = useAccessStore((s) => s.permissions)
   const moduleViews = useModuleViewStore((s) => s.views)
@@ -83,10 +88,16 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
           ) : (
             <span className="w-[26px]" aria-hidden="true" />
           )}
-          <button
-            type="button"
+          {/* Rangée = VRAI lien. `href` donne au navigateur une destination : ⌘-clic,
+              clic du milieu, « ouvrir dans un nouvel onglet » et l'aperçu d'adresse au
+              survol marchent alors sans une ligne de code. Le clic gauche nu, lui, reste
+              à l'application — qui ouvre le module sans recharger la page. */}
+          <a
+            href={linkFor?.(m.id) ?? '#'}
             ref={rowRef}
-            onClick={() => {
+            onClick={(e) => {
+              if (!isPlainClick(e)) return // ⌘/Ctrl/Maj/clic du milieu : au navigateur
+              e.preventDefault()
               onOpen(m.id)
               if (kids.length > 0) toggle(m.id)
             }}
@@ -97,7 +108,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
           >
             <Icon className={`w-4 h-4 shrink-0 opacity-70 ${m.accent}`} />
             <span className="flex-1">{t(m.labelKey)}</span>
-          </button>
+          </a>
         </div>
         {isOpen && kids.length > 0 && (
           <div className="ml-[26px] pl-2 border-l border-white/[0.06]">
@@ -107,10 +118,14 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
               // à la fois.
               const childActive = isActive && activeChild === c.id
               return (
-                <button
+                <a
                   key={c.id}
-                  type="button"
-                  onClick={() => onOpenChild(m.id, c.intent, c.routeTo)}
+                  href={linkFor?.(m.id, c.intent, c.routeTo) ?? '#'}
+                  onClick={(e) => {
+                    if (!isPlainClick(e)) return
+                    e.preventDefault()
+                    onOpenChild(m.id, c.intent, c.routeTo)
+                  }}
                   aria-current={childActive ? 'page' : undefined}
                   className={`w-full flex items-center gap-2 px-2.5 py-[5px] rounded-md text-[12.5px] text-left
                     transition-colors ${childActive
@@ -118,7 +133,7 @@ export function ModuleTree({ modules, activeSection, onOpen, onOpenChild, module
                       : 'text-white/40 hover:text-white/75 hover:bg-white/[0.04]'}`}
                 >
                   <span className="flex-1">{t(c.labelKey)}</span>
-                </button>
+                </a>
               )
             })}
           </div>

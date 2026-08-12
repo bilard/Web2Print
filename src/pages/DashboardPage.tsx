@@ -28,6 +28,7 @@ import { useTaxonomies } from '@/features/taxonomy/useTaxonomies'
 import { LibraryTaxonomyFilter } from '@/components/shared/LibraryTaxonomyFilter'
 import { DamPage } from '../features/dam/components/DamPage'
 import { useHighlight } from '@/features/help/hooks/useHighlight'
+import { isPlainClick } from '@/lib/plainClick'
 import { useHelpStore } from '@/features/help/help.store'
 import { useAccessStore } from '@/stores/access.store'
 import { TourLauncher } from '@/features/tour/TourLauncher'
@@ -116,6 +117,32 @@ export default function DashboardPage() {
       }
     }
   }, [location.key, location.state, setModuleIntent])
+  // ⚠ L'URL SUIT le module ouvert. Les modules ne sont pas des routes : sans ce report,
+  // l'adresse restait « /dashboard » quel que soit l'écran, et un rechargement (⌘R) ou une
+  // restauration d'onglet ramenait toujours à la Bibliothèque — on perdait l'écran sur
+  // lequel on travaillait. C'est aussi ce qui donne au menu des liens ouvrables ailleurs :
+  // sans destination dans l'adresse, un ⌘-clic n'a rien à ouvrir.
+  //
+  // `section` SEULE : l'`intent` (onglet, modale) est retiré une fois appliqué — le garder
+  // ferait rouvrir la modale d'import à chaque rechargement, exactement ce que le nettoyage
+  // de `location.state` juste au-dessus évite pour la navigation interne.
+  //
+  // `replace` : visiter cinq modules ne doit pas coûter cinq retours en arrière. Le bouton
+  // « Précédent » revient à la page d'où l'on vient, pas au module précédent.
+  //
+  // ⚠⚠ Écrit par `history.replaceState`, PAS par `navigate` — et l'état d'historique est
+  // reconduit tel quel (React Router y range sa clé de location). Un `navigate` ferait
+  // changer `location.key`, ce qui rejouerait l'effet ci-dessus et remettrait l'intent à
+  // `null` AVANT que le module ouvert l'ait consommé : le deep-link vers un onglet
+  // n'ouvrirait plus rien. L'adresse n'a besoin d'être juste qu'au rechargement, pas de
+  // traverser le routeur.
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('section') === activeSection && !url.searchParams.has('intent')) return
+    url.searchParams.set('section', activeSection)
+    url.searchParams.delete('intent')
+    window.history.replaceState(window.history.state, '', url)
+  }, [activeSection])
   // Permet aux étapes du tour guidé d'ouvrir une section (navigation injectée).
   useEffect(() => {
     registerTourSectionNavigator((section) => setActiveSection(section as Section))
@@ -201,7 +228,7 @@ export default function DashboardPage() {
   const setPendingImport = useProjectStore((s) => s.setPendingImport)
   const { importFile: importExcel } = useExcelImport()
 
-  const newProjectHighlight = useHighlight<HTMLButtonElement>('dashboard.new-project')
+  const newProjectHighlight = useHighlight<HTMLAnchorElement>('dashboard.new-project')
 
   const { data: taxonomies } = useTaxonomies()
   const projectTaxonomyLabel = useMemo<Record<string, string>>(() => {
@@ -322,6 +349,16 @@ export default function DashboardPage() {
     }
   }
 
+  // Adresse d'un module — exactement celle que l'URL portera une fois ouvert. Un menu
+  // dont les entrées n'ont pas de destination ne peut rien ouvrir ailleurs : c'est cette
+  // fonction, et elle seule, qui rend le ⌘-clic possible.
+  const moduleHref = useCallback((section: Section, intent?: string, routeTo?: string) => {
+    if (routeTo) return routeTo
+    const q = new URLSearchParams({ section })
+    if (intent) q.set('intent', intent)
+    return `/dashboard?${q.toString()}`
+  }, [])
+
   const handleKeyDown = (e: React.KeyboardEvent, id: Section) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
@@ -404,6 +441,7 @@ export default function DashboardPage() {
             <ModuleTree
               modules={visibleMenuItems}
               activeSection={activeSection}
+              linkFor={moduleHref}
               onOpen={(section) => setActiveSection(section)}
               onOpenChild={(section, intent, routeTo) => {
                 if (routeTo) { navigate(routeTo); return }
@@ -426,17 +464,24 @@ export default function DashboardPage() {
                 {items.map(({ id, icon: Icon, labelKey, accent, activeBg, activeText }) => {
                   const isActive = activeSection === id
                   return (
-                    <button
+                    <a
                       id={`menu-${id}`}
                       data-help-id={`dashboard.sidebar.${id}`}
                       ref={id === 'blank' ? newProjectHighlight.ref : undefined}
                       key={id}
+                      // Même raison qu'en mode déplié : une destination réelle, pour que le
+                      // navigateur puisse ouvrir ailleurs ce que le clic simple ouvre ici.
+                      href={moduleHref(id)}
                       role="menuitem"
                       tabIndex={isActive ? 0 : -1}
                       aria-current={isActive ? 'page' : undefined}
                       aria-label={t(labelKey)}
                       title={t(labelKey)}
-                      onClick={() => setActiveSection(id)}
+                      onClick={(e) => {
+                        if (!isPlainClick(e)) return
+                        e.preventDefault()
+                        setActiveSection(id)
+                      }}
                       onKeyDown={(e) => handleKeyDown(e, id)}
                       className={`w-full flex items-center justify-center px-0 py-[7px] rounded-md text-[13px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-surface-2 ${
                         isActive
@@ -445,7 +490,7 @@ export default function DashboardPage() {
                       } ${id === 'blank' ? newProjectHighlight.className : ''}`}
                     >
                       <Icon className={`w-4 h-4 shrink-0 ${isActive ? accent : 'opacity-50'}`} aria-hidden="true" />
-                    </button>
+                    </a>
                   )
                 })}
               </div>

@@ -110,6 +110,15 @@ export function ModuleNavDrawer({ variant = 'fab' }: { variant?: 'fab' | 'inline
             <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
               <ModuleTree
                 modules={modules}
+                // Même adresse que celle que le tableau de bord inscrira une fois le module
+                // ouvert : c'est ce qui permet d'ouvrir une entrée du menu dans un onglet
+                // (⌘/Ctrl+clic, clic du milieu) au lieu de quitter l'écran courant.
+                linkFor={(section, intent, routeTo) => {
+                  if (routeTo) return routeTo
+                  const q = new URLSearchParams({ section })
+                  if (intent) q.set('intent', intent)
+                  return `/dashboard?${q.toString()}`
+                }}
                 onOpen={(section) => { setOpen(false); navigate('/dashboard', { state: { section } }) }}
                 onOpenChild={(section, intent, routeTo) => {
                   setOpen(false)
