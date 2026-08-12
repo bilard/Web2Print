@@ -14,6 +14,7 @@
 // Ne touche QUE les fiches sans référence : une fiche déjà identifiée n'a rien à gagner à
 // une visite, et le budget doit aller là où il manque une clé.
 import { parseProductPage } from './competitorListing'
+import { mapWithConcurrency } from '../concurrency'
 import type { CompetitorListing } from './competitorListing'
 
 /** Une page d'index telle qu'elle est stockée (cf. `store.savePage`). */
@@ -42,6 +43,13 @@ export interface RefEnrichDeps {
   deadlineAt?: number
   now?: () => number
 }
+
+/**
+ * Fiches ouvertes SIMULTANÉMENT. Même esprit que le plafond de la moisson : assez pour
+ * saturer la fenêtre, assez peu pour ne pas déclencher les limites de débit du site — qui,
+ * sur un accès connecté, verrait une rafale comme un comportement suspect.
+ */
+const ENRICH_CONCURRENCY = 8
 
 export interface RefEnrichResult {
   /** Fiches ouvertes pendant cette passe. */
@@ -107,13 +115,21 @@ export async function refEnrichPass(
     // fiche consomme le dernier crédit est terminée : ne pas la marquer la ferait rouvrir
     // au tick suivant, indéfiniment, sur un index qui n'avancerait jamais.
     let interrupted = false
-    for (const l of targets) {
-      if (visited >= budget || deps.signal?.aborted
-        || (deps.deadlineAt != null && now() > deps.deadlineAt)) { interrupted = true; break }
-      visited++
+    // ⚠⚠ Fiches ouvertes EN PARALLÈLE. Une visite prend une à deux secondes ; en série,
+    // cent cinquante fiches occupaient quatre minutes de fenêtre pour couvrir 2 % d'un
+    // index de sept mille — soit une nuit entière avant que les appariements ne bougent.
+    // Elles sont indépendantes : rien ne justifiait de les attendre l'une après l'autre.
+    const slice = targets.slice(0, Math.max(0, budget - visited))
+    if (slice.length < targets.length) interrupted = true
+    const fiches = await mapWithConcurrency(slice, ENRICH_CONCURRENCY, async (l) => {
+      if (deps.signal?.aborted || (deps.deadlineAt != null && now() > deps.deadlineAt)) return null
       const html = await deps.fetchHtml(l.url).catch(() => null)
-      if (!html) continue
-      const fiche = parseProductPage(html, l.url)
+      return html ? { l, fiche: parseProductPage(html, l.url) } : { l, fiche: null }
+    })
+    for (const got of fiches) {
+      if (!got) { interrupted = true; continue }
+      visited++
+      const { l, fiche } = got
       // On ne retient QUE la clé manquante et ce qui la corrobore. Le prix, lui, reste
       // celui de la page liste : c'est le prix de rayon, celui que la veille compare, et
       // une fiche produit peut afficher une autre grille (quantité, promotion).

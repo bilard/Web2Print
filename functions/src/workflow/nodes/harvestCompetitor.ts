@@ -47,9 +47,16 @@ async function isCycleMode(workflowId: string | undefined): Promise<boolean> {
  *  qu'elles ne rapportent. */
 const REF_ENRICH_THRESHOLD = 0.33
 
-/** Fiches ouvertes par tick. Chaque visite est un fetch : à 150 par run et un run toutes
- *  les douze minutes, un index de 7 000 fiches est couvert en une nuit. */
-const REF_ENRICH_BUDGET = 150
+/**
+ * Fiches ouvertes par tick.
+ *
+ * ⚠ Passé de 150 à 800 le 2026-08-12, une fois les visites PARALLÉLISÉES (huit de front).
+ * En série, cent cinquante fiches occupaient quatre minutes pour couvrir 2 % d'un index de
+ * sept mille : il fallait une nuit entière avant que les appariements ne bougent. À huit de
+ * front, huit cents fiches tiennent dans la même fenêtre — l'index entier en une poignée de
+ * runs. Le garde-fou reste le temps (`deadlineAt`), pas ce nombre.
+ */
+const REF_ENRICH_BUDGET = 800
 
 /** Temps qu'il doit rester dans la fenêtre pour ouvrir la passe. Sous ce seuil, elle
  *  n'aurait le temps que de quelques fiches et risquerait de faire dépasser le segment —
