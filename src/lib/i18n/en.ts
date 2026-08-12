@@ -2633,6 +2633,7 @@ export const en: Record<TranslationKey, string> = {
   'run.harvest.siteAuth': '{domain}: authenticated access (cookie login).',
   'run.harvest.siteEngine': '{domain}: engine forced to "{engine}".',
   'run.harvest.siteIndexed': '{domain}: +{indexed} product(s) over {pages} page(s) (index: {total} pages).',
+  'run.harvest.refEnriched': "{domain}: {visited} product page(s) opened to read the reference — {enriched} key(s) recovered.",
   'run.harvest.familyFilterTooNarrow': "{domain}: the family filter kept no aisle — falling back to the full plan ({count} aisles). A filter never empties a list.",
   'run.harvest.antiBotBlocked': "{domain}: no page read — an anti-bot protection ({protection}) answered instead of the site. Try another engine (Bright Data gets through hard challenges).",
   'run.harvest.engineSilent': "{domain}: not a single page arrived — {asked} read(s) refused by the “{engine}” engine. Service down, missing key or exhausted budget: this is not an empty catalogue.",

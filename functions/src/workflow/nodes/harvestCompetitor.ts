@@ -14,7 +14,11 @@ import { registerServerNode } from '../registry'
 import { stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput, sitesForRole, splitPageBudget } from '../../priceWatch/sourceSites'
 import { harvestPass, type CompetitorConfig, type HarvestDeps } from '../../priceWatch/catalog/runHarvest'
-import { loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch, loadSourceFamilies } from '../../priceWatch/catalog/store'
+import {
+  loadCompetitorMeta, saveCompetitorMeta, savePage, countPages, touchWatch, loadSourceFamilies,
+  loadIndexPages, saveIndexPageProducts,
+} from '../../priceWatch/catalog/store'
+import { refEnrichPass } from '../../priceWatch/catalog/refEnrichPass'
 import { harvestProgress } from '../../priceWatch/catalog/harvest'
 import { mapWithConcurrency, HARVEST_CONCURRENCY } from '../../priceWatch/concurrency'
 import { buildServerFetcher } from '../../priceWatch/catalog/serverFetcher'
@@ -37,6 +41,15 @@ async function isCycleMode(workflowId: string | undefined): Promise<boolean> {
     return !!(snap.exists && (snap.data()?.cycle as { enabled?: boolean } | undefined)?.enabled)
   } catch { return false }
 }
+
+/** Sous ce taux de fiches identifiées, la passe d'enrichissement des clés se déclenche.
+ *  Un tiers : au-delà, l'index a déjà de quoi s'apparier et les visites coûteraient plus
+ *  qu'elles ne rapportent. */
+const REF_ENRICH_THRESHOLD = 0.33
+
+/** Fiches ouvertes par tick. Chaque visite est un fetch : à 150 par run et un run toutes
+ *  les douze minutes, un index de 7 000 fiches est couvert en une nuit. */
+const REF_ENRICH_BUDGET = 150
 
 /** Colonnes de la feuille de statut (parité avec le node client). */
 const STATUS_COLUMNS = [
@@ -245,6 +258,32 @@ registerServerNode({
           lastSweepIndexed: prevMeta?.productCount ?? 0,
           saturatedSweeps: stale ? (prevMeta?.saturatedSweeps ?? 0) + 1 : 0,
         })
+      }
+      // ⚠⚠ ENRICHISSEMENT DES CLÉS. Un site peut indexer des milliers de fiches sans
+      // qu'AUCUNE ne porte de référence : progarden.fr, 6 982 fiches, 0 % — son thème n'en
+      // affiche pas sur les pages de rayon. Ces fiches ne s'apparient alors que par
+      // libellé. La clé existe pourtant, une page plus loin, sur la fiche produit.
+      //
+      // La passe ne se déclenche QUE là où la clé manque vraiment (moins d'un tiers des
+      // fiches identifiées) et seulement quand le balayage a fini le sien : elle emprunte
+      // le temps qui reste, jamais celui de la moisson.
+      const listings = await loadAllListings(ctx.uid, watchId, cfg.siteId)
+      const withRef = listings.filter((l) => l.ref || l.gtin13).length
+      const needsKeys = listings.length >= 50 && withRef / listings.length < REF_ENRICH_THRESHOLD
+      if (needsKeys && res.sweepComplete && !ctx.signal.aborted) {
+        const enr = await refEnrichPass({
+          loadPages: () => loadIndexPages(ctx.uid, watchId, cfg.siteId),
+          fetchHtml: fetcher.fetchHtml,
+          savePage: (pg) => saveIndexPageProducts(ctx.uid, watchId, cfg.siteId, pg.id, pg.products),
+          signal: ctx.signal,
+          ...(ctx.deadlineAt ? { deadlineAt: ctx.deadlineAt } : {}),
+        }, REF_ENRICH_BUDGET, prevMeta?.refEnrichCursor ?? null)
+        if (enr.visited > 0) {
+          await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, { refEnrichCursor: enr.cursor })
+          ctx.log('info', t(ctx.locale, 'run.harvest.refEnriched', {
+            domain: site.domain, visited: enr.visited, enriched: enr.enriched,
+          }))
+        }
       }
       const blocker = fetcher.blockedBy()
       if (blocker && got === 0 && asked > 0) {

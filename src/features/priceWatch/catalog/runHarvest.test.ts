@@ -280,7 +280,7 @@ describe('⚠⚠ descente dans les sous-rayons pendant la moisson', () => {
     const page = (kids: string[]) => `<html>${kids.map((k) => `<a href="${k}">x</a>`).join('')}
       <div class="product-miniature"><a href="/p/a.html">Article A</a><span class="price">10 €</span></div>
       <div class="product-miniature"><a href="/p/b.html">Article B</a><span class="price">12 €</span></div></html>`
-    let saved: string[] = []
+    const saved: string[] = []
     const cursors: HarvestCursor[] = []
     await harvestPass(
       { siteId: 's', domain: 'shop.fr', families: [] },

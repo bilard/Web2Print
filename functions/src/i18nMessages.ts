@@ -126,6 +126,10 @@ const MESSAGES = {
     fr: '{domain} : le filtre par familles ne retenait aucun rayon — plan complet retenu ({count} rayons). Un filtre ne vide jamais une liste.',
     en: '{domain}: the family filter kept no aisle — falling back to the full plan ({count} aisles). A filter never empties a list.',
   },
+  'run.harvest.refEnriched': {
+    fr: '{domain} : {visited} fiche(s) produit ouverte(s) pour y lire la référence — {enriched} clé(s) récupérée(s).',
+    en: '{domain}: {visited} product page(s) opened to read the reference — {enriched} key(s) recovered.',
+  },
   'run.harvest.budgetReserved': {
     fr: 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',
     en: 'Budget reserved for the comparison — {skipped} site(s) not started on this run, the rest on the next tick.',

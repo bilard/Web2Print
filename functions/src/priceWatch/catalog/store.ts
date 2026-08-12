@@ -63,6 +63,8 @@ export interface CompetitorMeta {
   saturatedSweeps?: number
   /** Compte de fiches à la fin du balayage précédent — base de la comparaison. */
   lastSweepIndexed?: number
+  /** Position de reprise de la passe d'enrichissement des clés (`refEnrichPass`). */
+  refEnrichCursor?: string | null
 }
 
 /** Crée/rafraîchit le doc RACINE du suivi. À appeler dès la MOISSON : sans lui, le doc
@@ -148,6 +150,35 @@ export async function loadAllListings(
   // 97 % de doublons relevés sur un site). Dédupliquer ICI aligne matching, audit et
   // compteurs sur le nombre de fiches RÉEL — et divise d'autant la mémoire du cron.
   return dedupeListings(out)
+}
+
+/**
+ * Pages de l'index avec leur identifiant, dans un ordre STABLE.
+ *
+ * ⚠ L'ordre est celui du tri par identifiant de document, garanti par Firestore : la passe
+ * d'enrichissement (`refEnrichPass`) reprend par curseur d'un tick à l'autre, et un ordre
+ * qui changerait entre deux ticks lui ferait sauter des pages sans jamais le dire.
+ */
+export async function loadIndexPages(
+  uid: string, watchId: string, siteId: string,
+): Promise<{ id: string; url: string; page: number; products: CompetitorListing[] }[]> {
+  const snap = await getFirestore().collection(competitorPagesCol(uid, watchId, siteId)).orderBy('__name__').get()
+  return snap.docs.map((d) => {
+    const data = d.data() as PageDoc
+    return {
+      id: d.id, url: data.url, page: data.page,
+      products: Array.isArray(data.products) ? data.products : [],
+    }
+  })
+}
+
+/** Réécrit les produits d'une page déjà moissonnée (enrichissement des références). */
+export async function saveIndexPageProducts(
+  uid: string, watchId: string, siteId: string, pageId: string, products: CompetitorListing[],
+): Promise<void> {
+  await getFirestore().collection(competitorPagesCol(uid, watchId, siteId)).doc(pageId).set(
+    { products: stripUndefined(products) }, { merge: true },
+  )
 }
 
 /** Nombre de pages moissonnées pour un concurrent (pour la méta / l'affichage). */

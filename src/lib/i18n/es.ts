@@ -2632,6 +2632,7 @@ export const es: Record<TranslationKey, string> = {
   'run.harvest.siteAuth': '{domain}: acceso autenticado (login cookie).',
   'run.harvest.siteEngine': '{domain}: motor forzado «{engine}».',
   'run.harvest.siteIndexed': '{domain}: +{indexed} producto(s) en {pages} página(s) (índice: {total} páginas).',
+  'run.harvest.refEnriched': "{domain}: {visited} ficha(s) de producto abierta(s) para leer la referencia — {enriched} clave(s) recuperada(s).",
   'run.harvest.familyFilterTooNarrow': "{domain}: el filtro por familias no retuvo ningún pasillo — se usa el plan completo ({count} pasillos). Un filtro nunca vacía una lista.",
   'run.harvest.antiBotBlocked': "{domain}: ninguna página leída — una protección antibot ({protection}) respondió en lugar del sitio. Prueba otro motor (Bright Data supera los desafíos duros).",
   'run.harvest.engineSilent': "{domain}: no llegó ninguna página — {asked} lectura(s) rechazada(s) por el motor «{engine}». Servicio caído, clave ausente o presupuesto agotado: no es un catálogo vacío.",
