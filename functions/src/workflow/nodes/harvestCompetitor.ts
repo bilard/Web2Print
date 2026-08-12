@@ -51,6 +51,11 @@ const REF_ENRICH_THRESHOLD = 0.33
  *  les douze minutes, un index de 7 000 fiches est couvert en une nuit. */
 const REF_ENRICH_BUDGET = 150
 
+/** Temps qu'il doit rester dans la fenêtre pour ouvrir la passe. Sous ce seuil, elle
+ *  n'aurait le temps que de quelques fiches et risquerait de faire dépasser le segment —
+ *  ce qui perdrait le curseur de la moisson, bien plus précieux. */
+const REF_ENRICH_MIN_MS = 90_000
+
 /** Colonnes de la feuille de statut (parité avec le node client). */
 const STATUS_COLUMNS = [
   { key: 'site', label: 'Concurrent', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 200 },
@@ -270,7 +275,12 @@ registerServerNode({
       const listings = await loadAllListings(ctx.uid, watchId, cfg.siteId)
       const withRef = listings.filter((l) => l.ref || l.gtin13).length
       const needsKeys = listings.length >= 50 && withRef / listings.length < REF_ENRICH_THRESHOLD
-      if (needsKeys && res.sweepComplete && !ctx.signal.aborted) {
+      // ⚠ Pas « balayage terminé » : sur un plan de 250 rayons et 166 pages par tick, il ne
+      // se termine jamais dans le même run, et la passe n'aurait jamais tourné. La bonne
+      // condition est « la moisson a fini SON tick et il reste du temps » — elle prend le
+      // temps résiduel, celui qui serait sinon rendu inutilisé.
+      const timeLeft = ctx.deadlineAt == null || ctx.deadlineAt - Date.now() > REF_ENRICH_MIN_MS
+      if (needsKeys && timeLeft && !ctx.signal.aborted) {
         const enr = await refEnrichPass({
           loadPages: () => loadIndexPages(ctx.uid, watchId, cfg.siteId),
           fetchHtml: fetcher.fetchHtml,
