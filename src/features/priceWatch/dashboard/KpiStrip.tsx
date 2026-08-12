@@ -27,7 +27,13 @@ function Tile({ label, value, sub, accent, delta, spark, title }: {
   return (
     <div className="bg-surface rounded-md px-2.5 py-1.5 border border-white/5 min-w-0" title={title}>
       <div className="flex items-start justify-between gap-1">
-        <div className="text-white/40 text-[10px] uppercase tracking-wide truncate">{label}</div>
+        {/* ⚠ Le titre s'ENROULE sur deux lignes au lieu d'être coupé. Tronqué, il rendait
+            « TENUE P… », « PRIX SOUS-C… » — des étiquettes qu'il fallait survoler pour
+            savoir ce que le chiffre au-dessous mesurait. Deux lignes réservées, donc une
+            hauteur de tuile stable quelle que soit la longueur du libellé. */}
+        <div className="text-white/40 text-[10px] uppercase tracking-wide leading-tight line-clamp-2 min-h-[1.6em]">
+          {label}
+        </div>
         {spark}
       </div>
       <div className={`text-lg font-semibold leading-none mt-1 tabular-nums ${accent ?? 'text-white'}`}>{value}</div>
