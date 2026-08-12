@@ -2702,6 +2702,7 @@ export const en: Record<TranslationKey, string> = {
   'run.directed.productProgress': '— product {processed}/{total} · {hits} price(s) found',
   'run.directed.productProgressSkipped': '— product {processed}/{total} · {hits} price(s) found · {skipped} site(s) skipped',
   'run.directed.budgetReserved': 'Budget reserved for the comparison — directed search postponed to the next tick.',
+  'run.directed.authBudgetReserved': 'Budget reserved for the comparison — authenticated pass postponed to the next tick (its cursor still advances).',
   'run.directed.genericNoFirecrawlKey': 'Generic sites without a Firecrawl key — extraction through the Bright Data then Jina fallbacks.',
   'run.directed.authNoFirecrawlKey': 'Authenticated site {host} but no Firecrawl key — skipped.',
   'run.directed.authMatched': 'Auth {host}: {hits}/{total} price(s) matched [auth cursor {from} → {to} / {products}].',

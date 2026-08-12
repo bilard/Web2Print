@@ -217,6 +217,10 @@ describe('extractOriginRefs (parité serveur)', () => {
     // Compatibilité = MACHINES, pas références : ignorée des deux côtés, sinon le cron
     // continuerait de fabriquer les clés « MS230 » que le navigateur n'émet plus.
     expect(extractOriginRefs('Compatible avec les modèles STIHL MS210, MS230, MS250.')).toEqual([])
+    // La liste s'arrête où la phrase passe aux machines — même coupe des deux côtés, sinon
+    // le cron réintroduirait les clés « MS170 » que le navigateur n'émet plus.
+    expect(extractOriginRefs('Bande de frein STIHL remplace 1123-160-5400 pour modèles 017, MS170, MS230.'))
+      .toEqual(['1123-160-5400'])
   })
 })
 

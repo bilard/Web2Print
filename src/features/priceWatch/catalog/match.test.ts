@@ -419,6 +419,31 @@ describe('⚠⚠ une liste de MACHINES compatibles n’est pas une liste de réf
     expect(extractOriginRefs('Compatible avec : 181004383/0 et 118801752/0')).toEqual([])
   })
 
+  // Second cas remonté le même jour, et il n'était PAS couvert par le retrait des mots de
+  // compatibilité : ici l'annonce est bien un remplacement, c'est la SUITE de la phrase qui
+  // passe aux machines. « BANDE DE FREIN » réf. 5606335 s'appariait au même pignon par
+  // « MS170 » — et la seule vraie référence, 1123-160-5400, était PERDUE (collée à « pour
+  // modèles 017 » dans un fragment que le filtre de token rejette pour ses espaces).
+  const BANDE = 'Bande de frein adaptable STIHL remplace 1123-160-5400 pour modèles 017, 018, '
+    + '020T, 021, 023, 025, MS170, MS171, MS180, MS181, MS192T, MS193, MS200, MS200T, MS210, '
+    + 'MS211, MS230, MS250.'
+
+  it('s’arrête où la phrase passe des références aux machines', () => {
+    expect(extractOriginRefs(BANDE)).toEqual(['1123-160-5400'])
+  })
+
+  it('⚠ ne tronque PAS quand le mot d’arrêt précède la référence', () => {
+    // « pour » avant la référence : couper là ne laisserait rien. Ce garde fait gagner des
+    // références au lieu d'en perdre — les deux formulations étaient muettes avant.
+    expect(extractOriginRefs('Courroie. Remplace origine 516747 pour tondeuse AL-KO 4125.'))
+      .toEqual(['516747'])
+    // Mot d'arrêt en TÊTE : tronquer là ne laisserait rien du tout. Le garde rend la phrase
+    // entière, et la référence isolée est retrouvée — le premier fragment reste écarté pour
+    // ses espaces, comme n'importe quel bout de phrase.
+    expect(extractOriginRefs('Filtre. Remplace origine pour STIHL : 1123141, 1123142'))
+      .toEqual(['1123142'])
+  })
+
   it('n’apparie plus le verrou au pignon de tronçonneuse', () => {
     const pignon = listing({
       url: 'https://www.autoportee-discount.fr/pignons-de-tronconneuse/32604-pignon-pour-'

@@ -455,6 +455,37 @@ export function comparePrices(
 }
 
 /**
+ * Mots par lesquels une phrase cesse d'énumérer des RÉFÉRENCES pour énumérer des
+ * MACHINES. La liste s'arrête là.
+ *
+ * Cas VÉCU, mesuré : « Bande de frein adaptable STIHL **remplace 1123-160-5400 pour
+ * modèles** 017, 018, 020T, 021, 023, 025, MS170, MS171 … » rendait DIX-SEPT clés —
+ * « 018 », « MS170 », « MS210 »… — et **perdait la seule vraie** (`1123-160-5400`, collée
+ * à « pour modèles 017 » dans un fragment que le filtre de token rejette pour ses
+ * espaces). Le libellé annonçait donc la bonne référence, et le moteur retenait tout sauf
+ * elle : la bande de frein s'appariait à un PIGNON de chaîne par « MS170 ».
+ *
+ * Retirer les mots de compatibilité du LEAD ne suffisait pas — ici l'annonce est bien un
+ * remplacement, c'est la SUITE de la phrase qui change de sujet.
+ */
+const MACHINE_LIST_STOP = /\b(?:pour|modèles?|modeles?|machines?|séries?|series?|types?|convient|adaptable|compatible|montage|utilisation)\b/i
+
+/**
+ * Tronque une liste annoncée au moment où elle passe aux machines.
+ *
+ * ⚠ La troncature est ABANDONNÉE si ce qui précède le mot d'arrêt ne contient aucun
+ * chiffre : « Remplace origine **pour** STIHL : 1234 » place le mot d'arrêt AVANT la
+ * référence, et couper là ne laisserait rien. Sans ce garde, une formulation courante
+ * perdrait sa référence au lieu d'en gagner — l'inverse exact du but.
+ */
+function stopAtMachineList(segment: string): string {
+  const cut = segment.search(MACHINE_LIST_STOP)
+  if (cut < 0) return segment
+  const head = segment.slice(0, cut)
+  return /\d/.test(head) ? head : segment
+}
+
+/**
  * Références d'origine citées dans une description commerciale.
  * « Lame adaptable pour AL-KO. Remplace origine: 516747, 344769, 117720. »
  *   → ['516747', '344769', '117720']
@@ -524,7 +555,7 @@ export function extractOriginRefs(description: string | null | undefined): strin
   // QUELLES références sont lues, seulement leur ponctuation : c'est pour cela que
   // celui-ci est sûr, et que l'ajout des mots de compatibilité ne l'était pas.
   for (const m of text.matchAll(new RegExp(String.raw`${LEAD}\s*(?::|[-–—])?\s*([\s\S]{2,300}?)(?=\.(?:\s|$)|;|$)`, 'gi'))) {
-    for (const token of m[1].split(/[,;]| et /i)) {
+    for (const token of stopAtMachineList(m[1]).split(/[,;]| et /i)) {
       const raw = token.trim().replace(/\s*\)$/, '')
       // Une référence contient au moins un chiffre : écarte les mots de la phrase.
       if (!/\d/.test(raw)) continue
