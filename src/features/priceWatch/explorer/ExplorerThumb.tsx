@@ -13,7 +13,7 @@
 // une page de quarante lignes, les dernières mettent des dizaines de secondes à arriver et
 // l'écran se lisait comme un catalogue sans photos. Le fond qui bat dit « ça vient ».
 import { useEffect, useRef, useState } from 'react'
-import { ImageOff } from 'lucide-react'
+import { Camera, ImageOff } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 
 export function ExplorerThumb({ src, alt = '', size = 'h-16 w-16' }: {
@@ -39,12 +39,19 @@ export function ExplorerThumb({ src, alt = '', size = 'h-16 w-16' }: {
 
   if (!src || state === 'error') {
     const broken = !!src
+    // ⚠ DEUX pictos pour deux causes, et c'est tout l'intérêt du repli. L'APPAREIL PHOTO
+    // dit « ce concurrent ne publie pas de visuel » — un manque chez lui, pas une panne
+    // chez nous ; l'image barrée en ambre dit « adresse relevée mais injoignable », qui se
+    // corrige en relançant la collecte ou en réglant le préfixe. Un pictogramme unique
+    // faisait passer une absence normale pour un dysfonctionnement de l'outil, et envoyait
+    // chercher la panne du mauvais côté.
+    const Icon = broken ? ImageOff : Camera
     return (
       <div title={broken ? t('pwx.thumb.broken', { url: src }) : t('pwx.thumb.none')}
         className={`${size} shrink-0 rounded bg-well border flex items-center justify-center cursor-help ${
           broken ? 'border-amber-400/25' : 'border-white/10'
         }`}>
-        <ImageOff className={`w-4 h-4 ${broken ? 'text-amber-400/40' : 'text-white/20'}`} />
+        <Icon className={`w-4 h-4 ${broken ? 'text-amber-400/40' : 'text-white/25'}`} />
       </div>
     )
   }

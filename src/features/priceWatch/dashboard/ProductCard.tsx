@@ -3,7 +3,7 @@
 // chaque concurrent apparié (prix TTC/HT, barré, écart, stock, type d'appariement,
 // image, lien). L'image + le nom concurrent servent à vérifier le bon appariement.
 import { useState } from 'react'
-import { ChevronDown, ExternalLink, ImageOff } from 'lucide-react'
+import { Camera, ChevronDown, ExternalLink } from 'lucide-react'
 import type { ProductRow } from '../catalog/report'
 import { useResolvedImage } from '@/features/catalog/useResolvedImage'
 import { eur, pct, positionOf, POSITION_TEXT, STOCK_LABEL, MATCH_LABEL } from './format'
@@ -24,7 +24,9 @@ function Thumb({ src, alt }: { src: string | null; alt: string }) {
   const base = 'w-10 h-10 rounded bg-well shrink-0'
   if (src && resolving) return <div className={`${base} animate-pulse`} />
   if (resolved) return <img src={resolved} alt={alt} loading="lazy" className={`${base} object-cover`} />
-  return <div className={`${base} flex items-center justify-center`}><ImageOff className="w-4 h-4 text-white/20" /></div>
+  // Appareil photo, pas image barrée : ce concurrent ne publie pas de visuel — c'est une
+  // absence chez LUI, pas un défaut d'affichage chez nous. Cf. `ExplorerThumb`.
+  return <div className={`${base} flex items-center justify-center`}><Camera className="w-4 h-4 text-white/25" /></div>
 }
 
 export function ProductCard({ row }: { row: ProductRow }) {
