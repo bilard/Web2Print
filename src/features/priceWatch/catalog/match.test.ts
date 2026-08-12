@@ -397,3 +397,28 @@ describe('extractOriginRefs — formulations élargies', () => {
     expect(extractOriginRefs('Livraison : 48 heures.')).toEqual([])
   })
 })
+
+describe('⚠⚠ références d’origine citées SANS deux-points', () => {
+  it('capte les formulations courantes sans ponctuation', () => {
+    // Le deux-points était exigé, et c'est ce qui laissait 105 000 lignes sur 115 814 sans
+    // la moindre référence d'origine. Or ces références sont les seules qu'un concurrent
+    // puisse porter sur une pièce adaptable : elles produisaient déjà 592 des 974
+    // appariements du catalogue, à partir des 9 % de lignes qui portaient un deux-points.
+    expect(extractOriginRefs('Lame adaptable AL-KO. Remplace origine 516747, 344769.')).toEqual(['516747', '344769'])
+    expect(extractOriginRefs('Courroie. Équivalent 532134149')).toEqual(['532134149'])
+    expect(extractOriginRefs('Filtre. Réf. origine – 117720')).toEqual(['117720'])
+    expect(extractOriginRefs('Bougie. OEM 106103 et 117720.')).toEqual(['106103', '117720'])
+  })
+
+  it('⚠ n’invente rien sur une phrase sans référence', () => {
+    // Le garde-fou qui rend l'élargissement sûr : sans chiffre, pas de référence. Et une
+    // clé candidate doit de toute façon être PROUVÉE chez le concurrent — on élargit la
+    // recherche, jamais l'acceptation.
+    expect(extractOriginRefs('Compatible avec les modèles récents de la gamme')).toEqual([])
+    expect(extractOriginRefs('Courroie trapézoïdale renforcée pour autoportée')).toEqual([])
+  })
+
+  it('la forme avec deux-points continue de fonctionner', () => {
+    expect(extractOriginRefs('Remplace origine: 516747, 344769.')).toEqual(['516747', '344769'])
+  })
+})

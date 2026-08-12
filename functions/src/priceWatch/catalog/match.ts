@@ -483,7 +483,16 @@ export function extractOriginRefs(description: string | null | undefined): strin
   // La liste se termine à une fin de PHRASE (point suivi d'un blanc ou de la fin) et
   // non au premier point : les références en contiennent (« 000.02.501 »).
   const LEAD = String.raw`(?:remplace\s+(?:les\s+)?(?:r[ée]f[ée]rences?|origines?)?|r[ée]f[\.]?\s*(?:d['’]?)?origine|r[ée]f[ée]rence\s+(?:d['’]?)?origine|r[ée]f[\.]?\s*constructeur|origine|oem|[ée]quivalen(?:t|ce)s?|compatible\s+avec|compatibilit[ée]|correspondances?)`
-  for (const m of text.matchAll(new RegExp(String.raw`${LEAD}\s*:\s*([\s\S]{2,300}?)(?=\.(?:\s|$)|;|$)`, 'gi'))) {
+  // ⚠⚠ Le deux-points est OPTIONNEL. Il était exigé, et c'est ce qui laissait 105 000
+  // lignes sur 115 814 sans la moindre référence d'origine : « Remplace origine 516747 »,
+  // « Équivalent 532134149 », « Réf. origine – 117720 » s'écrivent tous les jours sans
+  // ponctuation, et aucun n'était vu. Or ces références sont les SEULES qu'un concurrent
+  // puisse porter sur une pièce adaptable — elles produisent déjà 592 des 974 appariements
+  // du catalogue, à partir des 9 % de lignes qui, elles, portaient un deux-points.
+  //
+  // Le risque de faux positif reste nul : une clé candidate doit ensuite être PROUVÉE chez
+  // le concurrent par `proveMatch`. Élargir ici élargit la RECHERCHE, jamais l'acceptation.
+  for (const m of text.matchAll(new RegExp(String.raw`${LEAD}\s*(?::|[-–—])?\s*([\s\S]{2,300}?)(?=\.(?:\s|$)|;|$)`, 'gi'))) {
     for (const token of m[1].split(/[,;]| et /i)) {
       const raw = token.trim().replace(/\s*\)$/, '')
       // Une référence contient au moins un chiffre : écarte les mots de la phrase.
