@@ -30,7 +30,7 @@ import { useGlobalSearch } from './useGlobalSearch'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { withVisual } from './confidence'
 import { buildTokenIndex, filterRows, EMPTY_EXPLORER_FILTER, type ExplorerFilter } from './filters'
-import { computeStats, countBands, countSourceFacts } from './stats'
+import { computeStats, countBands, countDoubts, countSourceFacts } from './stats'
 import { rowsToCsv } from './exportCsv'
 import { downloadRowsXlsx } from './exportXlsx'
 import { rowDomain, rowSiteId } from './compilation'
@@ -265,6 +265,9 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
   // Répartition des bandes sur TOUT le site, pas sur les lignes filtrées : elle sert à
   // expliquer une liste vidée par le filtre de fiabilité.
   const bands = useMemo(() => countBands(rows), [rows])
+  // Même source que les bandes : les lignes AFFICHÉES. Un filtre qui ne déplace pas la
+  // ventilation dirait que le motif ne dépend pas de ce qu'on regarde — il en dépend.
+  const doubts = useMemo(() => countDoubts(rows), [rows])
 
   const facts = useMemo(() => ({
     ...countSourceFacts(source.products),
@@ -346,7 +349,7 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
           <ExplorerPositionBar stats={stats} active={effective.gap} onPick={(gap) => patch({ gap })} />
         )}
         <div className="h-8 w-px bg-white/10 hidden lg:block" />
-        <ExplorerStats stats={stats} collected={compiling ? compilation.scanned : listings.length} pairingPending={source.loading}
+        <ExplorerStats stats={stats} collected={compiling ? compilation.scanned : listings.length} doubts={doubts} pairingPending={source.loading}
           promoOnly={effective.promoOnly} outOfStockOnly={effective.stock === 'out-of-stock'}
           suspectsOnly={effective.trust === 'suspect'} visualDiffOnly={effective.visual === 'different'}
           onTogglePromo={() => patch({ promoOnly: !effective.promoOnly })}

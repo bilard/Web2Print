@@ -2,13 +2,17 @@
 // compris). La position tarifaire, elle, vit dans le ruban : elle mérite la largeur,
 // ces chiffres-ci méritent une ligne discrète.
 import type { SiteStats } from './stats'
+import { DOUBT_SHORT } from './doubtLabels'
+import type { DoubtReason } from './confidence'
 import { Stat } from './ExplorerStat'
 import { eur } from '../dashboard/format'
 import { useTranslation, intlLocale } from '@/lib/i18n'
 
-export function ExplorerStats({ stats, collected, pairingPending, promoOnly, outOfStockOnly, suspectsOnly, visualDiffOnly, onTogglePromo, onToggleStock, onToggleSuspects, onToggleVisualDiff }: {
+export function ExplorerStats({ stats, collected, doubts, pairingPending, promoOnly, outOfStockOnly, suspectsOnly, visualDiffOnly, onTogglePromo, onToggleStock, onToggleSuspects, onToggleVisualDiff }: {
   stats: SiteStats
   collected: number
+  /** Ventilation des motifs de doute, la plus fréquente d'abord (cf. `countDoubts`). */
+  doubts: Array<{ reason: DoubtReason; count: number }>
   /** Le catalogue source n'est pas encore relu : les compteurs d'APPARIEMENT ne sont pas
    *  « 0 », ils ne sont pas CALCULÉS. Les publier comme des faits ferait lire « rien ne
    *  correspond » là où il n'y a rien eu à comparer. */
@@ -34,11 +38,18 @@ export function ExplorerStats({ stats, collected, pairingPending, promoOnly, out
         hint={pairingPending ? t('pwx.source.pending.hint') : t('pwx.stats.matched.help')} />
       <Stat label={t('pwx.chezLuiSeul')} value={pairingPending ? '…' : n(stats.orphans)}
         hint={pairingPending ? t('pwx.source.pending.hint') : t('pwx.stats.orphans.help')} />
-      {/* Compteur d'audit : le seul chiffre de cette ligne qui appelle une ACTION. */}
+      {/* Compteur d'audit : le seul chiffre de cette ligne qui appelle une ACTION — et
+          l'infobulle dit désormais POURQUOI. « 412 à vérifier » ne se règle pas ; « 380 sur
+          référence d'origine, 30 sur clé courte » désigne le levier à actionner dans les
+          règles d'appariement. */}
       <Stat label={t('pwx.trust.aVerifier')} value={n(stats.suspects)}
         tone={stats.suspects > 0 ? 'text-amber-300' : 'text-white/80'}
         active={suspectsOnly} onToggle={onToggleSuspects}
-        hint={t('pwx.trust.aVerifier.help')} />
+        hint={doubts.length > 0
+          ? `${t('pwx.trust.aVerifier.help')} ${t('pwx.trust.byReason', {
+            list: doubts.map((d) => `${t(DOUBT_SHORT[d.reason])} ${n(d.count)}`).join(' · '),
+          })}`
+          : t('pwx.trust.aVerifier.help')} />
       {/* Désaccords VISUELS, avec la couverture entre parenthèses. Publier « 3 » sans
           dire sur combien de paires jugées serait le même biais que la moyenne d'un
           ratio tronqué : le chiffre paraîtrait faible alors que rien n'a été analysé. */}

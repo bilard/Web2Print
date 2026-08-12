@@ -9,8 +9,9 @@ import { ChevronDown, Check, X, Image as ImageIcon, Languages } from 'lucide-rea
 import type { Verdict } from './verdictStore'
 import type { StoredVisual } from '../visual/visualStore'
 import { highlightKey, proofSpot } from './proofHighlight'
+import { DOUBT_LABEL } from './doubtLabels'
 import type { PairedRow } from './pairing'
-import type { ConfidenceBand, DoubtReason, SupportReason } from './confidence'
+import type { ConfidenceBand, SupportReason } from './confidence'
 import type { CompetitorListing } from '../catalog/competitorListing'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
@@ -65,18 +66,6 @@ const EVIDENCE_LABEL: Record<string, TranslationKey> = {
   'ref-in-title': 'pwx.proof.refInTitle',
 }
 
-const DOUBT_LABEL: Record<DoubtReason, TranslationKey> = {
-  'ean-conflict': 'pwx.doubt.eanConflict',
-  'ref-conflict': 'pwx.doubt.refConflict',
-  'weak-key': 'pwx.doubt.weakKey',
-  'numeric-short': 'pwx.doubt.numericShort',
-  'origin-key': 'pwx.doubt.originKey',
-  contested: 'pwx.doubt.contested',
-  'price-gulf': 'pwx.doubt.priceGulf',
-  'price-abyss': 'pwx.doubt.priceAbyss',
-  'family-conflict': 'pwx.doubt.familyConflict',
-  'visual-conflict': 'pwx.doubt.visualConflict',
-}
 
 /** Ce qui CORROBORE. Affiché depuis que les photos entrent dans l'indice : sans cette
  *  liste, un score monté par un renfort n'avait aucune justification lisible. */
@@ -439,7 +428,21 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                 −{promo} % <span className="text-white/30 line-through">{eur(cmp.listPriceTtc)}</span>
               </span>
             )}
-            {cmp.priceHt == null && <span className="text-white/30 italic">{t('pwx.prixNonExploitable')}</span>}
+            {/* Prix absent VS prix refusé : deux situations, deux gestes. La première dit
+                que le site n'affiche rien d'exploitable ; la seconde que NOUS avons écarté
+                ce qu'il affiche, et alors le chiffre du refus doit être lisible — c'est lui
+                qui permet de juger si c'est le seuil ou l'appariement qui est en cause. */}
+            {cmp.priceHt == null && (cmp.rejected === 'drop-too-deep' && cmp.rejectedPct != null ? (
+              <span className="text-amber-300/70 italic" title={t('pwx.prixEcarte.help')}>
+                {t('pwx.prixEcarte', { pct: cmp.rejectedPct })}
+              </span>
+            ) : cmp.rejected === 'below-floor' ? (
+              <span className="text-amber-300/70 italic" title={t('pwx.prixPlancher.help')}>
+                {t('pwx.prixPlancher')}
+              </span>
+            ) : (
+              <span className="text-white/30 italic">{t('pwx.prixNonExploitable')}</span>
+            ))}
           </div>
         </div>
         {/* Jugement, au bout de la ligne : le geste vient APRÈS la comparaison visuelle. */}

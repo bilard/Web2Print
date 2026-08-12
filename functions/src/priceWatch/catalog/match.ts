@@ -388,6 +388,20 @@ export interface PriceComparison {
   /** Position du prix source face au concurrent. */
   position?: 'cheaper' | 'aligned' | 'more-expensive'
   availability?: Availability
+  /**
+   * Pourquoi le prix relevé n'a PAS été retenu — quand il ne l'a pas été.
+   *
+   * Le garde-fou anti-prix-aberrant écartait en silence : la cellule affichait « prix non
+   * exploitable » sans distinguer « le site n'affiche aucun prix » de « nous avons refusé
+   * celui qu'il affiche ». Les deux demandent pourtant des gestes opposés — vérifier le
+   * scraping dans un cas, revoir l'appariement ou le seuil dans l'autre.
+   *
+   * ⚠ Calculé à la volée, jamais persisté dans le rapport : le poids d'une cellule est
+   * compté au byte près (plafond d'un mégaoctet, cf. le découpage du rapport).
+   */
+  rejected?: 'below-floor' | 'drop-too-deep'
+  /** Écart qui a motivé le refus, en % — c'est LUI qui rend le refus discutable. */
+  rejectedPct?: number
 }
 
 /** Arrondi monétaire au centime. */
@@ -435,7 +449,10 @@ export function comparePrices(
     ? ((priceHt - sourcePriceHt) / sourcePriceHt) * 100
     : 0
   if (priceHt < rules.minPriceEur || provisionalPct < -rules.maxDropPct) {
-    return out // { availability } seul — prix rejeté
+    // Le motif accompagne le refus : « écarté à −64 % » se discute, « non exploitable » non.
+    out.rejected = priceHt < rules.minPriceEur ? 'below-floor' : 'drop-too-deep'
+    if (out.rejected === 'drop-too-deep') out.rejectedPct = Math.round(provisionalPct * 10) / 10
+    return out // { availability, rejected } — prix relevé mais refusé
   }
 
   out.priceTtc = round2(isHt ? listing.price * (1 + vat) : listing.price)

@@ -42,10 +42,25 @@ async function isCycleMode(workflowId: string | undefined): Promise<boolean> {
   } catch { return false }
 }
 
-/** Sous ce taux de fiches identifiées, la passe d'enrichissement des clés se déclenche.
- *  Un tiers : au-delà, l'index a déjà de quoi s'apparier et les visites coûteraient plus
- *  qu'elles ne rapportent. */
-const REF_ENRICH_THRESHOLD = 0.33
+/**
+ * Fiches SANS CLÉ à partir desquelles la passe d'enrichissement vaut le détour.
+ *
+ * ⚠⚠ C'était un RATIO — un tiers de fiches identifiées — au motif qu'au-delà « l'index a
+ * déjà de quoi s'apparier ». Le raisonnement ne tient pas à l'échelle : autoportee-discount
+ * indexe 186 000 fiches et dépasse largement ce tiers, si bien que ses fiches n'étaient
+ * JAMAIS ouvertes — laissant des dizaines de milliers de produits sans clé, plus que
+ * l'index entier de la plupart des concurrents, et inappariables pour toujours.
+ *
+ * Ce qui compte est le NOMBRE de fiches qu'on peut encore identifier, pas leur part. Le
+ * coût, lui, était déjà borné ailleurs, et mieux : par le budget de fiches, le curseur qui
+ * reprend où il s'est arrêté, et l'échéance du segment.
+ *
+ * Cas mesuré derrière ce changement : la fiche produit d'autoportée déclare « Réf. :
+ * 1123-640-2003 » — la référence CONSTRUCTEUR — quand la page de rayon n'en montre pas.
+ * Sans visite, ce pignon ne pouvait s'apparier que par un modèle de machine lu dans son
+ * adresse : appariement douteux quand la référence exacte attendait une page plus loin.
+ */
+const REF_ENRICH_MIN_MISSING = 50
 
 /**
  * Fiches ouvertes par tick.
@@ -132,7 +147,11 @@ registerServerNode({
     for (const site of sites) {
       const m = await loadCompetitorMeta(ctx.uid, watchId, stableId(site.domain))
       if (m?.saturatedSweeps) satBySite.set(site.id, m.saturatedSweeps)
-      if ((m?.productCount ?? 0) >= 50 && (m?.pctRef ?? 100) < REF_ENRICH_THRESHOLD * 100) {
+      // Même règle qu'au déclenchement de la passe, exprimée sur la méta : le compte de
+      // fiches ENCORE SANS CLÉ, jamais leur part.
+      const indexed = m?.productCount ?? 0
+      const missing = Math.round(indexed * (1 - (m?.pctRef ?? 100) / 100))
+      if (indexed >= 50 && missing >= REF_ENRICH_MIN_MISSING) {
         needKeysBySite.add(site.id)
       }
     }
@@ -295,7 +314,7 @@ registerServerNode({
       // le temps qui reste, jamais celui de la moisson.
       const listings = await loadAllListings(ctx.uid, watchId, cfg.siteId)
       const withRef = listings.filter((l) => l.ref || l.gtin13).length
-      const needsKeys = listings.length >= 50 && withRef / listings.length < REF_ENRICH_THRESHOLD
+      const needsKeys = listings.length >= 50 && listings.length - withRef >= REF_ENRICH_MIN_MISSING
       // ⚠ Pas « balayage terminé » : sur un plan de 250 rayons et 166 pages par tick, il ne
       // se termine jamais dans le même run, et la passe n'aurait jamais tourné. La bonne
       // condition est « la moisson a fini SON tick et il reste du temps » — elle prend le

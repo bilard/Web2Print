@@ -1,6 +1,7 @@
 // Statistiques financières du site actif, calculées sur les lignes AFFICHÉES (filtres
 // compris) : un filtre qui ne fait pas bouger les chiffres ne sert à rien. PUR.
 import { discountPct, type PairedRow } from './pairing'
+import type { DoubtReason } from './confidence'
 
 export interface SiteStats {
   /** Fiches visibles / collectées. */
@@ -92,6 +93,31 @@ export function countBands(rows: PairedRow[]): { sure: number; check: number; do
     else if (r.confidence?.band === 'doubt') doubt++
   }
   return { sure, check, doubt }
+}
+
+/**
+ * POURQUOI les appariements douteux le sont — le motif, pas seulement le compte.
+ *
+ * « 412 douteux » ne se règle pas : on ignore s'il faut corriger le lexique des familles,
+ * durcir une nature de preuve, ou cesser de lire les références d'origine. « 380 sur clé
+ * d'origine » se règle. Le tri décroissant met en tête ce qui rapporterait le plus à
+ * traiter, et rien d'autre n'est à faire du reste.
+ *
+ * ⚠ Les lignes SÛRES sont exclues : une paire certaine peut porter un doute mineur qui n'a
+ * rien coûté à sa bande, et le compter noierait le signal. On mesure ce qui EMPÊCHE, pas ce
+ * qui est simplement noté. Une même ligne compte dans chaque motif qui la grève — la somme
+ * dépasse donc le nombre de lignes, et c'est voulu : on veut le poids d'un motif, pas une
+ * partition.
+ */
+export function countDoubts(rows: PairedRow[]): Array<{ reason: DoubtReason; count: number }> {
+  const by = new Map<DoubtReason, number>()
+  for (const r of rows) {
+    if (!r.confidence || r.confidence.band === 'sure') continue
+    for (const d of r.confidence.doubts) by.set(d, (by.get(d) ?? 0) + 1)
+  }
+  return [...by.entries()]
+    .map(([reason, count]) => ({ reason, count }))
+    .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason))
 }
 
 /** Ce que le catalogue source porte vraiment. Dit d'un coup d'œil s'il faut relancer
