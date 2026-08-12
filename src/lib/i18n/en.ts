@@ -2323,7 +2323,6 @@ export const en: Record<TranslationKey, string> = {
   'pw.ops.col.sweep': "Sweep",
   'pw.ops.col.listings': "Listings",
   'pw.ops.col.cycles': "Cycles",
-  'pw.ops.col.last': "Harvest",
   'pw.ops.col.sweep.help': "Families covered: {pct}%",
   'pw.ops.activeCompetitors': 'Active competitors',
   'pw.ops.nextHarvest': 'Next harvest',

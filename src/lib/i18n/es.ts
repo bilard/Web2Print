@@ -2322,7 +2322,6 @@ export const es: Record<TranslationKey, string> = {
   'pw.ops.col.sweep': "Barrido",
   'pw.ops.col.listings': "Fichas",
   'pw.ops.col.cycles': "Ciclos",
-  'pw.ops.col.last': "Recolección",
   'pw.ops.col.sweep.help': "Familias recorridas: {pct} %",
   'pw.ops.activeCompetitors': 'Competidores activos',
   'pw.ops.nextHarvest': 'Próxima recolección',

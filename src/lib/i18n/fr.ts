@@ -2406,7 +2406,6 @@ export const fr = {
   'pw.ops.col.sweep': "Balayage",
   'pw.ops.col.listings': "Fiches",
   'pw.ops.col.cycles': "Cycles",
-  'pw.ops.col.last': "Moisson",
   'pw.ops.col.sweep.help': "Familles parcourues : {pct} %",
   'pw.ops.activeCompetitors': 'Concurrents actifs',
   'pw.ops.nextHarvest': 'Prochaine moisson',
