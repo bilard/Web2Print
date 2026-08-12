@@ -75,14 +75,28 @@ export async function savePublishedRevisions(
   for (let i = 0; i < revisions.length; i += 400) {
     const batch = writeBatch(db)
     for (const r of revisions.slice(i, i + 400)) {
-      // ⚠ `merge` : la fiche porte peut-être déjà une réécriture faite à la main, sur un
-      // autre champ. L'écraser ferait disparaître un travail que personne n'a demandé de
-      // refaire.
-      batch.set(
-        doc(db, textRevisionsCol(uid, watchId), stableId(r.key)),
-        { byColumn: r.byColumn, ops: r.ops, at: r.at },
-        { merge: true },
-      )
+      // ⚠⚠ `merge: true` NE FUSIONNE PAS UNE MAP IMBRIQUÉE. Il fusionne les champs de
+      // PREMIER NIVEAU : passer `byColumn` en bloc REMPLACE la map entière, colonnes
+      // absentes comprises. Le commentaire d'origine promettait le contraire.
+      //
+      // Cas VÉCU, mesuré le 2026-08-12 : les fiches portaient depuis la veille
+      // « DESCRIPTION » ET « TEXT_VENTE » traduits. Une passe repartie sur la seule
+      // description a republié `byColumn: { DESCRIPTION }` — et les textes de vente de
+      // TOUT le catalogue ont disparu de l'écran, sans une erreur, sans un log. Le travail
+      // était perdu, pas caché : rien ne le remettait dans la file, puisque la mémoire
+      // d'enrichissement, elle, le savait toujours fait.
+      //
+      // Les chemins de champs (`byColumn.<colonne>`) ne touchent QUE les colonnes
+      // republiées. `FieldPath` plutôt qu'une chaîne pointée : un nom de colonne contenant
+      // un point (« Réf. origine ») serait sinon lu comme deux niveaux.
+      const path = doc(db, textRevisionsCol(uid, watchId), stableId(r.key))
+      const patch: Record<string, unknown> = { ops: r.ops, at: r.at }
+      for (const [col, v] of Object.entries(r.byColumn ?? {})) patch[`byColumn.${col}`] = v
+      // `setDoc` n'interprète pas les clés pointées ; `updateDoc` si — mais il exige que le
+      // document existe. On sème donc la map vide d'abord (sans écraser l'existante), puis
+      // on applique les colonnes une à une.
+      batch.set(path, { byColumn: {}, ops: r.ops, at: r.at }, { merge: true })
+      batch.update(path, patch)
     }
     await batch.commit()
   }
