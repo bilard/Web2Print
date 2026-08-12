@@ -271,6 +271,10 @@ const MESSAGES = {
     fr: 'Configuration incomplète ({code}) : corrigez-la avant de planifier le run.',
     en: 'Incomplete configuration ({code}): fix it before scheduling the run.',
   },
+  'run.textEnrich.softFail': {
+    fr: 'ENRICHISSEMENT ABANDONNÉ — {message}. Les {rows} ligne(s) passent SANS enrichissement : le comparatif garde son analyse plutôt que d\u2019être sauté avec cette carte. Rien n\u2019a été publié ; corrige la cause et relance.',
+    en: 'ENRICHMENT ABANDONED — {message}. The {rows} row(s) pass through UNENRICHED: the comparison keeps its analysis instead of being skipped along with this card. Nothing was published; fix the cause and re-run.',
+  },
   'run.textEnrich.serverBadJson': {
     fr: 'Réponse illisible du modèle sur un lot — les textes concernés reviendront au passage suivant.',
     en: 'Unreadable model response on a batch — the texts involved will come back on the next pass.',

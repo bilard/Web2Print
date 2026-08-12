@@ -1828,6 +1828,7 @@ export const en: Record<TranslationKey, string> = {
   'run.textEnrich.progress': '{done} / {total} fields processed.',
   'run.textEnrich.serverSheetOnly': 'The scheduled run can only handle SHEET mode: wire a sheet into the card, or launch it from the browser to work on a PIM project.',
   'run.textEnrich.serverConfig': 'Incomplete configuration ({code}): fix it before scheduling the run.',
+  'run.textEnrich.softFail': 'ENRICHMENT ABANDONED — {message}. The {rows} row(s) pass through UNENRICHED: the comparison keeps its analysis instead of being skipped along with this card. Nothing was published; fix the cause and re-run.',
   'run.textEnrich.serverBadJson': 'Unreadable model response on a batch — the texts involved will come back on the next pass.',
   'run.textEnrich.spendCapped': 'Pass stopped on its ${cap} cap: work remains.',
   'run.textEnrich.done': '{revised} fields revised, {rejected} refused. Pass “{passId}”.',

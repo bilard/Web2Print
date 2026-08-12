@@ -1906,6 +1906,7 @@ export const fr = {
   'run.textEnrich.progress': '{done} / {total} champs traités.',
   'run.textEnrich.serverSheetOnly': "Le run planifié ne sait traiter que le mode FEUILLE : branchez une feuille sur l'entrée de la carte, ou lancez-la depuis le navigateur pour travailler sur un projet PIM.",
   'run.textEnrich.serverConfig': 'Configuration incomplète ({code}) : corrigez-la avant de planifier le run.',
+  'run.textEnrich.softFail': 'ENRICHISSEMENT ABANDONNÉ — {message}. Les {rows} ligne(s) passent SANS enrichissement : le comparatif garde son analyse plutôt que d’être sauté avec cette carte. Rien n’a été publié ; corrige la cause et relance.',
   'run.textEnrich.serverBadJson': 'Réponse illisible du modèle sur un lot — les textes concernés reviendront au passage suivant.',
   'run.textEnrich.spendCapped': 'Passage arrêté sur son plafond de {cap} $ : il reste du travail.',
   'run.textEnrich.done': '{revised} champs révisés, {rejected} refusés. Passage « {passId} ».',

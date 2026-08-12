@@ -1827,6 +1827,7 @@ export const es: Record<TranslationKey, string> = {
   'run.textEnrich.progress': '{done} / {total} campos procesados.',
   'run.textEnrich.serverSheetOnly': 'La ejecución planificada solo sabe tratar el modo HOJA: conecte una hoja a la entrada de la tarjeta, o láncela desde el navegador para trabajar sobre un proyecto PIM.',
   'run.textEnrich.serverConfig': 'Configuración incompleta ({code}): corríjala antes de planificar la ejecución.',
+  'run.textEnrich.softFail': 'ENRIQUECIMIENTO ABANDONADO — {message}. Las {rows} fila(s) pasan SIN enriquecer: la comparativa conserva su análisis en lugar de omitirse junto con esta tarjeta. No se publicó nada; corrige la causa y vuelve a ejecutar.',
   'run.textEnrich.serverBadJson': 'Respuesta ilegible del modelo en un lote: los textos afectados volverán en la siguiente pasada.',
   'run.textEnrich.spendCapped': 'Pase detenido en su límite de {cap} $: queda trabajo.',
   'run.textEnrich.done': '{revised} campos revisados, {rejected} rechazados. Pase «{passId}».',

@@ -40,9 +40,15 @@ const JSON_INSTRUCTION = `
 ---
 Réponds UNIQUEMENT par un JSON de la forme {"results":[{"id":"…","text":"…","note":"…"}]}. Aucun texte avant ou après, aucune balise markdown.`
 
-registerServerNode({
-  type: 'text-enrich',
-  run: async (ctx, config, inputs) => {
+/**
+ * Le passage d'enrichissement lui-même. Enveloppé plus bas — voir pourquoi à
+ * l'enregistrement du node.
+ */
+const runTextEnrich = async (
+  ctx: Parameters<Parameters<typeof registerServerNode>[0]['run']>[0],
+  config: Record<string, unknown>,
+  inputs: Record<string, unknown>,
+): Promise<Record<string, unknown>> => {
     const sheet = inputs.sheet as { name?: string; columns?: SheetColumn[]; rows?: SheetRow[] } | undefined
     const fromSheet = Array.isArray(sheet?.rows)
     if (!fromSheet) throw new Error(t(ctx.locale, 'run.textEnrich.serverSheetOnly'))
@@ -315,6 +321,50 @@ registerServerNode({
           justification: notes[`${r.productId}::${r.field}`] ?? '',
         })),
       },
+    }
+}
+
+registerServerNode({
+  type: 'text-enrich',
+  /**
+   * ⚠⚠ UN ÉCHEC D'ENRICHISSEMENT NE DOIT PAS PRIVER LA VEILLE DE SON ANALYSE.
+   *
+   * Cette carte est EN AMONT de « Comparer catalogue » : son port `enriched` alimente le
+   * comparatif. Or l'exécuteur saute tout l'aval d'un node en erreur — une réponse de
+   * modèle illisible (`serverBadJson`), une clé d'API muette ou un quota épuisé
+   * emportaient donc le rapport de veille avec eux, alors que le comparatif n'a nul besoin
+   * des textes réécrits : il apparie sur des RÉFÉRENCES.
+   *
+   * Le risque n'est pas théorique : le journal de production du 2026-08-12 répétait
+   * « Aucun provider LLM (deepseek, gemini) n'a répondu — vérifie les clés API ». La
+   * moisson, elle, dégrade proprement (repli « catalogue complet ») ; cette carte n'avait
+   * pas ce filet, et son échec est silencieux du point de vue de l'aval : les cartes
+   * suivantes n'apparaissent pas en erreur, seulement « sautées ».
+   *
+   * La feuille repart donc telle qu'elle est entrée, et l'échec est CRIÉ dans le journal —
+   * jamais tu. Une carte qui échouerait en silence ferait croire à un enrichissement fait,
+   * ce qui est pire que la panne elle-même.
+   *
+   * ⚠ Sauf absence de feuille : sans entrée exploitable il n'y a rien à laisser passer, et
+   * masquer ce cas ferait comparer du vide. Celui-là reste bloquant.
+   */
+  run: async (ctx, config, inputs) => {
+    try {
+      return await runTextEnrich(ctx, config, inputs)
+    } catch (e) {
+      const sheet = inputs.sheet as { name?: string; columns?: SheetColumn[]; rows?: SheetRow[] } | undefined
+      if (!Array.isArray(sheet?.rows)) throw e
+      ctx.log('warn', t(ctx.locale, 'run.textEnrich.softFail', {
+        message: e instanceof Error ? e.message : String(e),
+        rows: sheet.rows.length,
+      }))
+      // Zéro champ révisé : le badge de la carte doit dire ce qui s'est passé, et non
+      // afficher le compte de ce qu'on avait prévu de traiter.
+      ctx.reportCount?.(0)
+      return {
+        enriched: { name: sheet?.name ?? 'sheet', columns: sheet?.columns ?? [], rows: sheet.rows },
+        revisions: { name: 'revisions', columns: [], rows: [] },
+      }
     }
   },
 })
