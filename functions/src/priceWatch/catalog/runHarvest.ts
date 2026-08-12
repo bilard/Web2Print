@@ -154,6 +154,10 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
 }
 
 /** Plafond du plan de moisson — aligné sur la découverte par sitemap. */
+/** Pages mortes mémorisées par site. Assez pour couvrir les trous d'un catalogue, assez
+ *  peu pour que le curseur reste un document Firestore léger. */
+const MAX_DEAD_URLS = 60
+
 const MAX_PLAN = 250
 
 /** Dédup insensible au `www.` et au `/` final (deux formes = deux `pageDocId` = doublons). */
@@ -300,7 +304,20 @@ export async function harvestPass(
     // `?page=2` et resert la page 1 : le verrou d'empreinte fermait alors la catégorie
     // au bout de 2 requêtes, soit 1 page utile sur 18.
     const url = target.page === 1 ? target.categoryUrl : (cursor.nextUrl ?? pageUrl(target.categoryUrl, target.page))
+    // Page déjà reconnue morte : on passe SANS payer la cascade. C'est ce contrôle qui rend
+    // sa fenêtre au run — cf. `HarvestCursor.deadUrls`.
+    if (cursor.deadUrls?.includes(url)) {
+      cursor = advance(cursor, { hadItems: false, hasNext: false })
+      await deps.saveCursor(cfg.siteId, cursor)
+      continue
+    }
     const html = await deps.fetchHtml(url)
+    if (!html) {
+      // Échec de TOUS les paliers : on le retient, borné. La liste est vidée tous les cinq
+      // balayages pour qu'un site rétabli reprenne sa place sans intervention.
+      const dead = cursor.sweeps % 5 === 0 ? [] : (cursor.deadUrls ?? [])
+      cursor = { ...cursor, deadUrls: [...dead.filter((u) => u !== url), url].slice(-MAX_DEAD_URLS) }
+    }
     let hadItems = false
     let nextUrl: string | undefined
     let signature: string | undefined

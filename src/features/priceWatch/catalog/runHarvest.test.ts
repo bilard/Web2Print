@@ -359,3 +359,35 @@ describe('⚠⚠ un filtre par familles ne vide JAMAIS le plan', () => {
     expect(plan.some((u) => u.includes('attelages-3-points'))).toBe(true)
   })
 })
+
+describe('⚠⚠ une page morte ne se repaie pas à chaque run', () => {
+  it('mémorise l’échec puis saute la page sans appeler la cascade', async () => {
+    // Mesuré sur swap-europe : la même URL réessayée sur direct, Jina, Firecrawl et les
+    // deux paliers de Bright Data a mangé seize minutes de fenêtre en boucle, empêchant
+    // tout le reste du run d'avancer.
+    const cursors: HarvestCursor[] = []
+    let fetched = 0
+    const deps = (cur: HarvestCursor) => ({
+      force: true,
+      fetchHtml: async () => { fetched++; return null },
+      loadCursor: async () => cur,
+      saveCursor: async (_id: string, c: HarvestCursor) => { cursors.push(c) },
+      savePage: async () => {},
+    })
+    const base: HarvestCursor = {
+      categories: ['https://s.fr/c/mort'], catIndex: 0, page: 1, sweeps: 1, done: false,
+    }
+    await harvestPass({ siteId: 's', domain: 's.fr', families: [] }, deps(base) as never, 1)
+    const after = cursors[cursors.length - 1]
+    expect(after.deadUrls).toContain('https://s.fr/c/mort')
+    expect(fetched).toBe(1)
+
+    // Deuxième passage : la page est connue morte, aucun appel réseau.
+    fetched = 0
+    await harvestPass(
+      { siteId: 's', domain: 's.fr', families: [] },
+      deps({ ...after, catIndex: 0, page: 1, done: false }) as never, 1,
+    )
+    expect(fetched).toBe(0)
+  })
+})

@@ -39,6 +39,16 @@ export interface HarvestCursor {
    * planification est mise en veille le temps du délai de reprise.
    */
   planFailedAt?: number
+  /**
+   * Pages qui ont échoué sur TOUTE la cascade de lecture.
+   *
+   * ⚠⚠ Sans cette mémoire, une seule URL morte est réessayée à chaque run sur direct, Jina,
+   * Firecrawl puis les deux paliers de Bright Data — quatre-vingt-dix secondes perdues par
+   * tick, indéfiniment. Mesuré sur swap-europe : la même page a mangé seize minutes de
+   * fenêtre en boucle, empêchant tout le reste du run d'avancer. Bornée, et vidée
+   * périodiquement : un site peut redevenir accessible.
+   */
+  deadUrls?: string[]
 }
 
 /**
