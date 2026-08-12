@@ -282,28 +282,58 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           </div>
           {/* Quatre colonnes sur grand écran : les douze concurrents tiennent en trois
               rangées au lieu de quatre, et c'est autant de hauteur rendue à la suite. */}
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-1.5">
-            {shown.slice(0, scope === 'all' ? 24 : 12).map((c) => (
-              <div key={c.siteId} className="flex items-center gap-2 text-xs">
-                <span className={`truncate flex-1 min-w-0 ${c.enabled ? 'text-white/75' : 'text-white/35 italic'}`}
-                  title={c.enabled ? c.domain : t('pw.ops.scope.off', { domain: c.domain })}>
-                  {c.domain.replace(/^www\./, '')}
-                </span>
-                <div className="h-1.5 w-16 rounded-full bg-white/[0.06] overflow-hidden shrink-0"
-                  title={`Familles parcourues ${Math.round(c.progress * 100)} %`}>
-                  <div className={`h-full ${c.progress >= 1 ? 'bg-emerald-500' : 'bg-indigo-400'}`} style={{ width: `${Math.round(c.progress * 100)}%` }} />
+          {/* ⚠⚠ UN TABLEAU, pas des blocs juxtaposés. En quatre colonnes de cartes
+              indépendantes, chaque bloc alignait ses valeurs pour lui seul : deux domaines
+              voisins n'avaient ni leurs barres, ni leurs volumes, ni leurs dates sur la même
+              verticale, et il fallait relire chaque ligne pour savoir quel chiffre allait
+              avec quel site. Les colonnes sont désormais partagées, avec un en-tête qui les
+              nomme — c'est ce qui fait la différence entre une liste et un tableau.
+
+              Deux tableaux côte à côte sur grand écran : vingt-deux lignes d'un seul tenant
+              feraient huit cents pixels de haut avant le premier graphique. */}
+          <div className="mt-2 grid grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-0.5">
+            {[0, 1].map((half) => {
+              const list = shown.slice(0, scope === 'all' ? 24 : 12)
+              const cut = Math.ceil(list.length / 2)
+              const part = half === 0 ? list.slice(0, cut) : list.slice(cut)
+              if (part.length === 0) return null
+              return (
+                <div key={half} className="min-w-0">
+                  <div className="grid grid-cols-[minmax(0,1fr)_4rem_3.5rem_2.25rem_2.75rem] gap-2 items-center
+                    text-[9px] uppercase tracking-wide text-white/25 border-b border-white/[0.06] pb-1">
+                    <span>{t('pw.ops.col.site')}</span>
+                    <span className="text-center">{t('pw.ops.col.sweep')}</span>
+                    <span className="text-right">{t('pw.ops.col.listings')}</span>
+                    <span className="text-right">{t('pw.ops.col.cycles')}</span>
+                    <span className="text-right">{t('pw.ops.col.last')}</span>
+                  </div>
+                  {part.map((c) => (
+                    <div key={c.siteId}
+                      className="grid grid-cols-[minmax(0,1fr)_4rem_3.5rem_2.25rem_2.75rem] gap-2 items-center
+                        text-xs py-[3px] border-b border-white/[0.03] hover:bg-white/[0.03]">
+                      <span className={`truncate ${c.enabled ? 'text-white/75' : 'text-white/35 italic'}`}
+                        title={c.enabled ? c.domain : t('pw.ops.scope.off', { domain: c.domain })}>
+                        {c.domain.replace(/^www\./, '')}
+                      </span>
+                      <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden"
+                        title={t('pw.ops.col.sweep.help', { pct: Math.round(c.progress * 100) })}>
+                        <div className={`h-full ${c.progress >= 1 ? 'bg-emerald-500' : 'bg-indigo-400'}`}
+                          style={{ width: `${Math.round(c.progress * 100)}%` }} />
+                      </div>
+                      <span className="tabular-nums text-white/50 text-right">{compactNum(c.indexed)}</span>
+                      <span className={`tabular-nums text-right ${c.sweeps > 0 ? 'text-emerald-300/80' : 'text-white/30'}`}>×{c.sweeps}</span>
+                      {/* ⚠ La FRAÎCHEUR, à côté du volume. « 186 300 fiches » se lit comme
+                          une richesse tant qu'on ignore que la dernière moisson remonte à
+                          trois semaines : le stock est mort et le chiffre trompeur. */}
+                      <span className="tabular-nums text-right text-white/30"
+                        title={c.lastPassAt ? t('pw.ops.lastHarvest', { when: new Date(c.lastPassAt).toLocaleString(intlLocale(locale)) }) : t('pw.ops.neverHarvested')}>
+                        {agoShort(c.lastPassAt, now)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <span className="tabular-nums text-white/50 w-12 text-right shrink-0">{compactNum(c.indexed)}</span>
-                <span className={`tabular-nums w-7 text-right shrink-0 ${c.sweeps > 0 ? 'text-emerald-300/80' : 'text-white/30'}`}>×{c.sweeps}</span>
-                {/* ⚠ La FRAÎCHEUR, à côté du volume. « 186 300 fiches » se lit comme une
-                    richesse tant qu'on ignore que la dernière moisson remonte à trois
-                    semaines : le stock est mort et le chiffre trompeur. */}
-                <span className="tabular-nums w-12 text-right shrink-0 text-white/30"
-                  title={c.lastPassAt ? t('pw.ops.lastHarvest', { when: new Date(c.lastPassAt).toLocaleString(intlLocale(locale)) }) : t('pw.ops.neverHarvested')}>
-                  {agoShort(c.lastPassAt, now)}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </>
       )}
