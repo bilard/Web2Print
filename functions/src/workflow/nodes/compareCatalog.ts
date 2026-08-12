@@ -12,6 +12,7 @@ import { parsePrice, stableId } from '../../priceWatch/helpers'
 import { resolveSitesInput } from '../../priceWatch/sourceSites'
 import { loadAllListings, loadCompetitorMeta, saveCompetitorMeta, saveSourceFamilies } from '../../priceWatch/catalog/store'
 import { familiesFromRows } from '../../priceWatch/catalog/categoryTargeting'
+import { auditListings } from '../../priceWatch/catalog/pairingRun'
 import { reportFromPairing } from '../../priceWatch/catalog/report'
 import { saveCatalogReport, saveSourceCatalog } from '../../priceWatch/reportStore'
 import { loadPairingRules } from '../../priceWatch/pairingRulesStore'
@@ -183,7 +184,14 @@ registerServerNode({
       indexedBySite.set(s.siteId, listings.length)
       readCount += listings.length
       pairing.addSite(s, listings)
-      ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', { domain: s.domain, count: listings.length }))
+      // ⚠⚠ Le taux de RÉFÉRENCES décide du taux d'appariement, et il était calculé sans
+      // jamais être dit. 971 appariés pour 11 656 fiches concurrentes : la question n'est
+      // pas « combien de fiches ? » mais « combien portent une clé ? ». Un site à 0 % de
+      // références ne s'appariera jamais, quel que soit le volume collecté.
+      const a = auditListings(listings)
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', {
+        domain: s.domain, count: listings.length, pctRef: a.pctRef, pctPrice: a.pctPrice,
+      }))
     }
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.indexLoaded', {
       count: readCount, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),

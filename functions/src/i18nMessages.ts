@@ -204,8 +204,8 @@ const MESSAGES = {
     en: '{count} source row(s) dropped as duplicates — check the "Reference column" (identity falls back to the name when it is missing).',
   },
   'run.compareCatalog.siteIndexCount': {
-    fr: "{domain} : {count} produit(s) dans l'index.",
-    en: '{domain}: {count} product(s) in the index.',
+    fr: "{domain} : {count} produit(s) dans l'index — {pctRef} % portent une référence, {pctPrice} % un prix.",
+    en: '{domain}: {count} product(s) in the index — {pctRef}% carry a reference, {pctPrice}% a price.',
   },
   'run.compareCatalog.emptyIndex': {
     fr: 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
