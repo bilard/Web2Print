@@ -16,6 +16,8 @@
 // reçoit des produits chaque jour, c'est exactement ça. La mémoire serait alors un
 // coup d'épée dans l'eau, invisible autrement que sur la facture. On clefe donc sur la
 // RÉFÉRENCE ARTICLE, celle-là même que la carte connaît déjà pour protéger les codes.
+import { sourceColumnOf } from './sheetMode'
+
 /** Une ligne de feuille, telle que le mode feuille la manipule (cf. `SheetRow`). */
 export type MemoryRow = Record<string, unknown>
 
@@ -114,7 +116,13 @@ export function sheetQueue(
     if (!key) { out.push({ row, key: null, reason: 'unknown-key', fields }); continue }
     const known = memory[key]
     if (!known) { out.push({ row, key, reason: 'new', fields }); continue }
-    const changed = fields.filter((f) => !remembers(known[f], textFingerprint(row[f] ?? null)))
+    // ⚠ La colonne « … (source) » vaut preuve de traitement. Quand la feuille a reçu la
+    // réécriture, la carte y a écrit l'original à côté : si CET original est celui que la
+    // mémoire retient, le champ est fait — même si le texte courant, lui, a changé (il EST
+    // la réécriture). Sans ce rattrapage, une mémoire écrite avant que le texte produit ne
+    // soit retenu ferait repayer tout le catalogue une dernière fois — 206 353 champs.
+    const changed = fields.filter((f) => !remembers(known[f], textFingerprint(row[f] ?? null))
+      && !remembers(known[f], textFingerprint(row[sourceColumnOf(f)] ?? null)))
     if (changed.length > 0) out.push({ row, key, reason: 'changed', fields: changed })
   }
   return out

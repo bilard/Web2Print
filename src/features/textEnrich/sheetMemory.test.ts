@@ -117,3 +117,33 @@ describe('⚠⚠ la carte ne doit pas retraiter son PROPRE travail', () => {
     expect(sheetQueue([row('Original')], ['TEXT_VENTE'], legacy, cols)).toEqual([])
   })
 })
+
+describe('⚠⚠ rattrapage : la colonne « (source) » vaut preuve de traitement', () => {
+  // Sans lui, une mémoire écrite AVANT que le texte produit ne soit retenu ferait repayer
+  // tout le catalogue une dernière fois — 206 353 champs, des milliers de jetons — alors
+  // que la feuille porte déjà, à côté, l'original que cette mémoire connaît.
+  const cols = { ref: 'REF' }
+
+  it('reconnaît un champ traduit dont l’original est resté dans la colonne jumelle', () => {
+    const legacy = rememberRows({}, [{
+      row: { REF: 'A1', TEXT_VENTE: 'Left blade, right rotation' },
+      key: 'A1', reason: 'new', fields: ['TEXT_VENTE'],
+    }], cols)
+    const rewritten = {
+      REF: 'A1',
+      TEXT_VENTE: 'Lame gauche, rotation à droite',
+      'TEXT_VENTE (source)': 'Left blade, right rotation',
+    }
+    expect(sheetQueue([rewritten], ['TEXT_VENTE'], legacy, cols)).toEqual([])
+  })
+
+  it('reprend quand la colonne jumelle porte un AUTRE original', () => {
+    const legacy = rememberRows({}, [{
+      row: { REF: 'A1', TEXT_VENTE: 'Ancien texte' }, key: 'A1', reason: 'new', fields: ['TEXT_VENTE'],
+    }], cols)
+    const changedAtSource = {
+      REF: 'A1', TEXT_VENTE: 'Traduction', 'TEXT_VENTE (source)': 'Texte tout neuf du fournisseur',
+    }
+    expect(sheetQueue([changedAtSource], ['TEXT_VENTE'], legacy, cols)).toHaveLength(1)
+  })
+})
