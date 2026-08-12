@@ -197,7 +197,6 @@ export const fr = {
   'dashboard.sidebar.closeAria': 'Fermer le menu principal',
   'dashboard.settings': 'Paramètres',
   'dashboard.signOut': 'Se déconnecter',
-  'dashboard.officialApp': "Ouvrir l'app officielle — vérifier que vous êtes sur la bonne version",
   'dashboard.createDocument': 'Créer un document',
   'dashboard.import': 'Importer',
 

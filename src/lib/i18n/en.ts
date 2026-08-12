@@ -193,7 +193,6 @@ export const en: Record<TranslationKey, string> = {
   'dashboard.sidebar.closeAria': 'Close the main menu',
   'dashboard.settings': 'Settings',
   'dashboard.signOut': 'Sign out',
-  'dashboard.officialApp': "Open the official app — check you're on the right version",
   'dashboard.createDocument': 'Create a document',
   'dashboard.import': 'Import',
   // — Dashboard : bibliothèque ———————————————————————————————————————

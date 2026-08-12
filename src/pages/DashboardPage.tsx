@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Plus, LogOut, Loader2, Library, Settings, LayoutGrid, List, Trash2, X, ExternalLink } from 'lucide-react'
+import { Plus, LogOut, Loader2, Library, Settings, LayoutGrid, List, Trash2, X } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth.store'
 import { useSignOut } from '@/features/auth/useAuth'
 import { useIsPending, useIsBlocked, useAccessLoading, useCan } from '@/features/access/useAccess'
@@ -908,16 +908,6 @@ export default function DashboardPage() {
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <h1 className="text-xl font-bold">{t('dashboard.settings')}</h1>
                     <span className="text-[11px] font-mono text-white/30">v0.1.0</span>
-                    <a
-                      href="https://app.hyperframe.ai/dashboard"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={t('dashboard.officialApp')}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors self-center"
-                    >
-                      app.hyperframe.ai
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
                   </div>
                 }
                 aside={<LiveLlmUsagePanel />}
