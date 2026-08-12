@@ -304,10 +304,10 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               disponible reste inutilisée. Le nombre de colonnes suit l'écran ; la liste se
               lit en VERTICAL dans chacune, l'ordre alphabétique se parcourant de haut en
               bas puis colonne suivante. */}
-          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-5 gap-y-0.5">
-            {[0, 1, 2, 3, 4].map((part_i) => {
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-0.5">
+            {[0, 1, 2, 3].map((part_i) => {
               const list = shown.slice(0, scope === 'all' ? 25 : 15)
-              const cut = Math.ceil(list.length / 5)
+              const cut = Math.ceil(list.length / 4)
               const part = list.slice(part_i * cut, (part_i + 1) * cut)
               if (part.length === 0) return null
               return (
