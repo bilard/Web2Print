@@ -97,7 +97,17 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const reportAgeMs = now - ck.runAt
   const stalled = hasReport && cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
   // Site en cours de moisson (heartbeat) + s'il ne produit rien (anti-bot / bloqué), le dire.
-  const shown = ck.competitors.filter((c) => c.indexed > 0)
+  // ⚠ Tri REFAIT ici, au plus près de l'affichage. Il l'est déjà dans `buildOpsCockpit`,
+  // mais le rail se composait quand même en ordre purement alphabétique, actifs mêlés aux
+  // autres : entre la construction du cockpit et son rendu, la liste passe par un filtre de
+  // périmètre et deux découpages, et il suffit qu'un maillon rende un tableau d'un autre
+  // ordre pour que la promesse tombe. Un tri de plus coûte quelques microsecondes sur
+  // vingt-cinq lignes ; une liste dans le désordre coûte une relecture entière.
+  const shown = ck.competitors
+    .filter((c) => c.indexed > 0)
+    .slice()
+    .sort((a, b) => Number(b.enabled) - Number(a.enabled)
+      || a.domain.replace(/^www\./, '').localeCompare(b.domain.replace(/^www\./, ''), 'fr'))
   const curSite = collecting && ck.lastCollectDomain ? ck.competitors.find((c) => c.domain === ck.lastCollectDomain) : null
   const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? t('pw.ops.blocked') : ''}` : null
 
