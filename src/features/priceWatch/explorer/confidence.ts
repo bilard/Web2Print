@@ -34,6 +34,9 @@ export type DoubtReason =
 
 /** Motif de RENFORT — ne peut que faire monter le score, jamais changer de bande. */
 export type SupportReason = 'title-echo' | 'ean-echo' | 'ref-echo' | 'visual-echo'
+  /** Une SECONDE de nos références se retrouve chez ce concurrent. Le seul renfort qui
+   *  agisse sur la BANDE et non sur le seul score — voir `SECOND_KEY_PROOF`. */
+  | 'second-key'
 
 export interface Confidence {
   score: number
@@ -143,6 +146,15 @@ export interface PairSignals {
   deltaPct?: number | null
   /** Nombre de produits F1 dont l'appariement a été prouvé sur CETTE fiche. */
   contenders?: number
+  /**
+   * Les AUTRES clés du produit source — celles qui n'ont pas prouvé.
+   *
+   * Sert à repérer une SECONDE concordance. Deux références distinctes qui se retrouvent
+   * toutes deux chez le même concurrent ne s'y trouvent pas par hasard : c'est une preuve
+   * indépendante de la première, et de loin le signal le plus fort qu'un appariement
+   * indirect puisse produire.
+   */
+  otherKeys?: string[]
 }
 
 /** Preuves lues dans un texte libre ou une adresse, par opposition à un champ d'identité
@@ -182,6 +194,35 @@ function distinctiveInTitle(value?: string): boolean {
  *  contredit rien : la plupart des marchands ne publient aucun code-barres. */
 function conflict(a: string, b: string): boolean {
   return !!a && !!b && a !== b
+}
+
+/**
+ * Ce que vaut une SECONDE référence concordante, ajouté au `core` — donc capable de
+ * changer la BANDE, contrairement à tous les autres renforts.
+ *
+ * Ce n'est pas une entorse à la règle « les renforts rassurent, ils ne prouvent pas » :
+ * une deuxième référence n'est pas un renfort, c'est une preuve indépendante. Qu'un
+ * nombre se retrouve par hasard dans un libellé arrive tous les jours ; que DEUX de nos
+ * références distinctes s'y retrouvent ensemble, non.
+ *
+ * Cas VÉCU, mesuré : « PIGNON ETOILE 6 DENTS » (« Remplace origine: 460663, 538243909 »)
+ * apparié à « Pignon de tronçonneuse 460663 - 538243909 HUSQVARNA » — les deux
+ * références y sont, les deux libellés disent « pignon » — était classé DOUTEUX 20. La
+ * clé numérique courte et la référence d'origine cumulaient leurs pénalités sur une base
+ * déjà rabaissée, et rien ne venait compenser. Un appariement de cette qualité ne doit
+ * pas dormir dans la file rouge : elle est faite pour ce qu'il faut vérifier.
+ */
+const SECOND_KEY_PROOF = 30
+
+/** Une autre de nos clés figure-t-elle comme MOT ENTIER dans le libellé ou l'adresse du
+ *  concurrent ? Mot entier, jamais inclusion : « 4606 » ⊂ « 460663 » ne prouve rien. Et
+ *  seulement des clés assez longues pour ne pas coïncider par accident. */
+function secondKeyEcho(s: PairSignals): boolean {
+  const others = (s.otherKeys ?? []).filter((k) => k && k !== s.keyValue && k.length >= 5)
+  if (others.length === 0) return false
+  const haystack = `${s.listingName ?? ''} ${s.listingRef ?? ''}`.toUpperCase()
+  const tokens = new Set(haystack.split(/[^A-Z0-9]+/).filter(Boolean))
+  return others.some((k) => tokens.has(k.toUpperCase()))
 }
 
 export function scorePair(s: PairSignals): Confidence {
@@ -234,6 +275,15 @@ export function scorePair(s: PairSignals): Confidence {
       ? BASE['ref-in-name']
       : BASE[s.evidence]
   for (const d of doubts) core -= PENALTY[d]
+
+  // ⚠ Ajouté au CORE, pas au bonus : c'est ce qui lui donne le pouvoir de remonter la
+  // bande. Volontairement appliqué APRÈS les pénalités — il ne les efface pas, il les
+  // contrebalance : une réf d'origine reste une correspondance indirecte, et le dire
+  // encore avec un second témoin serait nier ce que le badge « ORIGINE » annonce.
+  if (secondKeyEcho(s)) {
+    supports.push('second-key')
+    core += SECOND_KEY_PROOF
+  }
 
   let bonus = 0
   if (supports.includes('ean-echo')) bonus += 8

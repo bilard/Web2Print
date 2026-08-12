@@ -5946,6 +5946,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.doubt.visualConflict': 'Las fotos muestran objetos de naturalezas distintas',
   'pwx.support.eanEcho': 'Mismo código de barras en ambos lados',
   'pwx.support.refEcho': 'Misma referencia en ambos lados',
+  'pwx.support.secondKey': 'Una SEGUNDA de sus referencias también aparece en este competidor',
   'pwx.support.titleEcho': 'Palabras comunes en ambos títulos',
   'pwx.support.visualEcho': 'Las fotos muestran la misma pieza',
   'pwx.taxo.noColumns': 'Ninguna columna de taxonomía en «{db}». Se esperaba: Familia, WEBGROUP_DESC (subfamilia) o PRODUCTGROUP.',

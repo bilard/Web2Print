@@ -73,6 +73,7 @@ const SUPPORT_LABEL: Record<SupportReason, TranslationKey> = {
   'ean-echo': 'pwx.support.eanEcho',
   'ref-echo': 'pwx.support.refEcho',
   'title-echo': 'pwx.support.titleEcho',
+  'second-key': 'pwx.support.secondKey',
   'visual-echo': 'pwx.support.visualEcho',
 }
 

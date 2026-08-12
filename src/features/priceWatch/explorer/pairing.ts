@@ -8,6 +8,7 @@
 // appariement que le dashboard. Reconstruire une correspondance « listing → produit »
 // avec d'autres règles produirait des écarts contredisant le tableau de bord.
 import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type PriceComparison } from '../catalog/match'
+import { candidateKeys } from '../catalog/keys'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from '../catalog/pairingRules'
 import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/competitorListing'
@@ -129,6 +130,9 @@ export function pairSiteListings(
             sourceRef: p.ref, listingRef: listing.ref,
             sourceName: p.name, listingName: listing.name,
             deltaPct: cmp.deltaPct, contenders: hit.contenders,
+            // Les autres clés du produit : c'est en retrouvant l'une d'elles chez ce
+            // concurrent qu'un appariement indirect cesse d'être une coïncidence.
+            otherKeys: candidateKeys(p, rules).map((k) => k.value),
           })
         : null,
       source: p

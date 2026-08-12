@@ -273,3 +273,37 @@ describe('withVisual — le seul démenti qui porte sur les OBJETS', () => {
     expect(withVisual(gtin, 'different').band).toBe('check')
   })
 })
+
+describe('⚠ une SECONDE référence concordante n’est pas un renfort, c’est une preuve', () => {
+  // Cas remonté du rapport de production : « PIGNON ETOILE 6 DENTS » (« Remplace origine:
+  // 460663, 538243909 ») apparié à « Pignon de tronçonneuse 460663 - 538243909
+  // HUSQVARNA » — les DEUX références y figurent, les deux libellés disent « pignon » — et
+  // l'appariement dormait en DOUTEUX 20, faute de rien pour compenser le cumul « clé
+  // numérique courte » + « référence d'origine ». La file rouge est faite pour ce qu'il
+  // faut vérifier, pas pour ce qui est déjà corroboré deux fois.
+  const pignon = {
+    evidence: 'ref-in-url' as const,
+    key: { weak: false, origin: true },
+    keyValue: '460663',
+    sourceName: 'PIGNON ETOILE 6 DENTS',
+    listingName: 'Pignon de tronçonneuse 460663 - 538243909 HUSQVARNA - ALKO - MC CULLOCH',
+    deltaPct: -47.8,
+  }
+
+  it('remonte la bande — le seul renfort qui en ait le pouvoir', () => {
+    expect(scorePair(pignon).band).toBe('doubt')
+    const corroboré = scorePair({ ...pignon, otherKeys: ['460663', '538243909'] })
+    expect(corroboré.band).toBe('check')
+    expect(corroboré.supports).toContain('second-key')
+  })
+
+  it('exige le MOT ENTIER : une clé absente du libellé ne renforce rien', () => {
+    const c = scorePair({ ...pignon, otherKeys: ['460663', '999999999'] })
+    expect(c.supports).not.toContain('second-key')
+    expect(c.band).toBe('doubt')
+  })
+
+  it('ignore la clé qui a déjà prouvé — sinon toute paire se corroborerait elle-même', () => {
+    expect(scorePair({ ...pignon, otherKeys: ['460663'] }).supports).not.toContain('second-key')
+  })
+})

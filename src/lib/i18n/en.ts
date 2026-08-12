@@ -5947,6 +5947,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.doubt.visualConflict': 'The photos show objects of different kinds',
   'pwx.support.eanEcho': 'Same barcode on both sides',
   'pwx.support.refEcho': 'Same reference on both sides',
+  'pwx.support.secondKey': 'A SECOND one of your references also appears at this competitor',
   'pwx.support.titleEcho': 'Words shared by both labels',
   'pwx.support.visualEcho': 'The photos show the same part',
   'pwx.taxo.noColumns': 'No taxonomy column in “{db}”. Expected: Family, WEBGROUP_DESC (sub-family) or PRODUCTGROUP.',

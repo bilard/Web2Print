@@ -6138,6 +6138,7 @@ export const fr = {
   'pwx.doubt.visualConflict': 'Les photos montrent deux objets de natures différentes',
   'pwx.support.eanEcho': 'Même code-barres des deux côtés',
   'pwx.support.refEcho': 'Même référence des deux côtés',
+  'pwx.support.secondKey': 'Une SECONDE de vos références figure aussi chez ce concurrent',
   'pwx.support.titleEcho': 'Mots communs dans les deux libellés',
   'pwx.support.visualEcho': 'Les photos montrent la même pièce',
   'pwx.taxo.noColumns': 'Aucune colonne de taxonomie dans « {db} ». Attendu : Famille, WEBGROUP_DESC (sous-famille) ou PRODUCTGROUP.',
