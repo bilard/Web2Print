@@ -289,17 +289,20 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
               avec quel site. Les colonnes sont désormais partagées, avec un en-tête qui les
               nomme — c'est ce qui fait la différence entre une liste et un tableau.
 
-              Deux tableaux côte à côte sur grand écran : vingt-deux lignes d'un seul tenant
-              feraient huit cents pixels de haut avant le premier graphique. */}
-          <div className="mt-2 grid grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-0.5">
-            {[0, 1].map((half) => {
+              Jusqu'à QUATRE tableaux côte à côte : vingt-deux lignes d'un seul tenant
+              feraient huit cents pixels avant le premier graphique, et la largeur
+              disponible reste inutilisée. Le nombre de colonnes suit l'écran ; la liste se
+              lit en VERTICAL dans chacune, l'ordre alphabétique se parcourant de haut en
+              bas puis colonne suivante. */}
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-0.5">
+            {[0, 1, 2, 3].map((part_i) => {
               const list = shown.slice(0, scope === 'all' ? 24 : 12)
-              const cut = Math.ceil(list.length / 2)
-              const part = half === 0 ? list.slice(0, cut) : list.slice(cut)
+              const cut = Math.ceil(list.length / 4)
+              const part = list.slice(part_i * cut, (part_i + 1) * cut)
               if (part.length === 0) return null
               return (
-                <div key={half} className="min-w-0">
-                  <div className="grid grid-cols-[minmax(0,1fr)_4rem_3.5rem_2.25rem_2.75rem] gap-2 items-center
+                <div key={part_i} className="min-w-0">
+                  <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_3.25rem_2.25rem_2.5rem] gap-2 items-center
                     text-[9px] uppercase tracking-wide text-white/25 border-b border-white/[0.06] pb-1">
                     <span>{t('pw.ops.col.site')}</span>
                     <span className="text-center">{t('pw.ops.col.sweep')}</span>
@@ -323,7 +326,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                       </div>
                     )}
                     <div
-                      className="grid grid-cols-[minmax(0,1fr)_4rem_3.5rem_2.25rem_2.75rem] gap-2 items-center
+                      className="grid grid-cols-[minmax(0,1fr)_2.5rem_3.25rem_2.25rem_2.5rem] gap-2 items-center
                         text-xs py-[3px] border-b border-white/[0.03] hover:bg-white/[0.03]">
                       <span className={`truncate ${c.enabled ? 'text-white/75' : 'text-white/35 italic'}`}
                         title={c.enabled ? c.domain : t('pw.ops.scope.off', { domain: c.domain })}>
