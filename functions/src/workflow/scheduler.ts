@@ -158,7 +158,25 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
   // Distingue l'abort par TIMEOUT (reprenable) du STOP volontaire (on n'enchaîne pas).
   let abortReason: 'timeout' | 'stop' | null = null
   const ac = new AbortController()
-  const timer = setTimeout(() => { if (!abortReason) abortReason = 'timeout'; ac.abort() }, RUN_TIMEOUT_MS)
+  // ⚠⚠ NOMMER LES CARTES QUI N'ONT PAS RENDU LA MAIN. Un run coupé au verrou ne disait
+  // rien : les cartes restaient « en cours », l'aval « en attente », et il fallait une nuit
+  // d'observation pour deviner laquelle tenait la fenêtre. Cinq cycles ont été perdus ainsi
+  // le 2026-08-12, avec un tableau de bord figé et aucune trace exploitable.
+  //
+  // La liste est écrite au moment de la coupure, dans le journal du run : c'est le seul
+  // instant où l'information existe encore.
+  const timer = setTimeout(() => {
+    if (!abortReason) abortReason = 'timeout'
+    const snap = liveProbe?.()
+    const stuck = snap ? Object.entries(snap.states).filter(([, st]) => st === 'running').map(([id]) => id) : []
+    const names = stuck.map((id) => wf.nodes.find((n) => n.id === id)?.type ?? id)
+    console.warn(`[scheduler] run ${wf.id} coupé au verrou après ${Math.round(RUN_TIMEOUT_MS / 60_000)} min`
+      + (names.length ? ` — carte(s) encore en cours : ${names.join(', ')}` : ' — aucune carte en cours'))
+    void appendRunLiveError(uid, wf.id, names.length
+      ? `Run interrompu au bout de ${Math.round(RUN_TIMEOUT_MS / 60_000)} min : ${names.join(', ')} n'a pas rendu la main dans sa fenêtre. Les cartes en aval n'ont pas été exécutées.`
+      : `Run interrompu au bout de ${Math.round(RUN_TIMEOUT_MS / 60_000)} min.`)
+    ac.abort()
+  }, RUN_TIMEOUT_MS)
   // Bouton STOP : le client pose users/{uid}/workflowAbort/{wf.id} ; on purge un flag
   // périmé au départ, puis on le poll pour déclencher l'abort en cours de run.
   const abortRef = getFirestore().doc(`users/${uid}/workflowAbort/${wf.id}`)
