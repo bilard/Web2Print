@@ -463,6 +463,31 @@ export function comparePrices(
  * référence interne au distributeur, absente de tout catalogue concurrent. Les
  * références d'origine qu'ils remplacent sont, elles, universelles — c'est la seule
  * clé de jointure disponible pour cette part du catalogue.
+ *
+ * ⚠⚠ NE LIT QUE LES FORMULATIONS DE REMPLACEMENT, JAMAIS CELLES DE COMPATIBILITÉ.
+ * « Remplace », « Origine », « Réf. constructeur », « OEM », « Équivalent »,
+ * « Correspondance » annoncent la référence de la PIÈCE remplacée. « Compatible avec »
+ * et « Compatibilité » annoncent tout autre chose : la liste des MACHINES sur lesquelles
+ * la pièce se monte. Les deux étaient lus indifféremment, et c'est ce qui fabriquait des
+ * appariements faux à la chaîne — cas VÉCU, mesuré :
+ *
+ *   « VERROU TOURNANT » réf. 4100580, description « … compatible avec les modèles STIHL
+ *   MS210, MS210C-B, MS230, MS250, MS290 … Remplace origine 1123 141 2301 » émettait
+ *   onze clés « MS210CB », « MS230 », « MS250 »… Chez autoportee-discount, le slug
+ *   `/32604-pignon-pour-tronconneuse-stihl-017-…-ms210-ms211-ms230.html` porte ces mêmes
+ *   désignations : `proveMatch` prouvait « MS230 == MS230 » (`ref-in-url`), et un verrou
+ *   de filtre à air se retrouvait apparié à un PIGNON de chaîne.
+ *
+ * Ce cas réfute l'argument qui avait autorisé l'élargissement (« le risque de faux positif
+ * reste nul, la clé doit ensuite être PROUVÉE chez le concurrent ») : une preuve d'ÉGALITÉ
+ * n'est pas une preuve d'IDENTITÉ quand la clé, elle, n'identifie pas un article. Un
+ * modèle de machine est partagé par toutes les pièces qui s'y montent — il apparie donc
+ * n'importe laquelle avec n'importe quelle autre.
+ *
+ * Prix à payer, assumé : une description qui écrit « Compatible avec : 181004383/0 » — la
+ * référence de la pièce sous un mot de compatibilité — n'émet plus de clé. Un trou vaut
+ * mieux qu'un faux prix, et le catalogue écrit ses vraies références d'origine sous
+ * « Remplace origine ».
  */
 export function extractOriginRefs(description: string | null | undefined): string[] {
   const text = String(description ?? '')
@@ -470,19 +495,21 @@ export function extractOriginRefs(description: string | null | undefined): strin
   const out: string[] = []
   const seen = new Set<string>()
 
-  // Formulations reconnues, toutes suivies de « : » puis d'une liste :
-  //   « Remplace origine », « Origine », « Remplace », « Réf. origine », « Référence
-  //   d'origine », « Réf constructeur », « OEM », « Équivalent », « Compatible »,
-  //   « Remplace les références », « Correspondance ».
+  // Formulations reconnues — TOUTES annoncent la référence de la pièce REMPLACÉE :
+  //   « Remplace origine », « Origine », « Remplace », « Remplace les références »,
+  //   « Réf. origine », « Référence d'origine », « Réf constructeur », « OEM »,
+  //   « Équivalent », « Correspondance ».
   // Élargi après relevé en production : le catalogue n'appariait AUCUN produit par
   // référence d'origine (« 0 orig. » sur 16 483 appariés) alors que ces références sont
-  // les seules qu'un concurrent puisse porter sur des pièces adaptables. Le risque de
-  // faux positif reste nul : une clé candidate doit ensuite être PROUVÉE chez le
-  // concurrent par `proveMatch` — elle élargit la recherche, jamais l'acceptation.
+  // les seules qu'un concurrent puisse porter sur des pièces adaptables.
+  //
+  // ⚠⚠ « Compatible avec » et « Compatibilité » ont été RETIRÉS de cette liste (elles y
+  // figuraient depuis le même élargissement) : ce sont des annonces de MACHINES, pas de
+  // références — cf. l'en-tête de cette fonction pour le cas mesuré.
   //
   // La liste se termine à une fin de PHRASE (point suivi d'un blanc ou de la fin) et
   // non au premier point : les références en contiennent (« 000.02.501 »).
-  const LEAD = String.raw`(?:remplace\s+(?:les\s+)?(?:r[ée]f[ée]rences?|origines?)?|r[ée]f[\.]?\s*(?:d['’]?)?origine|r[ée]f[ée]rence\s+(?:d['’]?)?origine|r[ée]f[\.]?\s*constructeur|origine|oem|[ée]quivalen(?:t|ce)s?|compatible\s+avec|compatibilit[ée]|correspondances?)`
+  const LEAD = String.raw`(?:remplace\s+(?:les\s+)?(?:r[ée]f[ée]rences?|origines?)?|r[ée]f[\.]?\s*(?:d['’]?)?origine|r[ée]f[ée]rence\s+(?:d['’]?)?origine|r[ée]f[\.]?\s*constructeur|origine|oem|[ée]quivalen(?:t|ce)s?|correspondances?)`
   // ⚠⚠ Le deux-points est OPTIONNEL. Il était exigé, et c'est ce qui laissait 105 000
   // lignes sur 115 814 sans la moindre référence d'origine : « Remplace origine 516747 »,
   // « Équivalent 532134149 », « Réf. origine – 117720 » s'écrivent tous les jours sans
@@ -490,8 +517,12 @@ export function extractOriginRefs(description: string | null | undefined): strin
   // puisse porter sur une pièce adaptable — elles produisent déjà 592 des 974 appariements
   // du catalogue, à partir des 9 % de lignes qui, elles, portaient un deux-points.
   //
-  // Le risque de faux positif reste nul : une clé candidate doit ensuite être PROUVÉE chez
-  // le concurrent par `proveMatch`. Élargir ici élargit la RECHERCHE, jamais l'acceptation.
+  // ⚠ Ce qui rend cet assouplissement-là sans danger, c'est le MOT qui précède, pas la
+  // preuve qui suit. « Élargir ici élargit la recherche, jamais l'acceptation » a été
+  // écrit — et démenti par le terrain : `proveMatch` valide une ÉGALITÉ, il ne vérifie
+  // pas que la clé désigne un article. Rendre le deux-points optionnel ne change pas
+  // QUELLES références sont lues, seulement leur ponctuation : c'est pour cela que
+  // celui-ci est sûr, et que l'ajout des mots de compatibilité ne l'était pas.
   for (const m of text.matchAll(new RegExp(String.raw`${LEAD}\s*(?::|[-–—])?\s*([\s\S]{2,300}?)(?=\.(?:\s|$)|;|$)`, 'gi'))) {
     for (const token of m[1].split(/[,;]| et /i)) {
       const raw = token.trim().replace(/\s*\)$/, '')

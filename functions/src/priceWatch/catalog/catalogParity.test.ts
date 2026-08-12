@@ -213,9 +213,10 @@ describe('displayColumns (parité serveur)', () => {
 describe('extractOriginRefs (parité serveur)', () => {
   it('reconnaît les mêmes formulations élargies que le client', () => {
     expect(extractOriginRefs('Réf. origine : 1134-3496-04')).toEqual(['1134-3496-04'])
-    expect(extractOriginRefs('Compatible avec : 181004383/0 et 118801752/0'))
-      .toEqual(['181004383/0', '118801752/0'])
     expect(extractOriginRefs('Courroie renforcée, largeur 12 mm.')).toEqual([])
+    // Compatibilité = MACHINES, pas références : ignorée des deux côtés, sinon le cron
+    // continuerait de fabriquer les clés « MS230 » que le navigateur n'émet plus.
+    expect(extractOriginRefs('Compatible avec les modèles STIHL MS210, MS230, MS250.')).toEqual([])
   })
 })
 

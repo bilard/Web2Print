@@ -384,7 +384,6 @@ describe('extractOriginRefs — formulations élargies', () => {
     ['Réf constructeur : 21130-2056', ['21130-2056']],
     ['OEM : 000.02.501', ['000.02.501']],
     ['Équivalent : 5032227330047', ['5032227330047']],
-    ['Compatible avec : 181004383/0 et 118801752/0', ['181004383/0', '118801752/0']],
     ['Remplace les références : 6151-704-2110', ['6151-704-2110']],
     ['Correspondance : WD40-33004', ['WD40-33004']],
   ]
@@ -395,6 +394,46 @@ describe('extractOriginRefs — formulations élargies', () => {
   it('n’invente rien sur une description ordinaire', () => {
     expect(extractOriginRefs('Courroie renforcée pour tondeuse autoportée, largeur 12 mm.')).toEqual([])
     expect(extractOriginRefs('Livraison : 48 heures.')).toEqual([])
+  })
+})
+
+describe('⚠⚠ une liste de MACHINES compatibles n’est pas une liste de références', () => {
+  // Cas remonté du rapport de production : « VERROU TOURNANT » réf. 4100580 apparié au
+  // « Pignon pour tronçonneuse Stihl … MS230 » d'autoportee-discount. « compatible avec »
+  // et « compatibilité » figuraient dans les formulations lues, si bien que les modèles de
+  // machine devenaient des clés de jointure — et un modèle est partagé par TOUTES les
+  // pièces qui s'y montent : il apparie donc n'importe laquelle avec n'importe quelle autre.
+  const VERROU = 'Verrou tournant pour boîtier de filtre à air compatible avec les modèles '
+    + 'STIHL MS210, MS210C-B, MS210C-BE, MS230, MS230-C, MS230C-BE, MS250, MS250C-B, '
+    + 'MS250C-BE, MS290, MS290-Z, MS310 & MS390. Remplace origine 1123 141 2301, 11231412301.'
+
+  it('ne retient que la référence annoncée par « Remplace origine »', () => {
+    expect(extractOriginRefs(VERROU)).toEqual(['11231412301'])
+  })
+
+  it('ignore les formulations de compatibilité, avec ou sans deux-points', () => {
+    expect(extractOriginRefs('Compatible avec les modèles STIHL MS210, MS230.')).toEqual([])
+    expect(extractOriginRefs('Compatibilité : MS170, MS180, MS181.')).toEqual([])
+    // Le prix à payer, assumé et documenté : une VRAIE référence annoncée par un mot de
+    // compatibilité n'émet plus de clé. Le catalogue écrit les siennes sous « Remplace ».
+    expect(extractOriginRefs('Compatible avec : 181004383/0 et 118801752/0')).toEqual([])
+  })
+
+  it('n’apparie plus le verrou au pignon de tronçonneuse', () => {
+    const pignon = listing({
+      url: 'https://www.autoportee-discount.fr/pignons-de-tronconneuse/32604-pignon-pour-'
+        + 'tronconneuse-stihl-017-018-019-021-023-025-ms170-ms180-ms190-ms191-ms192-ms210-'
+        + 'ms211-ms230.html',
+      name: 'Pignon pour tronçonneuse Stihl 017 - 018 - 019 - 021 - 023 - 025 - MS170 - MS180 '
+        + '- MS190 - MS191 - MS192 - MS210 - MS211 - MS230',
+      price: 7.92,
+    })
+    const product = {
+      id: '4100580', name: 'VERROU TOURNANT', price: 2.08,
+      ref: '4100580', ean: '3582322277775', originRefs: extractOriginRefs(VERROU),
+    }
+    const res = matchProduct(product, 'autoportee', buildMemoryIndex([pignon]))
+    expect(res.outcome).toBe('not-found')
   })
 })
 
