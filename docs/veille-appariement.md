@@ -65,6 +65,12 @@ dans cet ordre exact :
 
 Conséquences à connaître :
 
+- ⚠ les références d'origine ne sont lues que sous une formulation de **remplacement**
+  (« Remplace », « Origine », « Réf. constructeur », « OEM », « Équivalent »,
+  « Correspondance »). Les mots de **compatibilité** (« Compatible avec »,
+  « Compatibilité ») en sont exclus depuis le 2026-08-12 : ils annoncent les **machines**
+  sur lesquelles la pièce se monte, et un modèle de machine apparie entre elles toutes les
+  pièces qui s'y montent (cas mesuré : « VERROU TOURNANT » ↔ « Pignon … MS230 ») ;
 - une clé est dite **faible** (`weak`) si elle fait moins de **5** caractères
   (`WEAK_REF_LEN`, `keys.ts:23`) — elle ne pourra prouver que sur un champ déclaré ;
 - une référence de moins de **3** caractères est ignorée (`MIN_REF_LEN`, `keys.ts:18`) ;
