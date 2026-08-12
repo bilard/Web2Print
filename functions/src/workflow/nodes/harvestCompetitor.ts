@@ -94,7 +94,16 @@ registerServerNode({
     // Budget réparti équitablement entre les sites (au moins 1 page chacun).
     // Budget : un site peut RÉSERVER ses pages (concurrent coûteux à brider) ; le reste
     // est partagé équitablement entre les autres.
-    const budgets = splitPageBudget(sites, pageBudget)
+    // ⚠ Budget PONDÉRÉ par la saturation : les metas sont chargées juste après, mais la
+    // répartition en a besoin maintenant — on les précharge donc ici.
+    const satBySite = new Map<string, number>()
+    for (const site of sites) {
+      const m = await loadCompetitorMeta(ctx.uid, watchId, stableId(site.domain))
+      if (m?.saturatedSweeps) satBySite.set(site.id, m.saturatedSweeps)
+    }
+    const budgets = splitPageBudget(
+      sites.map((s) => ({ ...s, saturatedSweeps: satBySite.get(s.id) })), pageBudget,
+    )
 
     // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
     await touchWatch(ctx.uid, watchId, ctx.workflowName)
@@ -226,6 +235,17 @@ registerServerNode({
       // « bloqué » dès qu'une passe finissait sans produit (fenêtre de run atteinte). Un
       // avertissement qui crie au loup sur un site sain fait ignorer les vrais.
       const { asked, got } = fetcher.stats()
+      // ⚠⚠ SATURATION : un balayage complet qui ne rapporte aucune fiche nouvelle signale
+      // un catalogue épuisé. On le compte pour rendre son budget aux autres au prochain
+      // run (cf. `splitPageBudget`) — jamais pour l'arrêter : les prix, eux, bougent encore.
+      if (res.sweepComplete) {
+        const before = prevMeta?.lastSweepIndexed
+        const stale = before != null && pagesTotal > 0 && (prevMeta?.productCount ?? 0) <= before
+        await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, {
+          lastSweepIndexed: prevMeta?.productCount ?? 0,
+          saturatedSweeps: stale ? (prevMeta?.saturatedSweeps ?? 0) + 1 : 0,
+        })
+      }
       const blocker = fetcher.blockedBy()
       if (blocker && got === 0 && asked > 0) {
         ctx.log('warn', t(ctx.locale, 'run.harvest.antiBotBlocked', { domain: site.domain, protection: blocker }))

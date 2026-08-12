@@ -53,6 +53,16 @@ export interface CompetitorMeta {
   lastPassPages?: number
   lastPassProducts?: number
   lastPassAt?: number
+  /**
+   * Balayages COMPLETS terminés sans une seule fiche nouvelle.
+   *
+   * ⚠ Sert à rendre son budget de pages à un catalogue épuisé : granit-parts.fr moissonnait
+   * 1 603 fiches par run pour zéro référence de plus, en consommant la même part que les
+   * sites qui découvraient encore. Remis à zéro dès qu'un balayage rapporte.
+   */
+  saturatedSweeps?: number
+  /** Compte de fiches à la fin du balayage précédent — base de la comparaison. */
+  lastSweepIndexed?: number
 }
 
 /** Crée/rafraîchit le doc RACINE du suivi. À appeler dès la MOISSON : sans lui, le doc

@@ -228,3 +228,34 @@ describe('marketplace : 0 page moissonnée n’est pas une panne', () => {
     expect(siteStatus({ ...base, enabled: false, productCount: 2 })).toBe('disabled')
   })
 })
+
+describe('⚠⚠ budget pondéré : un catalogue épuisé rend sa part', () => {
+  it('donne un quart de part au site saturé, le reste aux autres', () => {
+    // Mesuré une nuit entière : granit-parts.fr moissonnait 1 603 fiches par run pour ZÉRO
+    // référence nouvelle, en consommant la même part que swap-europe qui progressait encore.
+    const b = splitPageBudget([
+      { id: 'granit', saturatedSweeps: 3 },
+      { id: 'swap' },
+      { id: 'progarden' },
+    ], 180)
+    expect(b.get('granit')!).toBeLessThan(b.get('swap')!)
+    // Un quart de part sur un poids total de 2,25 → environ 20 pages contre 80.
+    expect(b.get('swap')).toBe(b.get('progarden'))
+    expect(b.get('granit')! * 4).toBeLessThanOrEqual(b.get('swap')! + 4)
+  })
+
+  it('un seul balayage à sec ne suffit pas — la fenêtre de run peut tromper', () => {
+    const b = splitPageBudget([{ id: 'a', saturatedSweeps: 1 }, { id: 'b' }], 100)
+    expect(b.get('a')).toBe(b.get('b'))
+  })
+
+  it('ralentit sans jamais arrêter : les prix, eux, bougent encore', () => {
+    const b = splitPageBudget([{ id: 'a', saturatedSweeps: 9 }, { id: 'b' }], 100)
+    expect(b.get('a')!).toBeGreaterThan(0)
+  })
+
+  it('sans saturation, la répartition reste celle d’avant', () => {
+    const b = splitPageBudget([{ id: 'a' }, { id: 'b' }, { id: 'c' }], 90)
+    expect([...b.values()]).toEqual([30, 30, 30])
+  })
+})

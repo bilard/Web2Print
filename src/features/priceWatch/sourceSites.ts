@@ -219,8 +219,26 @@ export function importSitesIntoRows(text: string, existing: SourceSiteRow[]): So
  * budgets explicites ne sont PAS rognés quand ils dépassent le total — c'est un choix
  * assumé de l'utilisateur, on ne le contredit pas en silence.
  */
+/**
+ * Part d'un site SATURÉ : un catalogue dont un balayage entier n'a plus rien apporté.
+ *
+ * ⚠⚠ Mesuré une nuit entière : granit-parts.fr moissonnait 1 603 fiches par run pour ZÉRO
+ * référence nouvelle, et progarden 5 571 pour zéro — chacun consommant 166 pages de budget
+ * toutes les douze minutes pour réécrire ce qui existait déjà, pendant que swap-europe, lui,
+ * progressait encore. Le budget est la ressource rare d'un tick de cron : il doit aller là
+ * où il reste quelque chose à trouver.
+ *
+ * Un quart, pas zéro : les prix, eux, continuent de bouger, et un catalogue saturé en
+ * NOMBRE de fiches doit rester rafraîchi. On ralentit, on n'abandonne pas.
+ */
+const SATURATED_SHARE = 0.25
+
+/** Balayages complets sans gain avant de considérer un site saturé. Deux, pas un : un
+ *  balayage peut finir à sec par hasard (fenêtre de run, panne passagère du site). */
+export const SATURATED_AFTER_SWEEPS = 2
+
 export function splitPageBudget(
-  sites: { id: string; pageBudget?: number }[], totalBudget: number,
+  sites: { id: string; pageBudget?: number; saturatedSweeps?: number }[], totalBudget: number,
 ): Map<string, number> {
   const out = new Map<string, number>()
   const total = Math.max(1, Math.floor(totalBudget))
@@ -233,7 +251,14 @@ export function splitPageBudget(
     reserved += b
   }
   const rest = Math.max(0, total - reserved)
-  const per = shared.length > 0 ? Math.max(1, Math.floor(rest / shared.length)) : 0
-  for (const s of shared) out.set(s.id, per)
+  // Répartition PONDÉRÉE : un site saturé ne prend qu'un quart de part, et ce qu'il laisse
+  // revient aux autres. À parts égales, le site le plus stérile coûtait autant que celui
+  // qui découvrait encore des milliers de fiches.
+  const weightOf = (s: { saturatedSweeps?: number }) =>
+    (s.saturatedSweeps ?? 0) >= SATURATED_AFTER_SWEEPS ? SATURATED_SHARE : 1
+  const totalWeight = shared.reduce((n, s) => n + weightOf(s), 0)
+  for (const s of shared) {
+    out.set(s.id, totalWeight > 0 ? Math.max(1, Math.floor((rest * weightOf(s)) / totalWeight)) : 0)
+  }
   return out
 }
