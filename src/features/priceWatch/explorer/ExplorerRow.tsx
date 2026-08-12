@@ -387,10 +387,19 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
               <span className="text-white/30 ml-1">{t('pwx.proof.inUrl')}</span>
             </div>
           )}
+          {/* ⚠ Un prix ÉCARTÉ s'affiche quand même — en ambre, jamais en blanc, pour qu'on
+              ne le confonde pas avec un prix retenu. L'effacer supprimait la seule donnée
+              qui permet de juger : « −92 % » ne dit pas si c'est le prix qui est faux,
+              l'appariement, ou le seuil ; « 1,50 € face à 20 € » le dit. Il reste exclu de
+              tout calcul — c'est le champ lui-même qui est distinct, pas l'affichage. */}
           <div className="flex items-baseline gap-2 flex-wrap mt-1 tabular-nums">
-            <span className="text-sm text-white/90 font-medium">{eur(cmp.priceHt)}</span>
+            <span className={`text-sm font-medium ${cmp.rejectedHt != null ? 'text-amber-300/80' : 'text-white/90'}`}>
+              {eur(cmp.priceHt ?? cmp.rejectedHt)}
+            </span>
             <span className="text-[10px] text-white/35">HT</span>
-            {cmp.priceTtc != null && <span className="text-[10px] text-white/35">({eur(cmp.priceTtc)} TTC)</span>}
+            {(cmp.priceTtc ?? cmp.rejectedTtc) != null && (
+              <span className="text-[10px] text-white/35">({eur(cmp.priceTtc ?? cmp.rejectedTtc)} TTC)</span>
+            )}
             {gap != null && <span className={`text-xs font-medium ${gapTone(gap)}`}>{pct(gap)}</span>}
           </div>
           {/* PRIX PROFESSIONNELS, quand le site est lu en accès connecté. Trois montants

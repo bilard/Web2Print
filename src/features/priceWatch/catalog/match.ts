@@ -412,6 +412,18 @@ export interface PriceComparison {
   rejected?: 'below-floor' | 'drop-too-deep'
   /** Écart qui a motivé le refus, en % — c'est LUI qui rend le refus discutable. */
   rejectedPct?: number
+  /**
+   * Le prix RELEVÉ, tel quel, quand il a été écarté.
+   *
+   * ⚠ Écarter n'est pas cacher. Ces montants restent hors de TOUT calcul — écart, position,
+   * médianes, KPI —, mais les masquer à l'écran privait du seul élément qui permet de
+   * trancher : un fusible à 1,50 € face à un prix source de 20 € affiche −92 % et paraît
+   * aberrant, alors qu'il peut être parfaitement juste (lot contre pièce, ou tarif
+   * grossiste). Le lecteur doit voir le chiffre pour juger si c'est le prix qui est faux,
+   * l'appariement, ou le seuil.
+   */
+  rejectedHt?: number
+  rejectedTtc?: number
 }
 
 /** Arrondi monétaire au centime. */
@@ -462,7 +474,12 @@ export function comparePrices(
     // Le motif accompagne le refus : « écarté à −64 % » se discute, « non exploitable » non.
     out.rejected = priceHt < rules.minPriceEur ? 'below-floor' : 'drop-too-deep'
     if (out.rejected === 'drop-too-deep') out.rejectedPct = Math.round(provisionalPct * 10) / 10
-    return out // { availability, rejected } — prix relevé mais refusé
+    // Le montant voyage AVEC son refus, jamais à la place d'un prix retenu : les champs
+    // sont distincts de `priceHt`/`priceTtc`, si bien qu'aucun calcul ne peut le prendre
+    // pour argent comptant — il n'est lisible que par qui le demande explicitement.
+    out.rejectedHt = priceHt
+    out.rejectedTtc = round2(isHt ? listing.price * (1 + vat) : listing.price)
+    return out // { availability, rejected, rejected*} — prix relevé, montré, mais hors calcul
   }
 
   out.priceTtc = round2(isHt ? listing.price * (1 + vat) : listing.price)
