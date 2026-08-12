@@ -70,11 +70,25 @@ async function liveRun(uid: string, workflowId: string): Promise<{ trigger: stri
  * ordonnés par échéance). Évite qu'un lot massif fasse expirer toute la Function. */
 const MAX_SCHEDULES_PER_TICK = 25
 
-/** Fenêtre de fin de run RÉSERVÉE aux nodes AVAL (Comparer catalogue, exports) : les
- * nodes à curseur (moisson, recherche dirigée) rendent la main à RUN_TIMEOUT − RESERVE.
- * Sans elle, la moisson consommait tout le budget à chaque run et le comparatif —
- * dernier du graphe — était interrompu systématiquement (dashboard jamais rafraîchi). */
-const DOWNSTREAM_RESERVE_MS = 600_000
+/**
+ * Fenêtre de fin de run RÉSERVÉE aux nodes AVAL (Comparer catalogue, exports) : les nodes
+ * à curseur (moisson, recherche dirigée) rendent la main à RUN_TIMEOUT − RESERVE.
+ * Sans elle, la moisson consommait tout le budget à chaque run et le comparatif — dernier
+ * du graphe — était interrompu systématiquement (dashboard jamais rafraîchi).
+ *
+ * ⚠⚠ PORTÉE DE DIX À QUINZE MINUTES le 2026-08-12, sur mesure et non par prudence. Dix
+ * minutes suffisaient quand l'index pesait 455 000 fiches ; à 504 000 — et il grossit de
+ * vingt mille par heure — « Comparer catalogue » n'y rentre plus. Constaté : QUATRE cycles
+ * consécutifs (21:12, 21:43, 22:45, 23:16) sans produire une seule analyse, pendant que le
+ * tableau de bord restait figé sur celle de 20:36. Aucune carte en erreur, aucun log : le
+ * run est simplement coupé au verrou pendant que le comparatif travaille encore.
+ *
+ * Le prix est réel — la moisson passe de 18 à 13 minutes par tick — et il est assumé : une
+ * analyse produite à chaque cycle vaut mieux qu'un tiers de collecte en plus sur des
+ * catalogues déjà bouclés. Ce réglage se relit quand le volume change ; il n'a pas de
+ * valeur juste dans l'absolu, seulement une valeur juste POUR UN INDEX DONNÉ.
+ */
+const DOWNSTREAM_RESERVE_MS = 900_000
 
 /** Types de nodes RÉ-EXÉCUTABLES sans risque même interrompus en plein vol : lecture/
  *  transformation pure, aucun effet de bord externe. La reprise ne saute QUE les nodes
