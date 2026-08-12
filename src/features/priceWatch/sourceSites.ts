@@ -105,6 +105,16 @@ export interface SiteStatusInput {
   /** Fiches déjà indexées pour ce site. Preuve qu'il A ÉTÉ collecté, même si le verdict
    *  de dernière passe manque (méta écrite par une version antérieure, ou passe purgée). */
   productCount?: number
+  /**
+   * Pages liste réellement indexées, tous balayages confondus.
+   *
+   * ⚠⚠ C'est LA preuve qu'un site est moissonnable. Sans elle, « zéro page à la dernière
+   * passe » suffisait à le déclarer « Recherche seule » — or une passe peut rendre zéro
+   * page pour une raison parfaitement banale : la fenêtre du run s'est épuisée avant que ce
+   * site ne démarre. Relevé sur swap-europe, qui compte plus de mille pages indexées et
+   * s'affichait pourtant comme une marketplace non moissonnable.
+   */
+  pageCount?: number
 }
 
 /** Statut courant d'un site (fonction pure). Un site désactivé est 'disabled' quel que
@@ -128,7 +138,14 @@ export function siteStatus(s: SiteStatusInput): SiteStatus {
   // construction (accueil anti-bot → aucune catégorie cible), elle n'est atteinte que par
   // la RECHERCHE DIRIGÉE. Afficher « ✗ Sans catalogue » en rouge juste à côté de
   // « fiches 2 » se lit comme une panne, alors que c'est le mode de fonctionnement prévu.
-  if ((s.lastPassPages ?? 0) === 0) return (s.productCount ?? 0) > 0 ? 'directed' : 'error'
+  if ((s.lastPassPages ?? 0) === 0) {
+    // Des pages déjà indexées prouvent que le site SE MOISSONNE : cette passe-ci n'a
+    // simplement pas eu le temps de démarrer. « Recherche seule » est réservé aux sites
+    // qu'aucune passe n'a jamais su parcourir — les marketplaces, dont l'accueil est
+    // verrouillé et qui ne sont atteintes que par recherche dirigée.
+    if ((s.pageCount ?? 0) > 0) return 'ok'
+    return (s.productCount ?? 0) > 0 ? 'directed' : 'error'
+  }
   if ((s.lastPassProducts ?? 0) === 0) return 'empty'
   return 'ok'
 }

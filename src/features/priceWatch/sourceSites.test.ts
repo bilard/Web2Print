@@ -259,3 +259,23 @@ describe('⚠⚠ budget pondéré : un catalogue épuisé rend sa part', () => {
     expect([...b.values()]).toEqual([30, 30, 30])
   })
 })
+
+describe('⚠⚠ « Recherche seule » ne doit pas coiffer un site moissonnable', () => {
+  const base = { enabled: true, live: false, lastPassAt: 1_700_000_000_000 }
+
+  it('une passe qui n’a pas démarré ne fait pas d’un site une marketplace', () => {
+    // Relevé sur swap-europe : plus de mille pages indexées, et pourtant « Recherche
+    // seule » — parce que la fenêtre du run s'était épuisée avant qu'il ne démarre.
+    expect(siteStatus({ ...base, lastPassPages: 0, pageCount: 1018, productCount: 2116 })).toBe('ok')
+  })
+
+  it('mais un site qu’AUCUNE passe n’a su parcourir le reste', () => {
+    // Une marketplace : accueil verrouillé, aucune page liste jamais indexée, des fiches
+    // rapportées uniquement par la recherche dirigée.
+    expect(siteStatus({ ...base, lastPassPages: 0, pageCount: 0, productCount: 42 })).toBe('directed')
+  })
+
+  it('sans page NI fiche, c’est un échec', () => {
+    expect(siteStatus({ ...base, lastPassPages: 0, pageCount: 0, productCount: 0 })).toBe('error')
+  })
+})

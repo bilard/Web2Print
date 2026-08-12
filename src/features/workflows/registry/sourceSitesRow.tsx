@@ -10,6 +10,9 @@ import { displayDomain, siteHomeUrl } from '@/features/priceWatch/siteLink'
 import { t } from '@/lib/i18n'
 
 export interface SiteRowStats {
+  /** Pages liste indexées, tous balayages confondus — preuve que le site se moissonne
+   *  (cf. `siteStatus`, qui s'en sert pour ne pas le confondre avec une marketplace). */
+  pageCount?: number
   products?: number
   /** Battement de MOISSON (écrit par une passe de scraping seulement). ⚠ `updatedAt` ne
    *  convient PAS pour « en cours » : le node « Comparer » réécrit la méta de TOUS les

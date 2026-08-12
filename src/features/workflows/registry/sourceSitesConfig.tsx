@@ -153,6 +153,9 @@ export function SourceSitesConfig({ config, onChange }: {
     const stat = report?.byCompetitor.find((c) => c.siteId === siteId)
     return {
       products: meta?.productCount,
+      // ⚠ Passé au calcul de statut : sans lui, une passe qui n'a pas eu le temps de
+      // démarrer faisait afficher « Recherche seule » à un site qui compte mille pages.
+      pageCount: meta?.pageCount,
       // Battement de MOISSON : seule preuve qu'une passe tourne sur CE site.
       harvestBeatAt: meta?.harvestBeatAt,
       // Live depuis l'index (mis à jour au scrape) prioritaire sur le rapport « Comparer ».
