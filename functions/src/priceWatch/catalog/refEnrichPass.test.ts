@@ -6,7 +6,7 @@ const fiche = (sku: string) => `<html><script type="application/ld+json">
   {"@type":"Product","name":"Courroie","sku":"${sku}","offers":{"price":"12.00"}}
 </script></html>`
 
-const page = (id: string, products: { url: string; name: string; ref?: string }[]): IndexedPage =>
+const page = (id: string, products: { url: string; name: string; ref?: string; price?: number }[]): IndexedPage =>
   ({ id, url: `https://s.fr/c/${id}`, page: 1, products })
 
 describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
@@ -51,7 +51,8 @@ describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
   it('n’ouvre PAS une fiche déjà identifiée — le budget va où la clé manque', async () => {
     let fetched = 0
     const r = await refEnrichPass({
-      loadPages: async () => [page('p1', [{ url: 'https://s.fr/a', name: 'A', ref: 'DÉJÀ' }])],
+      // Identifiée ET chiffrée : plus rien à y chercher.
+      loadPages: async () => [page('p1', [{ url: 'https://s.fr/a', name: 'A', ref: 'DÉJÀ', price: 9 }])],
       fetchHtml: async () => { fetched++; return fiche('X') },
       savePage: async () => {},
     }, 10)
@@ -89,6 +90,27 @@ describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
       savePage: async (p) => { saved.push(p) },
     }, 10)
     expect(saved[0].products[0].image).toBe('https://s.fr/large/a.jpg')
+  })
+
+  it('⚠ complète un prix ABSENT depuis la fiche, sans toucher à celui du rayon', async () => {
+    // kramp n'expose son prix que sur la fiche (« Prix brut : 29,38 € ») : sans cette
+    // complétion, la fiche entre à l'index sans prix et ne se compare à rien.
+    const saved: IndexedPage[] = []
+    await refEnrichPass({
+      loadPages: async () => [{
+        id: 'p1', url: 'https://s.fr/c', page: 1,
+        products: [
+          { url: 'https://s.fr/a', name: 'A', ref: 'R1' },
+          { url: 'https://s.fr/b', name: 'B', ref: 'R2', price: 10 },
+        ],
+      }],
+      fetchHtml: async () => `<html><h1>Filtre</h1><script type="application/ld+json">
+        {"@type":"Product","name":"Filtre","sku":"R1","offers":{"price":"29.38"}}</script></html>`,
+      savePage: async (p) => { saved.push(p) },
+    }, 10)
+    expect(saved[0].products[0].price).toBe(29.38)
+    // Celle qui avait déjà un prix n'est même pas rouverte.
+    expect(saved[0].products[1].price).toBe(10)
   })
 
   it('reprend APRÈS la dernière page menée à son terme', async () => {

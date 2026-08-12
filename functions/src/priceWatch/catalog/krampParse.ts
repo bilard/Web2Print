@@ -32,7 +32,22 @@ const PRICE_RE = /(?:\d{1,3}(?:[ .]\d{3})+|\d+),\d{2}\s*€/
  *  nom, et prix HT — le prix étant SCOPÉ à la fenêtre de CETTE carte (entre son URL et
  *  l'URL de la carte suivante), pour ne jamais rattacher un € d'ailleurs (bandeau
  *  livraison, filtre, panier). Textes VERBATIM. */
-export interface KrampCard { url: string; ref: string; name: string; price: number }
+export interface KrampCard {
+  url: string
+  ref: string
+  name: string
+  /**
+   * Prix HT rattaché à CETTE carte, quand la page de recherche en affiche un.
+   *
+   * ⚠⚠ OPTIONNEL depuis le 2026-08-12. Une carte sans prix était purement ÉCARTÉE :
+   * soixante-deux pour cent des fiches kramp n'entraient donc jamais dans l'index, alors
+   * que leur référence et leur libellé étaient là — et que le prix, lui, figure sur la
+   * fiche produit (« Prix brut : 29,38 € »). Ne pas inventer un prix est une règle saine ;
+   * jeter le produit avec, c'en est une autre, et elle nous coûtait la moitié du
+   * concurrent. La fiche est retenue sans prix ; la passe d'enrichissement le complétera.
+   */
+  price?: number
+}
 
 export function parseKrampSearchCards(markdown: string): KrampCard[] {
   const urls = parseKrampSearchUrls(markdown)
@@ -45,15 +60,16 @@ export function parseKrampSearchCards(markdown: string): KrampCard[] {
     const window = markdown.slice(start, next > start ? next : markdown.length)
     const priceM = window.match(PRICE_RE)
     const price = priceM ? parseFrPrice(priceM[0]) : null
-    if (price == null) continue // pas de prix rattaché à CETTE carte → on n'invente pas
     const ref = krampRefFromUrl(url)
+    // Une carte sans RÉFÉRENCE, elle, ne sert à rien : c'est la clé de l'appariement.
+    if (!ref) continue
     // Nom : libellé de lien le plus long pointant vers cette fiche (hors image `![…]` et
     // hors lien dont le texte n'est que la réf), dans la fenêtre de la carte.
     const name = [...window.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)]
       .filter((m) => m[2] === url && !m[1].startsWith('!') && m[1].trim() !== ref)
       .map((m) => m[1].trim())
       .sort((a, b) => b.length - a.length)[0] ?? ''
-    cards.push({ url, ref, name, price })
+    cards.push({ url, ref, name, ...(price != null ? { price } : {}) })
   }
   return cards
 }

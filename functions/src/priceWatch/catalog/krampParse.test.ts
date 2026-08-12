@@ -62,8 +62,18 @@ Filtrer à partir de 5,00 €
     expect(parseKrampSearchCards(md)[0].price).toBe(12.06)
   })
 
-  it('parseKrampSearchCards : carte sans prix → écartée', () => {
-    expect(parseKrampSearchCards(`[Produit](${P1})\nStock épuisé`)).toEqual([])
+  it('⚠⚠ carte sans prix : RETENUE, sans prix inventé', () => {
+    // Écarter la carte coûtait soixante-deux pour cent des fiches kramp, alors que leur
+    // référence et leur libellé étaient là — et que le prix figure sur la fiche produit
+    // (« Prix brut : 29,38 € »), que la passe d'enrichissement ira lire. Ne pas inventer un
+    // prix est une règle saine ; jeter le produit avec en est une autre.
+    const cards = parseKrampSearchCards(`[Produit](${P1})\nStock épuisé`)
+    expect(cards).toHaveLength(1)
+    expect(cards[0].price).toBeUndefined()
+    expect(cards[0].ref).toBeTruthy()
+  })
+
+  it('sans la moindre carte, rien n’est rendu', () => {
     expect(parseKrampSearchCards('Aucune correspondance exacte')).toEqual([])
   })
 })

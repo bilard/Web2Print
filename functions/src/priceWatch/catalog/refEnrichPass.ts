@@ -66,6 +66,9 @@ export interface RefEnrichResult {
 function needsVisit(l: CompetitorListing, wantB2B: boolean): boolean {
   if (!l.url) return false
   if (!l.ref && !l.gtin13) return true
+  // ⚠ Une fiche SANS PRIX vaut la visite : certaines pages de rayon n'en affichent aucun
+  // (kramp n'expose le sien que sur la fiche), et une fiche sans prix ne se compare pas.
+  if (l.price == null) return true
   return wantB2B && l.netPrice == null
 }
 
@@ -114,7 +117,7 @@ export async function refEnrichPass(
       // On ne retient QUE la clé manquante et ce qui la corrobore. Le prix, lui, reste
       // celui de la page liste : c'est le prix de rayon, celui que la veille compare, et
       // une fiche produit peut afficher une autre grille (quantité, promotion).
-      if (fiche?.ref || fiche?.gtin13 || fiche?.netPrice != null) {
+      if (fiche?.ref || fiche?.gtin13 || fiche?.netPrice != null || fiche?.price != null) {
         byUrl.set(l.url, {
           ...l,
           ...(fiche.ref ? { ref: fiche.ref } : {}),
@@ -126,6 +129,11 @@ export async function refEnrichPass(
           ...(fiche.netPrice != null ? { netPrice: fiche.netPrice } : {}),
           ...(fiche.advisedPrice != null ? { advisedPrice: fiche.advisedPrice } : {}),
           ...(fiche.discountPct != null ? { discountPct: fiche.discountPct } : {}),
+          // ⚠ Le prix de la fiche ne COMPLÈTE que l'absence — il ne remplace jamais celui
+          // du rayon. Une fiche produit peut afficher une autre grille (quantité,
+          // promotion), et c'est le prix de rayon que la veille compare.
+          ...(l.price == null && fiche.price != null ? { price: fiche.price } : {}),
+          ...(l.price == null && fiche.taxIncluded != null ? { taxIncluded: fiche.taxIncluded } : {}),
           // ⚠ Le visuel de la FICHE remplace celui de la liste, même s'il y en avait un :
           // la page de rayon sert une vignette de cent à trois cents pixels, la fiche le
           // grand visuel (cf. `extractZoomImage`). C'est celui-là qu'on veut pour comparer

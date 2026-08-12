@@ -57,7 +57,7 @@ export interface B2BPrices {
 }
 
 const NET = /(?:votre\s+prix(?:\s+d['’]achat)?(?:\s+unitaire)?|prix\s+d['’]achat(?:\s+unitaire)?|prix\s+net|your\s+price|net\s+price|dealer\s+price)\s*(?:unitaire)?\s*:?/i
-const ADVISED = /(?:prix\s+conseill[ée]|prix\s+(?:de\s+vente\s+)?public|prix\s+public\s+conseill[ée]|tarif\s+conseill[ée]|recommended\s+(?:retail\s+)?price|\brrp\b|\bpvc\b)\s*(?:unit\.?|unitaire)?\s*:?/i
+const ADVISED = /(?:prix\s+brut|gross\s+price|prix\s+conseill[ée]|prix\s+(?:de\s+vente\s+)?public|prix\s+public\s+conseill[ée]|tarif\s+conseill[ée]|recommended\s+(?:retail\s+)?price|\brrp\b|\bpvc\b)\s*(?:unit\.?|unitaire)?\s*:?/i
 const DISCOUNT = /(?:remise(?:\s+sur\s+prix\s+de\s+vente)?|discount)\s*:?\s*(-?\s*\d{1,3}(?:[.,]\d+)?)\s*%/i
 
 /**
