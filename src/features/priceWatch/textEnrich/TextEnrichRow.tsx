@@ -113,11 +113,18 @@ export function TextEnrichRow({ product, lang, revision, fromSheet, rejection, i
                   <>
                     <TextEnrichBlock label={t('pwte.field.name')} from={after} tone="after" strong
                       text={revision.name} />
-                    <TextEnrichBlock label={t('pwte.field.saleText')} from={after} tone="after"
-                      text={revision.description}
-                      {...(isTruncated(revision.description)
-                        ? { warn: t(redo ? 'pwte.origin.redo' : 'pwte.origin.cut') }
-                        : amputated ? { warn: t('pwte.origin.amputated') } : {})} />
+                    {/* ⚠ Le texte de vente n'est montré QUE si aucune colonne ne le porte —
+                        exactement la règle du côté « avant », qui l'appliquait déjà. Sans
+                        cette symétrie, une révision portant à la fois `description` et
+                        `byColumn` affichait DEUX FOIS les mêmes textes, l'un sous
+                        « Texte de vente », l'autre sous le nom de sa colonne. */}
+                    {cols.length === 0 && (
+                      <TextEnrichBlock label={t('pwte.field.saleText')} from={after} tone="after"
+                        text={revision.description}
+                        {...(isTruncated(revision.description)
+                          ? { warn: t(redo ? 'pwte.origin.redo' : 'pwte.origin.cut') }
+                          : amputated ? { warn: t('pwte.origin.amputated') } : {})} />
+                    )}
                   </>
                 )}
                 {cols.map(([key, v]) => (
