@@ -300,6 +300,9 @@ registerServerNode({
           fetchHtml: fetcher.fetchHtml,
           savePage: (pg) => saveIndexPageProducts(ctx.uid, watchId, cfg.siteId, pg.id, pg.products),
           signal: ctx.signal,
+          // Accès connecté : la fiche porte aussi le prix d'achat, le conseillé et la
+          // remise — invisibles sur les pages de rayon.
+          wantB2BPrices: !!site.auth,
           ...(ctx.deadlineAt ? { deadlineAt: ctx.deadlineAt } : {}),
         }, REF_ENRICH_BUDGET, prevMeta?.refEnrichCursor ?? null)
         if (enr.visited > 0) {

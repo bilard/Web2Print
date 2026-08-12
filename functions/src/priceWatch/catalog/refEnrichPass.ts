@@ -33,6 +33,11 @@ export interface RefEnrichDeps {
   savePage: (page: IndexedPage) => Promise<void>
   log?: (m: string) => void
   signal?: { aborted: boolean }
+  /**
+   * Le site est lu en accès CONNECTÉ : ses fiches portent des prix professionnels qui
+   * valent une visite même quand la référence est déjà connue (cf. `needsVisit`).
+   */
+  wantB2BPrices?: boolean
   /** Échéance du segment serveur : on rend la main ENTRE deux fiches. */
   deadlineAt?: number
   now?: () => number
@@ -47,9 +52,21 @@ export interface RefEnrichResult {
   cursor: string | null
 }
 
-/** Une fiche mérite-t-elle une visite ? */
-function needsRef(l: CompetitorListing): boolean {
-  return !l.ref && !l.gtin13 && !!l.url
+/**
+ * Une fiche mérite-t-elle une visite ?
+ *
+ * ⚠ Sur un site professionnel, la fiche porte aussi le prix d'ACHAT, le prix conseillé et
+ * la remise, tous absents des pages de rayon : une fiche déjà identifiée mais dont ces prix
+ * manquent vaut encore la visite.
+ *
+ * ⚠⚠ Mais SEULEMENT sur un accès connecté. Sans cette borne, un site public — dont aucune
+ * fiche n'aura jamais de prix d'achat — verrait tout son index revisité à chaque cycle,
+ * indéfiniment, pour ne rien trouver.
+ */
+function needsVisit(l: CompetitorListing, wantB2B: boolean): boolean {
+  if (!l.url) return false
+  if (!l.ref && !l.gtin13) return true
+  return wantB2B && l.netPrice == null
 }
 
 /**
@@ -79,7 +96,7 @@ export async function refEnrichPass(
     if (deps.deadlineAt != null && now() > deps.deadlineAt) break
 
     const page = pages[i]
-    const targets = page.products.filter(needsRef)
+    const targets = page.products.filter((l) => needsVisit(l, !!deps.wantB2BPrices))
     if (targets.length === 0) { cursor = page.id; continue }
 
     const byUrl = new Map<string, CompetitorListing>()
@@ -97,11 +114,18 @@ export async function refEnrichPass(
       // On ne retient QUE la clé manquante et ce qui la corrobore. Le prix, lui, reste
       // celui de la page liste : c'est le prix de rayon, celui que la veille compare, et
       // une fiche produit peut afficher une autre grille (quantité, promotion).
-      if (fiche?.ref || fiche?.gtin13) {
+      if (fiche?.ref || fiche?.gtin13 || fiche?.netPrice != null) {
         byUrl.set(l.url, {
           ...l,
           ...(fiche.ref ? { ref: fiche.ref } : {}),
           ...(fiche.gtin13 ? { gtin13: fiche.gtin13 } : {}),
+          // ⚠ Prix d'un espace PROFESSIONNEL : ils n'existent que sur la fiche, jamais sur
+          // la page de rayon, et ils ne remplacent PAS `price`. Le prix d'achat sert la
+          // négociation fournisseur, le conseillé la comparaison de marché — les fusionner
+          // annoncerait des écarts de 150 % qui n'existent pas.
+          ...(fiche.netPrice != null ? { netPrice: fiche.netPrice } : {}),
+          ...(fiche.advisedPrice != null ? { advisedPrice: fiche.advisedPrice } : {}),
+          ...(fiche.discountPct != null ? { discountPct: fiche.discountPct } : {}),
           // ⚠ Le visuel de la FICHE remplace celui de la liste, même s'il y en avait un :
           // la page de rayon sert une vignette de cent à trois cents pixels, la fiche le
           // grand visuel (cf. `extractZoomImage`). C'est celui-là qu'on veut pour comparer

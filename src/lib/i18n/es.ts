@@ -5801,6 +5801,8 @@ export const es: Record<TranslationKey, string> = {
   'pwx.original.showing': 'Original mostrado',
   'pwx.original.help': 'Texto anterior al enriquecimiento, conservado por la tarjeta «Enriquecer los textos»',
   'pwx.monPrixHt': 'Mi precio sin IVA',
+  'pwx.buyPrice': "Precio de compra",
+  'pwx.advisedPrice': "recomendado",
   'pwx.aucunProduitF1Apparie': 'Ningún producto F1 emparejado — el competidor referencia este artículo, usted no.',
   'pwx.prixNonExploitable': 'precio no utilizable',
   'pwx.referenceEanTitre': 'Referencia, EAN, título…',

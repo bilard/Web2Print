@@ -5993,6 +5993,8 @@ export const fr = {
   'pwx.original.showing': 'Original affiché',
   'pwx.original.help': 'Texte d’avant l’enrichissement, conservé par la carte « Enrichir les textes »',
   'pwx.monPrixHt': 'Mon prix HT',
+  'pwx.buyPrice': "Prix d'achat",
+  'pwx.advisedPrice': "conseillé",
   'pwx.aucunProduitF1Apparie': 'Aucun produit F1 apparié — le concurrent référence cet article, pas vous.',
   'pwx.prixNonExploitable': 'prix non exploitable',
   'pwx.referenceEanTitre': 'Référence, EAN, titre…',

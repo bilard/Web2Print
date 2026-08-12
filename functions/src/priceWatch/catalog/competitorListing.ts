@@ -22,6 +22,8 @@
 // tourner dans le navigateur ET dans une Cloud Function (pas de DOM côté serveur).
 
 /** Un produit relevé chez un concurrent, tel qu'affiché. Prix VERBATIM, non converti. */
+import { extractB2BPrices } from './b2bPrices'
+
 export interface CompetitorListing {
   url: string
   name: string
@@ -49,6 +51,18 @@ export interface CompetitorListing {
    * pouvoir ni prouver ni condamner un appariement.
    */
   seller?: string
+  /**
+   * Prix d'ACHAT du professionnel connecté (« Votre prix d'achat unitaire : 6,54 € HT »).
+   *
+   * ⚠ À ne JAMAIS confondre avec `price`, qui reste le prix de vente affiché : comparer un
+   * prix d'achat à un prix de vente annonce des écarts de 150 % qui n'existent pas. Présent
+   * seulement sur les sites lus en accès connecté (cf. `b2bPrices`).
+   */
+  netPrice?: number
+  /** Prix de vente CONSEILLÉ par le fournisseur (tarif public). */
+  advisedPrice?: number
+  /** Remise consentie sur le prix de vente, en pourcentage POSITIF. */
+  discountPct?: number
 }
 
 export type Availability = 'in-stock' | 'out-of-stock' | 'on-order'
@@ -380,6 +394,12 @@ export function parseProductPage(html: string, url: string): CompetitorListing |
     const regular = html.match(/<[^>]*\bregular-price\b[^>]*>([\s\S]{0,200}?)<\/span>/i)
     if (regular) out.listPrice = parsePriceFragment(regular[1])
   }
+  // Prix d'un espace PROFESSIONNEL : trois montants distincts, jamais fusionnés avec le
+  // prix de vente. Absents d'une fiche grand public — le module reste alors muet.
+  const b2b = extractB2BPrices(html)
+  if (b2b.netPrice != null) out.netPrice = b2b.netPrice
+  if (b2b.advisedPrice != null) out.advisedPrice = b2b.advisedPrice
+  if (b2b.discountPct != null) out.discountPct = b2b.discountPct
   if (out.availability == null) out.availability = extractAvailability(html)
   if (out.taxIncluded == null) {
     // Mention lue près du prix uniquement : « TTC » apparaît dans les CGV de toute page.
@@ -391,7 +411,10 @@ export function parseProductPage(html: string, url: string): CompetitorListing |
     }
   }
 
-  return out.name || out.ref ? out : null
+  // ⚠ Un prix d'ACHAT suffit à rendre la fiche exploitable, même si ni le titre ni la
+  // référence n'ont été reconnus : l'appelant part d'une fiche déjà connue et ne vient
+  // chercher que ce qui lui manque.
+  return out.name || out.ref || out.netPrice != null ? out : null
 }
 
 /**

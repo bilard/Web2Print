@@ -29,6 +29,25 @@ describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
     expect(saved[0].products.map((p) => p.ref)).toEqual(['REF-A', 'REF-B'])
   })
 
+  it('⚠ sur un site CONNECTÉ, revisite une fiche identifiée pour ses prix professionnels', async () => {
+    // La fiche porte le prix d'achat, le conseillé et la remise — tous absents des pages
+    // de rayon. Une clé déjà connue ne dispense donc pas de la visite.
+    const saved: IndexedPage[] = []
+    await refEnrichPass({
+      loadPages: async () => [page('p1', [{ url: 'https://s.fr/a', name: 'A', ref: 'DÉJÀ' }])],
+      fetchHtml: async () => `<html><h1>Ressort de lanceur</h1>
+        <p>Votre prix d'achat unitaire : 6,54 € HT</p>
+        <p>Prix conseillé unit. : 16,36 € HT</p>
+        <p>Remise sur prix de vente : -60%</p></html>`,
+      savePage: async (p) => { saved.push(p) },
+      wantB2BPrices: true,
+    }, 10)
+    expect(saved[0].products[0].netPrice).toBe(6.54)
+    expect(saved[0].products[0].advisedPrice).toBe(16.36)
+    expect(saved[0].products[0].discountPct).toBe(60)
+    expect(saved[0].products[0].price).toBeUndefined()
+  })
+
   it('n’ouvre PAS une fiche déjà identifiée — le budget va où la clé manque', async () => {
     let fetched = 0
     const r = await refEnrichPass({

@@ -404,6 +404,25 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
             {cmp.priceTtc != null && <span className="text-[10px] text-white/35">({eur(cmp.priceTtc)} TTC)</span>}
             {gap != null && <span className={`text-xs font-medium ${gapTone(gap)}`}>{pct(gap)}</span>}
           </div>
+          {/* PRIX PROFESSIONNELS, quand le site est lu en accès connecté. Trois montants
+              qu'il ne faut jamais fusionner avec le prix de vente : ce qu'on PAIE, ce que
+              le fournisseur CONSEILLE, et la remise entre les deux. Absents d'une fiche
+              grand public — la ligne ne s'affiche alors pas. */}
+          {listing.netPrice != null && (
+            <div className="mt-1 flex items-baseline gap-2 flex-wrap tabular-nums rounded bg-white/[0.04] px-1.5 py-1">
+              <span className="text-[9px] uppercase tracking-wide text-white/35">{t('pwx.buyPrice')}</span>
+              <span className="text-sm font-semibold text-emerald-300">{eur(listing.netPrice)}</span>
+              <span className="text-[10px] text-white/35">HT</span>
+              {listing.advisedPrice != null && (
+                <span className="text-[10px] text-white/40">
+                  {t('pwx.advisedPrice')} <span className="text-white/70">{eur(listing.advisedPrice)}</span>
+                </span>
+              )}
+              {listing.discountPct != null && (
+                <span className="text-[10px] font-medium text-amber-300">−{listing.discountPct} %</span>
+              )}
+            </div>
+          )}
           {/* VENDEUR. Sur une marketplace, le nom de domaine ne dit plus qui vend : la même
               fiche est proposée par des marchands tiers à des prix différents, et un écart
               n'est pas interprétable tant qu'on ignore à qui on se compare. Absent chez un
