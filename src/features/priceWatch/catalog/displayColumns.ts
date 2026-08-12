@@ -19,6 +19,10 @@ function foldHeaderName(s: string): string {
 // commercial — celui qui permet de trancher « est-ce bien la même pièce ? ». Une feuille
 // qui n'a que l'une des deux n'est pas concernée par cet ordre.
 const DESCRIPTION = [
+  // Les formes SUFFIXÉES d'abord : un export multilingue nomme ses colonnes
+  // « TEXT_VENTE_FR », « TEXT_VENTE_EN »… et l'inclusion seule prendrait la première venue
+  // dans l'ordre des colonnes — l'anglais un jour sur deux.
+  'textventefr', 'texteventefr', 'textedeventefr',
   'textvente', 'textevente', 'textedevente', 'texteventeweb',
   'description', 'descriptif', 'desc', 'caracteristiques', 'commentaire',
 ]
@@ -63,8 +67,19 @@ const STRICT_ONLY = new Set(['desc', 'img'])
 /** Première colonne dont la clé ou le libellé correspond, égalité stricte d'abord. */
 function pick(headers: HeaderLike[], aliases: string[], taken: Set<string>): string | undefined {
   const folded = headers.map((h) => ({ key: h.key, forms: [foldHeaderName(h.key), ...(h.label ? [foldHeaderName(h.label)] : [])] }))
-  for (const exact of [true, false]) {
-    for (const a of aliases) {
+  // ⚠⚠ ALIAS D'ABORD, mode de comparaison ensuite. L'inverse — toutes les égalités
+  // strictes, puis toutes les inclusions — ANNULAIT la priorité que la liste exprime : la
+  // colonne « DESCRIPTION » égale l'alias `description` au premier tour et emportait la
+  // mise, quand « TEXT_VENTE_FR » n'aurait pu être vue qu'au tour des inclusions, jamais
+  // atteint. Cas VÉCU, mesuré : « LAME 170MM » s'affichait en guise de description,
+  // c'est-à-dire le libellé recopié, tandis que le vrai argumentaire — « Couteaux
+  // adaptables pour tondeuse STIGA - STIHL / VIKING. Remplace origine: 1134-9123-01… » —
+  // dormait dans la colonne d'à côté. Sur tout le catalogue.
+  //
+  // Un alias placé en tête doit donc gagner même par inclusion contre un alias plus bas
+  // qui, lui, tombe juste. C'est le sens même d'une liste ordonnée.
+  for (const a of aliases) {
+    for (const exact of [true, false]) {
       if (!exact && STRICT_ONLY.has(a)) continue
       const hit = folded.find((h) => !taken.has(h.key) && h.forms.some((f) => (exact ? f === a : f.includes(a))))
       if (hit) { taken.add(hit.key); return hit.key }

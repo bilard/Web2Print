@@ -189,3 +189,24 @@ describe('colonne TEXT_VENTE', () => {
     expect(pickDisplayColumns(cols, { description: 'DESCRIPTION' }).description).toBe('DESCRIPTION')
   })
 })
+
+describe('⚠⚠ le TEXTE DE VENTE l’emporte, même suffixé', () => {
+  // Cas VÉCU sur tout le catalogue F1 : « LAME 170MM » s'affichait en guise de
+  // description — le libellé recopié — alors que « Couteaux adaptables pour tondeuse
+  // STIGA - STIHL / VIKING. Remplace origine: 1134-9123-01… » attendait dans la colonne
+  // d'à côté. La colonne « DESCRIPTION » gagnait par ÉGALITÉ au premier tour, avant que
+  // « TEXT_VENTE_FR » n'ait sa chance par inclusion.
+  const cols = [{ key: 'DESCRIPTION' }, { key: 'TEXT_VENTE_FR' }]
+
+  it('préfère TEXT_VENTE_FR à DESCRIPTION', () => {
+    expect(pickDisplayColumns(cols).description).toBe('TEXT_VENTE_FR')
+  })
+
+  it('retombe sur DESCRIPTION quand la feuille n’a que celle-là', () => {
+    expect(pickDisplayColumns([{ key: 'DESCRIPTION' }]).description).toBe('DESCRIPTION')
+  })
+
+  it('un choix EXPLICITE prime toujours sur le devinage', () => {
+    expect(pickDisplayColumns(cols, { description: 'DESCRIPTION' }).description).toBe('DESCRIPTION')
+  })
+})
