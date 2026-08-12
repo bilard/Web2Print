@@ -180,6 +180,23 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     if (fromPort) ctx.log('info', t('run.sourceSites.listReceivedActive', { count: sites.length }))
     const rawRows = (inputs.products?.rows ?? []) as Record<string, unknown>[]
 
+    // ⚠⚠ FAIL-CLOSED — la feuille reçue est-elle la VRAIE feuille, ou l'échantillon
+    // d'aperçu ? Les sorties d'un run sont persistées PLAFONNÉES à 100 lignes
+    // (`runHistoryClient.sanitize`), et l'éditeur les réinjecte à l'ouverture. Relancer
+    // CETTE SEULE CARTE après un rechargement de page fait donc tourner l'appariement sur
+    // les cent premières lignes d'un catalogue qui en compte cent quinze mille — sans que
+    // rien ne le dise, puisque le run réussit.
+    //
+    // Cas VÉCU (2026-08-12) : 25 092 appariés remplacés par 91, et le catalogue source
+    // persisté réécrit avec 99 produits. Le garde-fou de non-régression ne protège que le
+    // RECALCUL automatique (`recomputeReport`) — ce node, lui, est souverain et écrit
+    // toujours. Il doit donc refuser lui-même : `totalRows` n'est posé QUE par la
+    // persistance, sa seule présence au-dessus du nombre de lignes signe l'échantillon.
+    const sampledTotal = (inputs.products as { totalRows?: number } | undefined)?.totalRows
+    if (typeof sampledTotal === 'number' && sampledTotal > rawRows.length) {
+      throw new Error(t('run.compareCatalog.sampledInput', { got: rawRows.length, total: sampledTotal }))
+    }
+
     // Colonnes RÉSOLUES contre la feuille réellement branchée. Les valeurs par défaut du
     // node (`reference`, `ean`, `price`…) ne sont jamais vides : si la source nomme ses
     // en-têtes autrement, elles pointaient dans le vide et le run réussissait en

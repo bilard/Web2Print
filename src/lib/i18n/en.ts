@@ -2679,6 +2679,7 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.columnsMissing': 'Configured columns absent from the sheet and not found: {list}. Available headers: {headers}',
   'run.compareCatalog.noJoinKey': 'No join key in the source sheet (no reference, no reference 2, no EAN): the comparison cannot match anything. Headers received: {headers}',
   'run.compareCatalog.sourceKept': '{count} source product(s) kept out of {rows} row(s).',
+  'run.compareCatalog.sampledInput': 'TRUNCATED input: {got} rows received out of {total}. These are the last run’s preview data (capped at 100 rows), not the full sheet — re-running this card alone after a page reload compares a sample and OVERWRITES the report. Run the whole workflow (▶ at the top) so the source is read again.',
   'run.compareCatalog.duplicatesDropped': '{count} source row(s) dropped as duplicates — check the "Reference column" (identity falls back to the name when it is missing).',
   'run.compareCatalog.siteIndexCount': "{domain}: {count} product(s) in the index — {pctRef}% carry a reference, {pctPrice}% a price, {pctImage}% an image.",
   'run.compareCatalog.emptyIndex': 'Competitor index empty for the {sites} site(s) under the "{watchId}" monitoring. Check that the "Harvest competitors" node uses the SAME monitoring identifier ("{watchId}") and that it ran first.',

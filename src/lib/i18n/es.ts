@@ -2678,6 +2678,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.columnsMissing': 'Columnas configuradas ausentes de la hoja y no encontradas: {list}. Encabezados disponibles: {headers}',
   'run.compareCatalog.noJoinKey': 'Ninguna clave de unión en la hoja de origen (ni referencia, ni referencia 2, ni EAN): la comparación no puede emparejar nada. Encabezados recibidos: {headers}',
   'run.compareCatalog.sourceKept': '{count} producto(s) de origen conservado(s) de {rows} fila(s).',
+  'run.compareCatalog.sampledInput': 'Entrada TRUNCADA: {got} filas recibidas de {total}. Son los datos de vista previa de la última ejecución (limitados a 100 filas), no la hoja completa: volver a ejecutar solo esta tarjeta tras recargar la página compara una muestra y SOBRESCRIBE el informe. Ejecute el flujo completo (▶ arriba) para que la fuente se vuelva a leer.',
   'run.compareCatalog.duplicatesDropped': '{count} fila(s) de origen descartada(s) como duplicados — compruebe la «Columna Referencia» (la identidad recae en el nombre si falta).',
   'run.compareCatalog.siteIndexCount': "{domain}: {count} producto(s) en el índice — {pctRef} % llevan una referencia, {pctPrice} % un precio, {pctImage} % una imagen.",
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',

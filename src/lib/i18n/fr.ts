@@ -2799,6 +2799,7 @@ export const fr = {
   'run.compareCatalog.columnsMissing': 'Colonnes configurées absentes de la feuille et introuvables : {list}. En-têtes disponibles : {headers}',
   'run.compareCatalog.noJoinKey': 'Aucune clé de jointure dans la feuille source (ni référence, ni référence 2, ni EAN) : la comparaison ne peut rien apparier. En-têtes reçus : {headers}',
   'run.compareCatalog.sourceKept': '{count} produit(s) source retenus sur {rows} ligne(s).',
+  'run.compareCatalog.sampledInput': 'Entrée TRONQUÉE : {got} lignes reçues sur {total}. Ce sont les données d’aperçu du dernier run (plafonnées à 100 lignes), pas la feuille complète — relancer cette seule carte après un rechargement de page compare un échantillon et ÉCRASE le rapport. Lancez le workflow entier (▶ en haut) pour que la source soit relue.',
   'run.compareCatalog.duplicatesDropped': '{count} ligne(s) source écartées comme doublons — vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).',
   'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index — {pctRef} % portent une référence, {pctPrice} % un prix, {pctImage} % un visuel.",
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
