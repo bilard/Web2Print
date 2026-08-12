@@ -174,6 +174,8 @@ registerServerNode({
      * balayage. Le chiffre le plus regardé de l'écran était le plus faux.
      */
     const indexedBySite = new Map<string, number>()
+    /** % de fiches identifiées, par site — sert à réserver du temps à l'enrichissement. */
+    const refPctBySite = new Map<string, number>()
     for (const s of siteRefs) {
       if (ctx.signal.aborted) break
       const meta = await loadCompetitorMeta(ctx.uid, watchId, s.siteId)
@@ -189,6 +191,7 @@ registerServerNode({
       // pas « combien de fiches ? » mais « combien portent une clé ? ». Un site à 0 % de
       // références ne s'appariera jamais, quel que soit le volume collecté.
       const a = auditListings(listings)
+      refPctBySite.set(s.siteId, a.pctRef)
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', {
         domain: s.domain, count: listings.length, pctRef: a.pctRef, pctPrice: a.pctPrice,
       }))
@@ -259,7 +262,9 @@ registerServerNode({
       // seulement ceux retenus au rapport : un concurrent sans appariement collecte quand
       // même, et son compteur dérivait sans fin.
       await Promise.all([...indexedBySite].map(([siteId, indexed]) =>
-        saveCompetitorMeta(ctx.uid, watchId, siteId, { productCount: indexed })))
+        saveCompetitorMeta(ctx.uid, watchId, siteId, {
+          productCount: indexed, pctRef: refPctBySite.get(siteId) ?? 0,
+        })))
       // Familles du catalogue source, pour que la MOISSON cible les bons rayons — elle ne
       // les connaît pas autrement (cf. `saveSourceFamilies`).
       await saveSourceFamilies(ctx.uid, watchId, familiesFromRows(rawRows, familyColumn ?? ''))

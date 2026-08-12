@@ -44,6 +44,9 @@ export interface CompetitorMeta {
   updatedAt?: number
   /** % de produits avec prix sur la dernière passe (chip « prix » du node Sites sources). */
   pctPrice?: number
+  /** % de fiches portant une RÉFÉRENCE, mesuré au dernier « Comparer ». Décide si la passe
+   *  d'enrichissement des clés doit se voir réserver du temps (cf. `refEnrichPass`). */
+  pctRef?: number
   /** Compteurs CUMULÉS du balayage courant (base du pctPrice) — remis à zéro à la
    *  réouverture d'un sweep. Sans eux, le %% serait celui de la dernière passe seule. */
   sweepProducts?: number

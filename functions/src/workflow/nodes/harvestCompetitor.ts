@@ -115,13 +115,27 @@ registerServerNode({
     // ⚠ Budget PONDÉRÉ par la saturation : les metas sont chargées juste après, mais la
     // répartition en a besoin maintenant — on les précharge donc ici.
     const satBySite = new Map<string, number>()
+    // ⚠⚠ Un site dont les fiches n'ont pas de clé voit son budget de MOISSON réduit de
+    // moitié : le temps ainsi libéré va à la passe d'enrichissement. Sans cette réserve,
+    // elle n'avait que les restes de la fenêtre — et il n'en restait jamais, les quatre
+    // sites la consommant en entier, une URL morte réessayée sur tous les moteurs pouvant à
+    // elle seule coûter quatre-vingt-dix secondes. Collecter plus de fiches SANS clé
+    // n'apporte rien : mieux vaut identifier celles qu'on a déjà.
+    const needKeysBySite = new Set<string>()
     for (const site of sites) {
       const m = await loadCompetitorMeta(ctx.uid, watchId, stableId(site.domain))
       if (m?.saturatedSweeps) satBySite.set(site.id, m.saturatedSweeps)
+      if ((m?.productCount ?? 0) >= 50 && (m?.pctRef ?? 100) < REF_ENRICH_THRESHOLD * 100) {
+        needKeysBySite.add(site.id)
+      }
     }
     const budgets = splitPageBudget(
       sites.map((s) => ({ ...s, saturatedSweeps: satBySite.get(s.id) })), pageBudget,
     )
+    for (const id of needKeysBySite) {
+      const b = budgets.get(id)
+      if (b != null) budgets.set(id, Math.max(10, Math.floor(b / 2)))
+    }
 
     // Le suivi existe dès la 1ʳᵉ moisson (liste + dashboard), sans attendre « Comparer ».
     await touchWatch(ctx.uid, watchId, ctx.workflowName)
