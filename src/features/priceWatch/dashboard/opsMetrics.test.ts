@@ -176,3 +176,20 @@ describe('⚠⚠ le périmètre gouverne TOUT le panneau, pas seulement la liste
     expect(tous.counts).toEqual({ active: 1, inactive: 1, total: 2 })
   })
 })
+
+describe('⚠ ordre du rail : les actifs d’abord, puis l’alphabet', () => {
+  it('range les cochés en tête, chacun en ordre alphabétique', () => {
+    // Le classement par volume changeait la place d'un site à chaque moisson : on ne
+    // pouvait pas y chercher un domaine des yeux. Un ordre stable se parcourt.
+    const meta = new Map([
+      ['s1', { domain: 'www.zeta.fr', enabled: true, productCount: 5 }],
+      ['s2', { domain: 'alpha.fr', enabled: false, productCount: 9000 }],
+      ['s3', { domain: 'beta.fr', enabled: true, productCount: 10 }],
+    ])
+    const ck = buildOpsCockpit(
+      { byCompetitor: [], runAt: 0, kpis: {} } as never,
+      meta as never,
+    )
+    expect(ck.competitors.map((c) => c.domain)).toEqual(['beta.fr', 'www.zeta.fr', 'alpha.fr'])
+  })
+})

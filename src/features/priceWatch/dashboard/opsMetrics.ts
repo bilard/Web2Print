@@ -216,7 +216,6 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
     : []
   const competitorsRaw = [...report.byCompetitor, ...liveOnly]
     .map((s) => opsCompetitorOf(s, liveMeta?.get(s.siteId)))
-    .sort((a, b) => b.indexed - a.indexed || a.domain.localeCompare(b.domain))
   // ⚠ Un site DÉCOCHÉ ne doit plus peser : il gardait ses fiches d'hier, donc il
   // continuait d'alimenter les jauges et pouvait même s'afficher comme « le plus lent du
   // cycle » alors qu'il ne tourne plus. L'état vient de la méta (écrite par le node) ;
@@ -229,7 +228,14 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
   // verdir la jauge.
   // L'état coché est reporté sur chaque ligne : le rail du cockpit s'en sert pour
   // basculer entre « les concurrents qui travaillent » et « tout ce qu'on a collecté ».
-  const competitors = competitorsRaw.map((c) => ({ ...c, enabled: !disabled.has(c.siteId) }))
+  // ⚠ Tri : les COCHÉS d'abord, puis l'ordre alphabétique. Le classement par volume avait
+  // l'air informatif mais rendait la liste illisible dès qu'on y cherchait un site précis :
+  // sa place changeait à chaque moisson. Un ordre stable se parcourt des yeux ; un palmarès
+  // se relit à chaque fois.
+  const competitors = competitorsRaw
+    .map((c) => ({ ...c, enabled: !disabled.has(c.siteId) }))
+    .sort((a, b) => Number(b.enabled) - Number(a.enabled)
+      || a.domain.replace(/^www\./, '').localeCompare(b.domain.replace(/^www\./, ''), 'fr'))
   const active = competitors.filter((c) => c.indexed > 0 && c.enabled)
   const totalIndexed = competitors.reduce((n, c) => n + c.indexed, 0)
   const totalCumulMs = competitors.reduce((n, c) => n + c.cumulMs, 0)
