@@ -390,7 +390,19 @@ const textEnrichNode: NodeSpec<TextEnrichConfig, { sheet?: unknown; sites?: unkn
       const reached = new Set(result.productIds)
       const doneRows = decisions.filter((_, i) => reached.has(targets[i]?.id ?? ''))
       ctx.log('info', t('run.textEnrich.remembered', { done: doneRows.length, queued: decisions.length }))
-      if (uid2) await saveEnrichMemory(uid2, ctx.workflowId!, rememberRows(memory, doneRows, keyCols))
+      // ⚠ Les textes PRODUITS voyagent avec : sans eux, la carte retraduirait son propre
+      // travail dès que la feuille porte la réécriture (cf. `remembers`). `targets[i]`
+      // correspond à `decisions[i]` — c'est ce qui relie un identifiant de produit à sa clé
+      // de mémoire.
+      const keyByProduct = new Map(targets.map((tg, i) => [tg.id, decisions[i]?.key ?? null]))
+      const produced = new Map<string, string>()
+      // Côté navigateur, le texte produit vit dans `events` (`after`) — `revisions` ne porte
+      // que le champ lui-même. Même information, autre porteur.
+      for (const e of events) {
+        const k = keyByProduct.get(String((e.row as { _id?: unknown })?._id ?? ''))
+        if (k && e.after) produced.set(`${k}|${e.field}`, e.after)
+      }
+      if (uid2) await saveEnrichMemory(uid2, ctx.workflowId!, rememberRows(memory, doneRows, keyCols, produced))
     }
 
     // ⚠ En mode feuille, le travail était jusqu'ici SANS TRACE LISIBLE : la feuille

@@ -56,6 +56,30 @@ export function memoryKey(row: MemoryRow, cols: { ref?: string; ean?: string }):
   return null
 }
 
+/** Séparateur des empreintes retenues pour un même champ. */
+const FP_SEP = '|'
+
+/**
+ * La mémoire reconnaît-elle ce texte ?
+ *
+ * ⚠⚠ Elle retient DEUX empreintes par champ : celle du texte reçu, et celle du texte
+ * produit. Sans la seconde, la carte retraite indéfiniment son PROPRE travail — dès que la
+ * feuille reçoit la réécriture (export Sheets), l'empreinte cesse de correspondre à
+ * l'original mémorisé, la ligne est déclarée « changée par la source », et le modèle
+ * retraduit ce qu'il vient de traduire. À cent quinze mille produits et deux colonnes, la
+ * facture recommence à chaque cycle sans qu'un seul texte ne progresse.
+ *
+ * Cas VÉCU le 2026-08-12 : 206 353 champs remis en file alors que tout avait été traité la
+ * veille. Le compteur montait, le travail était déjà fait.
+ *
+ * Tolère l'ancien format à une seule empreinte : une mémoire écrite avant ce changement
+ * reste valable, elle ne connaît simplement pas encore le texte d'arrivée.
+ */
+export function remembers(entry: string | undefined, fingerprint: string): boolean {
+  if (!entry) return false
+  return entry.split(FP_SEP).includes(fingerprint)
+}
+
 /** Ce que la mémoire retient d'une ligne : par champ, l'empreinte du texte traité. */
 type RowMemory = Record<string, string>
 export type EnrichMemory = Record<string, RowMemory>
@@ -90,7 +114,7 @@ export function sheetQueue(
     if (!key) { out.push({ row, key: null, reason: 'unknown-key', fields }); continue }
     const known = memory[key]
     if (!known) { out.push({ row, key, reason: 'new', fields }); continue }
-    const changed = fields.filter((f) => known[f] !== textFingerprint(row[f] ?? null))
+    const changed = fields.filter((f) => !remembers(known[f], textFingerprint(row[f] ?? null)))
     if (changed.length > 0) out.push({ row, key, reason: 'changed', fields: changed })
   }
   return out
@@ -107,13 +131,23 @@ export function rememberRows(
   memory: EnrichMemory,
   decisions: SheetDecision[],
   cols: { ref?: string; ean?: string },
+  /** Textes PRODUITS, par `clé::champ`. Leur empreinte est retenue à côté de celle du texte
+   *  reçu : c'est ce qui empêche la carte de retraiter son propre travail au passage
+   *  suivant, quand la feuille porte désormais la réécriture (cf. `remembers`). */
+  produced?: Map<string, string>,
 ): EnrichMemory {
   const next: EnrichMemory = { ...memory }
   for (const d of decisions) {
     const key = d.key ?? memoryKey(d.row, cols)
     if (!key) continue
     const entry: RowMemory = { ...(next[key] ?? {}) }
-    for (const f of d.fields) entry[f] = textFingerprint(d.row[f] ?? null)
+    for (const f of d.fields) {
+      const received = textFingerprint(d.row[f] ?? null)
+      const after = produced?.get(`${key}${FP_SEP}${f}`)
+      const written = after == null ? null : textFingerprint(after)
+      // Une réécriture identique à l'entrée ne mérite pas deux fois la même empreinte.
+      entry[f] = written && written !== received ? `${received}${FP_SEP}${written}` : received
+    }
     next[key] = entry
   }
   return next

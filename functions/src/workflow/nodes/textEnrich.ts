@@ -270,7 +270,17 @@ const runTextEnrich = async (
       const reached = new Set(result.productIds)
       const done = decisions.filter((_, i) => reached.has(targets[i]?.id ?? ''))
       ctx.log('info', t(ctx.locale, 'run.textEnrich.remembered', { done: done.length, queued: decisions.length }))
-      await saveEnrichMemory(ctx.uid, ctx.workflowId!, rememberRows(memory, done, keyCols))
+      // ⚠ Les textes PRODUITS voyagent avec : sans eux, la carte retraduirait son propre
+      // travail dès que la feuille porte la réécriture (cf. `remembers`). `targets[i]`
+      // correspond à `decisions[i]` — c'est ce qui relie un identifiant de produit à sa clé
+      // de mémoire.
+      const keyByProduct = new Map(targets.map((tg, i) => [tg.id, decisions[i]?.key ?? null]))
+      const produced = new Map<string, string>()
+      for (const r of revisions) {
+        const k = keyByProduct.get(r.productId)
+        if (k && r.after != null) produced.set(`${k}|${r.field}`, String(r.after))
+      }
+      await saveEnrichMemory(ctx.uid, ctx.workflowId!, rememberRows(memory, done, keyCols, produced))
     }
 
     // ⚠ PUBLICATION pour l'écran de relecture — jumeau du navigateur, et la seule chose qui

@@ -86,3 +86,34 @@ describe('mise à jour de la mémoire', () => {
     expect(after).toEqual({})
   })
 })
+
+describe('⚠⚠ la carte ne doit pas retraiter son PROPRE travail', () => {
+  // Cas VÉCU le 2026-08-12 : 206 353 champs remis en file alors que tout avait été traité
+  // la veille. La feuille portait désormais la traduction ; la mémoire ne connaissait que
+  // l'original, déclarait « changé par la source », et le modèle retraduisait ce qu'il
+  // venait de traduire — à chaque cycle, indéfiniment.
+  const cols = { ref: 'REF' }
+  const row = (text: string) => ({ REF: 'A1', TEXT_VENTE: text })
+
+  it('reconnaît le texte qu’elle a produit', () => {
+    const before = row('Left blade, right rotation')
+    const memory = rememberRows({}, [{ row: before, key: 'A1', reason: 'new', fields: ['TEXT_VENTE'] }],
+      cols, new Map([['A1|TEXT_VENTE', 'Lame gauche, rotation à droite']]))
+    // La feuille porte maintenant la traduction : rien ne doit repartir.
+    expect(sheetQueue([row('Lame gauche, rotation à droite')], ['TEXT_VENTE'], memory, cols)).toEqual([])
+    // Et l'original reste reconnu, au cas où la feuille n'aurait pas été réécrite.
+    expect(sheetQueue([before], ['TEXT_VENTE'], memory, cols)).toEqual([])
+  })
+
+  it('reprend bien un texte VRAIMENT changé par la source', () => {
+    const memory = rememberRows({}, [{ row: row('Ancien'), key: 'A1', reason: 'new', fields: ['TEXT_VENTE'] }],
+      cols, new Map([['A1|TEXT_VENTE', 'Traduit']]))
+    expect(sheetQueue([row('Texte tout neuf du fournisseur')], ['TEXT_VENTE'], memory, cols))
+      .toHaveLength(1)
+  })
+
+  it('lit encore une mémoire écrite AVANT ce changement', () => {
+    const legacy = rememberRows({}, [{ row: row('Original'), key: 'A1', reason: 'new', fields: ['TEXT_VENTE'] }], cols)
+    expect(sheetQueue([row('Original')], ['TEXT_VENTE'], legacy, cols)).toEqual([])
+  })
+})
