@@ -74,6 +74,10 @@ export interface RefEnrichResult {
 function needsVisit(l: CompetitorListing, wantB2B: boolean): boolean {
   if (!l.url) return false
   if (!l.ref && !l.gtin13) return true
+  // ⚠ Déjà ouverte : on n'y retourne pas. Ce qu'on n'y a pas trouvé n'y sera pas davantage
+  // au cycle suivant, et la passe doit avancer, pas repasser.
+  if (l.enriched) return false
+  if (!l.image) return true
   // ⚠ Une fiche SANS PRIX vaut la visite : certaines pages de rayon n'en affichent aucun
   // (kramp n'expose le sien que sur la fiche), et une fiche sans prix ne se compare pas.
   if (l.price == null) return true
@@ -133,31 +137,30 @@ export async function refEnrichPass(
       // On ne retient QUE la clé manquante et ce qui la corrobore. Le prix, lui, reste
       // celui de la page liste : c'est le prix de rayon, celui que la veille compare, et
       // une fiche produit peut afficher une autre grille (quantité, promotion).
-      if (fiche?.ref || fiche?.gtin13 || fiche?.netPrice != null || fiche?.price != null) {
-        byUrl.set(l.url, {
-          ...l,
-          ...(fiche.ref ? { ref: fiche.ref } : {}),
-          ...(fiche.gtin13 ? { gtin13: fiche.gtin13 } : {}),
-          // ⚠ Prix d'un espace PROFESSIONNEL : ils n'existent que sur la fiche, jamais sur
-          // la page de rayon, et ils ne remplacent PAS `price`. Le prix d'achat sert la
-          // négociation fournisseur, le conseillé la comparaison de marché — les fusionner
-          // annoncerait des écarts de 150 % qui n'existent pas.
-          ...(fiche.netPrice != null ? { netPrice: fiche.netPrice } : {}),
-          ...(fiche.advisedPrice != null ? { advisedPrice: fiche.advisedPrice } : {}),
-          ...(fiche.discountPct != null ? { discountPct: fiche.discountPct } : {}),
-          // ⚠ Le prix de la fiche ne COMPLÈTE que l'absence — il ne remplace jamais celui
-          // du rayon. Une fiche produit peut afficher une autre grille (quantité,
-          // promotion), et c'est le prix de rayon que la veille compare.
-          ...(l.price == null && fiche.price != null ? { price: fiche.price } : {}),
-          ...(l.price == null && fiche.taxIncluded != null ? { taxIncluded: fiche.taxIncluded } : {}),
-          // ⚠ Le visuel de la FICHE remplace celui de la liste, même s'il y en avait un :
-          // la page de rayon sert une vignette de cent à trois cents pixels, la fiche le
-          // grand visuel (cf. `extractZoomImage`). C'est celui-là qu'on veut pour comparer
-          // deux produits côte à côte.
-          ...(fiche.image ? { image: fiche.image } : {}),
-        })
-        enriched++
+      // ⚠ La fiche est marquée VISITÉE dans TOUS les cas — trouvaille ou non. C'est la
+      // visite qu'on mémorise, pas son résultat : une page qui ne porte ni clé ni prix
+      // n'en portera pas davantage au cycle suivant, et la rouvrir sans fin empêcherait la
+      // passe d'atteindre le reste de l'index.
+      const found: Partial<CompetitorListing> = fiche ?? {}
+      const enrichedOne: CompetitorListing = {
+        ...l,
+        enriched: true,
+        ...(found.ref ? { ref: found.ref } : {}),
+        ...(found.gtin13 ? { gtin13: found.gtin13 } : {}),
+        // Prix d'un espace PROFESSIONNEL : ils n'existent que sur la fiche, jamais sur la
+        // page de rayon, et ne remplacent PAS `price`.
+        ...(found.netPrice != null ? { netPrice: found.netPrice } : {}),
+        ...(found.advisedPrice != null ? { advisedPrice: found.advisedPrice } : {}),
+        ...(found.discountPct != null ? { discountPct: found.discountPct } : {}),
+        // Le visuel de la FICHE remplace la vignette de liste : la page de rayon sert une
+        // miniature, la fiche le grand visuel (cf. `extractZoomImage`).
+        ...(found.image ? { image: found.image } : {}),
+        // Le prix de la fiche COMPLÈTE l'absence, il ne remplace jamais celui du rayon.
+        ...(l.price == null && found.price != null ? { price: found.price } : {}),
+        ...(l.price == null && found.taxIncluded != null ? { taxIncluded: found.taxIncluded } : {}),
       }
+      byUrl.set(l.url, enrichedOne)
+      if (found.ref || found.gtin13) enriched++
     }
 
     if (byUrl.size > 0) {

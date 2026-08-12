@@ -62,6 +62,15 @@ export interface CompetitorListing {
   advisedPrice?: number
   /** Remise consentie sur le prix de vente, en pourcentage POSITIF. */
   discountPct?: number
+  /**
+   * La fiche produit a DÉJÀ été ouverte par la passe d'enrichissement.
+   *
+   * ⚠⚠ Sans ce drapeau, une fiche dont le site n'affiche aucun prix professionnel était
+   * rouverte à CHAQUE cycle : la condition « pas de prix d'achat » restait vraie pour
+   * toujours, et la passe repassait indéfiniment sur les mêmes pages au lieu d'avancer.
+   * Ce qui compte n'est pas ce qu'on a trouvé, c'est qu'on soit allé voir.
+   */
+  enriched?: boolean
 }
 
 export type Availability = 'in-stock' | 'out-of-stock' | 'on-order'

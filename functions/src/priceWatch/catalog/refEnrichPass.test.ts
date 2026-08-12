@@ -6,7 +6,7 @@ const fiche = (sku: string) => `<html><script type="application/ld+json">
   {"@type":"Product","name":"Courroie","sku":"${sku}","offers":{"price":"12.00"}}
 </script></html>`
 
-const page = (id: string, products: { url: string; name: string; ref?: string; price?: number }[]): IndexedPage =>
+const page = (id: string, products: { url: string; name: string; ref?: string; price?: number; image?: string; enriched?: boolean }[]): IndexedPage =>
   ({ id, url: `https://s.fr/c/${id}`, page: 1, products })
 
 describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
@@ -51,8 +51,10 @@ describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
   it('n’ouvre PAS une fiche déjà identifiée — le budget va où la clé manque', async () => {
     let fetched = 0
     const r = await refEnrichPass({
-      // Identifiée ET chiffrée : plus rien à y chercher.
-      loadPages: async () => [page('p1', [{ url: 'https://s.fr/a', name: 'A', ref: 'DÉJÀ', price: 9 }])],
+      // Identifiée, chiffrée ET déjà ouverte : plus rien à y chercher.
+      loadPages: async () => [page('p1', [
+        { url: 'https://s.fr/a', name: 'A', ref: 'DÉJÀ', price: 9, image: 'i.jpg', enriched: true },
+      ])],
       fetchHtml: async () => { fetched++; return fiche('X') },
       savePage: async () => {},
     }, 10)
@@ -164,5 +166,22 @@ describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
     }, 10)
     expect(r.visited).toBe(2)
     expect(r.enriched).toBe(1)
+  })
+})
+
+describe('⚠⚠ une fiche déjà ouverte ne se rouvre pas', () => {
+  it('marque la visite même bredouille — sinon la passe repasse sans fin', async () => {
+    // Une fiche dont le site n'affiche aucun prix professionnel gardait « pas de prix
+    // d'achat » comme motif de revisite : la condition restait vraie pour toujours, et la
+    // passe repassait indéfiniment sur les mêmes pages au lieu d'avancer. Ce qui compte
+    // n'est pas ce qu'on a trouvé, c'est qu'on soit allé voir.
+    const saved: IndexedPage[] = []
+    await refEnrichPass({
+      loadPages: async () => [page('p1', [{ url: 'https://s.fr/a', name: 'A' }])],
+      fetchHtml: async () => '<html><h1>Sans rien</h1></html>',
+      savePage: async (p) => { saved.push(p) },
+      wantB2BPrices: true,
+    }, 10)
+    expect(saved[0].products[0].enriched).toBe(true)
   })
 })
