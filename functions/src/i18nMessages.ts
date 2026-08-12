@@ -122,6 +122,10 @@ const MESSAGES = {
     fr: "{domain} : aucune page n'est arrivée — {asked} lecture(s) refusée(s) par le moteur « {engine} ». Service en panne, clé absente ou budget épuisé : ce n'est pas un catalogue vide.",
     en: '{domain}: not a single page arrived — {asked} read(s) refused by the “{engine}” engine. Service down, missing key or exhausted budget: this is not an empty catalogue.',
   },
+  'run.harvest.familyFilterTooNarrow': {
+    fr: '{domain} : le filtre par familles ne retenait aucun rayon — plan complet retenu ({count} rayons). Un filtre ne vide jamais une liste.',
+    en: '{domain}: the family filter kept no aisle — falling back to the full plan ({count} aisles). A filter never empties a list.',
+  },
   'run.harvest.budgetReserved': {
     fr: 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',
     en: 'Budget reserved for the comparison — {skipped} site(s) not started on this run, the rest on the next tick.',

@@ -97,6 +97,25 @@ export async function planCategories(cfg: CompetitorConfig, deps: HarvestDeps): 
   // 2. GÉNÉRIQUE toute techno : sitemap (structure de confiance) puis liens home.
   const generic = await discoverGenericListings(cfg.domain, deps.fetchHtml, home, { keywords })
   if (generic.length > 0) return targetPlan(cfg, deps, generic)
+  // ⚠⚠ UN FILTRE NE VIDE JAMAIS UNE LISTE. Les familles de la source (« FILTRES »,
+  // « COURROIES ») ne se retrouvent pas forcément dans les libellés de rayons d'un
+  // concurrent (« Attelages 3 points », « Cabine et carrosserie ») : le ciblage renvoyait
+  // alors ZÉRO catégorie, et le site entier passait pour illisible — « aucune catégorie
+  // cible trouvée », zéro fiche, mise en veille. Relevé sur granit-parts.fr dès la
+  // première passe filtrée : un ciblage trop étroit avait éteint un site qui moissonnait
+  // 2 467 fiches la minute d'avant.
+  //
+  // Mieux vaut un plan large qu'un plan vide : on repasse sans mots-clés. Le filtre reste
+  // un GAIN quand il retient quelque chose, jamais une condition de survie.
+  if (keywords.length > 0) {
+    const unfiltered = await discoverGenericListings(cfg.domain, deps.fetchHtml, home, {})
+    if (unfiltered.length > 0) {
+      deps.log?.(t('run.harvest.familyFilterTooNarrow', {
+        domain: cfg.domain, count: unfiltered.length,
+      }))
+      return targetPlan(cfg, deps, unfiltered)
+    }
+  }
   // 3. SONDAGE (dernier recours, coûteux) : les étages 1 et 2 devinent d'après l'URL et
   //    restent muets sur les plateformes maison (castorama : `…/cat_id_0003374.cat`).
   //    Ici on ouvre quelques liens internes et on garde ceux qui contiennent VRAIMENT des

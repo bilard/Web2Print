@@ -2750,6 +2750,7 @@ export const fr = {
   'run.harvest.siteAuth': '{domain} : accès authentifié (login cookie).',
   'run.harvest.siteEngine': '{domain} : moteur forcé « {engine} ».',
   'run.harvest.siteIndexed': '{domain} : +{indexed} produit(s) sur {pages} page(s) (index : {total} pages).',
+  'run.harvest.familyFilterTooNarrow': "{domain} : le filtre par familles ne retenait aucun rayon — plan complet retenu ({count} rayons). Un filtre ne vide jamais une liste.",
   'run.harvest.antiBotBlocked': "{domain} : aucune page lue — une protection anti-bot ({protection}) a répondu à la place du site. Essayer un autre moteur (Bright Data passe les défis durs).",
   'run.harvest.engineSilent': "{domain} : aucune page n'est arrivée — {asked} lecture(s) refusée(s) par le moteur « {engine} ». Service en panne, clé absente ou budget épuisé : ce n'est pas un catalogue vide.",
   'run.harvest.budgetReserved': 'Budget réservé au comparatif — {skipped} site(s) non démarré(s) ce run, la suite au prochain tick.',

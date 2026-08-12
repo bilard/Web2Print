@@ -339,3 +339,23 @@ describe('⚠⚠ les rayons acquis survivent au cycle suivant', () => {
     expect(plan[0]).toBe('https://www.shop.fr/c/moteur')
   })
 })
+
+describe('⚠⚠ un filtre par familles ne vide JAMAIS le plan', () => {
+  it('repasse sans mots-clés quand le ciblage ne retient aucun rayon', async () => {
+    // Relevé en production : les familles de la source (« FILTRES », « COURROIES ») ne se
+    // retrouvent pas dans les libellés de rayons de granit-parts.fr (« Attelages 3 points »,
+    // « Cabine et carrosserie »). Le ciblage rendait ZÉRO catégorie et le site entier
+    // passait pour illisible — « aucune catégorie cible trouvée », zéro fiche, mise en
+    // veille — alors qu'il moissonnait 2 467 fiches la minute d'avant.
+    const home = `<html>
+      <a href="/c/attelages-3-points">Attelages 3 points</a>
+      <a href="/c/cabine-et-carrosserie">Cabine et carrosserie</a>
+    </html>`
+    const plan = await planCategories(
+      { siteId: 's', domain: 'shop.fr', families: ['FILTRES', 'COURROIES'] },
+      { fetchHtml: async () => home, loadCursor: async () => null, saveCursor: async () => {}, savePage: async () => {} } as never,
+    )
+    expect(plan.length).toBeGreaterThan(0)
+    expect(plan.some((u) => u.includes('attelages-3-points'))).toBe(true)
+  })
+})
