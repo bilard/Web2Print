@@ -172,6 +172,10 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     const names = stuck.map((id) => wf.nodes.find((n) => n.id === id)?.type ?? id)
     console.warn(`[scheduler] run ${wf.id} coupé au verrou après ${Math.round(RUN_TIMEOUT_MS / 60_000)} min`
       + (names.length ? ` — carte(s) encore en cours : ${names.join(', ')}` : ' — aucune carte en cours'))
+    // ⚠ Ce message ne s'écrit QUE sur un timeout applicatif. Un OOM tue le processus : rien
+    // n'est écrit, nulle part. Si les cartes restent « en cours » sans ce message dans le
+    // journal, chercher « Memory limit … exceeded » dans les logs de la Function — c'est le
+    // seul endroit où l'incident laisse une trace.
     void appendRunLiveError(uid, wf.id, names.length
       ? `Run interrompu au bout de ${Math.round(RUN_TIMEOUT_MS / 60_000)} min : ${names.join(', ')} n'a pas rendu la main dans sa fenêtre. Les cartes en aval n'ont pas été exécutées.`
       : `Run interrompu au bout de ${Math.round(RUN_TIMEOUT_MS / 60_000)} min.`)
@@ -384,8 +388,26 @@ function afterRunPatch(
 }
 
 // Scanner : toutes les minutes, exécute les plannings dûs (et purge les orphelins).
+/**
+ * ⚠⚠ MÉMOIRE PORTÉE DE 1 À 4 Gio le 2026-08-13, sur preuve et non par confort.
+ *
+ * Log de production : « Memory limit of 1024 MiB exceeded with 1025 MiB used ». Le
+ * processus est TUÉ — pas d'exception, pas de log applicatif, rien dans le journal du run.
+ * Les cartes restent figées « en cours », l'aval n'est jamais atteint, et le cycle suivant
+ * meurt de la même façon. Six cycles perdus, un tableau de bord figé cinq heures, et un
+ * diagnostic qui a d'abord accusé les échéances puis les timeouts LLM — parce que rien, du
+ * côté applicatif, ne dit qu'on vient de mourir.
+ *
+ * Ce que ce run tient en mémoire, à ce volume : 115 815 lignes × 14 colonnes, 206 353
+ * cibles d'enrichissement (la reprise incrémentale étant coupée sur ce flux), et l'index
+ * d'un concurrent à la fois — jusqu'à 190 000 fiches. Le gigaoctet ne suffisait plus.
+ *
+ * ⚠ Un OOM ne se règle pas QUE par la mémoire : il faut aussi que le travail tienne dans
+ * l'enveloppe. Mais un run tué n'écrit ni checkpoint ni diagnostic — donner l'air à la
+ * Function passe d'abord, comprendre l'empreinte ensuite.
+ */
 export const workflowCronScheduler = onSchedule(
-  { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 1800, memory: '1GiB' },
+  { schedule: 'every 1 minutes', region: 'europe-west1', timeoutSeconds: 1800, memory: '4GiB' },
   async () => {
     const db = getFirestore()
     const now = Date.now()
@@ -444,8 +466,10 @@ export const workflowCronScheduler = onSchedule(
 )
 
 // Callable : exécution immédiate (bouton « Lancer maintenant (serveur) »).
+// Même enveloppe que le cron : ce bouton exécute EXACTEMENT le même graphe, et mourir ici
+// aurait été aussi silencieux que là-bas.
 export const runWorkflowNow = onCall(
-  { region: 'europe-west1', timeoutSeconds: 1800, memory: '1GiB' },
+  { region: 'europe-west1', timeoutSeconds: 1800, memory: '4GiB' },
   async (req) => {
     const uid = req.auth?.uid
     if (!uid) throw new HttpsError('unauthenticated', 'Connexion requise.')
