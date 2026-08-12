@@ -155,13 +155,24 @@ function buildRawFetcher(uid: string, site: CompetitorSite, timeoutMs: number): 
   // coûterait plus cher que la page elle-même. `null` = pas de clé configurée, on
   // continue en anonyme plutôt que d'abandonner le site.
   let jinaKey: string | null | undefined
+  /** La clé a échoué au moins une fois : les lectures suivantes partent en anonyme. */
+  let jinaAnon = false
   const jinaOf = async (url: string): Promise<string | null> => {
     // try/catch plutôt que `.catch` sur le retour : la clé absente ne doit jamais faire
     // tomber une moisson, y compris si le lecteur de clés rend autre chose qu'une promesse.
     if (jinaKey === undefined) {
       try { jinaKey = (await getUserApiKey(uid, 'jina')) || null } catch { jinaKey = null }
     }
-    return jinaHtml(url, timeoutMs, jinaKey ?? undefined)
+    if (jinaAnon) return jinaHtml(url, timeoutMs)
+    const withKey = await jinaHtml(url, timeoutMs, jinaKey ?? undefined)
+    if (withKey || !jinaKey) return withKey
+    // ⚠⚠ REPLI ANONYME. Une clé épuisée ou révoquée fait répondre 401/402 à Jina, donc
+    // `null`, donc « aucune page n'est arrivée » — alors que le palier gratuit, lui,
+    // répond 200. Mesuré cette nuit sur granit-parts.fr : cinq lectures refusées avec clé
+    // pendant que la même URL sortait en 0,3 s sans en-tête d'authentification. Ajouter la
+    // clé devait lever une limite de débit ; elle ne doit pas pouvoir en créer une.
+    jinaAnon = true
+    return jinaHtml(url, timeoutMs)
   }
 
   if (site.auth) {
