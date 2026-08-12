@@ -12,11 +12,48 @@ export interface LlmResult {
 
 const DEFAULT_MAX_TOKENS = 8192
 
+/**
+ * Appel HTTP BORNÉ dans le temps.
+ *
+ * ⚠⚠ Aucun appel au modèle n'en avait. Un fournisseur qui ne répond pas — connexion
+ * suspendue, passerelle muette, quota qui fait traîner la requête — bloquait la carte
+ * INDÉFINIMENT : l'échéance de restitution n'est vérifiée qu'ENTRE deux lots, jamais
+ * pendant. La carte restait « en cours » jusqu'au verrou du run, et les cartes AVAL
+ * n'étaient jamais exécutées.
+ *
+ * Cas VÉCU, mesuré : cinq cycles consécutifs sans que « Comparer catalogue » ne démarre une
+ * seule fois — son journal disait « aucun traitement pour l'instant » — pendant que le
+ * tableau de bord restait figé trois heures sur une analyse périmée. Le journal du serveur
+ * répétait par ailleurs « Aucun provider LLM n'a répondu » : les appels ne revenaient pas.
+ *
+ * Deux minutes : un lot de quatorze textes met dix à trente secondes chez tous les
+ * fournisseurs. Au-delà, ce n'est plus de la lenteur, c'est une réponse qui ne viendra pas —
+ * et la cascade doit pouvoir essayer le fournisseur suivant tant qu'il reste du temps.
+ */
+const LLM_TIMEOUT_MS = 120_000
+
+async function fetchLlm(url: string, init: RequestInit): Promise<Response> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), LLM_TIMEOUT_MS)
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal })
+  } catch (e) {
+    // Un abort doit se lire comme un dépassement, pas comme une panne réseau obscure : la
+    // cascade journalise ce message et c'est lui qu'on retrouve dans la console du run.
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error(`Délai dépassé (${LLM_TIMEOUT_MS / 1000} s) — le fournisseur n'a pas répondu.`)
+    }
+    throw e
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /** DeepSeek (OpenAI-compatible) avec JSON natif (response_format json_object) :
  *  garantit une réponse JSON pure (pas de prose ni de bloc markdown) → parse direct
  *  fiable. deepseek-chat plafonne à 8192 tokens de sortie → clamp. */
 async function callDeepSeek(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
-  const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+  const res = await fetchLlm('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
@@ -33,7 +70,7 @@ async function callDeepSeek(key: string, prompt: string, maxTokens: number, mode
 }
 
 async function callAnthropic(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetchLlm('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
@@ -45,7 +82,7 @@ async function callAnthropic(key: string, prompt: string, maxTokens: number, mod
 
 /** OpenAI (gpt-5.1) avec JSON natif. Les modèles gpt-5.x utilisent max_completion_tokens. */
 async function callOpenAI(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetchLlm('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
@@ -62,7 +99,7 @@ async function callOpenAI(key: string, prompt: string, maxTokens: number, model:
 }
 
 async function callGemini(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
-  const res = await fetch(
+  const res = await fetchLlm(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
     {
       method: 'POST',
