@@ -7,7 +7,7 @@ import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from '
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
 import { AnimatedNumber } from './AnimatedNumber'
-import { buildOpsCockpit, competitorCountsLabel } from './opsMetrics'
+import { buildOpsCockpit, scopeCockpit, competitorCountsLabel } from './opsMetrics'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { useWorkflowSchedule } from './useWorkflowSchedule'
@@ -57,7 +57,11 @@ function SpendLine({ label, tint, volume, cost }: {
 export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId: string | null }) {
   const { t } = useTranslation()
   const liveMeta = useCompetitorMeta(watchId)
-  const ck = buildOpsCockpit(report, liveMeta)
+  const ckAll = buildOpsCockpit(report, liveMeta)
+  // Périmètre du panneau ENTIER, pas seulement du rail : les tuiles doivent compter la
+  // même chose que la liste qu'elles surplombent (cf. `scopeCockpit`).
+  const [scope, setScope] = useState<'active' | 'all'>('active')
+  const ck = scopeCockpit(ckAll, scope)
   const spend = useScrapeSpend()
   // Clé = workflowId ; pour F1 Pro le watchId EST l'id du workflow.
   const sched = useWorkflowSchedule(watchId)
@@ -93,10 +97,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const reportAgeMs = now - ck.runAt
   const stalled = hasReport && cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
   // Site en cours de moisson (heartbeat) + s'il ne produit rien (anti-bot / bloqué), le dire.
-  // Périmètre du rail : les sites qui travaillent, ou tout ce qu'on a collecté.
-  const [scope, setScope] = useState<'active' | 'all'>('active')
-  const shown = ck.competitors
-    .filter((c) => c.indexed > 0 && (scope === 'all' || c.enabled))
+  const shown = ck.competitors.filter((c) => c.indexed > 0)
   const curSite = collecting && ck.lastCollectDomain ? ck.competitors.find((c) => c.domain === ck.lastCollectDomain) : null
   const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? t('pw.ops.blocked') : ''}` : null
 
@@ -270,7 +271,11 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                 }`}>
                 {t(s === 'active' ? 'pw.ops.scope.active' : 'pw.ops.scope.all')}
                 <span className="ml-1 tabular-nums opacity-70">
-                  {s === 'active' ? shown.filter((c) => c.enabled).length : ck.competitors.filter((c) => c.indexed > 0).length}
+                  {/* Compté sur le cockpit COMPLET : un bouton dont le nombre change quand
+                      on le sélectionne ne dit plus ce qu'il propose. */}
+                  {s === 'active'
+                    ? ckAll.competitors.filter((c) => c.indexed > 0 && c.enabled).length
+                    : ckAll.competitors.filter((c) => c.indexed > 0).length}
                 </span>
               </button>
             ))}

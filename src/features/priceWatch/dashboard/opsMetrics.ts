@@ -156,6 +156,42 @@ export function competitorCountsLabel(c: CompetitorCounts): string {
     : `${c.active} actifs · ${c.total} au total`
 }
 
+/**
+ * Recalcule le cockpit sur un PÉRIMÈTRE choisi.
+ *
+ * ⚠⚠ La bascule « Actifs / Tous » ne peut pas se contenter de filtrer une liste : tout le
+ * panneau raconterait alors une histoire et le rail une autre. « 442 773 fiches collectées »
+ * au-dessus de trois lignes de concurrents actifs additionne en réalité vingt-quatre sites,
+ * dont vingt et un ne tournent plus depuis des jours — le chiffre est juste et la lecture
+ * fausse. Chaque agrégat suit donc le périmètre affiché : volume, temps de moisson, durée
+ * d'un cycle, avancement, goulot.
+ *
+ * PUR, et volontairement séparé de `buildOpsCockpit` : celui-ci compose le cockpit COMPLET
+ * (c'est lui qui connaît les métas), celle-ci n'en restreint que la lecture.
+ */
+export function scopeCockpit(ck: OpsCockpit, scope: 'active' | 'all'): OpsCockpit {
+  if (scope === 'all') return ck
+  const kept = ck.competitors.filter((c) => c.enabled)
+  const withFiches = kept.filter((c) => c.indexed > 0)
+  let slowestCycle: OpsCockpit['slowestCycle'] = null
+  for (const c of withFiches) {
+    if (c.cycleMs == null) continue
+    if (!slowestCycle || c.cycleMs > slowestCycle.cycleMs) slowestCycle = { domain: c.domain, cycleMs: c.cycleMs }
+  }
+  return {
+    ...ck,
+    competitors: kept,
+    totalIndexed: kept.reduce((n, c) => n + c.indexed, 0),
+    totalCumulMs: kept.reduce((n, c) => n + c.cumulMs, 0),
+    avgProgress: withFiches.length
+      ? withFiches.reduce((n, c) => n + c.progress, 0) / withFiches.length
+      : 0,
+    sitesComplete: withFiches.filter((c) => c.sweeps >= 1).length,
+    cyclesDone: withFiches.length ? Math.min(...withFiches.map((c) => c.sweeps)) : 0,
+    slowestCycle,
+  }
+}
+
 export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, HarvestMeta>): OpsCockpit {
   const inReport = new Set(report.byCompetitor.map((s) => s.siteId))
   // Sites présents dans le LIVE mais pas (encore) dans le rapport « Comparer » (ex.

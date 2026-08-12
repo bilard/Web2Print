@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildOpsCockpit, type HarvestMeta } from './opsMetrics'
+import { buildOpsCockpit, type HarvestMeta , scopeCockpit } from './opsMetrics'
 import type { StoredReport } from '../reportStore'
 import type { CompetitorStat } from '../catalog/report'
 
@@ -133,5 +133,35 @@ describe('comptes de concurrents', () => {
     // Analyses écrites avant que `sites` soit persisté : sans repli, « 0 actif sur 24 ».
     const old = { ...report(0, 24), sites: [] } as unknown as Parameters<typeof buildOpsCockpit>[0]
     expect(buildOpsCockpit(old).counts).toEqual({ active: 24, inactive: 0, total: 24 })
+  })
+})
+
+describe('⚠⚠ le périmètre gouverne TOUT le panneau, pas seulement la liste', () => {
+  const comp = (siteId: string, indexed: number, enabled: boolean, sweeps = 1) => ({
+    siteId, domain: `${siteId}.fr`, indexed, progress: 1, sweeps, cumulMs: 60_000,
+    cycleMs: 60_000, pctPrice: 100, enabled,
+  })
+
+  it('recalcule volume et temps sur les seuls concurrents affichés', () => {
+    // « 442 773 fiches collectées » au-dessus de trois lignes de concurrents actifs
+    // additionnait vingt-quatre sites, dont vingt et un ne tournent plus : le chiffre est
+    // juste et la lecture fausse.
+    const ck = {
+      competitors: [comp('a', 100, true), comp('b', 900, false)],
+      totalIndexed: 1000, totalCumulMs: 120_000, avgProgress: 1, sitesActive: 1, sitesTotal: 2,
+      counts: { active: 1, inactive: 1, total: 2 }, sitesComplete: 2, cyclesDone: 1,
+      slowestCycle: null, runAt: 0, lastCollectAt: null, lastCollectDomain: null,
+    } as unknown as Parameters<typeof scopeCockpit>[0]
+
+    expect(scopeCockpit(ck, 'all').totalIndexed).toBe(1000)
+    const actifs = scopeCockpit(ck, 'active')
+    expect(actifs.totalIndexed).toBe(100)
+    expect(actifs.totalCumulMs).toBe(60_000)
+    expect(actifs.competitors).toHaveLength(1)
+  })
+
+  it('« Tous » rend le cockpit intact — aucun recalcul, aucune dérive', () => {
+    const ck = { competitors: [], totalIndexed: 7 } as unknown as Parameters<typeof scopeCockpit>[0]
+    expect(scopeCockpit(ck, 'all')).toBe(ck)
   })
 })
