@@ -2317,6 +2317,8 @@ export const en: Record<TranslationKey, string> = {
   'pw.ops.scope.active.help': "Competitors currently working: ticked in “Source sites” and having collected at least one listing.",
   'pw.ops.scope.all.help': "Everything in the database, including unticked competitors — they keep yesterday’s listings but no longer run.",
   'pw.ops.scope.off': "{domain} — unticked, no longer running",
+  'pw.ops.lastHarvest': "Last harvest: {when}",
+  'pw.ops.neverHarvested': "Never harvested",
   'pw.ops.activeCompetitors': 'Active competitors',
   'pw.ops.nextHarvest': 'Next harvest',
   'pw.ops.manual': 'manual',

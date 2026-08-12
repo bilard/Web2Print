@@ -36,7 +36,6 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
   const out: CompetitorSite[] = []
   const seen = new Set<string>()
   for (const row of rows ?? []) {
-    if (!row?.enabled) continue
     const domain = normalizeDomain(row.domain ?? '')
     if (!domain) continue
     const id = stableId(domain)
@@ -46,6 +45,13 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
     const engine = ENGINES.includes(row.engine as SiteEngine) ? (row.engine as SiteEngine) : undefined
     out.push({
       id, domain,
+      // ⚠⚠ Les sites DÉCOCHÉS sont émis eux aussi, marqués. Ils étaient purement absents
+      // du flux : le comparatif ignorait donc leurs milliers de fiches déjà collectées, et
+      // décocher un concurrent revenait à effacer son historique du rapport. Ce n'est pas
+      // ce que veut dire « décocher » — cela veut dire « ne le moissonne plus », pas
+      // « oublie ce que tu sais de lui ». `sitesForRole` les écarte de la collecte ;
+      // « Comparer » les garde.
+      enabled: row?.enabled !== false,
       fields: fields.length ? fields : ['price'],
       ...(engine && engine !== 'auto' ? { engine } : {}),
       ...(row.auth ? { auth: true } : {}),
@@ -66,8 +72,13 @@ export function rowsToCompetitorSites(rows: SourceSiteRow[]): CompetitorSite[] {
  * Sites concernés par UN canal de relevé (jumeau serveur — cf. le module client pour le
  * détail). Un site sans `mode` est servi aux DEUX canaux ; le comparatif ne filtre jamais.
  */
-export function sitesForRole<T extends { mode?: SiteMode }>(sites: T[], role: SiteMode): T[] {
-  return sites.filter((s) => !s.mode || s.mode === role)
+export function sitesForRole<T extends { mode?: SiteMode; enabled?: boolean }>(
+  sites: T[], role: SiteMode,
+): T[] {
+  // ⚠ `enabled === false` = site retiré de la COLLECTE (moisson et recherche dirigée).
+  // Il reste dans le flux pour le comparatif, qui lit son index d'hier. Absent du champ
+  // (config antérieure) = actif, comme avant.
+  return sites.filter((s) => s.enabled !== false && (!s.mode || s.mode === role))
 }
 
 export function isSourceSitesPayload(v: unknown): v is SourceSitesPayload {

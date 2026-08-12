@@ -2400,6 +2400,8 @@ export const fr = {
   'pw.ops.scope.active.help': "Les concurrents qui travaillent : cochés dans « Sites sources » et ayant collecté au moins une fiche.",
   'pw.ops.scope.all.help': "Tout ce qu'on a en base, y compris les concurrents décochés — ils gardent leurs fiches d'hier mais ne tournent plus.",
   'pw.ops.scope.off': "{domain} — décoché, ne tourne plus",
+  'pw.ops.lastHarvest': "Dernière moisson : {when}",
+  'pw.ops.neverHarvested': "Jamais moissonné",
   'pw.ops.activeCompetitors': 'Concurrents actifs',
   'pw.ops.nextHarvest': 'Prochaine moisson',
   'pw.ops.manual': 'manuel',

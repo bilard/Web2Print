@@ -2316,6 +2316,8 @@ export const es: Record<TranslationKey, string> = {
   'pw.ops.scope.active.help': "Los competidores que trabajan: marcados en «Sitios fuente» y con al menos una ficha recopilada.",
   'pw.ops.scope.all.help': "Todo lo que hay en la base, incluidos los competidores desmarcados — conservan las fichas de ayer pero ya no se ejecutan.",
   'pw.ops.scope.off': "{domain} — desmarcado, ya no se ejecuta",
+  'pw.ops.lastHarvest': "Última recolección: {when}",
+  'pw.ops.neverHarvested': "Nunca recopilado",
   'pw.ops.activeCompetitors': 'Competidores activos',
   'pw.ops.nextHarvest': 'Próxima recolección',
   'pw.ops.manual': 'manual',

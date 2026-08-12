@@ -15,13 +15,17 @@ describe('rowsToCompetitorSites (jumeau serveur)', () => {
     { domain: 'www.leroymerlin.fr', enabled: true, engine: 'brightdata', pageBudget: 5 },
   ]
 
-  it('exclut les désactivés, déduplique, parse les champs', () => {
+  it('⚠⚠ ÉMET les désactivés, marqués — le comparatif lit leur index d’hier', () => {
+    // Ils étaient purement absents du flux : décocher un concurrent effaçait ses milliers
+    // de fiches du rapport. `sitesForRole` les écarte de la collecte, pas du comparatif.
     const sites = rowsToCompetitorSites(rows)
-    expect(sites.map((s) => s.domain)).toEqual([
+    expect(sites.some((s) => s.enabled === false)).toBe(true)
+    expect(sitesForRole(sites, 'harvest').map((s) => s.domain)).toEqual([
       'www.jardimax.com', 'progarden.fr', 'www.leroymerlin.fr',
     ])
-    expect(sites[0].fields).toEqual(['price'])
-    expect(sites[1].fields).toEqual(['price', 'stock'])
+    const actifs = sites.filter((s) => s.enabled !== false)
+    expect(actifs[0].fields).toEqual(['price'])
+    expect(actifs[1].fields).toEqual(['price', 'stock'])
   })
 
   it('porte le moteur forcé, le drapeau auth et le budget réservé', () => {

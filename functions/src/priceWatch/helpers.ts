@@ -12,6 +12,16 @@ export type SiteEngine = 'auto' | 'jina' | 'firecrawl' | 'brightdata'
 export type SiteMode = 'harvest' | 'directed'
 
 export interface CompetitorSite {
+  /**
+   * Site COCHÉ dans « Sites sources ». `false` = retiré de la COLLECTE (moisson et
+   * recherche dirigée) mais TOUJOURS présent au comparatif, qui lit son index d'hier.
+   *
+   * ⚠ « Décocher » veut dire « ne le moissonne plus », pas « oublie ce que tu sais de
+   * lui » : les sites décochés étaient absents du flux, et leurs milliers de fiches déjà
+   * collectées disparaissaient du rapport. Absent du champ (config antérieure) = actif.
+   */
+  enabled?: boolean
+
   id: string
   domain: string
   fields: string[]

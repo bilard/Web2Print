@@ -62,6 +62,14 @@ interface OpsCompetitor {
   /** Site COCHÉ dans « Sites sources ». Un site décoché garde ses fiches d'hier mais ne
    *  travaille plus : le rail doit pouvoir le montrer ou le masquer à la demande. */
   enabled: boolean
+  /**
+   * Dernière passe de MOISSON de ce site, en ms epoch. `null` si aucune.
+   *
+   * ⚠ Sans elle, un volume de fiches ne dit pas s'il date d'une heure ou de trois
+   * semaines : « 186 300 fiches » se lit comme une richesse alors que c'est parfois un
+   * stock mort. La fraîcheur est la moitié de l'information.
+   */
+  lastPassAt: number | null
 }
 
 export interface OpsCockpit {
@@ -119,6 +127,7 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
     // Valeur PROVISOIRE : `buildOpsCockpit` la réécrit avec l'état coché réel, qu'il est
     // seul à connaître (il compare toutes les métas d'un coup).
     enabled: true,
+    lastPassAt: live?.lastPassAt ?? null,
   }
 }
 

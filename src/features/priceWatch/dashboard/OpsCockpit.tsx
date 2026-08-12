@@ -11,9 +11,9 @@ import { buildOpsCockpit, scopeCockpit, competitorCountsLabel } from './opsMetri
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { useWorkflowSchedule } from './useWorkflowSchedule'
-import { duration, ago, compactNum } from './format'
+import { duration, ago, compactNum, agoShort } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronLabels'
-import { useTranslation } from '@/lib/i18n'
+import { intlLocale, useTranslation } from '@/lib/i18n'
 
 /** Tuile compteur : icône + label en tête, grand chiffre, sous-texte. */
 function Cell({ icon: Icon, tint, label, value, sub, title, children }: {
@@ -55,7 +55,7 @@ function SpendLine({ label, tint, volume, cost }: {
 }
 
 export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId: string | null }) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const liveMeta = useCompetitorMeta(watchId)
   const ckAll = buildOpsCockpit(report, liveMeta)
   // Périmètre du panneau ENTIER, pas seulement du rail : les tuiles doivent compter la
@@ -295,6 +295,13 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                 </div>
                 <span className="tabular-nums text-white/50 w-12 text-right shrink-0">{compactNum(c.indexed)}</span>
                 <span className={`tabular-nums w-7 text-right shrink-0 ${c.sweeps > 0 ? 'text-emerald-300/80' : 'text-white/30'}`}>×{c.sweeps}</span>
+                {/* ⚠ La FRAÎCHEUR, à côté du volume. « 186 300 fiches » se lit comme une
+                    richesse tant qu'on ignore que la dernière moisson remonte à trois
+                    semaines : le stock est mort et le chiffre trompeur. */}
+                <span className="tabular-nums w-12 text-right shrink-0 text-white/30"
+                  title={c.lastPassAt ? t('pw.ops.lastHarvest', { when: new Date(c.lastPassAt).toLocaleString(intlLocale(locale)) }) : t('pw.ops.neverHarvested')}>
+                  {agoShort(c.lastPassAt, now)}
+                </span>
               </div>
             ))}
           </div>

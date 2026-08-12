@@ -18,13 +18,18 @@ describe('rowsToCompetitorSites', () => {
     { domain: 'net-motoculture.fr', enabled: true, engine: 'auto' },
   ]
 
-  it('exclut les désactivés, déduplique, parse les champs', () => {
+  it('⚠⚠ ÉMET les désactivés, marqués — le comparatif lit leur index d’hier', () => {
+    // Ils étaient purement absents du flux : décocher un concurrent effaçait ses milliers
+    // de fiches du rapport. « Décocher » veut dire « ne le moissonne plus », pas « oublie
+    // ce que tu sais de lui ». `sitesForRole` les écarte de la collecte, pas du comparatif.
     const sites = rowsToCompetitorSites(rows)
-    expect(sites.map((s) => s.domain)).toEqual([
+    expect(sites.some((s) => s.enabled === false)).toBe(true)
+    expect(sitesForRole(sites, 'harvest').map((s) => s.domain)).toEqual([
       'www.jardimax.com', 'progarden.fr', 'rubix.fr', 'net-motoculture.fr',
     ])
-    expect(sites[0].fields).toEqual(['price'])
-    expect(sites[1].fields).toEqual(['price', 'stock'])
+    const actifs = sites.filter((s) => s.enabled !== false)
+    expect(actifs[0].fields).toEqual(['price'])
+    expect(actifs[1].fields).toEqual(['price', 'stock'])
   })
 
   it("porte le moteur forcé mais omet 'auto' (défaut implicite)", () => {
