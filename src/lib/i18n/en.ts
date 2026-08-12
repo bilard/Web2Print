@@ -2455,6 +2455,7 @@ export const en: Record<TranslationKey, string> = {
   'pw.truncatedNote': '{matched} matched products — the detail is capped at the 1000 worst-positioned. Distributions/heatmap/scatter cover that sample (the exhaustive list is in the Excel export).',
   'pw.ago.seconds': '{n} s ago',
   'pw.ago.minutes': '{n} min ago',
+  'pw.ago.hoursMinutes': '{h} h {m} ago',
   'pw.ago.hours': '{n} h ago',
   'pw.ago.days': '{n} d ago',
   'pw.source': 'Source',

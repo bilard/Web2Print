@@ -2454,6 +2454,7 @@ export const es: Record<TranslationKey, string> = {
   'pw.truncatedNote': '{matched} productos emparejados — el detalle se limita a los 1000 peor posicionados. Distribuciones/heatmap/scatter se aplican a esta muestra (el listado exhaustivo está en la exportación Excel).',
   'pw.ago.seconds': 'hace {n} s',
   'pw.ago.minutes': 'hace {n} min',
+  'pw.ago.hoursMinutes': 'hace {h} h {m}',
   'pw.ago.hours': 'hace {n} h',
   'pw.ago.days': 'hace {n} d',
   'pw.source': 'Fuente',

@@ -40,6 +40,10 @@ export function agoShort(ts: number | null | undefined, now = Date.now()): strin
   const m = Math.floor(s / 60)
   if (m < 60) return `${m} min`
   const h = Math.floor(m / 60)
+  // ⚠ Heures ET minutes sous six heures : « 1 h » pour une heure cinquante-quatre laisse
+  // croire que l'analyse vient de tourner. Sur un tableau de bord opérationnel, l'écart
+  // entre 1 h 05 et 1 h 54 décide si l'on attend ou si l'on va voir ce qui bloque.
+  if (h < 6) return m % 60 === 0 ? `${h} h` : `${h} h ${m % 60}`
   if (h < 24) return `${h} h`
   return `${Math.floor(h / 24)} j`
 }
@@ -52,6 +56,9 @@ export function ago(ts: number | null | undefined, now = Date.now()): string {
   const m = Math.floor(s / 60)
   if (m < 60) return t('pw.ago.minutes', { n: m })
   const h = Math.floor(m / 60)
+  // Même raison qu'au-dessus : « il y a 1 h » couvrait tout, de soixante à cent
+  // dix-neuf minutes.
+  if (h < 6 && m % 60 !== 0) return t('pw.ago.hoursMinutes', { h, m: m % 60 })
   if (h < 24) return t('pw.ago.hours', { n: h })
   return t('pw.ago.days', { n: Math.floor(h / 24) })
 }

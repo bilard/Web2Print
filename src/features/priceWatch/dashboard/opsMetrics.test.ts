@@ -193,3 +193,39 @@ describe('⚠ ordre du rail : les actifs d’abord, puis l’alphabet', () => {
     expect(ck.competitors.map((c) => c.domain)).toEqual(['beta.fr', 'www.zeta.fr', 'alpha.fr'])
   })
 })
+
+describe('⚠ le cockpit ne doit pas se contredire lui-même', () => {
+  const stat = (siteId: string, indexed: number) => ({
+    siteId, domain: `${siteId}.fr`, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null,
+    audit: { indexed, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 },
+  })
+
+  it('garde au rail les sites SUIVIS qui n’ont encore rien donné', () => {
+    // Le rapport écarte les concurrents sans appariement : le rail montrait vingt-deux
+    // lignes pendant que la tuile annonçait « 24 au total ».
+    const report = {
+      runAt: 1, kpis: {}, byCompetitor: [stat('a', 10), stat('b', 5)],
+      sites: [{ siteId: 'a', domain: 'a.fr' }, { siteId: 'b', domain: 'b.fr' }, { siteId: 'c', domain: 'c.fr' }],
+    } as unknown as Parameters<typeof buildOpsCockpit>[0]
+    const ck = buildOpsCockpit(report)
+    expect(ck.competitors.map((c) => c.siteId).sort()).toEqual(['a', 'b', 'c'])
+    expect(ck.counts.total).toBe(ck.competitors.length)
+    // …sans pour autant le compter comme actif : il n'a pas une seule fiche.
+    expect(ck.sitesActive).toBe(2)
+  })
+
+  it('n’élit pas comme goulot un site à l’arrêt depuis des jours', () => {
+    const now = 1_000_000_000_000
+    const report = {
+      runAt: 1, kpis: {}, sites: [],
+      byCompetitor: [stat('vif', 100), stat('dormant', 100)],
+    } as unknown as Parameters<typeof buildOpsCockpit>[0]
+    const meta = new Map([
+      ['vif', { domain: 'vif.fr', productCount: 100, cumulHarvestMs: 60_000, harvestSweeps: 1, harvestProgress: 1, lastPassAt: now - 60_000 }],
+      // Cycle DIX fois plus long, mais mesuré il y a six jours : il ne dit plus rien de
+      // la cadence d'aujourd'hui.
+      ['dormant', { domain: 'dormant.fr', productCount: 100, cumulHarvestMs: 600_000, harvestSweeps: 1, harvestProgress: 1, lastPassAt: now - 6 * 24 * 3600_000 }],
+    ]) as unknown as Map<string, Parameters<typeof buildOpsCockpit>[1] extends Map<string, infer M> | undefined ? M : never>
+    expect(buildOpsCockpit(report, meta, now).slowestCycle?.domain).toBe('vif.fr')
+  })
+})

@@ -210,7 +210,12 @@ export function scopeCockpit(ck: OpsCockpit, scope: 'active' | 'all'): OpsCockpi
   }
 }
 
-export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, HarvestMeta>): OpsCockpit {
+/** Au-delà, la dernière passe d'un site est trop ancienne pour dire quoi que ce soit de
+ *  la cadence courante. Vingt-quatre heures : un cycle complet dure une à deux heures, et
+ *  un site sain repasse plusieurs fois par jour. */
+const STALE_PASS_MS = 24 * 3600_000
+
+export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, HarvestMeta>, now = Date.now()): OpsCockpit {
   const inReport = new Set(report.byCompetitor.map((s) => s.siteId))
   // Sites présents dans le LIVE mais pas (encore) dans le rapport « Comparer » (ex.
   // fraîchement scrapés / réinitialisés) → on les ajoute pour que le tableau bouge en
@@ -223,7 +228,20 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
           audit: { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 },
         }))
     : []
-  const competitorsRaw = [...report.byCompetitor, ...liveOnly]
+  // ⚠ Sites SUIVIS qui n'ont encore rien donné. `byCompetitor` écarte les concurrents sans
+  // appariement, et un site jamais moissonné n'a pas non plus de méta : il disparaissait
+  // donc du rail, pendant que la tuile « Concurrents actifs » continuait de le compter.
+  // Le tableau annonçait « 24 au total » au-dessus de vingt-deux lignes, et la bascule
+  // « TOUS 22 » contredisait la tuile juste à côté. Un site suivi qui ne rapporte rien est
+  // une information — pas une ligne à masquer.
+  const knownIds = new Set([...report.byCompetitor.map((s) => s.siteId), ...liveOnly.map((s) => s.siteId)])
+  const watchedOnly: CompetitorStat[] = (report.sites ?? [])
+    .filter((s) => !knownIds.has(s.siteId))
+    .map((s) => ({
+      siteId: s.siteId, domain: s.domain, matched: 0, cheaper: 0, ruptures: 0, avgGapPct: null,
+      audit: { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 },
+    }))
+  const competitorsRaw = [...report.byCompetitor, ...liveOnly, ...watchedOnly]
     .map((s) => opsCompetitorOf(s, liveMeta?.get(s.siteId)))
   // ⚠ Un site DÉCOCHÉ ne doit plus peser : il gardait ses fiches d'hier, donc il
   // continuait d'alimenter les jauges et pouvait même s'afficher comme « le plus lent du
@@ -259,6 +277,11 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
   let slowestCycle: OpsCockpit['slowestCycle'] = null
   for (const c of active) {
     if (c.cycleMs == null) continue
+    // ⚠ Un site à l'ARRÊT ne fixe pas la cadence. Ce chiffre sert à régler la fréquence du
+    // cron — « rafraîchir tout le monde prend au moins ça » — et leroymerlin.fr, coché mais
+    // sans passe depuis six jours, s'affichait comme le plus lent avec une durée mesurée la
+    // semaine dernière. On ne règle pas un cron sur un site qui ne tourne plus.
+    if (c.lastPassAt != null && now - c.lastPassAt > STALE_PASS_MS) continue
     if (!slowestCycle || c.cycleMs > slowestCycle.cycleMs) slowestCycle = { domain: c.domain, cycleMs: c.cycleMs }
   }
 

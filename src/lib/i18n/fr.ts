@@ -2547,6 +2547,7 @@ export const fr = {
 
   'pw.ago.seconds': 'il y a {n} s',
   'pw.ago.minutes': 'il y a {n} min',
+  'pw.ago.hoursMinutes': 'il y a {h} h {m}',
   'pw.ago.hours': 'il y a {n} h',
   'pw.ago.days': 'il y a {n} j',
   'pw.source': 'Source',
