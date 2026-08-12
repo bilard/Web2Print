@@ -170,8 +170,11 @@ export function competitorCountsLabel(c: CompetitorCounts): string {
  * (c'est lui qui connaît les métas), celle-ci n'en restreint que la lecture.
  */
 export function scopeCockpit(ck: OpsCockpit, scope: 'active' | 'all'): OpsCockpit {
-  if (scope === 'all') return ck
-  const kept = ck.competitors.filter((c) => c.enabled)
+  // ⚠ Les DEUX périmètres passent par ce recalcul. Rendre le cockpit intact sur « Tous »
+  // paraissait économe et laissait `sitesActive` à 3 : le panneau annonçait alors
+  // « 442 773 fiches · 3/3 concurrents actifs » en montrant vingt-deux lignes. Le sous-titre
+  // contredisait la liste juste au-dessous.
+  const kept = scope === 'all' ? ck.competitors : ck.competitors.filter((c) => c.enabled)
   const withFiches = kept.filter((c) => c.indexed > 0)
   let slowestCycle: OpsCockpit['slowestCycle'] = null
   for (const c of withFiches) {
@@ -189,6 +192,12 @@ export function scopeCockpit(ck: OpsCockpit, scope: 'active' | 'all'): OpsCockpi
     sitesComplete: withFiches.filter((c) => c.sweeps >= 1).length,
     cyclesDone: withFiches.length ? Math.min(...withFiches.map((c) => c.sweeps)) : 0,
     slowestCycle,
+    // Le dénominateur des jauges suit le périmètre, sinon « cycle complet » se calculerait
+    // sur trois sites tout en en affichant vingt-deux.
+    sitesActive: withFiches.length,
+    // ⚠ `counts` reste GLOBAL : c'est le sujet même de la tuile « Concurrents actifs »
+    // (3 actifs · 21 inactifs · 24 au total). La restreindre au périmètre lui ferait dire
+    // « 22 actifs sur 22 » en mode Tous, ce qui est faux.
   }
 }
 
