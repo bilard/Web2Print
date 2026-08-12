@@ -1,7 +1,3 @@
-// functions/src/textEnrich/detectLang.ts
-// ⚠ COPIE de src/features/textEnrich/detectLang.ts (bundles séparés : `functions/` est hermétique,
-// `rootDir: "src"`). Toute modification là-bas doit être reportée ici — cf.
-// textReviseParity.test.ts.
 // Détection de langue d'un texte produit. PURE, locale, gratuite.
 //
 // ⚠ Ce n'est PAS un détecteur généraliste, et il ne prétend pas l'être. Son seul rôle est
@@ -41,6 +37,36 @@ const MARKERS: Record<Lang, string[]> = {
 }
 
 /**
+ * Noms de PIÈCES, par langue. Le second signal qui survit aux libellés courts.
+ *
+ * ⚠⚠ Sur un catalogue de pièces détachées, 82 % des textes ne portaient AUCUN mot
+ * grammatical — « LAME 510MM STIGA », « Messerhalterung Rasenmäher » — et partaient donc en
+ * abstention. Or chaque libellé, si court soit-il, nomme presque toujours la pièce : c'est
+ * là qu'est l'information, pas dans une syntaxe absente.
+ *
+ * ⚠ Chaque mot retenu est ABSENT des autres langues de la liste, et un test le vérifie.
+ * Les faux amis du domaine sont écartés sans regret : « moteur/motor/motor »,
+ * « lager » (roulement en néerlandais ET en allemand), « cable/cable/cavo »,
+ * « filtre/filter/filter », « kit » partout. Un mot présent dans deux listes n'apporte
+ * aucune information et ferait basculer le score au hasard.
+ */
+const PARTS: Record<Lang, string[]> = {
+  fr: ['lame', 'lames', 'courroie', 'courroies', 'roulement', 'ressort', 'poignée', 'vilebrequin',
+    'bougie', 'tondeuse', 'tronçonneuse', 'débroussailleuse', 'carburateur', 'embrayage',
+    'volant', 'chaîne', 'guide', 'plaquette', 'galet', 'goupille'],
+  nl: ['mes', 'messen', 'riem', 'schroef', 'veer', 'handgreep', 'maaier', 'kettingzaag',
+    'bougie', 'koppeling', 'ketting', 'wiel', 'pakking', 'aandrijving'],
+  de: ['messer', 'riemen', 'schraube', 'feder', 'griff', 'rasenmäher', 'kettensäge',
+    'zündkerze', 'kupplung', 'kette', 'rad', 'dichtung', 'vergaser', 'schwert'],
+  en: ['blade', 'blades', 'belt', 'bearing', 'screw', 'spring', 'handle', 'mower',
+    'chainsaw', 'sparkplug', 'clutch', 'chain', 'wheel', 'gasket', 'carburettor', 'carburetor'],
+  es: ['cuchilla', 'correa', 'rodamiento', 'tornillo', 'muelle', 'mango', 'cortacésped',
+    'motosierra', 'bujía', 'embrague', 'cadena', 'rueda', 'junta', 'carburador'],
+  it: ['lama', 'cinghia', 'cuscinetto', 'vite', 'molla', 'maniglia', 'tosaerba',
+    'motosega', 'candela', 'frizione', 'catena', 'ruota', 'guarnizione', 'carburatore'],
+}
+
+/**
  * Signes ORTHOGRAPHIQUES propres à une langue. Ils valent plus qu'un mot grammatical
  * parce qu'ils survivent aux libellés courts : « Messerhalterung für Rasenmäher » n'a
  * qu'un mot de la liste allemande, mais deux tréma et un « ß » ne trompent pas.
@@ -58,8 +84,20 @@ const SIGNS: { lang: Lang; re: RegExp; weight: number }[] = [
   // converti), et il est fréquent sur les exports d'ERP. En espagnol réel, « ¡ » ouvre
   // toujours une exclamation qu'un « ! » referme.
   { lang: 'es', re: /¿[^?]{0,120}\?|¡[^!]{0,120}!/g, weight: 3 },
-  { lang: 'fr', re: /[àâçéèêëîïôùûœ]/gi, weight: 1 },
+  // ⚠ « é » est ABSENT de cette liste : il est aussi fréquent en espagnol (« bujía » non,
+  // mais « cortacésped », « transmisión ») et en italien. Le compter comme français faisait
+  // basculer des libellés espagnols courts en égalité, donc en abstention. Les caractères
+  // retenus, eux, n'existent dans aucune des autres langues de la liste.
+  { lang: 'fr', re: /[àâçèêëîïôùûœ]/gi, weight: 1 },
   { lang: 'it', re: /\w+(?:zione|zioni)\b/gi, weight: 2 },
+  // ⚠ Suffixes MORPHOLOGIQUES, choisis pour ne pas exister dans les autres langues de la
+  // liste. Ils tranchent là où la syntaxe manque : « Messerhalterung » n'a aucun mot
+  // grammatical mais son « -ung » ne laisse pas de doute. « -ing » est volontairement
+  // ABSENT : il est néerlandais autant qu'anglais, et ferait basculer le score au hasard.
+  { lang: 'de', re: /\w{4,}(?:ung|ungen|keit|heit|schaft)\b/gi, weight: 2 },
+  { lang: 'nl', re: /\w{4,}(?:heid|lijk|lijke)\b/gi, weight: 2 },
+  { lang: 'es', re: /\w{3,}(?:ción|ciones|sión|siones|dad)\b/gi, weight: 2 },
+  { lang: 'fr', re: /\w{3,}(?:euse|euses|ette|ettes)\b/gi, weight: 2 },
 ]
 
 export interface Detection {
@@ -113,6 +151,11 @@ export function detectLanguage(raw: string | null | undefined): Detection {
   const ws = wordCounts(text)
   for (const [lang, markers] of Object.entries(MARKERS) as [Lang, string[]][]) {
     for (const m of markers) add(lang, ws.get(m) ?? 0)
+  }
+  // Noms de pièces : même poids qu'un mot grammatical. Deux d'entre eux suffisent donc à
+  // franchir le seuil, ce qui est exactement le cas des libellés courts qu'on veut trancher.
+  for (const [lang, parts] of Object.entries(PARTS) as [Lang, string[]][]) {
+    for (const w of parts) add(lang, ws.get(w) ?? 0)
   }
   for (const { lang, re, weight } of SIGNS) {
     const hits = text.match(re)?.length ?? 0

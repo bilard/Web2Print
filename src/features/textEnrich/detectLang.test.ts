@@ -94,3 +94,42 @@ describe('ponctuation espagnole : ouvrante seule = encodage cassé', () => {
     expect(detectLanguage('Muelle de compresión para la caña').lang).toBe('es')
   })
 })
+
+describe('⚠⚠ libellés COURTS : trancher là où la syntaxe manque', () => {
+  it('reconnaît la langue par le nom de la pièce', () => {
+    // 82 % des textes du catalogue ne portent AUCUN mot grammatical et partaient en
+    // abstention. Chaque libellé nomme pourtant la pièce : c'est là qu'est l'information.
+    expect(detectLanguage('LAME 510MM COURROIE STIGA').lang).toBe('fr')
+    expect(detectLanguage('BLADE 510MM BELT STIGA').lang).toBe('en')
+    expect(detectLanguage('MESSER RIEMEN STIGA').lang).toBe('de')
+    expect(detectLanguage('CUCHILLA CORREA STIGA').lang).toBe('es')
+    expect(detectLanguage('LAMA CINGHIA STIGA').lang).toBe('it')
+  })
+
+  it('tranche sur un suffixe morphologique, sans un seul mot grammatical', () => {
+    expect(detectLanguage('Messerhalterung Rasenmäher 46').lang).toBe('de')
+    expect(detectLanguage('Cortacésped transmisión 46').lang).toBe('es')
+  })
+
+  it('⚠ s’abstient toujours quand le libellé ne dit rien', () => {
+    // L'abstention reste le comportement par défaut : une traduction déclenchée à tort
+    // abîme un texte correct.
+    expect(detectLanguage('510MM 45X12 STIGA 2724').lang).toBeNull()
+    expect(detectLanguage('REF 17-329').lang).toBeNull()
+  })
+
+  it('⚠ un seul nom de pièce ne suffit pas — deux indices, pas un', () => {
+    expect(detectLanguage('LAME 510MM').lang).toBeNull()
+  })
+
+  it('les faux amis du domaine restent hors des listes', () => {
+    // « moteur/motor », « filtre/filter », « kit », « lager » (nl ET de) : présents dans
+    // deux langues, ils feraient basculer le score au hasard.
+    expect(detectLanguage('MOTOR FILTER KIT').lang).toBeNull()
+  })
+
+  it('ne casse pas la détection des textes longs déjà reconnus', () => {
+    expect(detectLanguage('Cette lame convient pour les tondeuses de la marque').lang).toBe('fr')
+    expect(detectLanguage('Geschikt voor alle maaiers van het merk met deze riem').lang).toBe('nl')
+  })
+})
