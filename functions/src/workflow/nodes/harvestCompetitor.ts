@@ -78,6 +78,26 @@ const REF_ENRICH_BUDGET = 800
  *  ce qui perdrait le curseur de la moisson, bien plus précieux. */
 const REF_ENRICH_MIN_MS = 90_000
 
+/**
+ * Avance que la passe d'enrichissement rend à l'AVAL : elle s'arrête cinq minutes avant
+ * l'échéance des autres nodes à curseur.
+ *
+ * ⚠⚠ Sans cela, elle mange la réserve du comparatif. Le commentaire qui l'introduit
+ * promet qu'elle « emprunte le temps qui reste, jamais celui de la moisson » — c'était
+ * vrai tant qu'elle ne se déclenchait que sur deux ou trois sites. Depuis qu'elle
+ * s'applique partout où des fiches restent sans clé, elle occupe la fenêtre jusqu'à
+ * l'échéance stricte, et « Comparer catalogue » n'hérite plus que des dix minutes de
+ * `DOWNSTREAM_RESERVE_MS` — trop peu pour relire 115 815 produits contre 483 781 fiches.
+ *
+ * Mesuré le 2026-08-12 : le cycle de 20:10 produisait encore son analyse ; les DEUX
+ * suivants (21:12 et 21:43), postérieurs à l'élargissement de la passe, n'en ont produit
+ * aucune. Le tableau de bord se figeait sans qu'aucune carte n'échoue.
+ *
+ * Cinq minutes plutôt qu'un élargissement de la réserve globale : le besoin vient de CETTE
+ * passe, et la moisson elle-même n'a aucune raison de rendre la main plus tôt.
+ */
+const REF_ENRICH_YIELD_MS = 300_000
+
 /** Colonnes de la feuille de statut (parité avec le node client). */
 const STATUS_COLUMNS = [
   { key: 'site', label: 'Concurrent', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 200 },
@@ -319,7 +339,10 @@ registerServerNode({
       // se termine jamais dans le même run, et la passe n'aurait jamais tourné. La bonne
       // condition est « la moisson a fini SON tick et il reste du temps » — elle prend le
       // temps résiduel, celui qui serait sinon rendu inutilisé.
-      const timeLeft = ctx.deadlineAt == null || ctx.deadlineAt - Date.now() > REF_ENRICH_MIN_MS
+      // ⚠ Échéance PROPRE à la passe, cinq minutes avant celle du run : c'est ce qui rend
+      // sa fenêtre au comparatif (cf. REF_ENRICH_YIELD_MS).
+      const enrichDeadline = ctx.deadlineAt == null ? null : ctx.deadlineAt - REF_ENRICH_YIELD_MS
+      const timeLeft = enrichDeadline == null || enrichDeadline - Date.now() > REF_ENRICH_MIN_MS
       if (needsKeys && timeLeft && !ctx.signal.aborted) {
         const enr = await refEnrichPass({
           loadPages: () => loadIndexPages(ctx.uid, watchId, cfg.siteId),
@@ -329,7 +352,7 @@ registerServerNode({
           // Accès connecté : la fiche porte aussi le prix d'achat, le conseillé et la
           // remise — invisibles sur les pages de rayon.
           wantB2BPrices: !!site.auth,
-          ...(ctx.deadlineAt ? { deadlineAt: ctx.deadlineAt } : {}),
+          ...(enrichDeadline ? { deadlineAt: enrichDeadline } : {}),
         }, REF_ENRICH_BUDGET, prevMeta?.refEnrichCursor ?? null)
         if (enr.visited > 0) {
           await saveCompetitorMeta(ctx.uid, watchId, cfg.siteId, { refEnrichCursor: enr.cursor })
