@@ -20,6 +20,18 @@ import { useTranslation } from '@/lib/i18n'
 const OTHERS: ConfigField[] = [
   { name: 'title', kind: 'text', labelKey: 'node.pw-report.title.label', helpKey: 'node.pw-report.title.help' },
   { name: 'watchId', kind: 'text', labelKey: 'node.compare-catalog.watchId.label', helpKey: 'node.compare-catalog.watchId.help' },
+  // ⚠ Deux rapports pour deux usages. « Appariés » ne parle que des concurrents dont on
+  // sait comparer les prix — c'est le rapport de POSITIONNEMENT, et le défaut. « Tous »
+  // ajoute ceux qu'on collecte sans jamais réussir à les relier au catalogue : leur volume
+  // dit ce qu'on a chez eux et ce qui nous échappe. C'est un rapport de COUVERTURE.
+  {
+    name: 'scope', kind: 'select',
+    labelKey: 'node.pw-report.scope.label', helpKey: 'node.pw-report.scope.help',
+    options: [
+      { value: 'matched', labelKey: 'node.pw-report.scope.matched' },
+      { value: 'all', labelKey: 'node.pw-report.scope.all' },
+    ],
+  },
   { name: 'competitorThresholdPct', kind: 'number', labelKey: 'node.pw-report.compThreshold.label', helpKey: 'node.pw-report.compThreshold.help' },
   { name: 'familyThresholdPct', kind: 'number', labelKey: 'node.pw-report.famThreshold.label', helpKey: 'node.pw-report.famThreshold.help' },
   { name: 'examples', kind: 'number', labelKey: 'node.pw-report.examples.label', helpKey: 'node.pw-report.examples.help' },

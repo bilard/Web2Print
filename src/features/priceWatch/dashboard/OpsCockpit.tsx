@@ -93,6 +93,10 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const reportAgeMs = now - ck.runAt
   const stalled = hasReport && cronOn && !scrapeActive && reportAgeMs > 20 * 60_000
   // Site en cours de moisson (heartbeat) + s'il ne produit rien (anti-bot / bloqué), le dire.
+  // Périmètre du rail : les sites qui travaillent, ou tout ce qu'on a collecté.
+  const [scope, setScope] = useState<'active' | 'all'>('active')
+  const shown = ck.competitors
+    .filter((c) => c.indexed > 0 && (scope === 'all' || c.enabled))
   const curSite = collecting && ck.lastCollectDomain ? ck.competitors.find((c) => c.domain === ck.lastCollectDomain) : null
   const curLabel = curSite ? `${curSite.domain.replace(/^www\./, '')}${curSite.indexed === 0 ? t('pw.ops.blocked') : ''}` : null
 
@@ -249,12 +253,37 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
           </div>
 
           {/* Qui scrape quoi : les concurrents par volume, barre de balayage + cycles. */}
+          {/* ⚠ DEUX périmètres, parce que ce rail répond à deux questions différentes.
+              « Actifs » ne montre que les sites qui travaillent — c'est l'état de la
+              collecte en cours. « Tous » ajoute les sites décochés, qui gardent leurs
+              fiches d'hier : c'est l'inventaire de ce qu'on a en base, y compris ce qui ne
+              tourne plus. Mélanger les deux dans une liste unique faisait passer un vieux
+              stock pour du travail en cours. */}
+          <div className="mt-3 flex items-center gap-1.5">
+            {(['active', 'all'] as const).map((s) => (
+              <button key={s} type="button" onClick={() => setScope(s)}
+                title={t(s === 'active' ? 'pw.ops.scope.active.help' : 'pw.ops.scope.all.help')}
+                className={`text-[10px] uppercase tracking-wide rounded px-2 py-0.5 border transition-colors ${
+                  scope === s
+                    ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-200'
+                    : 'border-white/10 text-white/40 hover:text-white/70'
+                }`}>
+                {t(s === 'active' ? 'pw.ops.scope.active' : 'pw.ops.scope.all')}
+                <span className="ml-1 tabular-nums opacity-70">
+                  {s === 'active' ? shown.filter((c) => c.enabled).length : ck.competitors.filter((c) => c.indexed > 0).length}
+                </span>
+              </button>
+            ))}
+          </div>
           {/* Quatre colonnes sur grand écran : les douze concurrents tiennent en trois
               rangées au lieu de quatre, et c'est autant de hauteur rendue à la suite. */}
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-1.5">
-            {ck.competitors.filter((c) => c.indexed > 0).slice(0, 12).map((c) => (
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-1.5">
+            {shown.slice(0, scope === 'all' ? 24 : 12).map((c) => (
               <div key={c.siteId} className="flex items-center gap-2 text-xs">
-                <span className="truncate text-white/75 flex-1 min-w-0" title={c.domain}>{c.domain.replace(/^www\./, '')}</span>
+                <span className={`truncate flex-1 min-w-0 ${c.enabled ? 'text-white/75' : 'text-white/35 italic'}`}
+                  title={c.enabled ? c.domain : t('pw.ops.scope.off', { domain: c.domain })}>
+                  {c.domain.replace(/^www\./, '')}
+                </span>
                 <div className="h-1.5 w-16 rounded-full bg-white/[0.06] overflow-hidden shrink-0"
                   title={`Familles parcourues ${Math.round(c.progress * 100)} %`}>
                   <div className={`h-full ${c.progress >= 1 ? 'bg-emerald-500' : 'bg-indigo-400'}`} style={{ width: `${Math.round(c.progress * 100)}%` }} />

@@ -86,7 +86,8 @@ const pwReportNode: NodeSpec<PwReportConfig, Record<string, never>, PwReportOutp
       // baisse depuis le dernier run » n'aurait aucune donnée à quoi se raccrocher.
       const moves = eventsOfLastRun(await loadPriceEvents(uid, watchId).catch(() => []))
       const composed = await composeReportHtml(report, prompt, moves,
-        (i) => ctx.log('info', t('run.pwReport.composedBy', { provider: i.provider, model: i.model })))
+        (i) => ctx.log('info', t('run.pwReport.composedBy', { provider: i.provider, model: i.model })),
+        String(config.scope ?? '') === 'all' ? 'all' : 'matched')
       if (composed) {
         const day = new Date().toISOString().slice(0, 10)
         const raw = (config.fileName ?? '').trim() || `veille-tarifaire-${day}.html`

@@ -96,10 +96,27 @@ function undercutBy(
   return n
 }
 
+/** Périmètre des concurrents retenus dans un rapport. */
+export interface ReportScopeOptions {
+  /**
+   * Inclure les concurrents SANS appariement.
+   *
+   * Ils n'ont aucun écart de prix à montrer — mais ils disent combien de fiches on a
+   * collectées chez eux et qu'aucune ne se relie au catalogue. C'est un rapport de
+   * COUVERTURE plutôt que de positionnement, et les deux ont leur usage.
+   */
+  includeUnmatched?: boolean
+}
+
 /** Faits transmis au modèle : bornés, déjà agrégés, sans donnée brute à recalculer. */
-export function reportFacts(report: StoredReport): Record<string, unknown> {
+export function reportFacts(report: StoredReport, opts: ReportScopeOptions = {}): Record<string, unknown> {
   const k = report.kpis
-  const comps = (report.byCompetitor ?? []).filter((c) => c.matched > 0)
+  // ⚠ Périmètre : par défaut, seuls les concurrents qui ont au moins un appariement — les
+  // autres n'ont aucun écart à montrer et une ligne « — % » dans un rapport se lit comme
+  // une panne. Mais un concurrent COLLECTÉ sans appariement est une information en soi :
+  // il dit ce qu'on a chez lui et ce qu'on n'arrive pas à relier. « Tous » l'inclut donc,
+  // avec son volume, pour qui veut suivre la couverture plutôt que les seuls écarts.
+  const comps = (report.byCompetitor ?? []).filter((c) => opts.includeUnmatched || c.matched > 0)
   return {
     analyse_du: new Date(report.runAt).toISOString(),
     produits_apparies: k.products ?? 0,
@@ -185,8 +202,10 @@ const RENDER_RULES = `Contraintes techniques du support (un client de messagerie
  * une instruction concurrente — un brief maison placé avant reprendrait la main sur la
  * demande.
  */
-export function buildComposePrompt(report: StoredReport, prompt: string, moves: PriceEvent[] = []): string {
-  const facts = reportFacts(report)
+export function buildComposePrompt(
+  report: StoredReport, prompt: string, moves: PriceEvent[] = [], opts: ReportScopeOptions = {},
+): string {
+  const facts = reportFacts(report, opts)
   const changes = movesFacts(moves)
   return `${prompt.trim()}
 

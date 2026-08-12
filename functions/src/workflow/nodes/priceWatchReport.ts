@@ -40,13 +40,15 @@ async function composeServerSide(
   report: StoredReport,
   prompt: string,
   moves: PriceEvent[],
+  /** « all » inclut les concurrents SANS appariement — rapport de couverture. */
+  scope: 'matched' | 'all' = 'matched',
 ): Promise<string | null> {
   try {
     // 32 000 tokens, pas les 8192 par défaut : un corps de mail entièrement en styles
     // inline pèse 20 à 30 Ko, et chaque guillemet de `style="…"` est ré-échappé dans la
     // chaîne JSON. Tronquée, la réponse n'est plus du JSON valide — donc un échec muet.
     // (`callDeepSeek` reclampe à 8192 de son côté ; Claude et Gemini encaissent.)
-    const r = await callLlm(ctx.uid, buildComposePrompt(report, prompt, moves) + JSON_INSTRUCTION, {
+    const r = await callLlm(ctx.uid, buildComposePrompt(report, prompt, moves, { includeUnmatched: scope === 'all' }) + JSON_INSTRUCTION, {
       maxTokens: 32_000,
       preferProviders: ['claude', 'gemini'],
     })
@@ -104,7 +106,8 @@ registerServerNode({
       // à quoi se raccrocher sans eux.
       const jSnap = await getFirestore().doc(priceEventsDoc(ctx.uid, watchId)).get().catch(() => null)
       const journal = ((jSnap?.data()?.events ?? []) as PriceEvent[])
-      const composed = await composeServerSide(ctx, report, prompt, eventsOfLastRun(journal))
+      const composed = await composeServerSide(ctx, report, prompt, eventsOfLastRun(journal),
+        String(config.scope ?? '') === 'all' ? 'all' : 'matched')
       if (composed) {
         doneLog(composed)
         return { html: composed, file: makeServerFile(fileName, 'text/html;charset=utf-8', composed) }

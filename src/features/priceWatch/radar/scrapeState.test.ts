@@ -21,7 +21,7 @@ const ops = (patch: Partial<OpsCockpit> = {}): OpsCockpit => ({
   sitesComplete: 0, cyclesDone: 0, slowestCycle: null, runAt: NOW, lastCollectAt: null,
   lastCollectDomain: null, hasData: true,
   totalPages: 0, lastPassProducts: 0, lastPassPages: 0, sitesCollecting: 0,
-  competitors: [{ siteId: 'a', domain: 'www.exemple.com', indexed: 10, progress: 0.5, sweeps: 0, cumulMs: 0, cycleMs: null, pctPrice: 90 }],
+  competitors: [{ siteId: 'a', domain: 'www.exemple.com', indexed: 10, progress: 0.5, sweeps: 0, cumulMs: 0, cycleMs: null, enabled: true, pctPrice: 90 }],
   ...patch,
 })
 

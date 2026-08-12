@@ -28,11 +28,14 @@ export async function composeReportHtml(
   prompt: string,
   moves: PriceEvent[],
   onProvider?: (info: { provider: string; model: string }) => void,
+  /** Périmètre : « all » inclut les concurrents SANS appariement — un rapport de
+   *  couverture plutôt que de positionnement (cf. `ReportScopeOptions`). */
+  scope: 'matched' | 'all' = 'matched',
 ): Promise<string | null> {
   try {
     const out = await generateJson({
       task: 'priceWatch.analysis',
-      prompt: buildComposePrompt(report, prompt, moves),
+      prompt: buildComposePrompt(report, prompt, moves, { includeUnmatched: scope === 'all' }),
       schema,
       schemaForLLM,
       version: 'pw-report-compose-1',

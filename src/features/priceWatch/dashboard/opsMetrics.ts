@@ -59,6 +59,9 @@ interface OpsCompetitor {
   cumulMs: number          // temps de moisson cumulé, toutes passes (LIVE)
   cycleMs: number | null   // durée d'UN cycle complet = cumulMs / sweeps (null si 0 cycle)
   pctPrice: number         // % des fiches portant un prix (santé du parsing)
+  /** Site COCHÉ dans « Sites sources ». Un site décoché garde ses fiches d'hier mais ne
+   *  travaille plus : le rail doit pouvoir le montrer ou le masquer à la demande. */
+  enabled: boolean
 }
 
 export interface OpsCockpit {
@@ -113,6 +116,9 @@ function opsCompetitorOf(s: CompetitorStat, live?: HarvestMeta): OpsCompetitor {
     cycleMs: sweeps > 0 ? Math.round(cumulMs / sweeps) : null,
     // % prix LIVE (mis à jour au scrape depuis l'index) prioritaire sur le rapport figé.
     pctPrice: live?.pctPrice ?? s.audit?.pctPrice ?? 0,
+    // Valeur PROVISOIRE : `buildOpsCockpit` la réécrit avec l'état coché réel, qu'il est
+    // seul à connaître (il compare toutes les métas d'un coup).
+    enabled: true,
   }
 }
 
@@ -163,7 +169,7 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
           audit: { indexed: 0, pctPrice: 0, pctListPrice: 0, pctStock: 0, pctName: 0, pctImage: 0, pctRef: 0 },
         }))
     : []
-  const competitors = [...report.byCompetitor, ...liveOnly]
+  const competitorsRaw = [...report.byCompetitor, ...liveOnly]
     .map((s) => opsCompetitorOf(s, liveMeta?.get(s.siteId)))
     .sort((a, b) => b.indexed - a.indexed || a.domain.localeCompare(b.domain))
   // ⚠ Un site DÉCOCHÉ ne doit plus peser : il gardait ses fiches d'hier, donc il
@@ -176,7 +182,10 @@ export function buildOpsCockpit(report: StoredReport, liveMeta?: Map<string, Har
   // « Actif » = coché ET a collecté ≥ 1 fiche. Garde-fou : un site à 0 fiche mais
   // `progress=1` (balayage « complet » de rien) ne doit ni compter comme bouclé ni
   // verdir la jauge.
-  const active = competitors.filter((c) => c.indexed > 0 && !disabled.has(c.siteId))
+  // L'état coché est reporté sur chaque ligne : le rail du cockpit s'en sert pour
+  // basculer entre « les concurrents qui travaillent » et « tout ce qu'on a collecté ».
+  const competitors = competitorsRaw.map((c) => ({ ...c, enabled: !disabled.has(c.siteId) }))
+  const active = competitors.filter((c) => c.indexed > 0 && c.enabled)
   const totalIndexed = competitors.reduce((n, c) => n + c.indexed, 0)
   const totalCumulMs = competitors.reduce((n, c) => n + c.cumulMs, 0)
   const avgProgress = active.length
