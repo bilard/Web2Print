@@ -2785,7 +2785,7 @@ export const fr = {
   'run.compareCatalog.noJoinKey': 'Aucune clé de jointure dans la feuille source (ni référence, ni référence 2, ni EAN) : la comparaison ne peut rien apparier. En-têtes reçus : {headers}',
   'run.compareCatalog.sourceKept': '{count} produit(s) source retenus sur {rows} ligne(s).',
   'run.compareCatalog.duplicatesDropped': '{count} ligne(s) source écartées comme doublons — vérifie la « Colonne Référence » (identité repliée sur le nom si elle est absente).',
-  'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index — {pctRef} % portent une référence, {pctPrice} % un prix.",
+  'run.compareCatalog.siteIndexCount': "{domain} : {count} produit(s) dans l'index — {pctRef} % portent une référence, {pctPrice} % un prix, {pctImage} % un visuel.",
   'run.compareCatalog.emptyIndex': 'Index concurrent vide pour les {sites} site(s) sous le suivi « {watchId} ». Vérifie que le node « Moisson concurrents » utilise le MÊME identifiant de suivi (« {watchId} ») et qu\'il a bien été lancé avant.',
   'run.compareCatalog.matchedBreakdown': "{matched} produit(s) apparié(s) : {exact} même produit, {originOnly} pièce d'origine (adaptable ↔ OEM). {unmatched} sans correspondance, {noKey} sans clé.",
   'run.compareCatalog.emptySites': '{count} concurrent(s) sans aucun appariement, écartés de la feuille : {sites}.',

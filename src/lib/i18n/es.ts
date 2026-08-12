@@ -2664,7 +2664,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.noJoinKey': 'Ninguna clave de unión en la hoja de origen (ni referencia, ni referencia 2, ni EAN): la comparación no puede emparejar nada. Encabezados recibidos: {headers}',
   'run.compareCatalog.sourceKept': '{count} producto(s) de origen conservado(s) de {rows} fila(s).',
   'run.compareCatalog.duplicatesDropped': '{count} fila(s) de origen descartada(s) como duplicados — compruebe la «Columna Referencia» (la identidad recae en el nombre si falta).',
-  'run.compareCatalog.siteIndexCount': "{domain}: {count} producto(s) en el índice — {pctRef} % llevan una referencia, {pctPrice} % un precio.",
+  'run.compareCatalog.siteIndexCount': "{domain}: {count} producto(s) en el índice — {pctRef} % llevan una referencia, {pctPrice} % un precio, {pctImage} % una imagen.",
   'run.compareCatalog.emptyIndex': 'Índice de competidores vacío para los {sites} sitio(s) bajo el seguimiento «{watchId}». Compruebe que el nodo «Cosecha de competidores» utiliza el MISMO identificador de seguimiento («{watchId}») y que se ha ejecutado antes.',
   'run.compareCatalog.matchedBreakdown': '{matched} producto(s) emparejado(s): {exact} mismo producto, {originOnly} pieza original (adaptable ↔ OEM). {unmatched} sin correspondencia, {noKey} sin clave.',
   'run.compareCatalog.emptySites': '{count} competidor(es) sin ninguna coincidencia, excluidos de la hoja: {sites}.',

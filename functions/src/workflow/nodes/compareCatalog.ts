@@ -193,7 +193,7 @@ registerServerNode({
       const a = auditListings(listings)
       refPctBySite.set(s.siteId, a.pctRef)
       ctx.log('info', t(ctx.locale, 'run.compareCatalog.siteIndexCount', {
-        domain: s.domain, count: listings.length, pctRef: a.pctRef, pctPrice: a.pctPrice,
+        domain: s.domain, count: listings.length, pctRef: a.pctRef, pctPrice: a.pctPrice, pctImage: a.pctImage,
       }))
     }
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.indexLoaded', {
