@@ -56,6 +56,22 @@ describe('refEnrichPass — visiter les fiches pour y trouver la clé', () => {
     expect(saved[0].products[0].ref).toBe('REF-A')
   })
 
+  it('⚠ remplace la vignette de liste par le grand visuel de la fiche', async () => {
+    // La page de rayon sert une miniature ; la fiche, l'image de zoom. C'est celle-là
+    // qu'on veut pour comparer deux produits côte à côte.
+    const saved: IndexedPage[] = []
+    await refEnrichPass({
+      loadPages: async () => [{
+        id: 'p1', url: 'https://s.fr/c', page: 1,
+        products: [{ url: 'https://s.fr/a', name: 'A', image: 'https://s.fr/thumb/a-100.jpg' }],
+      }],
+      fetchHtml: async () => `<html><meta property="og:image" content="https://s.fr/large/a.jpg">
+        <script type="application/ld+json">{"@type":"Product","name":"A","sku":"REF-A"}</script></html>`,
+      savePage: async (p) => { saved.push(p) },
+    }, 10)
+    expect(saved[0].products[0].image).toBe('https://s.fr/large/a.jpg')
+  })
+
   it('reprend APRÈS la dernière page menée à son terme', async () => {
     const r = await refEnrichPass({
       loadPages: async () => [

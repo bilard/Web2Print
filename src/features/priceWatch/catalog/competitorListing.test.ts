@@ -284,3 +284,33 @@ describe('mode catalogue (marchand qui ne publie pas ses prix)', () => {
     expect(detectCatalogMode('<html><body>24,99 €</body></html>')).toBe(false)
   })
 })
+
+describe('⚠ fiche produit : le ZOOM prime sur la vignette', () => {
+  const BASE = 'https://s.fr/p/17-329-poignee.html'
+
+  it('prend og:image plutôt que la miniature du JSON-LD', () => {
+    // La vignette ne fait souvent que 100 à 300 pixels : illisible dès qu'on compare deux
+    // produits côte à côte. La grande image est sur la même page, déclarée en og:image.
+    const html = `<html>
+      <meta property="og:image" content="https://s.fr/img/large/17-329.jpg">
+      <script type="application/ld+json">{"@type":"Product","name":"Poignée","sku":"17-329",
+        "image":"https://s.fr/img/thumb/17-329-100x100.jpg"}</script></html>`
+    expect(parseProductPage(html, BASE)?.image).toBe('https://s.fr/img/large/17-329.jpg')
+  })
+
+  it('reconnaît un zoom déclaré par attribut, et le rend ABSOLU', () => {
+    const html = '<html><img src="/img/t.jpg" data-zoom-image="/img/large/t.jpg"><h1>Poignée</h1></html>'
+    expect(parseProductPage(html, BASE)?.image).toBe('https://s.fr/img/large/t.jpg')
+  })
+
+  it('⚠ écarte les SVG et GIF — pixel de suivi ou logo, jamais le produit', () => {
+    const html = `<html><meta property="og:image" content="https://s.fr/logo.svg">
+      <img src="/img/produit.jpg"><h1>Poignée</h1></html>`
+    expect(parseProductPage(html, BASE)?.image).not.toContain('.svg')
+  })
+
+  it('sans zoom déclaré, le comportement d’avant est conservé', () => {
+    const html = '<html><h1>Poignée</h1><img src="/img/produit.jpg"></html>'
+    expect(parseProductPage(html, BASE)?.image).toBe('https://s.fr/img/produit.jpg')
+  })
+})

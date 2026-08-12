@@ -304,6 +304,36 @@ function str(v: unknown): string | undefined {
  * Extrait la fiche produit d'une page. JSON-LD `Product` en premier, replis regex
  * ensuite — pour les sites dont le JSON-LD est absent ou invalide.
  */
+/**
+ * Visuel en HAUTE définition d'une fiche produit.
+ *
+ * ⚠ La vignette affichée ne fait souvent que 100 à 300 pixels : illisible dès qu'on
+ * compare deux produits côte à côte. La grande image existe pourtant sur la même page, et
+ * les plateformes la déclarent toutes de la même façon — `og:image` pour les réseaux
+ * sociaux, `data-zoom-image` pour les visionneuses, `link rel=image_src` pour les moteurs.
+ * Trois conventions, aucun site nommé.
+ *
+ * Ordre : `og:image` d'abord (c'est l'image que le marchand a CHOISI de montrer, donc la
+ * bonne, et elle est toujours absolue), puis le zoom déclaré, puis l'aperçu moteur.
+ */
+function extractZoomImage(html: string, baseUrl: string): string | undefined {
+  const patterns = [
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+    /\bdata-(?:zoom-image|large-image|image-large|full-image)=["']([^"']+)["']/i,
+    /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i,
+  ]
+  for (const re of patterns) {
+    const m = html.match(re)
+    const raw = m?.[1]?.trim()
+    // Un pixel de suivi ou un logo de réseau social n'est pas le produit : on écarte les
+    // adresses qui n'ont rien d'une image de fiche.
+    if (!raw || /\.(?:svg|gif)(?:$|\?)/i.test(raw)) continue
+    try { return new URL(raw, baseUrl).href } catch { continue }
+  }
+  return undefined
+}
+
 export function parseProductPage(html: string, url: string): CompetitorListing | null {
   const product = parseJsonLdObjects(html).find((o) => {
     const t = o['@type']
@@ -342,7 +372,9 @@ export function parseProductPage(html: string, url: string): CompetitorListing |
     out.name = h1 ? textOf(h1[1]) : ''
   }
   if (!out.ref) out.ref = extractRef(html)
-  if (!out.image) out.image = extractImage(html, url)
+  // ⚠ Le ZOOM prime sur tout, y compris sur l'image du JSON-LD : celle-ci est parfois la
+  // vignette de liste, et c'est le grand visuel qu'on vient chercher sur une fiche.
+  out.image = extractZoomImage(html, url) ?? out.image ?? extractImage(html, url)
   if (out.price == null) {
     const zone = html.match(/<[^>]*\bcurrent-price\b[\s\S]{0,300}?<\/div>/i)
       ?? html.match(/itemprop=["']price["'][^>]*content=["']([\d.,]+)["']/i)

@@ -102,7 +102,11 @@ export async function refEnrichPass(
           ...l,
           ...(fiche.ref ? { ref: fiche.ref } : {}),
           ...(fiche.gtin13 ? { gtin13: fiche.gtin13 } : {}),
-          ...(!l.image && fiche.image ? { image: fiche.image } : {}),
+          // ⚠ Le visuel de la FICHE remplace celui de la liste, même s'il y en avait un :
+          // la page de rayon sert une vignette de cent à trois cents pixels, la fiche le
+          // grand visuel (cf. `extractZoomImage`). C'est celui-là qu'on veut pour comparer
+          // deux produits côte à côte.
+          ...(fiche.image ? { image: fiche.image } : {}),
         })
         enriched++
       }
