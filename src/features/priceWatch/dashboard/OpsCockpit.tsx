@@ -2,7 +2,7 @@
 // est la collecte — fiches traitées, balayage restant, cycles bouclés, temps consommé,
 // tokens Jina, prochaine moisson. Tout est LIVE (le rapport et la conso arrivent en
 // onSnapshot ; countdown au tic). Lecture seule, aucun bouton d'action ici.
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from 'lucide-react'
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
@@ -307,8 +307,22 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                     <span className="text-right">{t('pw.ops.col.cycles')}</span>
                     <span className="text-right">{t('pw.ops.col.last')}</span>
                   </div>
-                  {part.map((c) => (
-                    <div key={c.siteId}
+                  {part.map((c, k) => (
+                    <Fragment key={c.siteId}>
+                    {/* ⚠ FILET de séparation dès que le groupe change — y compris en tête
+                        de colonne, où la frontière tombe sans qu'on la voie. Sans lui, les
+                        sites au repos se confondaient avec ceux qui travaillent : deux
+                        lignes voisines, même graisse, même colonne, et rien pour dire que
+                        l'une est collectée à l'instant et l'autre depuis six jours. */}
+                    {!c.enabled && (k === 0 || part[k - 1].enabled) && (
+                      <div className="flex items-center gap-2 pt-2 pb-0.5">
+                        <span className="text-[9px] uppercase tracking-wider text-white/25 whitespace-nowrap">
+                          {t('ops.gauges.groupInactive')}
+                        </span>
+                        <span className="h-px flex-1 bg-white/10" />
+                      </div>
+                    )}
+                    <div
                       className="grid grid-cols-[minmax(0,1fr)_4rem_3.5rem_2.25rem_2.75rem] gap-2 items-center
                         text-xs py-[3px] border-b border-white/[0.03] hover:bg-white/[0.03]">
                       <span className={`truncate ${c.enabled ? 'text-white/75' : 'text-white/35 italic'}`}
@@ -330,6 +344,7 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
                         {agoShort(c.lastPassAt, now)}
                       </span>
                     </div>
+                    </Fragment>
                   ))}
                 </div>
               )
