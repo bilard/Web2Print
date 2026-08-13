@@ -5933,6 +5933,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.why.conflictValues': '{label}: {mine} ≠ {theirs}',
   'pwx.why.detail': '{label}: {detail}',
   'pwx.doubtBar.label': 'Qué bloquea',
+  'pwx.doubtBar.total': '{count} motivos registrados — haga clic para aislar',
   'pwx.doubtBar.pick': 'Conservar solo las líneas afectadas por este motivo',
   'pwx.doubtBar.clear': 'Quitar este filtro',
   'pwx.why.claim.direct': 'por su ref.',

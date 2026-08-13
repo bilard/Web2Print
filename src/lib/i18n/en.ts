@@ -5934,6 +5934,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.why.conflictValues': '{label}: {mine} ≠ {theirs}',
   'pwx.why.detail': '{label}: {detail}',
   'pwx.doubtBar.label': 'What blocks',
+  'pwx.doubtBar.total': '{count} reasons recorded — click to isolate',
   'pwx.doubtBar.pick': 'Keep only the rows this reason weighs on',
   'pwx.doubtBar.clear': 'Remove this filter',
   'pwx.why.claim.direct': 'by its own ref.',

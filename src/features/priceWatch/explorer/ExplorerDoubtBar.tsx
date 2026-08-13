@@ -19,11 +19,15 @@ export function ExplorerDoubtBar({ doubts, selected, onPick }: {
   onPick: (reason: DoubtReason | null) => void
 }) {
   const { t, locale } = useTranslation()
-  if (doubts.length === 0) return null
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
+  if (doubts.length === 0) return null
+  const total = doubts.reduce((s, d) => s + d.count, 0)
   return (
-    <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-      <span className="text-white/30 uppercase tracking-wide">{t('pwx.doubtBar.label')}</span>
+    <div className="flex items-center gap-1.5 flex-wrap text-[10px] rounded bg-well/60 border border-white/10 px-2 py-1.5">
+      <span className="text-amber-200/80 font-medium uppercase tracking-wide">
+        {t('pwx.doubtBar.label')}
+      </span>
+      <span className="text-white/30 tabular-nums mr-1">{t('pwx.doubtBar.total', { count: n(total) })}</span>
       {doubts.map((d) => {
         const on = selected === d.reason
         return (

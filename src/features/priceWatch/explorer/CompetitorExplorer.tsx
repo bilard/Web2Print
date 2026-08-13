@@ -362,12 +362,6 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
 
       {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}
       <div className="px-3 py-2 space-y-2 border-b border-white/10">
-        {/* Ce qui EMPÊCHE les appariements d'être acquis, motif par motif. En clair, parce
-            qu'un tas de plusieurs milliers ne se traite qu'en le décomposant. */}
-        {!catalogMode && !enrichMode && !source.loading && (
-          <ExplorerDoubtBar doubts={doubts} selected={effective.reason}
-            onPick={(reason) => patch({ reason })} />
-        )}
         <div className="flex items-center gap-2 flex-wrap">
           {/* La recherche s'affiche dans la barre de TITRE : elle occupait ici une ligne
               entière pour elle seule, au-dessus des filtres. Rendue par portail, elle
@@ -427,6 +421,13 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
           </div>
         </div>
         {!catalogMode && !enrichMode && <ExplorerTokens filter={effective} onChange={patch} tokenIndex={tokenIndex} />}
+        {/* Ce qui EMPÊCHE les appariements d'être acquis, motif par motif — juste sous les
+            filtres, parce que c'en est un : chaque motif isole ses lignes. Un tas de
+            plusieurs milliers ne se traite qu'en le décomposant. */}
+        {!catalogMode && !enrichMode && (
+          <ExplorerDoubtBar doubts={doubts} selected={effective.reason}
+            onPick={(reason) => patch({ reason })} />
+        )}
       </div>
 
       {/* ── Concurrents · taxonomie F1 · liste : seules zones qui défilent ──── */}

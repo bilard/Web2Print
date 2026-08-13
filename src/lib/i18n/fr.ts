@@ -6125,6 +6125,7 @@ export const fr = {
   'pwx.why.conflictValues': '{label} : {mine} ≠ {theirs}',
   'pwx.why.detail': '{label} : {detail}',
   'pwx.doubtBar.label': 'Ce qui bloque',
+  'pwx.doubtBar.total': '{count} motifs relevés — cliquez pour isoler',
   'pwx.doubtBar.pick': 'Ne garder que les lignes que ce motif grève',
   'pwx.doubtBar.clear': 'Retirer ce filtre',
   'pwx.why.claim.direct': 'par sa réf.',
