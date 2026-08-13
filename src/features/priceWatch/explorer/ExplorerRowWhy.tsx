@@ -1,0 +1,81 @@
+// Le POURQUOI de l'indice, lu à même la ligne — et non caché derrière une infobulle.
+//
+// L'infobulle du badge dit déjà tout, mais elle ne se lit qu'une ligne à la fois, en
+// visant un badge de 9 px. Or l'écran sert à trier des centaines d'appariements : ce qui
+// décide (« clé courte », « familles incompatibles », « photos divergentes ») doit se
+// balayer verticalement. L'infobulle RESTE en place : elle porte la forme longue, qui
+// explique le cas, là où cette ligne ne fait que le NOMMER.
+//
+// Composant à part, pas quelques lignes de plus dans `ExplorerRow` : ce fichier-là est
+// déjà le plus gros du dossier, et les tables de libellés vivent hors des composants qui
+// les affichent (cf. `doubtLabels.ts`).
+import { DOUBT_SHORT } from './doubtLabels'
+import type { Confidence, SupportReason } from './confidence'
+import type { StoredVisual } from '../visual/visualStore'
+import { useTranslation, type TranslationKey } from '@/lib/i18n'
+
+/** Forme COURTE de la preuve. La longue tient en une phrase (« référence retrouvée dans
+ *  le libellé du concurrent — la preuve la plus faible… ») : elle explique, et reste dans
+ *  l'infobulle. Ici on énumère, donc on nomme. */
+const EVIDENCE_SHORT: Record<string, TranslationKey> = {
+  gtin13: 'pwx.proof.short.gtin13',
+  'ean-in-url': 'pwx.proof.short.eanInUrl',
+  sku: 'pwx.proof.short.sku',
+  mpn: 'pwx.proof.short.mpn',
+  'ref-in-name': 'pwx.proof.short.refInName',
+  'ref-in-url': 'pwx.proof.short.refInUrl',
+  'ref-in-title': 'pwx.proof.short.refInTitle',
+}
+
+/** Idem pour les renforts : ce qui a fait MONTER le score, en trois mots. */
+const SUPPORT_SHORT: Record<SupportReason, TranslationKey> = {
+  'ean-echo': 'pwx.support.short.eanEcho',
+  'ref-echo': 'pwx.support.short.refEcho',
+  'title-echo': 'pwx.support.short.titleEcho',
+  'second-key': 'pwx.support.short.secondKey',
+  'visual-echo': 'pwx.support.short.visualEcho',
+}
+
+export function ExplorerRowWhy({ confidence, proof, visual }: {
+  confidence: Confidence | null
+  proof: { evidence: string; keyValue: string; isEan: boolean } | null
+  visual?: StoredVisual | null
+}) {
+  const { t } = useTranslation()
+  const proofKey = proof ? EVIDENCE_SHORT[proof.evidence] : undefined
+  const doubts = confidence?.doubts ?? []
+  const supports = confidence?.supports ?? []
+  const note = visual?.note?.trim() || null
+  const hasReasons = Boolean(proofKey) || doubts.length > 0 || supports.length > 0
+  if (!hasReasons && !note) return null
+
+  // Un doute sur une ligne DÉJÀ douteuse se lit en rose, comme sa bande : deux couleurs
+  // pour le même état enverraient deux signaux là où il n'y en a qu'un.
+  const doubtTone = confidence?.band === 'doubt' ? 'text-rose-300/80' : 'text-amber-300/80'
+
+  return (
+    <div className="mt-1 space-y-0.5 text-[10px] leading-snug">
+      {hasReasons && (
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          {proofKey && (
+            <span className="text-white/40">{t('pwx.trust.proof', { what: t(proofKey) })}</span>
+          )}
+          {doubts.map((d) => (
+            <span key={d} className={doubtTone}>⚠ {t(DOUBT_SHORT[d])}</span>
+          ))}
+          {supports.map((s) => (
+            <span key={s} className="text-emerald-300/60">+ {t(SUPPORT_SHORT[s])}</span>
+          ))}
+        </div>
+      )}
+      {/* ⚠ La note vient d'un modèle : sa longueur n'est pas bornée. Sans le clamp, une
+          seule ligne d'analyse bavarde repousse tout l'écran vers le bas. Le texte entier
+          reste accessible à la souris. */}
+      {note && (
+        <div className="text-white/35 italic line-clamp-2" title={note}>
+          {t('pwx.why.visual', { score: visual?.score ?? 0, note })}
+        </div>
+      )}
+    </div>
+  )
+}

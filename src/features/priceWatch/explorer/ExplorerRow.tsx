@@ -16,6 +16,7 @@ import type { CompetitorListing } from '../catalog/competitorListing'
 import { discountPct } from './pairing'
 import { eur, pct } from '../dashboard/format'
 import { ExplorerThumb } from './ExplorerThumb'
+import { ExplorerRowWhy } from './ExplorerRowWhy'
 import { useTranslation, type TranslationKey } from '@/lib/i18n'
 
 // ⚠ Clés de traduction, pas libellés : un t() en constante de module fige la langue à
@@ -288,6 +289,11 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                   </span>
                 )}
               </div>
+              {/* Le détail de l'indice, EN CLAIR sous les badges : motifs de doute, nature
+                  de la preuve, renforts, et ce que l'analyse des photos a vu. Ils
+                  n'existaient que dans les infobulles — invisibles au balayage, alors que
+                  ce sont eux qui décident de garder ou d'écarter la ligne. */}
+              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual} />
               {/* Avant / après enrichissement. N'apparaît QUE si la feuille porte la
                   mémoire de l'original — un catalogue jamais enrichi n'a rien à montrer,
                   et un bouton inerte vaudrait moins que pas de bouton. */}

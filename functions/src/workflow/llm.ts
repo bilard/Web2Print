@@ -41,7 +41,7 @@ async function fetchLlm(url: string, init: RequestInit): Promise<Response> {
     // Un abort doit se lire comme un dépassement, pas comme une panne réseau obscure : la
     // cascade journalise ce message et c'est lui qu'on retrouve dans la console du run.
     if (e instanceof Error && e.name === 'AbortError') {
-      throw new Error(`Délai dépassé (${LLM_TIMEOUT_MS / 1000} s) — le fournisseur n'a pas répondu.`)
+      throw new Error(`Délai dépassé (${LLM_TIMEOUT_MS / 1000} s) — le fournisseur n'a pas répondu.`, { cause: e })
     }
     throw e
   } finally {
