@@ -29,8 +29,14 @@ import { loadPairingRules } from '../../priceWatch/pairingRulesStore'
 import { rulesDifferFromDefault, summarizeRules } from '../../priceWatch/catalog/pairingRules'
 
 /** Cycles consécutifs SANS le moindre appariement au-delà desquels une passe authentifiée
- *  se met en veille. Dix ≈ cinquante produits testés en vain sur ce site. */
-const AUTH_DRY_LIMIT = 10
+ *  se met en veille. Cinq ≈ vingt-cinq produits testés en vain sur ce site.
+ *
+ *  ⚠ Abaissé de dix à cinq sur mesure : le cycle de 22:50 a vu la recherche dirigée tenir
+ *  1 415 s à elle seule — les DIX minutes rendues à la collecte par la réserve ramenée à
+ *  cinq minutes ont été absorbées par trois passes authentifiées (progarden, sodipieces,
+ *  kramp) qui rendent « 0/5 » depuis des jours. À dix cycles, la mise en veille aurait
+ *  demandé deux heures et demie de gaspillage supplémentaire. */
+const AUTH_DRY_LIMIT = 5
 /** Une passe de contrôle est rejouée tous les N cycles, pour reprendre tout seul un site
  *  qui se remet à répondre. */
 const AUTH_DRY_RECHECK = 25
