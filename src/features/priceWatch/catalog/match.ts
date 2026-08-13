@@ -12,7 +12,7 @@ import {
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import { familiesConflict, partFamilies } from './partFamily'
-import { partNature, sourceNature, natureMismatch } from './partNature'
+import { partNature, productNature, natureMismatch } from './partNature'
 import { nameTokens } from './nameMatch'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { CompetitorListing, Availability } from './competitorListing'
@@ -222,7 +222,7 @@ export type VetoReason = 'family' | 'price-abyss' | 'no-corroboration' | 'nature
  * chaque réglage coûte.
  */
 export function vetoReason(
-  source: { name?: string; price?: number; description?: string; taxo?: string[] },
+  source: { name?: string; price?: number; description?: string; taxo?: string[]; originRefs?: string[] },
   candidate: { name?: string; price?: number },
   proof: MatchProof,
   rules: PairingRules = DEFAULT_PAIRING_RULES,
@@ -236,7 +236,7 @@ export function vetoReason(
   // les séparer : seul ce qu'ils AFFIRMENT le peut. Rangement du catalogue d'abord,
   // libellé ensuite ; et jamais de refus tiré d'un silence.
   if (rules.natureVeto
-    && natureMismatch(sourceNature(source.taxo, sourceName, source.description), partNature(candidate.name))) {
+    && natureMismatch(productNature({ ...source, name: sourceName }), partNature(candidate.name))) {
     return 'nature'
   }
   if (rules.familyVeto && familiesConflict(sourceName, candidate.name, rules.extraFamilies)) return 'family'

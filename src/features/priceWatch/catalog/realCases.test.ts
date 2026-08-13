@@ -119,6 +119,18 @@ describe('LE CŒUR DU SUJET — adaptable et pièce d’origine ne se confondent
     expect(row.source).toBeNull()
   })
 
+  it('« Remplace origine : … » suffit à dire qu’un produit EST un adaptable', () => {
+    // Signal déterministe, sans lexique : déclarer qu'on remplace une pièce, c'est
+    // déclarer qu'on n'est pas cette pièce. 15 117 produits du catalogue le portent — sans
+    // lui, la règle « origine avec origine » ne s'appliquait presque jamais.
+    const muet: SourceProduct = {
+      id: 'muet', name: 'COURROIE 5/8 52POUCES', ref: '3300173',
+      originRefs: ['754-0280'], price: 11.9, // aucun mot « adaptable » nulle part
+    }
+    const [row] = pair([muet], fiche('Courroie MTD 754-0280 — pièce d’origine constructeur'))
+    expect(row.source).toBeNull()
+  })
+
   it('le RANGEMENT du catalogue prime sur le libellé', () => {
     // Un produit rangé sous « PIÈCES ORIGINE » EST une pièce constructeur, quoi que dise
     // son libellé — et il ne peut donc pas s'apparier à une fiche d'adaptable.

@@ -67,6 +67,29 @@ export function natureFromTaxonomy(path: string[] | null | undefined): PartNatur
   return 'unknown'
 }
 
+/**
+ * Nature d'un produit du CATALOGUE SOURCE, du signal le plus sûr au moins sûr :
+ *
+ * 1. son RANGEMENT (« PIÈCES ORIGINE », « ADAPTABLE ») — un rangement dit ce qu'une pièce
+ *    est, là où un libellé dit ce qui la vend ;
+ * 2. ses RÉFÉRENCES D'ORIGINE. Déclarer « Remplace origine : 754-0280 », c'est déclarer
+ *    qu'on n'EST PAS cette pièce. Le signal est déterministe, sans lexique et sans
+ *    ambiguïté — c'est le plus fiable des trois après le rangement, et de loin le plus
+ *    répandu dans ce catalogue : 15 117 produits le portent ;
+ * 3. son libellé et sa description, à défaut.
+ */
+export function productNature(p: {
+  taxo?: string[] | null
+  originRefs?: string[] | null
+  name?: string | null
+  description?: string | null
+}): PartNature {
+  const byPath = natureFromTaxonomy(p.taxo)
+  if (byPath !== 'unknown') return byPath
+  if (p.originRefs?.length) return 'aftermarket'
+  return partNature(p.name, p.description)
+}
+
 /** Nature d'un produit SOURCE : son rangement d'abord, son libellé ensuite. */
 export function sourceNature(
   path: string[] | null | undefined,
