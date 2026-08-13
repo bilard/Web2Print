@@ -13,7 +13,7 @@ import { DEFAULT_PAIRING_RULES, type PairingRules } from '../catalog/pairingRule
 import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/competitorListing'
 import { scorePair, type Confidence } from './confidence'
-import { claimRank } from '../catalog/originYield'
+import { claimRank, natureFits } from '../catalog/originYield'
 import { partNature, natureMismatch, type PartNature } from '../catalog/partNature'
 
 /** Nature de la preuve d'appariement (même classement que le rapport). */
@@ -119,6 +119,8 @@ export function pairSiteListings(
     /** Rang du gagnant courant (cf. `originYield`) : c'est lui que le suivant doit
      *  surclasser pour prendre la fiche. */
     rank: number
+    /** Nature affirmée par le gagnant courant — sert au départage à rang égal. */
+    nature: PartNature
     claims: { ref: string; origin: boolean }[]
   }>()
   for (const product of products) {
@@ -131,9 +133,10 @@ export function pairSiteListings(
     // Rang de la revendication : direct > variante du même code > référence d'origine
     // pure. Le même classement que le rapport — l'écran ne doit jamais désigner un autre
     // produit que lui pour une fiche donnée.
+    const myNature = partNature(product.name, product.description)
     const rank = claimRank({
       url: m.listing.url, origin: m.proof.key.origin,
-      ownRef: product.ref, keyValue: m.proof.key.value,
+      ownRef: product.ref, keyValue: m.proof.key.value, nature: myNature,
     })
     const seen = byListing.get(m.listing.url)
     if (seen) {
@@ -146,16 +149,27 @@ export function pairSiteListings(
       // le fichier (cf. `originYield` — même règle que le rapport, où la cellule perdante
       // est effacée). À rang ÉGAL, le premier reste le gagnant : les runs successifs
       // doivent rendre la même liste.
-      if (rank > seen.rank) {
+      // À rang ÉGAL, la NATURE tranche : un adaptable ne prend pas la fiche d'une pièce
+      // d'origine quand l'équivalent constructeur revendique la même référence, et
+      // réciproquement. C'est la raison d'être de cet écran — comparer ce qui est
+      // comparable. Le silence ne départage rien : l'ordre du catalogue reprend la main.
+      const listingNature = partNature(m.listing.name)
+      const url = m.listing.url
+      const better = rank > seen.rank
+        || (rank === seen.rank
+          && natureFits({ url, origin: m.proof.key.origin, nature: myNature }, listingNature)
+          && !natureFits({ url, origin: seen.proof.key.origin, nature: seen.nature }, listingNature))
+      if (better) {
         seen.product = product
         seen.proof = m.proof
         seen.rank = rank
+        seen.nature = myNature
       }
       continue
     }
     byListing.set(m.listing.url, {
       product, proof: m.proof, contenders: 1,
-      directs: m.proof.key.origin ? 0 : 1, rank, claims: [claim],
+      directs: m.proof.key.origin ? 0 : 1, rank, nature: myNature, claims: [claim],
     })
   }
 

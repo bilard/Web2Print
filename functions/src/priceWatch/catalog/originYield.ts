@@ -21,6 +21,8 @@
 // le cron apparie sans passer par le navigateur. Toute correction doit être portée des
 // deux côtés — un test de parité le vérifie.
 
+import type { PartNature } from './partNature'
+
 /**
  * Trois rangs, du plus légitime au moins :
  *
@@ -59,6 +61,9 @@ export interface Claim {
   url: string
   /** L'appariement a été prouvé par une référence d'ORIGINE. */
   origin: boolean
+  /** ORIGINE ou ADAPTABLE, tel que le libellé du produit l'affirme (cf. `partNature`).
+   *  Sert à départager deux prétendants de même rang — jamais à en écarter un seul. */
+  nature?: PartNature
   /** Référence PROPRE du produit qui revendique, telle qu'au catalogue. */
   ownRef?: string | null
   /** Valeur normalisée de la clé qui a prouvé. */
@@ -74,6 +79,25 @@ function norm(raw: string | null | undefined): string {
 export function claimRank(c: Claim): number {
   if (!c.origin) return 2
   return sameUpToHabit(norm(c.ownRef), norm(c.keyValue)) ? 1 : 0
+}
+
+/**
+ * Départage DEUX prétendants de même rang : celui dont la NATURE correspond à celle de la
+ * fiche l'emporte.
+ *
+ * C'est le cœur du métier de ce catalogue. Une pièce d'origine et son équivalent adaptable
+ * portent la même référence constructeur ; à rang égal, rien ne les distinguait et l'ordre
+ * du fichier décidait — donc un adaptable pouvait être mis en face d'une pièce
+ * constructeur, et l'écart de prix affiché ne mesurait plus un positionnement mais la
+ * différence entre deux articles.
+ *
+ * ⚠ N'intervient QUE si la fiche affirme sa nature ET que le prétendant affirme la sienne.
+ * Le silence ne départage rien : c'est le cas le plus fréquent, et il retombe sur l'ordre
+ * du catalogue — donc sur un résultat stable d'un run à l'autre.
+ */
+export function natureFits(claim: Claim, listingNature: PartNature): boolean {
+  if (listingNature === 'unknown' || !claim.nature || claim.nature === 'unknown') return false
+  return claim.nature === listingNature
 }
 
 /** Le meilleur rang atteint sur chaque fiche. */

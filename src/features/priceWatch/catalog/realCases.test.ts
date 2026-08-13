@@ -78,6 +78,54 @@ describe('cas réels — appariements JUSTES qui ne doivent plus être condamné
   })
 })
 
+describe('LE CŒUR DU SUJET — adaptable et pièce d’origine ne se confondent pas', () => {
+  // Une pièce d'origine et son équivalent adaptable portent la MÊME référence
+  // constructeur : ils s'apparient donc tous deux, parfaitement, à la même fiche. Ce qui
+  // les départage n'est pas la clé — c'est ce que chaque libellé AFFIRME.
+  const fiche = (name: string): CompetitorListing[] =>
+    [{ url: 'https://c.fr/f', name, ref: 'MTD7540280', price: 16.08 }]
+
+  const adaptable: SourceProduct = {
+    id: 'adapt', name: 'COURROIE LISSE 5/8 52POUCES', ref: '3300173', originRefs: ['754-0280'],
+    description: 'Courroie lisse trapézoïdale qualité d’origine MTD, adaptable pour séries 400, 500 et 600.',
+    price: 11.9,
+  }
+  const origine: SourceProduct = {
+    id: 'orig', name: 'COURROIE MTD 754-0280', ref: '754-0280',
+    description: 'Pièce d’origine constructeur MTD.', price: 14,
+  }
+
+  it('la fiche d’une pièce d’ORIGINE revient à la pièce d’origine, pas à l’adaptable', () => {
+    const [row] = pair([adaptable, origine], fiche('Courroie MTD 754-0280 — pièce d’origine constructeur'))
+    expect(row.source?.id).toBe('orig')
+  })
+
+  it('et l’ordre du catalogue ne renverse rien', () => {
+    const [row] = pair([origine, adaptable], fiche('Courroie MTD 754-0280 — pièce d’origine constructeur'))
+    expect(row.source?.id).toBe('orig')
+  })
+
+  it('quand la fiche se tait, l’arbitrage retombe sur la référence — jamais sur un hasard', () => {
+    // « Courroie spécifique MTD 754-0280 » n'affirme rien : c'est le rang des références
+    // qui décide (la pièce d'origine revendique par sa propre référence).
+    const [row] = pair([adaptable, origine], fiche('Courroie spécifique MTD 754-0280'))
+    expect(row.source?.id).toBe('orig')
+  })
+
+  it('l’écran AVERTIT quand les deux natures s’opposent', () => {
+    // Seul l'adaptable est au catalogue : l'appariement est légitime — c'est le seul lien
+    // possible — mais l'écart de prix compare deux articles différents. Il faut le dire.
+    const [row] = pair([adaptable], fiche('Courroie MTD 754-0280 — pièce d’origine constructeur'))
+    expect(row.source?.id).toBe('adapt')
+    expect(row.natures).toEqual({ mine: 'aftermarket', theirs: 'origin' })
+  })
+
+  it('deux adaptables face à face n’avertissent de rien', () => {
+    const [row] = pair([adaptable], fiche('Courroie adaptable MTD 754-0280'))
+    expect(row.natures).toBeUndefined()
+  })
+})
+
 describe('cas réels — le champ « Référence » du marchand, dans ses trois formes', () => {
   // Trois écritures relevées chez trois concurrents. Normalisées d'un bloc, elles ne
   // produisaient qu'une bouillie (« 11343496061134349606 ») : ces fiches n'étaient

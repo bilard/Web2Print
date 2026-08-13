@@ -18,6 +18,7 @@ import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './competitorListing'
 import { bestRankByListing, yieldsToBetter } from './originYield'
+import { partNature } from './partNature'
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. Mesuré ICI
  *  parce que c'est le seul endroit qui voit encore les fiches : l'index du site est relâché
@@ -121,6 +122,9 @@ export function createPairingRun(
     const claimOf = (c: PairedCell) => ({
       url: c.url, origin: c.proof.key.origin,
       ownRef: products[c.productIdx].ref, keyValue: c.proof.key.value,
+      // La nature affirmée par le libellé : elle départage deux prétendants de même rang
+      // (adaptable ↔ pièce d'origine), cf. `originYield`.
+      nature: partNature(products[c.productIdx].name, products[c.productIdx].description),
     })
     const best = bestRankByListing(siteCells.map(claimOf))
     for (const cell of siteCells) {
