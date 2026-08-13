@@ -13,6 +13,7 @@ import { DEFAULT_PAIRING_RULES, type PairingRules } from '../catalog/pairingRule
 import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/competitorListing'
 import { scorePair, type Confidence } from './confidence'
+import { claimRank } from '../catalog/originYield'
 
 /** Nature de la preuve d'appariement (même classement que le rapport). */
 type PairKind = 'exact-ean' | 'exact-ref' | 'origin'
@@ -109,6 +110,9 @@ export function pairSiteListings(
      *  litige est tranché par construction (cf. `originYield`), et il ne reste rien à
      *  mettre en doute : les autres sont des adaptables qui ont cédé. */
     directs: number
+    /** Rang du gagnant courant (cf. `originYield`) : c'est lui que le suivant doit
+     *  surclasser pour prendre la fiche. */
+    rank: number
     claims: { ref: string; origin: boolean }[]
   }>()
   for (const product of products) {
@@ -118,26 +122,34 @@ export function pairSiteListings(
     // « 3309342 (par réf. d'origine) contre 754-04038 (par sa propre réf.) » se juge d'un
     // coup d'œil, « 2 prétendants » ne se juge pas du tout.
     const claim = { ref: product.ref || product.id, origin: m.proof.key.origin }
+    // Rang de la revendication : direct > variante du même code > référence d'origine
+    // pure. Le même classement que le rapport — l'écran ne doit jamais désigner un autre
+    // produit que lui pour une fiche donnée.
+    const rank = claimRank({
+      url: m.listing.url, origin: m.proof.key.origin,
+      ownRef: product.ref, keyValue: m.proof.key.value,
+    })
     const seen = byListing.get(m.listing.url)
     if (seen) {
       seen.contenders++
       if (!m.proof.key.origin) seen.directs++
       if (seen.claims.length <= MAX_CLAIMS) seen.claims.push(claim)
       // ⚠ L'ordre du catalogue ne décide plus seul : une pièce ADAPTABLE atteint la fiche
-      // par la référence d'ORIGINE qu'elle remplace, la pièce d'origine par la sienne. La
-      // seconde doit l'emporter, quel que soit son rang dans le fichier (cf.
-      // `originYield` — même règle que le rapport, où la cellule de l'adaptable est
-      // effacée). À égalité de nature, le premier reste le gagnant : les runs successifs
+      // par la référence d'ORIGINE qu'elle remplace, la pièce vendue par la sienne ou par
+      // une variante de son code. La mieux classée l'emporte, quel que soit son rang dans
+      // le fichier (cf. `originYield` — même règle que le rapport, où la cellule perdante
+      // est effacée). À rang ÉGAL, le premier reste le gagnant : les runs successifs
       // doivent rendre la même liste.
-      if (seen.proof.key.origin && !m.proof.key.origin) {
+      if (rank > seen.rank) {
         seen.product = product
         seen.proof = m.proof
+        seen.rank = rank
       }
       continue
     }
     byListing.set(m.listing.url, {
       product, proof: m.proof, contenders: 1,
-      directs: m.proof.key.origin ? 0 : 1, claims: [claim],
+      directs: m.proof.key.origin ? 0 : 1, rank, claims: [claim],
     })
   }
 

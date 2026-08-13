@@ -142,6 +142,23 @@ describe('parité arbitrage adaptable / pièce d’origine', () => {
     }
   })
 
+  it('entre deux références d’ORIGINE, la VARIANTE du code vendu l’emporte', () => {
+    // Cas vécu (123courroies, « Courroie spécifique MTD 754-0280 ») : les deux prétendants
+    // passent par une référence d'origine — l'adaptable « COURROIE LISSE 5/8 52POUCES » et
+    // la pièce « 754-0280A », dont la référence PROPRE est celle du marchand au « A » près.
+    // L'ordre du catalogue donnait la fiche à l'adaptable, et comparait 11,90 € à 16,08 €.
+    const deux = [
+      { id: 'adapt', name: 'COURROIE LISSE 5/8 52POUCES', ref: '3300173', originRefs: ['754-0280'], price: 11.9 },
+      { id: 'variante', name: 'COURROIE MTD 754-0280A', ref: '754-0280A', originRefs: ['754-0280'], price: 14 },
+    ]
+    const fiche = [{ url: 'https://c.fr/b', name: 'Courroie spécifique MTD 754-0280', ref: 'MTD7540280', price: 16.08 }]
+    for (const [label, pair] of [['client', pairClient], ['serveur', pairServer]] as const) {
+      const run = pair(deux, SITE, new Map([['s1', fiche]]))
+      expect(run.cellsByProduct.get(1), `${label} : la variante garde sa cellule`).toHaveLength(1)
+      expect(run.cellsByProduct.get(0), `${label} : l’adaptable cède`).toBeUndefined()
+    }
+  })
+
   it('laisse l’adaptable apparié quand la pièce d’origine n’est PAS au catalogue', () => {
     // La règle tranche un litige ; elle ne condamne pas les références d'origine, seul
     // lien possible avec un catalogue qui ne référence pas la pièce d'origine.

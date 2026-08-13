@@ -78,6 +78,23 @@ describe('pairSiteListings', () => {
     ])
   })
 
+  it('donne la fiche à la VARIANTE du code vendu, pas à l’adaptable qui cite la même origine', () => {
+    // Les deux revendiquent par référence d'origine : seul le rapprochement entre leur
+    // référence PROPRE et celle du marchand (« MTD7540280 ») les départage.
+    const deux: SourceProduct[] = [
+      { id: 'adapt', name: 'COURROIE LISSE 5/8 52POUCES', ref: '3300173', originRefs: ['754-0280'], price: 11.9 },
+      { id: 'variante', name: 'COURROIE MTD 754-0280A', ref: '754-0280A', originRefs: ['754-0280'], price: 14 },
+    ]
+    const fiche: CompetitorListing[] = [
+      { url: 'https://c.fr/b', name: 'Courroie spécifique MTD 754-0280', ref: 'MTD7540280', price: 16.08 },
+    ]
+    const [row] = pairSiteListings(deux, 's1', fiche, { vatRate: 0.2 })
+    expect(row.source?.id).toBe('variante')
+    // ⚠ Le doute RESTE : le marchand vend « 754-0280 » et on lui oppose « 754-0280A ».
+    // L'arbitrage désigne le meilleur candidat, il ne certifie pas que c'est le bon.
+    expect(row.confidence?.doubts).toContain('contested')
+  })
+
   it('joint description et visuels via les extras (base PIM)', () => {
     const rows = pairSiteListings(products, 's1', listings, {
       vatRate: 0.2,

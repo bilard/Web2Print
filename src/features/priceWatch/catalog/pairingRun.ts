@@ -15,7 +15,7 @@ import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './competitorListing'
-import { directlyClaimed, yieldsToDirect } from './originYield'
+import { bestRankByListing, yieldsToBetter } from './originYield'
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. Mesuré ICI
  *  parce que c'est le seul endroit qui voit encore les fiches : l'index du site est relâché
@@ -116,9 +116,13 @@ export function createPairingRun(
         proof: m.proof,
       })
     }
-    const direct = directlyClaimed(siteCells.map((c) => ({ url: c.url, origin: c.proof.key.origin })))
+    const claimOf = (c: PairedCell) => ({
+      url: c.url, origin: c.proof.key.origin,
+      ownRef: products[c.productIdx].ref, keyValue: c.proof.key.value,
+    })
+    const best = bestRankByListing(siteCells.map(claimOf))
     for (const cell of siteCells) {
-      if (yieldsToDirect({ url: cell.url, origin: cell.proof.key.origin }, direct)) {
+      if (yieldsToBetter(claimOf(cell), best)) {
         totals.yielded++
         continue
       }
