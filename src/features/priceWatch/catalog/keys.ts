@@ -277,7 +277,12 @@ function leadingToken(name: string | undefined): string {
  * ce qui reste discrimine seul (six chiffres au moins). Rien n'est deviné pour autant :
  * chaque forme produite doit encore prouver l'appariement par égalité exacte.
  */
-const BRAND_DRESSED = /^[A-Z]+(\d{6,})$/
+/** ⚠ Le nombre dénudé ne doit PAS commencer par un zéro. Sans cette borne, « KL060004 »
+ *  rendait « 060004 », que le dépaddage ramenait ensuite à « 60004 » — soit DEUX
+ *  transformations enchaînées, assez pour rencontrer n'importe quelle référence courte.
+ *  Cas vécu : « LAME 479MM » (origine 60.00-4) appariée à un « Thermostat UNIVERSEL
+ *  KL060004 », +551 % d'écart. Une clé qu'il faut retailler deux fois n'est pas une clé. */
+const BRAND_DRESSED = /^[A-Z]+([1-9]\d{5,})$/
 
 export function declaredRefTokens(raw: string | null | undefined, minLen: number = MIN_REF_LEN): string[] {
   const out: string[] = []

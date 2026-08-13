@@ -228,6 +228,33 @@ describe('cas réels — appariements FAUX qui ne doivent pas exister', () => {
     expect(row.source?.id).toBe('variante')
   })
 
+  it('lame de tondeuse ↔ thermostat : une référence d’ORIGINE ne prouve pas seule', () => {
+    // Cas relevé à l'écran, +551 % d'écart. « LAME 479MM » (« Remplace origine: 60.00-4 »)
+    // face à « Thermostat UNIVERSEL KL060004 » : la marque dénudée puis le dépaddage
+    // faisaient se rencontrer « 60004 » et « KL060004 ». Deux retailles pour fabriquer une
+    // égalité — et deux libellés qui ne partagent pas un mot.
+    const [row] = pair(
+      [{
+        id: 'lame', name: 'LAME 479MM', ref: '1108406', ean: '3582329980340',
+        originRefs: ['60.00-4'],
+        description: 'Lame mulching adaptable sur tondeuse KLIPPO 19". L: 479mm. Remplace origine: 60.00-4.',
+        price: 12.60,
+      }],
+      [{ url: 'https://c.fr/thermostat', name: 'Thermostat UNIVERSEL KL060004', ref: 'KL060004', gtin13: '8719607056588', price: 98.51 }],
+    )
+    expect(row.source, 'un trou vaut mieux qu’un faux prix').toBeNull()
+  })
+
+  it('mais une référence d’origine dont les libellés se recoupent reste appariée', () => {
+    // Le garde-fou ne condamne pas les références d'origine : il exige que le libellé
+    // confirme le type de pièce. « COURROIE » des deux côtés suffit.
+    const [row] = pair(
+      [{ id: 'c', name: 'COURROIE LISSE 5/8', ref: '3309342', originRefs: ['754-04038'], price: 20.15 }],
+      [{ url: 'https://c.fr/courroie', name: 'Courroie spécifique MTD 754-04038', ref: 'MTD75404038', price: 12.48 }],
+    )
+    expect(row.source?.id).toBe('c')
+  })
+
   it('les faux appariements historiques restent refusés', () => {
     // Trois cas mesurés avant cette session, gardés ici pour qu'aucun assouplissement ne
     // les rouvre : la famille de pièce, le gouffre de prix, la corroboration du libellé.

@@ -142,6 +142,13 @@ function keyIsBarcode(proof: MatchProof): boolean {
  * libellé qu'il confirme.
  */
 function keyIsDistinctive(proof: MatchProof): boolean {
+  // ⚠⚠ Une référence d'ORIGINE ne prouve jamais à elle seule. Elle désigne une AUTRE
+  // pièce — celle que l'article remplace — donc le lien est indirect par construction, et
+  // le libellé doit confirmer qu'on parle au moins du même type d'objet. Cas vécu :
+  // « LAME 479MM » (« Remplace origine: 60.00-4 ») appariée à un « Thermostat UNIVERSEL
+  // KL060004 » à +551 %. Rien dans les clés ne pouvait le voir ; les deux libellés, eux,
+  // ne partagent pas un mot et nomment deux pièces sans rapport.
+  if (proof.key.origin) return false
   // ⚠ Une clé COURTE n'est jamais discriminante, quelle que soit sa forme. Cas relevé à
   // l'écran : « TETE FIL NYLON » appariée à une « Courroie double dentée » sur une
   // référence d'origine de trois caractères que le marchand déclarait aussi. Un tiret
