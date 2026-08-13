@@ -116,15 +116,32 @@ describe('scorePair — on retranche pour une CONTRADICTION, jamais pour une abs
     expect(c.band).toBe('check')
   })
 
-  it('un code-barres contredit reste douteux quels que soient les renforts', () => {
+  it('un code-barres contredit condamne QUAND IL EST SEUL À PARLER', () => {
+    // Le marchand ne déclare aucune référence : il ne reste que deux codes-barres, et ils
+    // se contredisent. Aucun renfort ne rachète cela.
     const c = scorePair(base({
-      evidence: 'gtin13',
+      evidence: 'ref-in-title', keyValue: '40495823',
       sourceEan: '4049582395377', listingEan: '4049582856748',
       sourceName: 'Courroie tondeuse', listingName: 'Courroie tondeuse',
-      sourceRef: 'ABC-123', listingRef: 'ABC-123',
+      sourceRef: 'ABC-123', listingRef: null,
     }))
     expect(c.doubts).toContain('ean-conflict')
     expect(c.band).toBe('doubt')
+  })
+
+  it('mais pas quand la RÉFÉRENCE concorde des deux côtés', () => {
+    // ⚠ CHANGEMENT DE DOCTRINE, imposé par le terrain : « FUSIBLE 1134-3496-06 » ↔
+    // « Fusible STIGA 1134349606 - 1134-3496-06 » — référence écrite deux fois par le
+    // marchand, et un code-barres à lui (fournisseur, conditionnement). L'appariement est
+    // littéral ; le condamner mettait des milliers de lignes justes dans la file rouge.
+    // Le doute reste NOTÉ, il ne décide plus.
+    const c = scorePair(base({
+      evidence: 'ref-in-url', keyValue: 'ABC123',
+      sourceEan: '4049582395377', listingEan: '4049582856748',
+      sourceRef: 'ABC-123', listingRef: 'ABC-123',
+    }))
+    expect(c.doubts).toContain('ean-conflict')
+    expect(c.band).not.toBe('doubt')
   })
 
   it('un seul côté sans code-barres ne contredit rien', () => {

@@ -46,7 +46,7 @@ export interface Confidence {
   /** Rouages du calcul, conservés pour pouvoir REJOUER la bande quand un signal arrive
    *  après coup (cf. `withVisual`). `core` = base moins les pénalités ; `bonus` = ce que
    *  les renforts ajoutent au score sans toucher à la bande. */
-  raw: { core: number; bonus: number }
+  raw: { core: number; bonus: number; hardEan?: boolean }
 }
 
 /**
@@ -77,6 +77,22 @@ const BASE: Record<MatchEvidence, number> = {
   // qu'un nombre. C'est le cas qui mérite vraiment l'œil humain.
   'ref-in-title': 62,
 }
+
+/**
+ * Ce que coûte un code-barres contredit quand la RÉFÉRENCE, elle, concorde littéralement.
+ *
+ * Cas VÉCU, deux fois de suite : « FUSIBLE 1134-3496-06 » ↔ « Fusible STIGA 1134349606 -
+ * 1134-3496-06 » (la référence est écrite DEUX fois par le marchand, dans son titre, son
+ * champ Référence et son adresse) et « POP RIVET » ↔ « Rivet STIGA 9632051300 » (référence
+ * déclarée à l'identique). Dans les deux cas le marchand publie un autre code-barres — le
+ * sien, celui de son fournisseur, celui de son conditionnement — et les deux appariements,
+ * littéraux, tombaient en « douteux » : −45 points ET bande forcée.
+ *
+ * Un EAN de revendeur n'a pas l'autorité d'un EAN de fabricant. Face à une référence
+ * constructeur écrite en toutes lettres des deux côtés, sa divergence reste un signal —
+ * elle ne peut plus être un verdict.
+ */
+const EAN_CONFLICT_SOFT = 15
 
 const PENALTY: Record<DoubtReason, number> = {
   'ean-conflict': 45,
@@ -286,6 +302,14 @@ function refFieldCarriesOurs(rawListingRef: string | null | undefined, ours: str
   return false
 }
 
+/** La référence concorde-t-elle par ailleurs ? Alors le code-barres n'est plus seul à
+ *  parler, et sa contradiction cesse d'être un verdict. */
+function refBacked(s: PairSignals, sRef: string, lRef: string): boolean {
+  if (s.evidence === 'sku' || s.evidence === 'mpn') return true // égales par construction
+  if (sRef && lRef && (sRef === lRef || sameRefUpToBrand(sRef, lRef))) return true
+  return refFieldCarriesOurs(s.listingRef, sRef)
+}
+
 export function scorePair(s: PairSignals): Confidence {
   const doubts: DoubtReason[] = []
   const supports: SupportReason[] = []
@@ -300,9 +324,10 @@ export function scorePair(s: PairSignals): Confidence {
   // enseignes) comme PREUVE — les laisser servir de démenti était une asymétrie coûteuse :
   // ce motif retranche 45 points ET force la bande « douteux », qu'aucun renfort ne
   // rachète. Un code qu'on n'accepte pas comme preuve ne peut pas condamner.
-  if (conflict(sEan, lEan) && !isInternalBarcode(sEan) && !isInternalBarcode(lEan)) {
-    doubts.push('ean-conflict')
-  }
+  const eanConflict = conflict(sEan, lEan) && !isInternalBarcode(sEan) && !isInternalBarcode(lEan)
+  if (eanConflict) doubts.push('ean-conflict')
+  // Le code-barres ne CONDAMNE que lorsqu'il est seul à parler (cf. `EAN_CONFLICT_SOFT`).
+  const hardEan = eanConflict && !refBacked(s, sRef, lRef)
   // Une référence contredite ne pèse que si ce n'est PAS elle qui a prouvé l'appariement :
   // quand la preuve vient du champ `sku`, les deux valeurs sont égales par construction.
   // Et la même clé préfixée de la marque n'est pas une autre clé (cf. `sameRefUpToBrand`).
@@ -357,7 +382,9 @@ export function scorePair(s: PairSignals): Confidence {
     : s.evidence === 'ref-in-title' && distinctiveInTitle(s.keyValue)
       ? BASE['ref-in-name']
       : BASE[s.evidence]
-  for (const d of doubts) core -= PENALTY[d]
+  for (const d of doubts) {
+    core -= d === 'ean-conflict' && !hardEan ? EAN_CONFLICT_SOFT : PENALTY[d]
+  }
 
   // ⚠ Ajouté au CORE, pas au bonus : c'est ce qui lui donne le pouvoir de remonter la
   // bande. Volontairement appliqué APRÈS les pénalités — il ne les efface pas, il les
@@ -373,18 +400,21 @@ export function scorePair(s: PairSignals): Confidence {
   if (supports.includes('ref-echo')) bonus += 5
   bonus += Math.min(common, 2) * 5
 
-  return finalize(core, bonus, doubts, supports)
+  return finalize(core, bonus, doubts, supports, hardEan)
 }
 
 /** Bande et score à partir des rouages. Isolé pour que `withVisual` rejoue exactement le
  *  même calcul plutôt que d'en tenir une seconde copie qui divergerait. */
-function finalize(core: number, bonus: number, doubts: DoubtReason[], supports: SupportReason[]): Confidence {
-  const band: ConfidenceBand = doubts.includes('ean-conflict')
-    ? 'doubt' // un code-barres contredit ne se rachète par aucun renfort
+function finalize(
+  core: number, bonus: number, doubts: DoubtReason[], supports: SupportReason[],
+  hardEan = false,
+): Confidence {
+  const band: ConfidenceBand = hardEan
+    ? 'doubt' // un code-barres contredit, et rien d'autre pour le contredire lui
     : core >= SURE_FROM ? 'sure' : core >= CHECK_FROM ? 'check' : 'doubt'
   const ceiling = band === 'sure' ? 100 : band === 'check' ? SURE_FROM - 1 : CHECK_FROM - 1
   const score = Math.max(0, Math.min(ceiling, Math.round(core + bonus)))
-  return { score, band, doubts, supports, raw: { core, bonus } }
+  return { score, band, doubts, supports, raw: { core, bonus, hardEan } }
 }
 
 /** Renfort apporté par deux photos jugées identiques. Volontairement modeste : deux
@@ -411,10 +441,10 @@ export function withVisual(c: Confidence, verdict: VisualCall): Confidence {
   if (verdict === 'unclear') return c
   if (verdict === 'same') {
     if (c.supports.includes('visual-echo')) return c
-    return finalize(c.raw.core, c.raw.bonus + VISUAL_ECHO_BONUS, c.doubts, [...c.supports, 'visual-echo'])
+    return finalize(c.raw.core, c.raw.bonus + VISUAL_ECHO_BONUS, c.doubts, [...c.supports, 'visual-echo'], c.raw.hardEan)
   }
   if (c.doubts.includes('visual-conflict')) return c
-  return finalize(c.raw.core - PENALTY['visual-conflict'], c.raw.bonus, [...c.doubts, 'visual-conflict'], c.supports)
+  return finalize(c.raw.core - PENALTY['visual-conflict'], c.raw.bonus, [...c.doubts, 'visual-conflict'], c.supports, c.raw.hardEan)
 }
 
 /** Mots significatifs partagés par les deux libellés, hors nombres — un même chiffre de

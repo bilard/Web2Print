@@ -139,6 +139,12 @@ function keyIsBarcode(proof: MatchProof): boolean {
  * libellé qu'il confirme.
  */
 function keyIsDistinctive(proof: MatchProof): boolean {
+  // ⚠ Une clé COURTE n'est jamais discriminante, quelle que soit sa forme. Cas relevé à
+  // l'écran : « TETE FIL NYLON » appariée à une « Courroie double dentée » sur une
+  // référence d'origine de trois caractères que le marchand déclarait aussi. Un tiret
+  // (« 36-25 ») suffisait à faire passer une telle clé pour structurée, et elle échappait
+  // alors à toute confirmation du libellé. Quatre caractères ne distinguent rien.
+  if (proof.key.weak) return false
   return !/^\d+$/.test(proof.key.raw.trim())
 }
 
