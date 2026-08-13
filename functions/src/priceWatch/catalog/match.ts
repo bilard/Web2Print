@@ -13,6 +13,7 @@ import {
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import { familiesConflict, partFamilies } from './partFamily'
+import { partNature, sourceNature, natureMismatch } from './partNature'
 import { nameTokens } from './nameTokens'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { CompetitorListing, Availability } from './competitorListing'
@@ -199,7 +200,7 @@ function corroborated(
  * dégradation propre, pas une exemption — les deux autres démentis restent armés.
  */
 /** Le démenti qui a refusé une paire. `null` = aucun, la paire est retenue. */
-export type VetoReason = 'family' | 'price-abyss' | 'no-corroboration'
+export type VetoReason = 'family' | 'price-abyss' | 'no-corroboration' | 'nature'
 
 /**
  * QUEL démenti refuse cette paire — ou `null` si elle passe.
@@ -211,7 +212,7 @@ export type VetoReason = 'family' | 'price-abyss' | 'no-corroboration'
  * chaque réglage coûte.
  */
 export function vetoReason(
-  source: { name?: string; price?: number },
+  source: { name?: string; price?: number; description?: string; taxo?: string[] },
   candidate: { name?: string; price?: number },
   proof: MatchProof,
   rules: PairingRules = DEFAULT_PAIRING_RULES,
@@ -219,6 +220,15 @@ export function vetoReason(
   // Un code-barres se suffit à lui-même — aucun libellé ne le renverse.
   if (keyIsBarcode(proof)) return null
   const sourceName = source.name ?? ''
+  // ⚠⚠ ADAPTABLE ↔ PIÈCE D'ORIGINE : ce ne sont pas les mêmes articles, et les apparier
+  // n'a aucun sens — c'est la règle métier du catalogue. Ils portent pourtant la MÊME
+  // référence constructeur (c'est la définition d'un adaptable), donc aucune clé ne peut
+  // les séparer : seul ce qu'ils AFFIRMENT le peut. Rangement du catalogue d'abord,
+  // libellé ensuite ; et jamais de refus tiré d'un silence.
+  if (rules.natureVeto
+    && natureMismatch(sourceNature(source.taxo, sourceName, source.description), partNature(candidate.name))) {
+    return 'nature'
+  }
   if (rules.familyVeto && familiesConflict(sourceName, candidate.name, rules.extraFamilies)) return 'family'
   if (priceAbyss(source.price, candidate.price, rules.priceAbyssRatio)) return 'price-abyss'
   // Le libellé doit CONFIRMER quand la clé, elle, ne prouve rien : une suite de

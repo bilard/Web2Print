@@ -1924,6 +1924,8 @@ export const es: Record<TranslationKey, string> = {
   'pw.rules.tree.vetoes.title': 'Desmentidos, aplicados a lo ya probado',
   'pw.rules.tree.vetoes.sub': 'Solo ven los pares que los dos niveles anteriores han dejado pasar, y el PRIMERO que se activa rechaza — los números no se solapan y su suma es el total de rechazos.',
   'pw.rules.tree.vetoes.total': '{n} rechazados',
+  'pw.rules.tree.veto.nature': 'Adaptable ↔ pieza de origen',
+  'pw.rules.tree.veto.nature.hint': 'Rechaza emparejar una pieza ADAPTABLE con una de ORIGEN. Llevan la misma referencia del fabricante — eso es una pieza adaptable — pero no son los mismos artículos: su diferencia de precio no mide ningún posicionamiento. Solo actúa si ambos lados lo afirman (clasificación del catálogo o título), nunca ante un silencio ni contra un código de barras idéntico.',
   'pw.rules.tree.veto.family': 'Piezas de naturalezas incompatibles',
   'pw.rules.tree.veto.family.hint': 'Ambos títulos nombran una pieza y ninguna es común. Un lado mudo no rechaza nada.',
   'pw.rules.tree.veto.price-abyss': 'Proporción de precio fuera de toda medida',

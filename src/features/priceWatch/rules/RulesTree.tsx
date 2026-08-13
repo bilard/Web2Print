@@ -114,7 +114,7 @@ const KEY_BRANCHES: { branch: KeyBranch; rank: string }[] = [
   { branch: 'origin', rank: '4' },
 ]
 
-const VETOES: VetoReason[] = ['family', 'price-abyss', 'no-corroboration']
+const VETOES: VetoReason[] = ['nature', 'family', 'price-abyss', 'no-corroboration']
 
 export function RulesTree(
   { rules, onChange, weights, loading }:
@@ -211,7 +211,8 @@ export function RulesTree(
         total={weights && <span className="text-[11px] text-white/40">{t('pw.rules.tree.vetoes.total', { n: weights.vetoed })}</span>}
       >
         {VETOES.map((v) => {
-          const on = v === 'family' ? rules.familyVeto
+          const on = v === 'nature' ? rules.natureVeto
+            : v === 'family' ? rules.familyVeto
             : v === 'no-corroboration' ? rules.corroborateNumericKeys
               : rules.priceAbyssRatio > 0
           return (
@@ -229,9 +230,11 @@ export function RulesTree(
               ) : (
                 <input
                   type="checkbox" checked={on} className="accent-[#6366f1]"
-                  onChange={(e) => (v === 'family'
-                    ? set({ familyVeto: e.target.checked })
-                    : set({ corroborateNumericKeys: e.target.checked }))}
+                  onChange={(e) => (v === 'nature'
+                    ? set({ natureVeto: e.target.checked })
+                    : v === 'family'
+                      ? set({ familyVeto: e.target.checked })
+                      : set({ corroborateNumericKeys: e.target.checked }))}
                 />
               )}
               weight={<Weight n={weights?.byVeto[v] ?? (weights ? 0 : undefined)} max={maxVeto} muted={!on} loading={loading} />}

@@ -49,6 +49,36 @@ export function partNature(...texts: (string | null | undefined)[]): PartNature 
 }
 
 /**
+ * Nature affirmée par le CHEMIN DE TAXONOMIE du catalogue source.
+ *
+ * Signal plus sûr qu'un libellé : c'est un rangement, pas un argument de vente. Le
+ * catalogue F1 porte un univers « PIÈCES ORIGINE » — un produit rangé là EST une pièce
+ * constructeur, quoi que dise son libellé. Symétriquement, un univers « ADAPTABLE ».
+ *
+ * ⚠ Le chemin prime sur le libellé quand les deux parlent : un vendeur écrit ce qui vend,
+ * un catalogue range ce qui est.
+ */
+const TAXO_ORIGIN = /\b(?:pieces?[\s-]*origine|origine[\s-]*constructeur|oem)\b/i
+const TAXO_AFTERMARKET = /\b(?:adaptables?|aftermarket)\b/i
+
+export function natureFromTaxonomy(path: string[] | null | undefined): PartNature {
+  const hay = (path ?? []).join(' ')
+  if (!hay) return 'unknown'
+  if (TAXO_AFTERMARKET.test(hay)) return 'aftermarket'
+  if (TAXO_ORIGIN.test(hay)) return 'origin'
+  return 'unknown'
+}
+
+/** Nature d'un produit SOURCE : son rangement d'abord, son libellé ensuite. */
+export function sourceNature(
+  path: string[] | null | undefined,
+  ...texts: (string | null | undefined)[]
+): PartNature {
+  const byPath = natureFromTaxonomy(path)
+  return byPath !== 'unknown' ? byPath : partNature(...texts)
+}
+
+/**
  * Les deux côtés affirment-ils des natures OPPOSÉES ? Jamais vrai si l'un des deux se
  * tait — on ne conclut rien d'une absence, principe de tout ce dossier.
  */

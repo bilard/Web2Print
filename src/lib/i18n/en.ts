@@ -1925,6 +1925,8 @@ export const en: Record<TranslationKey, string> = {
   'pw.rules.tree.vetoes.title': 'Contradictions, applied to what is already proved',
   'pw.rules.tree.vetoes.sub': 'They only see the pairs the two stages above let through, and the FIRST one that fires refuses — so the numbers do not overlap and their sum is the total of refusals.',
   'pw.rules.tree.vetoes.total': '{n} refused',
+  'pw.rules.tree.veto.nature': 'Aftermarket ↔ original part',
+  'pw.rules.tree.veto.nature.hint': 'Refuses to pair an AFTERMARKET part with an ORIGINAL one. They carry the same manufacturer reference — that is what an aftermarket part is — but they are not the same articles: the price gap measures nothing about positioning. Fires only when both sides state it (catalogue filing, or label), never on silence nor against an identical barcode.',
   'pw.rules.tree.veto.family': 'Parts of incompatible natures',
   'pw.rules.tree.veto.family.hint': 'Both titles each name a part, and none is shared. A silent side refuses nothing.',
   'pw.rules.tree.veto.price-abyss': 'Price ratio beyond all measure',

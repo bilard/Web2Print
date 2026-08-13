@@ -58,6 +58,11 @@ export interface PairingRules {
   // --- Démentis (vetos) ---
   /** Refuser un appariement dont les deux libellés nomment des pièces incompatibles. */
   familyVeto: boolean
+  /** Refuser d'apparier une pièce ADAPTABLE à une pièce d'ORIGINE (et l'inverse) quand les
+   *  deux libellés — ou le rangement du catalogue — l'affirment. Ce ne sont pas les mêmes
+   *  articles : leur écart de prix ne mesure aucun positionnement. Ne se déclenche jamais
+   *  sur un silence, ni contre un code-barres identique. */
+  natureVeto: boolean
   /** Familles ajoutées au lexique de base — la connaissance métier que le code ne devine
    *  pas. ⚠ Un mot mal rangé FABRIQUE une contradiction et condamne un appariement juste :
    *  dans le doute, ne pas ajouter le mot. */
@@ -117,6 +122,7 @@ export const DEFAULT_PAIRING_RULES: PairingRules = {
     'ref-in-name': true, 'ref-in-url': true, 'ref-in-title': true,
   },
   familyVeto: true,
+  natureVeto: true,
   extraFamilies: {},
   priceAbyssRatio: 21,
   corroborateNumericKeys: true,
@@ -191,6 +197,7 @@ export function resolvePairingRules(partial?: Partial<PairingRules> | null): Pai
     weakRefLen: Math.round(num(p.weakRefLen, d.weakRefLen, 3, 16)),
     evidence,
     familyVeto: bool(p.familyVeto, d.familyVeto),
+    natureVeto: bool(p.natureVeto, d.natureVeto),
     extraFamilies: normalizeFamilyLexicon(p.extraFamilies),
     // 0 = désactivé ; en dessous de 2 le filet refuserait le fonctionnement normal du
     // marché (grossiste → détail, un facteur 2 ou 3 est la norme).
@@ -222,6 +229,7 @@ export function summarizeRules(r: PairingRules): Record<string, unknown> {
     weakRefLen: r.weakRefLen,
     evidenceOff: off,
     familyVeto: r.familyVeto,
+    natureVeto: r.natureVeto,
     extraFamilies: Object.keys(r.extraFamilies).sort(),
     priceAbyssRatio: r.priceAbyssRatio,
     corroborateNumericKeys: r.corroborateNumericKeys,

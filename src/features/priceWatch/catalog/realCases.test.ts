@@ -112,12 +112,22 @@ describe('LE CŒUR DU SUJET — adaptable et pièce d’origine ne se confondent
     expect(row.source?.id).toBe('orig')
   })
 
-  it('l’écran AVERTIT quand les deux natures s’opposent', () => {
-    // Seul l'adaptable est au catalogue : l'appariement est légitime — c'est le seul lien
-    // possible — mais l'écart de prix compare deux articles différents. Il faut le dire.
+  it('un ADAPTABLE ne s’apparie PAS à une pièce d’origine — même seul au catalogue', () => {
+    // Règle métier, énoncée par l'utilisateur : « apparier une adaptable à une origine n'a
+    // aucun sens ». Ce ne sont pas les mêmes articles ; l'écart de prix ne mesurerait rien.
     const [row] = pair([adaptable], fiche('Courroie MTD 754-0280 — pièce d’origine constructeur'))
-    expect(row.source?.id).toBe('adapt')
-    expect(row.natures).toEqual({ mine: 'aftermarket', theirs: 'origin' })
+    expect(row.source).toBeNull()
+  })
+
+  it('le RANGEMENT du catalogue prime sur le libellé', () => {
+    // Un produit rangé sous « PIÈCES ORIGINE » EST une pièce constructeur, quoi que dise
+    // son libellé — et il ne peut donc pas s'apparier à une fiche d'adaptable.
+    const range: SourceProduct = {
+      id: 'range', name: 'COURROIE 754-0280', ref: '754-0280',
+      taxo: ['PIECES-ORIGINE', 'MTD'], price: 14,
+    }
+    const [row] = pair([range], fiche('Courroie adaptable MTD 754-0280'))
+    expect(row.source).toBeNull()
   })
 
   it('deux adaptables face à face n’avertissent de rien', () => {

@@ -2003,6 +2003,8 @@ export const fr = {
   'pw.rules.tree.vetoes.title': 'Démentis, appliqués à ce qui est déjà prouvé',
   'pw.rules.tree.vetoes.sub': 'Ils ne voient que les paires que les deux étages précédents ont laissé passer, et le PREMIER qui se déclenche refuse — les nombres ne se recouvrent donc pas, leur somme est le total des refus.',
   'pw.rules.tree.vetoes.total': '{n} refusés',
+  'pw.rules.tree.veto.nature': 'Adaptable ↔ pièce d’origine',
+  'pw.rules.tree.veto.nature.hint': 'Refuse d’apparier une pièce ADAPTABLE à une pièce d’ORIGINE. Elles portent la même référence constructeur — c’est la définition d’un adaptable — mais ce ne sont pas les mêmes articles : leur écart de prix ne mesure aucun positionnement. Ne se déclenche que si les deux côtés l’affirment (rangement du catalogue, ou libellé), jamais sur un silence ni contre un code-barres identique.',
   'pw.rules.tree.veto.family': 'Pièces de natures incompatibles',
   'pw.rules.tree.veto.family.hint': 'Les deux libellés nomment chacun une pièce, et aucune n’est commune. Un côté muet ne refuse rien.',
   'pw.rules.tree.veto.price-abyss': 'Rapport de prix hors de toute mesure',
