@@ -148,6 +148,12 @@ export async function executeWorkflowHeadless(
   const outputs = new Map<string, Record<string, unknown>>()
   const errored = new Set<string>()
   const skipped = new Set<string>()
+  /** En deçà, la durée d'une carte n'apprend rien — on ne noie pas le journal. */
+  const SLOW_NODE_MS = 60_000
+  /** Cartes qui n'ont pas tourné parce que le run a été COUPÉ (verrou de temps, stop) —
+   *  distinctes des cartes sautées par une condition métier (`ctx.skip()`), qui, elles,
+   *  sont un déroulement normal. */
+  const abortedNodes = new Set<string>()
   const started = new Set<string>() // nodes entrés dans spec.run (garde reprise)
   let cycleComplete = false // posé par ctx.reportCycleComplete (fin de cycle de moisson)
   // Un incident au moins a-t-il été consigné pendant CE run ? Sert à ne purger qu'une fois
@@ -252,7 +258,11 @@ export async function executeWorkflowHeadless(
       skipped.add(node.id); return
     }
     // Abort (STOP volontaire ou timeout) = pas un échec : node « arrêté » (neutre), pas erreur.
-    if (opts.signal.aborted) { skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id); return }
+    if (opts.signal.aborted) {
+      skipped.add(node.id); abortedNodes.add(node.id)
+      log('warn', 'Arrêté (run interrompu).', node.id)
+      return
+    }
     // ByPass : la carte ne travaille pas, mais ce qui entre ressort — l'aval continue.
     if (node.bypass) {
       const passed: Record<string, unknown> = {}
@@ -270,6 +280,7 @@ export async function executeWorkflowHeadless(
     if (node.type === 'cron') { outputs.set(node.id, { tick: { at: new Date().toISOString() } }); return }
     if (loopByCollect.has(node.id) && !loopByEach.has(node.id)) { nodeCount++; return }
 
+    const nodeStartedAt = Date.now()
     if (SERVER_UNSUPPORTED.has(node.type)) {
       // Node purement visuel (chart…) : no-op gracieux (sortie vide + warning) → ne fait
       // PAS échouer le run, et l'aval continue avec une entrée vide (pas de cascade skip).
@@ -364,13 +375,24 @@ export async function executeWorkflowHeadless(
       }
       outputs.set(node.id, result ?? {})
       nodeOutputs[node.id] = result ?? {}
+      // ⚠ COMBIEN DE TEMPS chaque carte a tenu la fenêtre, et ce qu'il restait avant
+      // l'échéance de restitution. Sans cette mesure, « le comparatif n'a pas eu son tour »
+      // se diagnostique en recoupant des horodatages de logs sur plusieurs runs — c'est
+      // exactement ce qui a coûté plusieurs journées d'analyse figée. Seules les cartes
+      // LENTES sont journalisées : une carte instantanée n'apprend rien.
+      const heldMs = Date.now() - nodeStartedAt
+      if (heldMs >= SLOW_NODE_MS) {
+        const left = opts.deadlineAt ? Math.round((opts.deadlineAt - Date.now()) / 1000) : null
+        log('info', `Fenêtre tenue ${Math.round(heldMs / 1000)} s${left == null ? '' : ` — reste ${left} s avant l'échéance de restitution`}.`, node.id)
+      }
       nodeCount++
       await opts.onNodeDone?.(node.id, result ?? {})
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       // Interruption (STOP/timeout) → arrêté (neutre), pas un échec du node.
       if (opts.signal.aborted || /aborted|arrêté/i.test(msg)) {
-        skipped.add(node.id); log('warn', 'Arrêté (run interrompu).', node.id)
+        skipped.add(node.id); abortedNodes.add(node.id)
+        log('warn', 'Arrêté (run interrompu).', node.id)
       } else {
         errored.add(node.id); log('error', msg, node.id)
         // Journal des pannes de la veille tarifaire — MÊME granularité que le navigateur
@@ -450,7 +472,13 @@ export async function executeWorkflowHeadless(
   if (incidentWatchId && recordedIncident) await pruneExpiredIncidents(opts.uid, incidentWatchId)
 
   const errorCount = errored.size
-  const status: HeadlessResult['status'] = errorCount === 0 ? 'success' : nodeCount > 0 ? 'partial' : 'error'
+  // ⚠ Un run dont des cartes ont été COUPÉES n'est pas un succès. Vécu : « Comparer
+  // catalogue » arrêté au verrou, et le run annoncé « run success — 5 node(s) OK » — donc
+  // un comparatif jamais produit, sous une étiquette verte. Le statut doit dire ce qui
+  // s'est réellement passé, sinon rien ne signale qu'il faut relancer.
+  const status: HeadlessResult['status'] = errorCount > 0
+    ? (nodeCount > 0 ? 'partial' : 'error')
+    : abortedNodes.size > 0 ? 'partial' : 'success'
   // Statut final par node, pour l'affichage live côté client (cartes colorées).
   const nodeStates = deriveStates()
   console.log(`[wf:${wf.name}] run ${status} — ${nodeCount} node(s) OK, ${errorCount} en erreur`)
