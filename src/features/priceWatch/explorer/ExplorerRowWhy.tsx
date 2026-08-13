@@ -53,7 +53,13 @@ function conflictValues(
   return mine && theirs ? { mine, theirs } : null
 }
 
-export function ExplorerRowWhy({ confidence, proof, visual, sides, claims }: {
+/** Libellé d'une nature commerciale. `unknown` n'est jamais affiché : la ligne n'apparaît
+ *  que lorsque les DEUX côtés ont parlé. */
+function natureLabel(n: string): TranslationKey {
+  return n === 'origin' ? 'pwx.nature.origin' : 'pwx.nature.aftermarket'
+}
+
+export function ExplorerRowWhy({ confidence, proof, visual, sides, claims, natures }: {
   confidence: Confidence | null
   proof: { evidence: string; keyValue: string; isEan: boolean } | null
   visual?: StoredVisual | null
@@ -61,6 +67,8 @@ export function ExplorerRowWhy({ confidence, proof, visual, sides, claims }: {
   sides: { sourceEan?: string | null; listingEan?: string | null; sourceRef?: string | null; listingRef?: string | null }
   /** Les produits F1 qui se disputent la fiche — le premier est celui qui l'a emportée. */
   claims?: { ref: string; origin: boolean }[]
+  /** Natures opposées affirmées de part et d'autre (adaptable ↔ pièce d'origine). */
+  natures?: { mine: string; theirs: string }
 }) {
   const { t } = useTranslation()
   const proofKey = proof ? EVIDENCE_SHORT[proof.evidence] : undefined
@@ -104,6 +112,17 @@ export function ExplorerRowWhy({ confidence, proof, visual, sides, claims }: {
           {supports.map((s) => (
             <span key={s} className="text-emerald-300/60">+ {t(SUPPORT_SHORT[s])}</span>
           ))}
+        </div>
+      )}
+      {/* ⚠ ADAPTABLE face à PIÈCE D'ORIGINE. L'appariement est bon — c'est la même
+          référence — mais l'écart de prix ne mesure alors pas un positionnement : il
+          mesure l'écart entre une pièce constructeur et son équivalent. Le dire est la
+          seule façon d'éviter une décision tarifaire prise sur une comparaison biaisée. */}
+      {natures && (
+        <div className="text-amber-200/70">
+          {t('pwx.why.nature', {
+            mine: t(natureLabel(natures.mine)), theirs: t(natureLabel(natures.theirs)),
+          })}
         </div>
       )}
       {/* Le litige TRANCHÉ, dit en clair — et sans le compter comme un doute. Depuis que

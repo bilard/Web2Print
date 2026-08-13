@@ -14,6 +14,7 @@ import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/competitorListing'
 import { scorePair, type Confidence } from './confidence'
 import { claimRank } from '../catalog/originYield'
+import { partNature, natureMismatch, type PartNature } from '../catalog/partNature'
 
 /** Nature de la preuve d'appariement (même classement que le rapport). */
 type PairKind = 'exact-ean' | 'exact-ref' | 'origin'
@@ -53,6 +54,11 @@ export interface PairedRow {
   proof: { evidence: string; keyValue: string; isEan: boolean } | null
   /** Indice de fiabilité de l'appariement. null quand la fiche est orpheline. */
   confidence: Confidence | null
+  /** ORIGINE ou ADAPTABLE, de part et d'autre — quand les libellés l'affirment. Deux
+   *  natures opposées apparient bien la même RÉFÉRENCE, mais pas le même article : l'écart
+   *  de prix dit alors la différence entre une pièce constructeur et son équivalent, pas un
+   *  positionnement. Renseigné seulement si les deux côtés parlent. */
+  natures?: { mine: PartNature; theirs: PartNature }
   /** Les produits F1 qui revendiquent CETTE fiche, gagnant compris, quand ils sont
    *  plusieurs. Le compteur seul (`contested`) dit qu'il y a litige sans dire entre qui —
    *  or c'est le RIVAL qui tranche : une pièce adaptable et la pièce d'ORIGINE qu'elle
@@ -173,6 +179,12 @@ export function pairSiteListings(
         ? { evidence: hit.proof.evidence, keyValue: hit.proof.key.value, isEan: hit.proof.key.kind === 'ean' }
         : null,
       claims: hit && hit.claims.length > 1 ? hit.claims : undefined,
+      natures: (() => {
+        if (!p) return undefined
+        const mine = partNature(p.name, description)
+        const theirs = partNature(listing.name)
+        return natureMismatch(mine, theirs) ? { mine, theirs } : undefined
+      })(),
       confidence: hit && p
         ? scorePair({
             evidence: hit.proof.evidence, key: hit.proof.key, keyValue: hit.proof.key.value,
