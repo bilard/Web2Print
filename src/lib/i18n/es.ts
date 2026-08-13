@@ -2705,6 +2705,7 @@ export const es: Record<TranslationKey, string> = {
   'run.directed.productProgress': '— producto {processed}/{total} · {hits} precio(s) encontrado(s)',
   'run.directed.productProgressSkipped': '— producto {processed}/{total} · {hits} precio(s) encontrado(s) · {skipped} sitio(s) ignorado(s)',
   'run.directed.budgetReserved': 'Presupuesto reservado para la comparativa — búsqueda dirigida pospuesta al siguiente tick.',
+  'run.directed.authDormant': 'Pasada autenticada {host} EN REPOSO — {cycles} ciclos sin un solo emparejamiento. Se reintentará periódicamente; desmarque el sitio para detenerla del todo.',
   'run.directed.authBudgetReserved': 'Presupuesto reservado para la comparativa — pasada autenticada pospuesta al siguiente tick (su cursor avanza igualmente).',
   'run.directed.genericNoFirecrawlKey': 'Sitios genéricos sin clave Firecrawl — extracción mediante las alternativas Bright Data y luego Jina.',
   'run.directed.authNoFirecrawlKey': 'Sitio autenticado {host} pero sin clave Firecrawl — ignorado.',

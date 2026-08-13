@@ -2827,6 +2827,7 @@ export const fr = {
   'run.directed.productProgress': '— produit {processed}/{total} · {hits} prix trouvé(s)',
   'run.directed.productProgressSkipped': '— produit {processed}/{total} · {hits} prix trouvé(s) · {skipped} site(s) ignoré(s)',
   'run.directed.budgetReserved': 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
+  'run.directed.authDormant': 'Passe authentifiée {host} EN VEILLE — {cycles} cycles sans un seul appariement. Elle sera retentée périodiquement ; décochez le site si vous voulez l’arrêter tout à fait.',
   'run.directed.authBudgetReserved': 'Budget réservé au comparatif — passe authentifiée repoussée au prochain tick (son curseur avance quand même).',
   'run.directed.genericNoFirecrawlKey': 'Sites génériques sans clé Firecrawl — extraction via les replis Bright Data puis Jina.',
   'run.directed.authNoFirecrawlKey': 'Site authentifié {host} mais aucune clé Firecrawl — ignoré.',

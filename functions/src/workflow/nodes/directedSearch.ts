@@ -28,6 +28,14 @@ import { t } from '../../i18n'
 import { loadPairingRules } from '../../priceWatch/pairingRulesStore'
 import { rulesDifferFromDefault, summarizeRules } from '../../priceWatch/catalog/pairingRules'
 
+/** Cycles consécutifs SANS le moindre appariement au-delà desquels une passe authentifiée
+ *  se met en veille. Dix ≈ cinquante produits testés en vain sur ce site. */
+const AUTH_DRY_LIMIT = 10
+/** Une passe de contrôle est rejouée tous les N cycles, pour reprendre tout seul un site
+ *  qui se remet à répondre. */
+const AUTH_DRY_RECHECK = 25
+
+
 const VAT = 0.2
 
 /** Domaine nu (pour l'opérateur `site:` et la comparaison). */
@@ -257,6 +265,20 @@ registerServerNode({
           break
         }
         if (!key) { ctx.log('warn', t(ctx.locale, 'run.directed.authNoFirecrawlKey', { host: cred!.host })); break }
+        // ⚠⚠ DISJONCTEUR. Mesuré sur ce suivi : « Auth progarden.fr : 0/5 » et « Auth
+        // sodipieces.fr : 0/5 » à CHAQUE cycle depuis des jours, pour treize minutes de
+        // fenêtre et autant de connexions Firecrawl facturées. Au rythme de cinq produits
+        // par run sur 115 814, le tour de catalogue demanderait des mois — la passe ne
+        // « finira » donc jamais d'elle-même. Après DRY_LIMIT cycles sans le moindre
+        // appariement, elle se met en veille ; une passe de CONTRÔLE est rejouée
+        // périodiquement pour qu'un site qui se remet à répondre soit repris tout seul.
+        const dryKey = `directed_auth_dry_${siteId}`
+        const dry = (await loadCompetitorMeta(ctx.uid, watchId, dryKey))?.productCount ?? 0
+        if (dry >= AUTH_DRY_LIMIT && dry % AUTH_DRY_RECHECK !== 0) {
+          await saveCompetitorMeta(ctx.uid, watchId, dryKey, { domain: 'directed-auth-dry', productCount: dry + 1 })
+          ctx.log('info', t(ctx.locale, 'run.directed.authDormant', { host: cred!.host, cycles: dry }))
+          continue
+        }
         const authHits = await krampAuthPass(authSlice, {
           rules,
           // ⚠ Deux signaux, et ce n'est pas une inattention. `krampBatchScrape` interrompt
@@ -268,6 +290,11 @@ registerServerNode({
           signal: timedSignal,
           log: (m) => ctx.log('info', m),
           locale: ctx.locale,
+        })
+        // Sec ou fructueux : le compteur du disjoncteur suit, et se REMET À ZÉRO au premier
+        // appariement — un site qui redevient utile ne traîne pas sa mauvaise réputation.
+        await saveCompetitorMeta(ctx.uid, watchId, dryKey, {
+          domain: 'directed-auth-dry', productCount: authHits.length > 0 ? 0 : dry + 1,
         })
         for (const h of authHits) pass.results.push({ productId: h.productId, siteId, hit: { listing: h.listing, evidence: h.evidence as DirectedHit['evidence'], query: h.listing.ref ?? '' } })
         ctx.log('info', t(ctx.locale, 'run.directed.authMatched', {

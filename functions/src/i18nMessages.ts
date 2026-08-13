@@ -401,6 +401,10 @@ const MESSAGES = {
     fr: 'Budget réservé au comparatif — recherche dirigée repoussée au prochain tick.',
     en: 'Budget reserved for the comparison — directed search postponed to the next tick.',
   },
+  'run.directed.authDormant': {
+    fr: 'Passe authentifiée {host} EN VEILLE — {cycles} cycles sans un seul appariement. Elle sera retentée périodiquement ; décochez le site si vous voulez l’arrêter tout à fait.',
+    en: 'Authenticated pass {host} DORMANT — {cycles} cycles without a single match. It will be retried periodically; untick the site to stop it altogether.',
+  },
   'run.directed.authBudgetReserved': {
     fr: 'Budget réservé au comparatif — passe authentifiée repoussée au prochain tick (son curseur avance quand même).',
     en: 'Budget reserved for the comparison — authenticated pass postponed to the next tick (its cursor still advances).',
