@@ -68,7 +68,10 @@ export function ExplorerRowWhy({ confidence, proof, visual, sides, claims }: {
   const supports = confidence?.supports ?? []
   const note = visual?.note?.trim() || null
   const hasReasons = Boolean(proofKey) || doubts.length > 0 || supports.length > 0
-  if (!hasReasons && !note) return null
+  // Les adaptables qui ont CÉDÉ la fiche. Uniquement quand le litige est tranché : tant
+  // qu'il porte le doute « fiche contestée », c'est ce libellé-là qui nomme les rivaux.
+  const yielded = doubts.includes('contested') ? [] : (claims ?? []).filter((c) => c.origin)
+  if (!hasReasons && !note && yielded.length === 0) return null
 
   // Un doute sur une ligne DÉJÀ douteuse se lit en rose, comme sa bande : deux couleurs
   // pour le même état enverraient deux signaux là où il n'y en a qu'un.
@@ -101,6 +104,16 @@ export function ExplorerRowWhy({ confidence, proof, visual, sides, claims }: {
           {supports.map((s) => (
             <span key={s} className="text-emerald-300/60">+ {t(SUPPORT_SHORT[s])}</span>
           ))}
+        </div>
+      )}
+      {/* Le litige TRANCHÉ, dit en clair — et sans le compter comme un doute. Depuis que
+          la pièce d'origine l'emporte sur les adaptables qui la citent, ces lignes ne
+          portent plus « fiche contestée » : sans cette note, l'arbitrage deviendrait
+          invisible, alors que c'est LUI qui explique pourquoi cette fiche est en face de
+          ce produit-ci et pas de l'autre. */}
+      {yielded.length > 0 && (
+        <div className="text-white/35">
+          {t('pwx.why.arbitrated', { list: yielded.map((c) => c.ref).join(' · ') })}
         </div>
       )}
       {/* ⚠ La note vient d'un modèle : sa longueur n'est pas bornée. Sans le clamp, une

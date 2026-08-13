@@ -5932,6 +5932,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.why.visual': 'Fotos ({score}/100): {note}',
   'pwx.why.conflictValues': '{label}: {mine} ≠ {theirs}',
   'pwx.why.detail': '{label}: {detail}',
+  'pwx.why.arbitrated': 'Litigio resuelto — descartado: {list} (pieza adaptable que cita esta referencia)',
   'pwx.doubtBar.label': 'Qué bloquea',
   'pwx.doubtBar.total': '{count} motivos registrados — haga clic para aislar',
   'pwx.doubtBar.pick': 'Conservar solo las líneas afectadas por este motivo',

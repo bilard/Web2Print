@@ -6124,6 +6124,7 @@ export const fr = {
   'pwx.why.visual': 'Photos ({score}/100) : {note}',
   'pwx.why.conflictValues': '{label} : {mine} ≠ {theirs}',
   'pwx.why.detail': '{label} : {detail}',
+  'pwx.why.arbitrated': 'Litige tranché — écarté : {list} (adaptable citant cette référence)',
   'pwx.doubtBar.label': 'Ce qui bloque',
   'pwx.doubtBar.total': '{count} motifs relevés — cliquez pour isoler',
   'pwx.doubtBar.pick': 'Ne garder que les lignes que ce motif grève',

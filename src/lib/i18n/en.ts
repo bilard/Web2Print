@@ -5933,6 +5933,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.why.visual': 'Photos ({score}/100): {note}',
   'pwx.why.conflictValues': '{label}: {mine} ≠ {theirs}',
   'pwx.why.detail': '{label}: {detail}',
+  'pwx.why.arbitrated': 'Dispute settled — set aside: {list} (aftermarket part citing this reference)',
   'pwx.doubtBar.label': 'What blocks',
   'pwx.doubtBar.total': '{count} reasons recorded — click to isolate',
   'pwx.doubtBar.pick': 'Keep only the rows this reason weighs on',
