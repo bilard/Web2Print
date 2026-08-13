@@ -1,6 +1,7 @@
 // functions/src/workflow/runHistory.ts
 import { getFirestore } from 'firebase-admin/firestore'
 import type { HeadlessResult } from './execute'
+import { fitRunOutputs } from './fitRunDoc'
 
 const MAX_LOGS = 200
 const MAX_ROWS = 100
@@ -40,12 +41,18 @@ export async function writeRunHistory(
   result: HeadlessResult,
 ): Promise<void> {
   const logs = result.logs.slice(-MAX_LOGS)
+  // ⚠ Le plafond de LIGNES ne suffit pas : cent lignes d'un catalogue enrichi pèsent des
+  // mégaoctets et le document était REFUSÉ (2 808 947 octets pour 1 048 576). Le run avait
+  // pourtant abouti — il finissait « error », statut final jamais publié.
+  const fitted = fitRunOutputs(capOutputs(result.nodeOutputs))
   await getFirestore().collection('users').doc(uid).collection('workflowRuns').add({
     workflowId: meta.workflowId, name: meta.name, trigger: meta.trigger,
     startedAt: meta.startedAt, endedAt: Date.now(),
     status: result.status, nodeCount: result.nodeCount, errorCount: result.errorCount, logs,
     // Snapshot de résultat (écran Résultats / historique) : sorties cappées + états par node.
-    nodeOutputs: capOutputs(result.nodeOutputs), nodeStates: result.nodeStates,
+    nodeOutputs: fitted.outputs, nodeStates: result.nodeStates,
+    // Jamais de réduction muette : l'écran Résultats doit pouvoir dire ce qui manque.
+    ...(fitted.trimmed ? { outputsTrimmed: fitted.trimmed } : {}),
   })
   await prune(uid, meta.workflowId).catch(() => {})
 }

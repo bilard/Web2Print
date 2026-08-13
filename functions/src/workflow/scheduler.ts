@@ -304,7 +304,20 @@ async function runWorkflow(wf: ServerWorkflow, uid: string, trigger: 'cron' | 'm
     // Run interrompu (STOP/timeout non reprenable) : statut global « error » (n'a pas abouti),
     // même si les nodes individuels sont « arrêtés » (skipped) et non en échec.
     const finalStatus = ac.signal.aborted ? 'error' : result.status
+    // ⚠ L'HISTORIQUE NE DOIT JAMAIS FAIRE ÉCHOUER LE RUN. Cas vécu : un snapshot de
+    // 2 808 947 octets refusé par Firestore (limite 1 048 576) faisait remonter l'exception
+    // jusqu'au catch ci-dessous — un run ABOUTI y était enregistré « error », son statut
+    // final jamais publié et son checkpoint effacé. Le snapshot est un confort ; savoir que
+    // le run s'est terminé est l'essentiel. L'échec est journalisé, jamais avalé.
     await writeRunHistory(uid, { workflowId: wf.id, name: wf.name, trigger, startedAt }, { ...result, status: finalStatus })
+      .catch(async (e) => {
+        const why = e instanceof Error ? e.message : String(e)
+        console.warn('[runHistory] snapshot non conservé :', why)
+        await appendRunLiveError(
+          uid, wf.id, `Résultat non conservé (le run, lui, s'est terminé) : ${why}`,
+          { watchId: firstWatchId(wf), runId },
+        ).catch(() => {})
+      })
     await writeRunLive(uid, wf.id, {
       runId, trigger, startedAt, endedAt: Date.now(),
       status: finalStatus, nodeStates: result.nodeStates, logs: result.logs.slice(-200),

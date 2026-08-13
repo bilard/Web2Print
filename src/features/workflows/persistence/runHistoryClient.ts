@@ -5,6 +5,7 @@
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import type { NodeRunState, NodeStatus, Workflow } from '../types'
+import { fitRunOutputs } from './fitRunDoc'
 
 const MAX_ROWS = 100
 const MAX_RUNS = 20
@@ -44,10 +45,14 @@ export async function persistClientRun(
   if (Object.keys(nodeOutputs).length === 0) return // rien à montrer
 
   try {
+    // ⚠ Borné en OCTETS, pas seulement en lignes : au-delà d'un mégaoctet, Firestore refuse
+    // le document et le snapshot du run est perdu (cf. `fitRunDoc`).
+    const fitted = fitRunOutputs(sanitize(nodeOutputs))
     await addDoc(collection(db, 'users', uid, 'workflowRuns'), {
       workflowId: wf.id, name: wf.name, trigger: 'manual',
       startedAt: args.startedAt, endedAt: Date.now(), status: args.status,
-      nodeOutputs: sanitize(nodeOutputs), nodeStates: stateMap,
+      nodeOutputs: fitted.outputs, nodeStates: stateMap,
+      ...(fitted.trimmed ? { outputsTrimmed: fitted.trimmed } : {}),
     })
     // Purge : ne garder que les MAX_RUNS plus récents (tri client → pas d'index requis).
     const snap = await getDocs(query(collection(db, 'users', uid, 'workflowRuns'), where('workflowId', '==', wf.id)))
