@@ -378,3 +378,28 @@ describe('les deux clés retrouvées ensemble, même habillées', () => {
     expect(c.doubts).not.toContain('ref-conflict')
   })
 })
+
+describe('un litige arbitré n’est plus un litige', () => {
+  const contested = (over: Partial<PairSignals>): PairSignals => ({
+    evidence: 'ref-in-title', key: { weak: false, origin: false }, keyValue: '7540240',
+    contenders: 2, ...over,
+  })
+
+  it('la pièce d’ORIGINE qui a emporté la fiche ne porte plus le doute', () => {
+    // Cas vécu (123courroies) : « COURROIE MTD 754-0240 » gagne la fiche contre un
+    // adaptable qui la cite en référence d'origine — et tombait à 44 pour un seuil à 45.
+    const c = scorePair(contested({ directContenders: 1 }))
+    expect(c.doubts).not.toContain('contested')
+    expect(c.band).not.toBe('doubt')
+  })
+
+  it('mais DEUX prétendants directs restent un conflit que rien ne tranche', () => {
+    const c = scorePair(contested({ directContenders: 2 }))
+    expect(c.doubts).toContain('contested')
+  })
+
+  it('et un gagnant par référence d’ORIGINE le porte toujours', () => {
+    const c = scorePair(contested({ key: { weak: false, origin: true }, directContenders: 0 }))
+    expect(c.doubts).toContain('contested')
+  })
+})

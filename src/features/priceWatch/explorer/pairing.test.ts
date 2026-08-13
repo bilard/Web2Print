@@ -69,7 +69,9 @@ describe('pairSiteListings', () => {
     // 12,48 € et annonçait −38 %.
     expect(row.source?.id).toBe('orig')
     expect(row.kind).toBe('exact-ref')
-    expect(row.confidence?.doubts).toContain('contested')
+    // Le litige est TRANCHÉ (un seul prétendant direct) : il ne reste rien à mettre en
+    // doute — c'est le sens de l'arbitrage.
+    expect(row.confidence?.doubts).not.toContain('contested')
     expect(row.claims).toEqual([
       { ref: '3309342', origin: true },
       { ref: '754-04038', origin: false },

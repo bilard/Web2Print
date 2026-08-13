@@ -146,6 +146,8 @@ export interface PairSignals {
   deltaPct?: number | null
   /** Nombre de produits F1 dont l'appariement a été prouvé sur CETTE fiche. */
   contenders?: number
+  /** Combien d'entre eux la revendiquent par LEUR PROPRE référence. */
+  directContenders?: number
   /**
    * Les AUTRES clés du produit source — celles qui n'ont pas prouvé.
    *
@@ -311,7 +313,18 @@ export function scorePair(s: PairSignals): Confidence {
   if (s.key.weak) doubts.push('weak-key')
   if (isNumericShort(s.keyValue) && INDIRECT.has(s.evidence)) doubts.push('numeric-short')
   if (s.key.origin) doubts.push('origin-key')
-  if ((s.contenders ?? 1) > 1) doubts.push('contested')
+  // ⚠ Un litige ARBITRÉ n'est plus un litige. Depuis que la pièce d'origine l'emporte sur
+  // les adaptables qui la citent (cf. `catalog/originYield`), une fiche revendiquée par un
+  // seul produit DIRECT et par des adaptables est tranchée par construction : le gagnant
+  // est le bon, et lui retrancher 20 points punissait la situation la plus banale d'un
+  // catalogue qui porte à la fois les pièces d'origine et leurs équivalents. Mesuré : la
+  // « COURROIE MTD 754-0240 », appariement exact, tombait à 44 pour un seuil à 45.
+  // Deux prétendants DIRECTS, en revanche, restent un vrai conflit : aucune règle ne
+  // départage deux produits qui revendiquent la même fiche par leur propre référence.
+  // ⚠ FAIL-CLOSED : sans l'information (signal absent), le doute est CONSERVÉ. Un appelant
+  // qui ne compte pas les prétendants directs ne doit pas blanchir un litige par omission.
+  const arbitrated = !s.key.origin && s.directContenders === 1
+  if ((s.contenders ?? 1) > 1 && !arbitrated) doubts.push('contested')
   // Un seul des deux paliers : cumuler « écart » et « gouffre » compterait deux fois le
   // même fait, et l'infobulle dirait deux fois la même chose.
   if (s.deltaPct != null && s.deltaPct > PRICE_ABYSS_PCT) doubts.push('price-abyss')

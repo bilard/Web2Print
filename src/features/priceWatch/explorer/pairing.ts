@@ -105,6 +105,10 @@ export function pairSiteListings(
   // se trompe — un défaut qu'aucun autre signal de l'indice ne voit.
   const byListing = new Map<string, {
     product: SourceProduct; proof: MatchProof; contenders: number
+    /** Prétendants qui revendiquent la fiche par LEUR PROPRE référence. Un seul = le
+     *  litige est tranché par construction (cf. `originYield`), et il ne reste rien à
+     *  mettre en doute : les autres sont des adaptables qui ont cédé. */
+    directs: number
     claims: { ref: string; origin: boolean }[]
   }>()
   for (const product of products) {
@@ -117,6 +121,7 @@ export function pairSiteListings(
     const seen = byListing.get(m.listing.url)
     if (seen) {
       seen.contenders++
+      if (!m.proof.key.origin) seen.directs++
       if (seen.claims.length <= MAX_CLAIMS) seen.claims.push(claim)
       // ⚠ L'ordre du catalogue ne décide plus seul : une pièce ADAPTABLE atteint la fiche
       // par la référence d'ORIGINE qu'elle remplace, la pièce d'origine par la sienne. La
@@ -130,7 +135,10 @@ export function pairSiteListings(
       }
       continue
     }
-    byListing.set(m.listing.url, { product, proof: m.proof, contenders: 1, claims: [claim] })
+    byListing.set(m.listing.url, {
+      product, proof: m.proof, contenders: 1,
+      directs: m.proof.key.origin ? 0 : 1, claims: [claim],
+    })
   }
 
   return listings.map((listing) => {
@@ -159,7 +167,7 @@ export function pairSiteListings(
             sourceEan: p.ean, listingEan: listing.gtin13,
             sourceRef: p.ref, listingRef: listing.ref,
             sourceName: p.name, listingName: listing.name,
-            deltaPct: cmp.deltaPct, contenders: hit.contenders,
+            deltaPct: cmp.deltaPct, contenders: hit.contenders, directContenders: hit.directs,
             // Les autres clés du produit : c'est en retrouvant l'une d'elles chez ce
             // concurrent qu'un appariement indirect cesse d'être une coïncidence.
             otherKeys: candidateKeys(p, rules).map((k) => k.value),
