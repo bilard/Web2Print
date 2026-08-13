@@ -6122,6 +6122,7 @@ export const fr = {
   'pwx.support.short.secondKey': 'seconde référence retrouvée',
   'pwx.support.short.visualEcho': 'photos concordantes',
   'pwx.why.visual': 'Photos ({score}/100) : {note}',
+  'pwx.why.conflictValues': '{label} : {mine} ≠ {theirs}',
   'pwx.trust.filterAll': 'Toutes fiabilités',
   'pwx.trust.filterSuspect': 'À vérifier + douteux',
   'pwx.trust.filterDoubt': 'Douteux seulement',

@@ -293,7 +293,11 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                   de la preuve, renforts, et ce que l'analyse des photos a vu. Ils
                   n'existaient que dans les infobulles — invisibles au balayage, alors que
                   ce sont eux qui décident de garder ou d'écarter la ligne. */}
-              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual} />
+              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual}
+                sides={{
+                  sourceEan: source.ean, listingEan: listing.gtin13,
+                  sourceRef: source.ref, listingRef: listing.ref,
+                }} />
               {/* Avant / après enrichissement. N'apparaît QUE si la feuille porte la
                   mémoire de l'original — un catalogue jamais enrichi n'a rien à montrer,
                   et un bouton inerte vaudrait moins que pas de bouton. */}

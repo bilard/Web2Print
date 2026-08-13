@@ -5930,6 +5930,7 @@ export const es: Record<TranslationKey, string> = {
   'pwx.support.short.secondKey': 'segunda referencia encontrada',
   'pwx.support.short.visualEcho': 'fotos coincidentes',
   'pwx.why.visual': 'Fotos ({score}/100): {note}',
+  'pwx.why.conflictValues': '{label}: {mine} ≠ {theirs}',
   'pwx.trust.filterAll': 'Todas las fiabilidades',
   'pwx.trust.filterSuspect': 'Por verificar + dudosos',
   'pwx.trust.filterDoubt': 'Solo dudosos',

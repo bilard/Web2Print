@@ -5931,6 +5931,7 @@ export const en: Record<TranslationKey, string> = {
   'pwx.support.short.secondKey': 'second reference found',
   'pwx.support.short.visualEcho': 'matching photos',
   'pwx.why.visual': 'Photos ({score}/100): {note}',
+  'pwx.why.conflictValues': '{label}: {mine} ≠ {theirs}',
   'pwx.trust.filterAll': 'All reliability',
   'pwx.trust.filterSuspect': 'Check + doubtful',
   'pwx.trust.filterDoubt': 'Doubtful only',

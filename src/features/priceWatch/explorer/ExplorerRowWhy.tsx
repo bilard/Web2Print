@@ -36,10 +36,29 @@ const SUPPORT_SHORT: Record<SupportReason, TranslationKey> = {
   'visual-echo': 'pwx.support.short.visualEcho',
 }
 
-export function ExplorerRowWhy({ confidence, proof, visual }: {
+/** Les deux valeurs qu'un motif de CONTRADICTION oppose. Les nommer est le seul moyen de
+ *  trancher : « codes-barres divergents » ne dit pas si le concurrent publie un vrai code
+ *  fabricant ou son propre code interne — et cette différence-là décide si l'appariement
+ *  est faux ou si c'est le démenti qui ne vaut rien. Les valeurs sont montrées TELLES QUE
+ *  PUBLIÉES : c'est sous cette forme qu'on les retrouve sur les deux fiches. */
+function conflictValues(
+  reason: string,
+  sides: { sourceEan?: string | null; listingEan?: string | null; sourceRef?: string | null; listingRef?: string | null },
+): { mine: string; theirs: string } | null {
+  const pair = reason === 'ean-conflict'
+    ? [sides.sourceEan, sides.listingEan]
+    : reason === 'ref-conflict' ? [sides.sourceRef, sides.listingRef] : null
+  if (!pair) return null
+  const [mine, theirs] = pair.map((v) => String(v ?? '').trim())
+  return mine && theirs ? { mine, theirs } : null
+}
+
+export function ExplorerRowWhy({ confidence, proof, visual, sides }: {
   confidence: Confidence | null
   proof: { evidence: string; keyValue: string; isEan: boolean } | null
   visual?: StoredVisual | null
+  /** Les valeurs comparées, pour NOMMER ce qui se contredit. */
+  sides: { sourceEan?: string | null; listingEan?: string | null; sourceRef?: string | null; listingRef?: string | null }
 }) {
   const { t } = useTranslation()
   const proofKey = proof ? EVIDENCE_SHORT[proof.evidence] : undefined
@@ -60,9 +79,16 @@ export function ExplorerRowWhy({ confidence, proof, visual }: {
           {proofKey && (
             <span className="text-white/40">{t('pwx.trust.proof', { what: t(proofKey) })}</span>
           )}
-          {doubts.map((d) => (
-            <span key={d} className={doubtTone}>⚠ {t(DOUBT_SHORT[d])}</span>
-          ))}
+          {doubts.map((d) => {
+            const v = conflictValues(d, sides)
+            return (
+              <span key={d} className={doubtTone}>
+                ⚠ {v
+                  ? t('pwx.why.conflictValues', { label: t(DOUBT_SHORT[d]), mine: v.mine, theirs: v.theirs })
+                  : t(DOUBT_SHORT[d])}
+              </span>
+            )
+          })}
           {supports.map((s) => (
             <span key={s} className="text-emerald-300/60">+ {t(SUPPORT_SHORT[s])}</span>
           ))}
