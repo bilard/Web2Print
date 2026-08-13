@@ -454,14 +454,29 @@ export const workflowCronScheduler = onSchedule(
       // `status: running`), et la bloquer figerait le flux jusqu'à expiration du verrou.
       const human = await liveRun(s.uid, s.workflowId)
       if (human && human.trigger !== 'cron') {
-        await docSnap.ref.update({ nextRunAt: now + 5 * 60_000 })
+        await docSnap.ref.update({ nextRunAt: now + 5 * 60_000 }).catch(() => {})
         console.log('workflowCronScheduler: run manuel en cours, tick reporté', s.workflowId)
         continue
       }
-      await docSnap.ref.update({ lastRunAt: now, lastStatus: 'running', nextRunAt: now + RUN_TIMEOUT_MS + 120_000 })
+      // ⚠ Le VERROU d'abord, et FAIL-CLOSED : si le planning a disparu entre le scan et
+      // ici (cron supprimé, suspendu, réécrit), on ne lance rien — sans verrou, chaque tick
+      // relancerait le même workflow par-dessus lui-même.
+      const locked = await docSnap.ref
+        .update({ lastRunAt: now, lastStatus: 'running', nextRunAt: now + RUN_TIMEOUT_MS + 120_000 })
+        .then(() => true)
+        .catch((e) => { console.warn('workflowCronScheduler: verrou impossible, tick ignoré', s.workflowId, e); return false })
+      if (!locked) continue
       try {
         const result = await runWorkflow(wf, s.uid, 'cron')
+        // ⚠⚠ NE JAMAIS FAIRE ÉCHOUER LE TICK SUR CETTE ÉCRITURE. Vécu : le planning
+        // supprimé PENDANT le run faisait remonter « 5 NOT_FOUND: No document to update »
+        // jusqu'à la Function — le tick était compté en échec et, surtout, le résultat du
+        // run n'était jamais reporté : ni `lastStatus`, ni `lastEndAt`, ni `nextRunAt`. Le
+        // bandeau restait donc bloqué sur « En cours » alors que le run était terminé, et
+        // c'est exactement la question qu'on n'arrivait pas à trancher à l'écran.
+        // Le planning n'est PAS recréé : s'il a disparu, c'est qu'on a voulu l'arrêter.
         await docSnap.ref.update(afterRunPatch(s, result, now))
+          .catch((e) => console.warn('workflowCronScheduler: planning disparu pendant le run', s.workflowId, e))
       } catch (err) {
         await docSnap.ref.update({
           lastStatus: 'error',
@@ -471,7 +486,7 @@ export const workflowCronScheduler = onSchedule(
           lastEndAt: Date.now(), // run terminé (en échec) : les battements antérieurs sont morts
 
           nextRunAt: computeNextRun(cron, cron.afterCompletion ? Date.now() : now),
-        })
+        }).catch((e) => console.warn('workflowCronScheduler: planning disparu pendant le run', s.workflowId, e))
         console.error('workflowCronScheduler: échec', s.workflowId, err)
       }
     }
