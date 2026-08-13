@@ -9,7 +9,7 @@
 
 import {
   candidateKeys, proveMatch, normalizeRef, stripLeadingZeros, normalizeEan,
-  isInternalBarcode, refTokensFromUrl, refTokensFromText, MIN_REF_LEN,
+  isInternalBarcode, refTokensFromUrl, refTokensFromText, declaredRefTokens, MIN_REF_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import { familiesConflict, partFamilies } from './partFamily'
@@ -47,7 +47,9 @@ export function indexKeysOf(
     if (ean && !isInternalBarcode(ean)) out.add(ean)
   }
 
-  if (listing.ref) addRef(listing.ref)
+  // ⚠ Chaque référence portée par le champ, pas la chaîne entière : « 1134349606 -
+  // 1134-3496-06 » n'indexait qu'une bouillie que rien ne retrouve (cf. `declaredRefTokens`).
+  if (listing.ref) for (const t of declaredRefTokens(listing.ref, rules.minRefLen)) addRef(t)
   addEan(listing.gtin13 ?? '')
 
   // Réf en tête de titre (emc : « 002748 - Courroie … ») : seulement si assez longue

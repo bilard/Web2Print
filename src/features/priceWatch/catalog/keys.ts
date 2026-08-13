@@ -261,17 +261,54 @@ function leadingToken(name: string | undefined): string {
   return normalizeRef(first)
 }
 
-/** Un champ d'identité déclaré porte-t-il exactement cette référence ?
- *  Une déclinaison PrestaShop « 181004383/0 » doit prouver « 181004383 » : normaliser
- *  la chaîne entière collerait le suffixe de variante (« 1810043830 ») et l'égalité
- *  exacte raterait — la partie AVANT le premier « / » est donc testée aussi. */
+/**
+ * Références lues dans un champ d'identité DÉCLARÉ (« Référence », `sku`, `mpn`).
+ *
+ * ⚠ Le champ n'en contient pas toujours UNE seule — c'est même le cas le plus courant sur
+ * le terrain, mesuré chez trois concurrents du suivi :
+ *   « 1134349606 - 1134-3496-06 »   deux écritures de la MÊME référence ;
+ *   « MTD7540280 »                  la référence habillée de la marque ;
+ *   « 5127500-00/6, 5127500-80/8 »  deux références distinctes, énumérées.
+ * Normalisée d'un bloc, la première donnait « 11343496061134349606 » : une clé que rien ne
+ * peut retrouver. Ces fiches n'étaient alors appariables que par raccroc — si l'URL ou le
+ * titre portaient la référence.
+ *
+ * On découpe donc sur les séparateurs d'ÉNUMÉRATION et on dénude l'habit de marque quand
+ * ce qui reste discrimine seul (six chiffres au moins). Rien n'est deviné pour autant :
+ * chaque forme produite doit encore prouver l'appariement par égalité exacte.
+ */
+const BRAND_DRESSED = /^[A-Z]+(\d{6,})$/
+
+export function declaredRefTokens(raw: string | null | undefined, minLen: number = MIN_REF_LEN): string[] {
+  const out: string[] = []
+  const seen = new Set<string>()
+  const push = (v: string) => {
+    if (v.length < minLen || seen.has(v)) return
+    seen.add(v); out.push(v)
+  }
+  for (const part of String(raw ?? '').split(/[\s,;|]+/)) {
+    const norm = normalizeRef(part)
+    if (!norm) continue
+    push(norm)
+    // Déclinaison PrestaShop « 181004383/0 » : la partie avant la barre est la référence.
+    const beforeSlash = normalizeRef(part.split('/')[0])
+    if (beforeSlash) push(beforeSlash)
+    const bare = BRAND_DRESSED.exec(norm)?.[1]
+    if (bare) push(bare)
+  }
+  return out
+}
+
+/** Un champ d'identité déclaré porte-t-il exactement cette référence ? Chaque forme que
+ *  le champ contient est essayée — déclinaison PrestaShop « 181004383/0 », énumération,
+ *  habit de marque —, et l'égalité reste EXACTE sur chacune. */
 function refEqualsDeclared(key: JoinKey, id: CompetitorIdentity, rules: PairingRules): MatchEvidence | null {
   for (const [field, evidence] of [['sku', 'sku'], ['mpn', 'mpn']] as const) {
     const raw = id[field]
     if (!raw || !rules.evidence[evidence]) continue
-    for (const cand of [String(raw), String(raw).split('/')[0]]) {
-      const norm = normalizeRef(cand)
-      if (!norm) continue
+    // ⚠ CHAQUE forme portée par le champ, jamais la chaîne entière : un champ qui empile
+    // deux écritures ou préfixe la marque ne prouvait RIEN (cf. `declaredRefTokens`).
+    for (const norm of declaredRefTokens(raw, rules.minRefLen)) {
       if (norm === key.value || stripLeadingZeros(norm) === key.value) return evidence
     }
   }

@@ -78,6 +78,38 @@ describe('cas réels — appariements JUSTES qui ne doivent plus être condamné
   })
 })
 
+describe('cas réels — le champ « Référence » du marchand, dans ses trois formes', () => {
+  // Trois écritures relevées chez trois concurrents. Normalisées d'un bloc, elles ne
+  // produisaient qu'une bouillie (« 11343496061134349606 ») : ces fiches n'étaient
+  // appariables que par raccroc, si l'URL ou le titre portait aussi la référence.
+  const listing = (ref: string): CompetitorListing[] =>
+    [{ url: 'https://c.fr/fiche', name: 'Pièce sans référence dans le titre', ref, price: 10 }]
+
+  it('deux écritures de la même référence, séparées par un tiret', () => {
+    const [row] = pair([{ id: 'p', name: 'FUSIBLE', ref: '1134-3496-06', price: 8 }], listing('1134349606 - 1134-3496-06'))
+    expect(row.source?.id).toBe('p')
+    expect(row.proof?.evidence).toBe('sku')
+  })
+
+  it('référence habillée de la marque', () => {
+    const [row] = pair([{ id: 'p', name: 'COURROIE', ref: '754-0280', price: 8 }], listing('MTD7540280'))
+    expect(row.source?.id).toBe('p')
+    expect(row.proof?.evidence).toBe('sku')
+  })
+
+  it('deux références distinctes, énumérées', () => {
+    const [row] = pair([{ id: 'p', name: 'KIT', ref: '5127500-80/8', price: 8 }], listing('5127500-00/6, 5127500-80/8'))
+    expect(row.source?.id).toBe('p')
+  })
+
+  it('mais une bouillie ne prouve toujours rien', () => {
+    // Le collage de deux références n'est pas une référence : aucun produit ne doit
+    // s'apparier à « 11343496061134349606 » pris comme un tout.
+    const [row] = pair([{ id: 'p', name: 'FUSIBLE', ref: '11343496061134349606', price: 8 }], listing('1134349606 - 1134-3496-06'))
+    expect(row.source).toBeNull()
+  })
+})
+
 describe('cas réels — appariements FAUX qui ne doivent pas exister', () => {
   it('tête fil nylon ↔ courroie dentée : clé courte, aucun mot ne confirme', () => {
     // 123courroies. Une référence d'origine de trois chiffres que le marchand déclare
