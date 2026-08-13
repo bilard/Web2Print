@@ -73,6 +73,9 @@ describe('executeWorkflow', () => {
     expect(states['n1'].status).toBe('error')
     expect(states['n1'].error).toContain('kaboom')
     expect(states['n2'].status).toBe('skipped')
+    // ⚠ La console du run se construit à partir des LOGS des nodes : sans cette ligne,
+    // elle affichait « Err 0 » sous une carte rouge et le message restait introuvable.
+    expect(states['n1'].logs?.some((l) => l.level === 'error' && l.msg.includes('kaboom'))).toBe(true)
   })
 
   it('respects abort signal', async () => {

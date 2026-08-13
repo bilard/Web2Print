@@ -539,6 +539,12 @@ export async function executeWorkflow(wf: Workflow, opts: ExecuteOptions = {}): 
         } catch (err) {
           if (ac.signal.aborted) return
           const msg = err instanceof Error ? err.message : String(err)
+          // ⚠ JOURNALISÉE, pas seulement posée sur la carte. L'état d'un node porte son
+          // `error`, mais la console du run se construit à partir des LOGS des nodes
+          // (`buildLiveLogs`) : une panne n'y écrivait donc rien. On lisait « Err 0 » sous
+          // une carte rouge, et le message n'était visible qu'en ouvrant le node — le
+          // symptôme le plus difficile à rapporter qui soit.
+          useRunContext.getState().appendLog(node.id, 'error', msg)
           useRunContext.getState().endNode(node.id, 'error', msg)
           // Journal des pannes de la veille tarifaire : seulement quand CE flux en adresse
           // une — un flux sans suivi n'a rien à faire dans ce journal, silencieusement.

@@ -345,3 +345,36 @@ describe('des démentis qui n’en sont pas', () => {
     expect(c.doubts).toContain('ref-conflict')
   })
 })
+
+describe('les deux clés retrouvées ensemble, même habillées', () => {
+  it('reconnaît une clé préfixée de la QUANTITÉ du lot (5x697015)', () => {
+    // Cas vécu : « LOT DE 5 FILTRES BRIGGS ET STRATTON 697015 » (origine 4215 ET 697015)
+    // face à « Pré-filtres à air 5x697015 BRIGGS ET STRATTON 4215 ». Les deux clés y sont.
+    const c = scorePair({
+      evidence: 'sku', key: { weak: true, origin: true }, keyValue: '4215',
+      otherKeys: ['4215', '697015'],
+      listingName: 'Pré-filtres à air 5x697015 BRIGGS ET STRATTON 4215', listingRef: '4215',
+      sourceName: 'LOT DE 5 FILTRES BRIGGS ET STRATTON 697015',
+    })
+    expect(c.supports).toContain('second-key')
+  })
+
+  it('ne prend PAS un fragment pour une clé', () => {
+    // « 4606 » ⊂ « 460663 » : l'inclusion nue ne prouve rien, seul l'habit est toléré.
+    const c = scorePair({
+      evidence: 'ref-in-title', key: { weak: false, origin: false }, keyValue: '123456',
+      otherKeys: ['123456', '460663'],
+      listingName: 'Pignon 1460663 spécial', listingRef: null,
+    })
+    expect(c.supports).not.toContain('second-key')
+  })
+
+  it('un champ « Référence » qui EMPILE deux écritures de notre clé ne contredit rien', () => {
+    // Cas vécu (autoportee-discount) : réf marchand « 1134349606 - 1134-3496-06 ».
+    const c = scorePair({
+      evidence: 'ref-in-url', key: { weak: false, origin: false }, keyValue: '1134349606',
+      sourceRef: '1134-3496-06', listingRef: '1134349606 - 1134-3496-06',
+    })
+    expect(c.doubts).not.toContain('ref-conflict')
+  })
+})

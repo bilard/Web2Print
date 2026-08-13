@@ -236,15 +236,52 @@ function sameRefUpToBrand(a: string, b: string): boolean {
  */
 const SECOND_KEY_PROOF = 30
 
+/**
+ * Habits COURANTS d'une référence dans un libellé marchand : la marque devant
+ * (« BS4215 »), ou la quantité d'un lot (« 5x697015 »). Ce ne sont pas d'autres codes,
+ * c'est le nôtre habillé.
+ *
+ * Cas VÉCU, et coûteux : « LOT DE 5 FILTRES BRIGGS ET STRATTON 697015 » (origine 4215 et
+ * 697015) face à « Pré-filtres à air 5x697015 BRIGGS ET STRATTON 4215 ». Les DEUX
+ * références y sont — la preuve indépendante que `second-key` est fait pour reconnaître —
+ * mais « 5X697015 » ne forme qu'un seul mot, et le renfort ne se déclenchait pas. La ligne
+ * restait « douteuse » alors que rien n'est plus concluant que deux clés retrouvées
+ * ensemble.
+ */
+const DRESSED_PREFIX = /^(?:[A-Z]+|\d+X)$/
+
+function tokenCarriesKey(token: string, key: string): boolean {
+  if (token === key) return true
+  if (!token.endsWith(key)) return false
+  return DRESSED_PREFIX.test(token.slice(0, token.length - key.length))
+}
+
 /** Une autre de nos clés figure-t-elle comme MOT ENTIER dans le libellé ou l'adresse du
- *  concurrent ? Mot entier, jamais inclusion : « 4606 » ⊂ « 460663 » ne prouve rien. Et
- *  seulement des clés assez longues pour ne pas coïncider par accident. */
+ *  concurrent ? Mot entier — jamais une inclusion quelconque : « 4606 » ⊂ « 460663 » ne
+ *  prouve rien —, à l'habit de marque ou de quantité près. Et seulement des clés assez
+ *  longues pour ne pas coïncider par accident. */
 function secondKeyEcho(s: PairSignals): boolean {
   const others = (s.otherKeys ?? []).filter((k) => k && k !== s.keyValue && k.length >= 5)
   if (others.length === 0) return false
   const haystack = `${s.listingName ?? ''} ${s.listingRef ?? ''}`.toUpperCase()
-  const tokens = new Set(haystack.split(/[^A-Z0-9]+/).filter(Boolean))
-  return others.some((k) => tokens.has(k.toUpperCase()))
+  const tokens = [...new Set(haystack.split(/[^A-Z0-9]+/).filter(Boolean))]
+  return others.some((k) => tokens.some((tk) => tokenCarriesKey(tk, k.toUpperCase())))
+}
+
+/**
+ * Le champ « Référence » du marchand porte-t-il NOTRE référence ? Beaucoup de boutiques y
+ * empilent plusieurs écritures de la même clé (« 1134349606 - 1134-3496-06 ») ou la
+ * préfixent de la marque. La chaîne entière diffère alors de la nôtre sans rien contredire
+ * du tout — et le motif « références divergentes » se déclenchait sur un champ qui, lu par
+ * un humain, dit exactement la même chose que le nôtre.
+ */
+function refFieldCarriesOurs(rawListingRef: string | null | undefined, ours: string): boolean {
+  if (!ours) return false
+  for (const part of String(rawListingRef ?? '').split(/[\s|,;]+/)) {
+    const norm = normalizeRef(part)
+    if (norm && (norm === ours || sameRefUpToBrand(norm, ours))) return true
+  }
+  return false
 }
 
 export function scorePair(s: PairSignals): Confidence {
@@ -267,7 +304,8 @@ export function scorePair(s: PairSignals): Confidence {
   // Une référence contredite ne pèse que si ce n'est PAS elle qui a prouvé l'appariement :
   // quand la preuve vient du champ `sku`, les deux valeurs sont égales par construction.
   // Et la même clé préfixée de la marque n'est pas une autre clé (cf. `sameRefUpToBrand`).
-  if (s.evidence !== 'sku' && s.evidence !== 'mpn' && conflict(sRef, lRef) && !sameRefUpToBrand(sRef, lRef)) {
+  if (s.evidence !== 'sku' && s.evidence !== 'mpn' && conflict(sRef, lRef)
+    && !sameRefUpToBrand(sRef, lRef) && !refFieldCarriesOurs(s.listingRef, sRef)) {
     doubts.push('ref-conflict')
   }
   if (s.key.weak) doubts.push('weak-key')
