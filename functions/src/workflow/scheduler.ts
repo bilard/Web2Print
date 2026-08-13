@@ -76,19 +76,26 @@ const MAX_SCHEDULES_PER_TICK = 25
  * Sans elle, la moisson consommait tout le budget à chaque run et le comparatif — dernier
  * du graphe — était interrompu systématiquement (dashboard jamais rafraîchi).
  *
- * ⚠⚠ PORTÉE DE DIX À QUINZE MINUTES le 2026-08-12, sur mesure et non par prudence. Dix
- * minutes suffisaient quand l'index pesait 455 000 fiches ; à 504 000 — et il grossit de
- * vingt mille par heure — « Comparer catalogue » n'y rentre plus. Constaté : QUATRE cycles
- * consécutifs (21:12, 21:43, 22:45, 23:16) sans produire une seule analyse, pendant que le
- * tableau de bord restait figé sur celle de 20:36. Aucune carte en erreur, aucun log : le
- * run est simplement coupé au verrou pendant que le comparatif travaille encore.
+ * Historique : porté de dix à QUINZE minutes le 2026-08-12, après quatre cycles sans
+ * analyse — un diagnostic posé sans mesure, faute d'instrumentation. La cause supposée
+ * (« le comparatif n'y rentre plus ») était FAUSSE.
  *
- * Le prix est réel — la moisson passe de 18 à 13 minutes par tick — et il est assumé : une
- * analyse produite à chaque cycle vaut mieux qu'un tiers de collecte en plus sur des
- * catalogues déjà bouclés. Ce réglage se relit quand le volume change ; il n'a pas de
- * valeur juste dans l'absolu, seulement une valeur juste POUR UN INDEX DONNÉ.
+ * ⚠⚠ RAMENÉ À CINQ MINUTES le 2026-08-13, sur mesure cette fois. Durées relevées carte par
+ * carte sur un index de 443 060 fiches réparties sur 24 sites :
+ *
+ *     moisson            521 s
+ *     recherche dirigée  818 s   ← elle mangeait la fenêtre, dépassant même l'échéance
+ *     COMPARER CATALOGUE  87 s   ← lecture des 24 index comprise (51,8 s)
+ *
+ * Le comparatif ne demande donc pas quinze minutes mais une minute et demie ; c'est la
+ * recherche dirigée qui l'affamait. Cinq minutes lui laissent une marge de plus de trois
+ * fois — et rendent DIX MINUTES de collecte à chaque cycle.
+ *
+ * ⚠ Ce réglage n'a pas de valeur dans l'absolu, seulement pour un index donné. Avant de le
+ * retoucher, relire les lignes « Fenêtre tenue … s » du journal du run : elles disent
+ * laquelle des cartes tient réellement la fenêtre.
  */
-const DOWNSTREAM_RESERVE_MS = 900_000
+const DOWNSTREAM_RESERVE_MS = 300_000
 
 /** Types de nodes RÉ-EXÉCUTABLES sans risque même interrompus en plein vol : lecture/
  *  transformation pure, aucun effet de bord externe. La reprise ne saute QUE les nodes
