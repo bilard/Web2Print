@@ -12,7 +12,7 @@
 // norme, pas un indice. Pénaliser dessus condamnerait en masse des appariements justes,
 // et le premier écran d'audit serait rouge à tort. Les mots communs ne peuvent que
 // MONTER le score.
-import { normalizeEan, normalizeRef, type MatchEvidence } from '../catalog/keys'
+import { normalizeEan, normalizeRef, isInternalBarcode, type MatchEvidence } from '../catalog/keys'
 import { nameTokens } from '../catalog/nameMatch'
 import { familiesConflict } from '../catalog/partFamily'
 
@@ -197,6 +197,28 @@ function conflict(a: string, b: string): boolean {
 }
 
 /**
+ * La MÊME référence, à la marque près : `MTD75404038` face à `754-04038`, `BS790287` face
+ * à `790287`. Les marchands préfixent couramment la référence constructeur du nom de la
+ * marque dans leur champ « Référence » — ce n'est pas une contradiction, c'est la même
+ * clé habillée.
+ *
+ * Mesuré sur le terrain : ce faux démenti tombait sur presque toutes les lignes d'un site
+ * qui préfixe (−15 points chacune), et le motif « références divergentes » se hissait en
+ * tête de la ventilation des doutes sans désigner aucun vrai défaut.
+ *
+ * Bornes volontairement étroites : le préfixe retiré doit être PUREMENT alphabétique (une
+ * marque, jamais des chiffres), et la partie commune doit rester assez longue pour ne pas
+ * coïncider par accident.
+ */
+const BRAND_PREFIX = /^[A-Z]+$/
+function sameRefUpToBrand(a: string, b: string): boolean {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a]
+  if (short.length < NUMERIC_MIN_LEN || short === long) return false
+  if (!long.endsWith(short)) return false
+  return BRAND_PREFIX.test(long.slice(0, long.length - short.length))
+}
+
+/**
  * Ce que vaut une SECONDE référence concordante, ajouté au `core` — donc capable de
  * changer la BANDE, contrairement à tous les autres renforts.
  *
@@ -234,10 +256,20 @@ export function scorePair(s: PairSignals): Confidence {
   const sRef = normalizeRef(s.sourceRef)
   const lRef = normalizeRef(s.listingRef)
 
-  if (conflict(sEan, lEan)) doubts.push('ean-conflict')
+  // ⚠ Un code-barres INTERNE à la boutique ne dément rien. `proveMatch` refuse déjà ces
+  // codes (préfixes GS1 02, 20-29, 30 : usage interne, ils ne joignent RIEN entre deux
+  // enseignes) comme PREUVE — les laisser servir de démenti était une asymétrie coûteuse :
+  // ce motif retranche 45 points ET force la bande « douteux », qu'aucun renfort ne
+  // rachète. Un code qu'on n'accepte pas comme preuve ne peut pas condamner.
+  if (conflict(sEan, lEan) && !isInternalBarcode(sEan) && !isInternalBarcode(lEan)) {
+    doubts.push('ean-conflict')
+  }
   // Une référence contredite ne pèse que si ce n'est PAS elle qui a prouvé l'appariement :
   // quand la preuve vient du champ `sku`, les deux valeurs sont égales par construction.
-  if (s.evidence !== 'sku' && s.evidence !== 'mpn' && conflict(sRef, lRef)) doubts.push('ref-conflict')
+  // Et la même clé préfixée de la marque n'est pas une autre clé (cf. `sameRefUpToBrand`).
+  if (s.evidence !== 'sku' && s.evidence !== 'mpn' && conflict(sRef, lRef) && !sameRefUpToBrand(sRef, lRef)) {
+    doubts.push('ref-conflict')
+  }
   if (s.key.weak) doubts.push('weak-key')
   if (isNumericShort(s.keyValue) && INDIRECT.has(s.evidence)) doubts.push('numeric-short')
   if (s.key.origin) doubts.push('origin-key')

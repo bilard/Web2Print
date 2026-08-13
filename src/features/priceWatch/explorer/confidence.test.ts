@@ -307,3 +307,41 @@ describe('⚠ une SECONDE référence concordante n’est pas un renfort, c’es
     expect(scorePair({ ...pignon, otherKeys: ['460663'] }).supports).not.toContain('second-key')
   })
 })
+
+describe('des démentis qui n’en sont pas', () => {
+  // Deux motifs pesaient sur des masses de lignes sans désigner un seul vrai défaut.
+  // Mesure de départ : 12 437 lignes à vérifier sur 26 608 appariées.
+  const base = (over: Partial<PairSignals>): PairSignals => ({
+    evidence: 'ref-in-url', key: { weak: false, origin: false }, keyValue: '75404038', ...over,
+  })
+
+  it('un code-barres INTERNE à la boutique ne condamne plus', () => {
+    // Préfixe 20-29 : code émis par le marchand. `proveMatch` le refuse déjà comme preuve.
+    const c = scorePair(base({ sourceEan: '3582321744582', listingEan: '2000000302195' }))
+    expect(c.doubts).not.toContain('ean-conflict')
+    expect(c.band).not.toBe('doubt')
+  })
+
+  it('mais un vrai code-barres fabricant condamne toujours', () => {
+    const c = scorePair(base({ sourceEan: '3582321744582', listingEan: '4049582856748' }))
+    expect(c.doubts).toContain('ean-conflict')
+    expect(c.band).toBe('doubt')
+  })
+
+  it('la même référence préfixée de la MARQUE n’est pas une autre référence', () => {
+    // Cas vécu (123courroies) : le marchand déclare « MTD75404038 » pour « 754-04038 ».
+    const c = scorePair(base({ sourceRef: '754-04038', listingRef: 'MTD75404038' }))
+    expect(c.doubts).not.toContain('ref-conflict')
+  })
+
+  it('deux références réellement différentes se contredisent toujours', () => {
+    const c = scorePair(base({ sourceRef: '754-04038', listingRef: '954-04038' }))
+    expect(c.doubts).toContain('ref-conflict')
+  })
+
+  it('un préfixe NUMÉRIQUE ne se confond pas avec une marque', () => {
+    // « 1754-04038 » n'est pas « 754-04038 » habillé : rien ne dit que le 1 soit un habit.
+    const c = scorePair(base({ sourceRef: '754-04038', listingRef: '1754-04038' }))
+    expect(c.doubts).toContain('ref-conflict')
+  })
+})
