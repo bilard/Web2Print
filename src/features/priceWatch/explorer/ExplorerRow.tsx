@@ -256,48 +256,7 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                     </span>
                   </SearchKey>
                 )}
-                {kind && (
-                  <span title={t(KIND_BADGE[kind].help)}
-                    className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${KIND_BADGE[kind].cls}`}>
-                    {t(KIND_BADGE[kind].key)}
-                  </span>
-                )}
-                {confidence && (
-                  // Cliquable : le badge est l'endroit où le regard tombe déjà quand un
-                  // appariement intrigue. Il isole d'un coup toutes les lignes de son état,
-                  // sans avoir à retrouver le filtre dans la barre du haut.
-                  //
-                  // Une fois la ligne JUGÉE, il porte le verdict et non plus l'indice :
-                  // laisser « à vérifier » sur un appariement qu'on vient de valider donne
-                  // deux réponses contradictoires sur la même ligne. Le détail de l'indice
-                  // reste dans l'infobulle.
-                  <button type="button"
-                    onClick={() => (verdict ? onPickVerdict?.(verdict) : onPickBand?.(confidence.band))}
-                    title={`${why}\n\n${t('pwx.trust.clickToFilter')}`}
-                    className={`px-1 rounded border text-[9px] uppercase tracking-wide hover:brightness-125 transition ${
-                      verdict ? VERDICT_BADGE[verdict].cls : BAND[confidence.band].cls
-                    }`}>
-                    {verdict ? t(VERDICT_BADGE[verdict].key) : t(BAND[confidence.band].key)}
-                    {!verdict && <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>}
-                  </button>
-                )}
-                {visual && (
-                  <span title={`${visual.note}\n\n${t('pwx.visual.score', { score: visual.score })}`}
-                    className={`px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${VISUAL_BADGE[visual.verdict].cls}`}>
-                    {t(VISUAL_BADGE[visual.verdict].key)}
-                    {visual.verdict !== 'unclear' && <span className="ml-1 opacity-60 tabular-nums">{visual.score}</span>}
-                  </span>
-                )}
               </div>
-              {/* Le détail de l'indice, EN CLAIR sous les badges : motifs de doute, nature
-                  de la preuve, renforts, et ce que l'analyse des photos a vu. Ils
-                  n'existaient que dans les infobulles — invisibles au balayage, alors que
-                  ce sont eux qui décident de garder ou d'écarter la ligne. */}
-              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual} claims={row.claims}
-                sides={{
-                  sourceEan: source.ean, listingEan: listing.gtin13,
-                  sourceRef: source.ref, listingRef: listing.ref,
-                }} />
               {/* Avant / après enrichissement. N'apparaît QUE si la feuille porte la
                   mémoire de l'original — un catalogue jamais enrichi n'a rien à montrer,
                   et un bouton inerte vaudrait moins que pas de bouton. */}
@@ -313,16 +272,58 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                   {showSource ? t('pwx.original.showing') : t('pwx.original.show')}
                 </button>
               )}
-              {source.url ? (
-                <a href={source.url} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
-                  className="block text-xs text-white/90 leading-snug mt-0.5 break-words underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
-                  {showSource && source.nameSource ? source.nameSource : source.name}
-                </a>
-              ) : (
-                <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">
-                  {showSource && source.nameSource ? source.nameSource : source.name}
-                </div>
-              )}
+              {/* NOM DU PRODUIT, et ses badges à sa suite — dans le même flux de texte, pas
+                  sur une ligne à part : la nature de l'appariement et sa fiabilité jugent CE
+                  libellé, et c'est en les lisant ensemble qu'on tranche. Rejetés en tête de
+                  ligne avec les références, ils obligeaient à faire l'aller-retour. */}
+              <div className="text-xs text-white/90 leading-snug mt-0.5 break-words">
+                {source.url ? (
+                  <a href={source.url} target="_blank" rel="noopener noreferrer" title={t('pw.table.openSource')}
+                    className="underline decoration-dotted decoration-white/30 underline-offset-[3px] hover:text-indigo-300 hover:decoration-solid">
+                    {showSource && source.nameSource ? source.nameSource : source.name}
+                  </a>
+                ) : (showSource && source.nameSource ? source.nameSource : source.name)}
+                {kind && (
+                  <span title={t(KIND_BADGE[kind].help)}
+                    className={`ml-1.5 align-middle whitespace-nowrap px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${KIND_BADGE[kind].cls}`}>
+                    {t(KIND_BADGE[kind].key)}
+                  </span>
+                )}
+                {confidence && (
+                  // Cliquable : le badge est l'endroit où le regard tombe déjà quand un
+                  // appariement intrigue. Il isole d'un coup toutes les lignes de son état,
+                  // sans avoir à retrouver le filtre dans la barre du haut.
+                  //
+                  // Une fois la ligne JUGÉE, il porte le verdict et non plus l'indice :
+                  // laisser « à vérifier » sur un appariement qu'on vient de valider donne
+                  // deux réponses contradictoires sur la même ligne.
+                  <button type="button"
+                    onClick={() => (verdict ? onPickVerdict?.(verdict) : onPickBand?.(confidence.band))}
+                    title={`${why}\n\n${t('pwx.trust.clickToFilter')}`}
+                    className={`ml-1.5 align-middle whitespace-nowrap px-1 rounded border text-[9px] uppercase tracking-wide hover:brightness-125 transition ${
+                      verdict ? VERDICT_BADGE[verdict].cls : BAND[confidence.band].cls
+                    }`}>
+                    {verdict ? t(VERDICT_BADGE[verdict].key) : t(BAND[confidence.band].key)}
+                    {!verdict && <span className="ml-1 opacity-60 tabular-nums">{confidence.score}</span>}
+                  </button>
+                )}
+                {visual && (
+                  <span title={`${visual.note}\n\n${t('pwx.visual.score', { score: visual.score })}`}
+                    className={`ml-1.5 align-middle whitespace-nowrap px-1 rounded border text-[9px] uppercase tracking-wide cursor-help ${VISUAL_BADGE[visual.verdict].cls}`}>
+                    {t(VISUAL_BADGE[visual.verdict].key)}
+                    {visual.verdict !== 'unclear' && <span className="ml-1 opacity-60 tabular-nums">{visual.score}</span>}
+                  </span>
+                )}
+              </div>
+              {/* Le détail de l'indice, EN CLAIR sous le libellé qu'il juge : motifs de
+                  doute, nature de la preuve, renforts, et ce que l'analyse des photos a vu.
+                  Ils n'existaient que dans les infobulles — invisibles au balayage, alors
+                  que ce sont eux qui décident de garder ou d'écarter la ligne. */}
+              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual} claims={row.claims}
+                sides={{
+                  sourceEan: source.ean, listingEan: listing.gtin13,
+                  sourceRef: source.ref, listingRef: listing.ref,
+                }} />
               {/* La description est LUE, pas dépliée : elle sert à trancher « est-ce bien
                   la même pièce ? » et l'obliger à un clic sur chaque ligne annulait
                   l'intérêt de la vue en regard. Le chevron ne subsiste que pour les
