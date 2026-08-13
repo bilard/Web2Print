@@ -53,12 +53,14 @@ function conflictValues(
   return mine && theirs ? { mine, theirs } : null
 }
 
-export function ExplorerRowWhy({ confidence, proof, visual, sides }: {
+export function ExplorerRowWhy({ confidence, proof, visual, sides, claims }: {
   confidence: Confidence | null
   proof: { evidence: string; keyValue: string; isEan: boolean } | null
   visual?: StoredVisual | null
   /** Les valeurs comparées, pour NOMMER ce qui se contredit. */
   sides: { sourceEan?: string | null; listingEan?: string | null; sourceRef?: string | null; listingRef?: string | null }
+  /** Les produits F1 qui se disputent la fiche — le premier est celui qui l'a emportée. */
+  claims?: { ref: string; origin: boolean }[]
 }) {
   const { t } = useTranslation()
   const proofKey = proof ? EVIDENCE_SHORT[proof.evidence] : undefined
@@ -81,11 +83,18 @@ export function ExplorerRowWhy({ confidence, proof, visual, sides }: {
           )}
           {doubts.map((d) => {
             const v = conflictValues(d, sides)
+            const rivals = d === 'contested' && claims?.length
+              ? claims
+                  .map((c) => `${c.ref} (${t(c.origin ? 'pwx.why.claim.origin' : 'pwx.why.claim.direct')})`)
+                  .join(' · ')
+              : null
             return (
               <span key={d} className={doubtTone}>
                 ⚠ {v
                   ? t('pwx.why.conflictValues', { label: t(DOUBT_SHORT[d]), mine: v.mine, theirs: v.theirs })
-                  : t(DOUBT_SHORT[d])}
+                  : rivals
+                    ? t('pwx.why.detail', { label: t(DOUBT_SHORT[d]), detail: rivals })
+                    : t(DOUBT_SHORT[d])}
               </span>
             )
           })}

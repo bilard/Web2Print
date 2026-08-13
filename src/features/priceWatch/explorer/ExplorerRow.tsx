@@ -293,7 +293,7 @@ export function ExplorerRow({ row, domain, onPickBand, verdict, onVerdict, onPic
                   de la preuve, renforts, et ce que l'analyse des photos a vu. Ils
                   n'existaient que dans les infobulles — invisibles au balayage, alors que
                   ce sont eux qui décident de garder ou d'écarter la ligne. */}
-              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual}
+              <ExplorerRowWhy confidence={confidence} proof={proof} visual={visual} claims={row.claims}
                 sides={{
                   sourceEan: source.ean, listingEan: listing.gtin13,
                   sourceRef: source.ref, listingRef: listing.ref,

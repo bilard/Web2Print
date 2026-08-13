@@ -17,6 +17,7 @@ import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './competitorListing'
+import { directlyClaimed, yieldsToDirect } from './originYield'
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. Mesuré ICI
  *  parce que c'est le seul endroit qui voit encore les fiches : l'index du site est relâché
@@ -69,6 +70,10 @@ export interface PairingTotals {
   vetoed: number
   /** Produits pour lesquels AU MOINS un site a pu interroger une clé. */
   sawKey: boolean[]
+  /** Appariements par référence d'ORIGINE effacés devant un appariement direct sur la
+   *  même fiche (cf. `originYield`). Compté, jamais silencieux : c'est une perte VOULUE,
+   *  et son ampleur doit pouvoir se lire dans le journal du run. */
+  yielded: number
 }
 
 export interface PairingRun {
@@ -88,17 +93,21 @@ export function createPairingRun(
   const rules = opts.rules ?? DEFAULT_PAIRING_RULES
   const cellsByProduct = new Map<number, PairedCell[]>()
   const auditBySite = new Map<string, CompetitorAudit>()
-  const totals: PairingTotals = { vetoed: 0, sawKey: new Array(products.length).fill(false) }
+  const totals: PairingTotals = { vetoed: 0, sawKey: new Array(products.length).fill(false), yielded: 0 }
 
   const addSite = (site: { siteId: string; domain: string }, listings: CompetitorListing[]) => {
     auditBySite.set(site.siteId, auditListings(listings))
     const lookup = buildMemoryIndex(listings, rules)
+    // Les cellules du site sont retenues avant d'être publiées : l'arbitrage « l'origine
+    // cède au direct » a besoin de voir TOUS les prétendants d'une même fiche, et on ne
+    // les connaît qu'une fois le catalogue entier passé sur ce site.
+    const siteCells: PairedCell[] = []
     for (let i = 0; i < products.length; i++) {
       const m = matchProduct(products[i], site.siteId, lookup, rules)
       totals.vetoed += m.vetoed ?? 0
       if (m.outcome !== 'no-key') totals.sawKey[i] = true
       if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
-      const cell: PairedCell = {
+      siteCells.push({
         productIdx: i,
         siteId: site.siteId,
         domain: site.domain,
@@ -107,10 +116,17 @@ export function createPairingRun(
         image: m.listing.image ?? null,
         cmp: comparePrices(products[i].price, m.listing, { vatRate: opts.vatRate, alignedPct: opts.alignedPct, rules }),
         proof: m.proof,
+      })
+    }
+    const direct = directlyClaimed(siteCells.map((c) => ({ url: c.url, origin: c.proof.key.origin })))
+    for (const cell of siteCells) {
+      if (yieldsToDirect({ url: cell.url, origin: cell.proof.key.origin }, direct)) {
+        totals.yielded++
+        continue
       }
-      const list = cellsByProduct.get(i)
+      const list = cellsByProduct.get(cell.productIdx)
       if (list) list.push(cell)
-      else cellsByProduct.set(i, [cell])
+      else cellsByProduct.set(cell.productIdx, [cell])
     }
   }
 

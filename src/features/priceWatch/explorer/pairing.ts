@@ -52,7 +52,15 @@ export interface PairedRow {
   proof: { evidence: string; keyValue: string; isEan: boolean } | null
   /** Indice de fiabilité de l'appariement. null quand la fiche est orpheline. */
   confidence: Confidence | null
+  /** Les produits F1 qui revendiquent CETTE fiche, gagnant compris, quand ils sont
+   *  plusieurs. Le compteur seul (`contested`) dit qu'il y a litige sans dire entre qui —
+   *  or c'est le RIVAL qui tranche : une pièce adaptable et la pièce d'ORIGINE qu'elle
+   *  remplace se disputent régulièrement la même fiche, et la seconde doit gagner. */
+  claims?: { ref: string; origin: boolean }[]
 }
+
+/** Au-delà, l'énumération devient plus longue que la ligne qu'elle explique. */
+const MAX_CLAIMS = 3
 
 function kindOf(proof: { key: { origin: boolean; kind: string }; evidence: string }): PairKind {
   if (proof.key.origin) return 'origin'
@@ -95,13 +103,34 @@ export function pairSiteListings(
   // Les suivants ne sont pas jetés en silence pour autant : leur NOMBRE est retenu. Deux
   // produits F1 distincts qui revendiquent la même fiche, c'est au moins un des deux qui
   // se trompe — un défaut qu'aucun autre signal de l'indice ne voit.
-  const byListing = new Map<string, { product: SourceProduct; proof: MatchProof; contenders: number }>()
+  const byListing = new Map<string, {
+    product: SourceProduct; proof: MatchProof; contenders: number
+    claims: { ref: string; origin: boolean }[]
+  }>()
   for (const product of products) {
     const m = matchProduct(product, siteId, lookup, rules)
     if (m.outcome !== 'matched' || !m.listing || !m.proof) continue
+    // Le rival est retenu AVANT tout arbitrage — c'est lui qui rend le litige lisible :
+    // « 3309342 (par réf. d'origine) contre 754-04038 (par sa propre réf.) » se juge d'un
+    // coup d'œil, « 2 prétendants » ne se juge pas du tout.
+    const claim = { ref: product.ref || product.id, origin: m.proof.key.origin }
     const seen = byListing.get(m.listing.url)
-    if (seen) { seen.contenders++; continue }
-    byListing.set(m.listing.url, { product, proof: m.proof, contenders: 1 })
+    if (seen) {
+      seen.contenders++
+      if (seen.claims.length <= MAX_CLAIMS) seen.claims.push(claim)
+      // ⚠ L'ordre du catalogue ne décide plus seul : une pièce ADAPTABLE atteint la fiche
+      // par la référence d'ORIGINE qu'elle remplace, la pièce d'origine par la sienne. La
+      // seconde doit l'emporter, quel que soit son rang dans le fichier (cf.
+      // `originYield` — même règle que le rapport, où la cellule de l'adaptable est
+      // effacée). À égalité de nature, le premier reste le gagnant : les runs successifs
+      // doivent rendre la même liste.
+      if (seen.proof.key.origin && !m.proof.key.origin) {
+        seen.product = product
+        seen.proof = m.proof
+      }
+      continue
+    }
+    byListing.set(m.listing.url, { product, proof: m.proof, contenders: 1, claims: [claim] })
   }
 
   return listings.map((listing) => {
@@ -123,6 +152,7 @@ export function pairSiteListings(
       proof: hit
         ? { evidence: hit.proof.evidence, keyValue: hit.proof.key.value, isEan: hit.proof.key.kind === 'ean' }
         : null,
+      claims: hit && hit.claims.length > 1 ? hit.claims : undefined,
       confidence: hit && p
         ? scorePair({
             evidence: hit.proof.evidence, key: hit.proof.key, keyValue: hit.proof.key.value,

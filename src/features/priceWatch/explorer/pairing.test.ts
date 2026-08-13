@@ -52,6 +52,30 @@ describe('pairSiteListings', () => {
     }
   })
 
+  it('nomme les produits qui se disputent une fiche, et PAR QUELLE clé chacun la revendique', () => {
+    // Cas réel (123courroies) : une courroie adaptable qui « remplace origine: 754-04038 »
+    // et la pièce d'ORIGINE 754-04038 elle-même tombent sur la même fiche. Le compteur de
+    // prétendants dit qu'il y a litige ; seul le nom des rivaux dit lequel doit gagner.
+    const rivals: SourceProduct[] = [
+      { id: 'adapt', name: 'COURROIE LISSE 5/8 1015MM', ref: '3309342', originRefs: ['754-04038'], price: 20.15 },
+      { id: 'orig', name: 'COURROIE MTD', ref: '754-04038', price: 18 },
+    ]
+    const fiche: CompetitorListing[] = [
+      { url: 'https://c.fr/mtd', name: 'Courroie spécifique MTD 754-04038', ref: 'MTD75404038', price: 12.48 },
+    ]
+    const [row] = pairSiteListings(rivals, 's1', fiche, { vatRate: 0.2 })
+    // La pièce d'ORIGINE l'emporte bien qu'elle soit SECONDE dans le catalogue : sans
+    // arbitrage, l'écran comparait une courroie générique à 20,15 € à une pièce MTD à
+    // 12,48 € et annonçait −38 %.
+    expect(row.source?.id).toBe('orig')
+    expect(row.kind).toBe('exact-ref')
+    expect(row.confidence?.doubts).toContain('contested')
+    expect(row.claims).toEqual([
+      { ref: '3309342', origin: true },
+      { ref: '754-04038', origin: false },
+    ])
+  })
+
   it('joint description et visuels via les extras (base PIM)', () => {
     const rows = pairSiteListings(products, 's1', listings, {
       vatRate: 0.2,

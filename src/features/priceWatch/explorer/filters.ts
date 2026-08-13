@@ -9,6 +9,7 @@ import { foldText } from '../catalog/categories'
 import { normalizeEan } from '../catalog/keys'
 import { discountPct, type PairedRow } from './pairing'
 import { isUnderPath } from './taxonomyTree'
+import type { DoubtReason } from './confidence'
 
 /** Position du concurrent face à mon prix (lecture ACHETEUR, cf. `pw` : < 0 = lui moins cher). */
 export type GapBand = 'all' | 'cheaper' | 'aligned' | 'dearer'
@@ -33,6 +34,10 @@ export interface ExplorerFilter {
   path: string[]
   /** Fiabilité de l'appariement : `suspect` = tout ce qui n'est pas jugé sûr. */
   trust: TrustFilter
+  /** UN motif de doute précis. Sans lui, « 12 437 douteux » ne se traite pas : c'est en
+   *  isolant un motif qu'on décide s'il faut corriger une règle (une référence d'origine
+   *  n'est pas un défaut de la fiche) ou vérifier les lignes une à une. */
+  reason: DoubtReason | null
   /** Les moins fiables en tête — l'ordre de travail quand on audite les rapprochements. */
   worstFirst: boolean
   /** Avancement de l'audit : ce qui reste à juger, ce qui a été validé, ce qui a été rejeté. */
@@ -55,13 +60,14 @@ export type TrustFilter = 'all' | 'suspect' | 'doubt' | 'sure'
 export const EMPTY_EXPLORER_FILTER: ExplorerFilter = {
   q: '', pairing: 'matched', gap: 'all', stock: 'all',
   promoOnly: false, noPriceOnly: false, priceMin: null, priceMax: null, tokens: [], path: [],
-  trust: 'all', worstFirst: false, audit: 'all', visual: 'all',
+  trust: 'all', worstFirst: false, audit: 'all', visual: 'all', reason: null,
 }
 
 export function isExplorerFilterActive(f: ExplorerFilter): boolean {
   return !!f.q.trim() || f.pairing !== 'matched' || f.gap !== 'all' || f.stock !== 'all'
     || f.promoOnly || f.noPriceOnly || f.priceMin != null || f.priceMax != null
     || f.tokens.length > 0 || f.path.length > 0 || f.trust !== 'all' || f.worstFirst
+    || f.reason != null
     || f.audit !== 'all' || f.visual !== 'all'
 }
 
@@ -133,6 +139,11 @@ export function filterRows(
       if (f.trust === 'doubt' && band !== 'doubt') return false
       if (f.trust === 'sure' && band !== 'sure') return false
     }
+
+    // Un motif isolé ne s'applique qu'aux lignes qu'il GRÈVE : comme `countDoubts`, les
+    // lignes sûres sont hors sujet — un doute mineur qui n'a rien coûté à la bande n'est
+    // pas du travail à faire.
+    if (f.reason && (!r.confidence || r.confidence.band === 'sure' || !r.confidence.doubts.includes(f.reason))) return false
 
     // Taxonomie : sélection par PRÉFIXE — choisir une famille garde ses sous-familles.
     if (f.path.length > 0 && !isUnderPath(r.source?.path ?? [], f.path)) return false

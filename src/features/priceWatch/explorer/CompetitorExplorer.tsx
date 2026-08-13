@@ -19,6 +19,7 @@ import { buildRail, ExplorerSiteRail } from './ExplorerSiteRail'
 import { ExplorerSearch } from './ExplorerSearch'
 import { ExplorerFilters, ExplorerTokens } from './ExplorerFilters'
 import { ExplorerStats } from './ExplorerStats'
+import { ExplorerDoubtBar } from './ExplorerDoubtBar'
 import { ExplorerPositionBar } from './ExplorerPositionBar'
 import { ExplorerPager, PAGE_SIZES } from './ExplorerPager'
 import { ExplorerRow } from './ExplorerRow'
@@ -361,6 +362,12 @@ export function CompetitorExplorer({ watchId, workflowId, initialMode = null }: 
 
       {/* ── Étage 2 · contrôle : chercher, filtrer, paginer ──────────────────── */}
       <div className="px-3 py-2 space-y-2 border-b border-white/10">
+        {/* Ce qui EMPÊCHE les appariements d'être acquis, motif par motif. En clair, parce
+            qu'un tas de plusieurs milliers ne se traite qu'en le décomposant. */}
+        {!catalogMode && !enrichMode && !source.loading && (
+          <ExplorerDoubtBar doubts={doubts} selected={effective.reason}
+            onPick={(reason) => patch({ reason })} />
+        )}
         <div className="flex items-center gap-2 flex-wrap">
           {/* La recherche s'affiche dans la barre de TITRE : elle occupait ici une ligne
               entière pour elle seule, au-dessus des filtres. Rendue par portail, elle

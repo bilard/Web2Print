@@ -8,6 +8,8 @@ import { familiesConflict as conflictClient } from './partFamily'
 import { familiesConflict as conflictServer } from '../../../../functions/src/priceWatch/catalog/partFamily'
 import { matchProduct as matchClient, buildMemoryIndex as indexClient } from './match'
 import { matchProduct as matchServer, buildMemoryIndex as indexServer } from '../../../../functions/src/priceWatch/catalog/match'
+import { pairAllSites as pairClient } from './pairingRun'
+import { pairAllSites as pairServer } from '../../../../functions/src/priceWatch/catalog/pairingRun'
 
 /**
  * PARITÉ des deux implémentations de la matrice de comparaison.
@@ -110,6 +112,44 @@ describe('parité appariement client / serveur — veto compris', () => {
       const server = matchServer(c.source, 's', indexServer([c.listing]))
       expect(server.outcome, c.label).toBe(client.outcome)
       expect(server.vetoed ?? 0, c.label).toBe(client.vetoed ?? 0)
+    }
+  })
+})
+
+/**
+ * PARITÉ de l'arbitrage « l'origine cède au direct ».
+ *
+ * Le cas est asymétrique par nature : il ne se produit que si DEUX produits du catalogue
+ * atteignent la même fiche, ce qu'un test par produit ne voit jamais. Et il vaut de
+ * l'argent — l'écart affiché en dépend. Une règle posée d'un seul côté rendrait un
+ * comparatif dans le navigateur et un autre par le cron.
+ */
+describe('parité arbitrage adaptable / pièce d’origine', () => {
+  const RIVALS = [
+    { id: 'adapt', name: 'COURROIE LISSE 5/8 1015MM', ref: '3309342', originRefs: ['754-04038'], price: 20.15 },
+    { id: 'orig', name: 'COURROIE MTD', ref: '754-04038', price: 18 },
+  ]
+  const SITE = [{ siteId: 's1', domain: 'c.fr' }]
+  const FICHE = [{ url: 'https://c.fr/mtd', name: 'Courroie spécifique MTD 754-04038', ref: 'MTD75404038', price: 12.48 }]
+
+  it('efface la cellule de l’ADAPTABLE, des deux côtés', () => {
+    const client = pairClient(RIVALS, SITE, new Map([['s1', FICHE]]))
+    const server = pairServer(RIVALS, SITE, new Map([['s1', FICHE]]))
+    for (const [label, run] of [['client', client], ['serveur', server]] as const) {
+      expect(run.cellsByProduct.get(1), `${label} : la pièce d’origine garde sa cellule`).toHaveLength(1)
+      expect(run.cellsByProduct.get(0), `${label} : l’adaptable n’en a plus`).toBeUndefined()
+      expect(run.totals.yielded, `${label} : la perte est comptée`).toBe(1)
+    }
+  })
+
+  it('laisse l’adaptable apparié quand la pièce d’origine n’est PAS au catalogue', () => {
+    // La règle tranche un litige ; elle ne condamne pas les références d'origine, seul
+    // lien possible avec un catalogue qui ne référence pas la pièce d'origine.
+    const seul = [RIVALS[0]]
+    for (const pair of [pairClient, pairServer]) {
+      const run = pair(seul, SITE, new Map([['s1', FICHE]]))
+      expect(run.cellsByProduct.get(0)).toHaveLength(1)
+      expect(run.totals.yielded).toBe(0)
     }
   })
 })
