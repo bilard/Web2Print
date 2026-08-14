@@ -10,7 +10,7 @@ import { formatEur } from '@/lib/money'
 import { getBadgeKind, formatTokens, formatBillingDate, type BadgeKind } from '@/features/stats/usageFormat'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
-import { resolveModelCost, resolveProviderCost } from '@/features/stats/modelCost'
+import { resolveModelCost, resolveProviderCost, summarizeModels } from '@/features/stats/modelCost'
 import { AI_MODELS, getModel, type AiProvider } from '@/lib/aiModels'
 // ⚠ Partagés avec l'écran « Suivi », qui liste les mêmes fournisseurs.
 import { PROVIDER_META, PROVIDERS } from '@/features/stats/providerMeta'
@@ -133,23 +133,6 @@ function ProgressBar({ pct, kind }: { pct: number; kind: BadgeKind }) {
   )
 }
 
-/** Le modèle qui a réellement consommé le plus chez ce fournisseur, ou `null` si le détail
- *  par modèle manque (écritures antérieures à `byModel`).
- *
- *  ⚠ Le sous-titre de chaque ligne montrait le modèle SÉLECTIONNÉ dans les Réglages — or la
- *  dépense vient de ce qui a TOURNÉ, pas de ce qui est coché. DeepSeek s'annonçait
- *  « DeepSeek Chat (V4) » au-dessus de 1,18 M de tokens consommés par `deepseek-v4-flash`,
- *  un modèle que l'écran ne nommait nulle part. */
-function dominantModel(byModel: Record<string, { tokensIn: number; tokensOut: number }>): string | null {
-  let best: string | null = null
-  let bestTokens = 0
-  for (const [id, leaf] of Object.entries(byModel)) {
-    const tokens = leaf.tokensIn + leaf.tokensOut
-    if (tokens > bestTokens) { best = id; bestTokens = tokens }
-  }
-  return best
-}
-
 export function LiveLlmUsagePanel() {
   const { t } = useTranslation()
   const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
@@ -221,34 +204,31 @@ export function LiveLlmUsagePanel() {
       const kind = getBadgeKind(costUsd, budget)
       const selectedModelId = selectedModel[p] ?? getSelectedModel(p)
       const selectedInfo = AI_MODELS[p].find((m) => m.id === selectedModelId)
-      // Ce qui a réellement tourné prime sur ce qui est coché dans les Réglages.
-      const usedModelId = dominantModel(u.byModel)
-      const usedInfo = usedModelId ? getModel(p, usedModelId) : null
-      // Sur TOUS les modèles du fournisseur, pas seulement le dominant : un seul modèle non
-      // tarifé suffit à rendre le montant incomplet, et l'écran doit le dire.
-      const resolved = Object.entries(u.byModel).map(([id, leaf]) => resolveModelCost(p, id, leaf))
-      const anyUnpriced = resolved.some((r) => r.unpriced)
-      const anyEstimated = resolved.some((r) => r.estimated)
+      // Ce qui a réellement tourné prime sur ce qui est coché dans les Réglages. Le bilan
+      // porte aussi les drapeaux : un seul modèle non tarifé rend le montant incomplet.
+      const all = summarizeModels(p, u.byModel)
+      const usedInfo = all.dominantId ? getModel(p, all.dominantId) : null
 
-      // Cas spécial Gemini : on émet 1 ligne pour le texte (modèle sélectionné)
-      // + 1 ligne pour le modèle image. Les autres providers gardent 1 ligne.
+      // Cas spécial Gemini : 1 ligne pour le TEXTE (tous les modèles sauf l'image) + 1 ligne
+      // pour le modèle image. Les autres fournisseurs gardent 1 ligne.
       if (p === 'gemini') {
-        const textLeaf = u.byModel[selectedModelId]
-        // Fallback : si pas de byModel (anciennes écritures), on attribue tout
-        // au texte et on soustrait ce qu'on a vu côté image pour ne pas double-compter.
+        // ⚠⚠ La somme de TOUS les modèles texte, pas `byModel[modèle coché]` : la dépense
+        // venue d'un autre modèle Gemini que celui sélectionné donnait « 0 / 0 · 0,00 € »
+        // — elle disparaissait de la ligne ET du total.
+        const text = summarizeModels(p, u.byModel, [GEMINI_IMAGE_MODEL_ID])
         const imageLeaf = u.byModel[GEMINI_IMAGE_MODEL_ID]
-        const hasByModel = Object.keys(u.byModel).length > 0
-        const textTokensIn  = textLeaf?.tokensIn  ?? (hasByModel ? 0 : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0))
-        const textTokensOut = textLeaf?.tokensOut ?? (hasByModel ? 0 : u.tokensOut - (imageLeaf?.tokensOut ?? 0))
-        // Rattrapé comme partout ailleurs : le tarif du catalogue prime quand la base a
-        // enregistré moins que ce que les tokens valent.
-        const textResolved = textLeaf ? resolveModelCost(p, selectedModelId, textLeaf) : null
         const imageResolved = imageLeaf ? resolveModelCost(p, GEMINI_IMAGE_MODEL_ID, imageLeaf) : null
-        const textCostUsd   = textResolved?.costUsd ?? (hasByModel ? 0 : u.costUsd - (imageLeaf?.costUsd ?? 0))
+        // Sans détail par modèle (écritures anciennes), tout va au texte, moins ce que
+        // l'image a pris — sinon on double-compterait.
+        const textTokensIn  = text.hasDetail ? text.tokensIn  : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0)
+        const textTokensOut = text.hasDetail ? text.tokensOut : u.tokensOut - (imageLeaf?.tokensOut ?? 0)
+        const textCostUsd   = text.hasDetail ? text.costUsd   : u.costUsd   - (imageLeaf?.costUsd   ?? 0)
+        const textInfo = text.dominantId ? getModel(p, text.dominantId) : null
         result.push({
           key: `${p}-text`,
           provider: p,
-          title: selectedInfo?.label ?? selectedModelId,
+          // Le modèle texte qui a consommé, sinon celui qui est coché.
+          title: textInfo?.label ?? text.dominantId ?? selectedInfo?.label ?? selectedModelId,
           subtitle: 'Gemini (Google) · texte',
           tokensIn:  textTokensIn,
           tokensOut: textTokensOut,
@@ -256,9 +236,9 @@ export function LiveLlmUsagePanel() {
           budget,
           pct,
           kind,
-          pricing: selectedInfo?.pricing,
-          ...(textResolved?.estimated ? { estimated: true } : {}),
-          ...(textResolved?.unpriced ? { unpriced: true } : {}),
+          pricing: textInfo?.pricing ?? selectedInfo?.pricing,
+          ...(text.estimated ? { estimated: true } : {}),
+          ...(text.unpriced ? { unpriced: true } : {}),
         })
         const imageInfo = AI_MODELS.gemini.find((m) => m.id === GEMINI_IMAGE_MODEL_ID)
         result.push({
@@ -285,7 +265,7 @@ export function LiveLlmUsagePanel() {
         provider: p,
         title: PROVIDER_META[p].label,
         // Le modèle qui a CONSOMMÉ, sinon celui qui est coché (rien n'a encore tourné).
-        subtitle: usedModelId ? (usedInfo?.label ?? usedModelId) : (selectedInfo?.label ?? selectedModelId),
+        subtitle: all.dominantId ? (usedInfo?.label ?? all.dominantId) : (selectedInfo?.label ?? selectedModelId),
         tokensIn: u.tokensIn,
         tokensOut: u.tokensOut,
         costUsd,
@@ -293,8 +273,8 @@ export function LiveLlmUsagePanel() {
         pct,
         kind,
         pricing: usedInfo?.pricing ?? selectedInfo?.pricing,
-        ...(anyEstimated ? { estimated: true } : {}),
-        ...(anyUnpriced ? { unpriced: true } : {}),
+        ...(all.estimated ? { estimated: true } : {}),
+        ...(all.unpriced ? { unpriced: true } : {}),
       })
     }
     return result

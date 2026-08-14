@@ -105,22 +105,29 @@ export function WatchOpsScreen() {
         </header>
 
         <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
+      </div>
 
-        {/* ⚠⚠ Ce que l'écran taisait : ce qui s'est PASSÉ. Tout, ici, décrivait l'instant —
-            run vivant, régime de collecte, chantiers en cours — et rien ne disait combien de
-            cycles ont été bouclés ni si les passages précédents ont abouti. Un balayage qui
-            échoue une fois sur deux ressemblait exactement à un balayage sain, deux fois plus
-            lent. Le bandeau est celui du cockpit voisin, à l'identique : deux écrans qui
-            comptent les cycles chacun de leur côté finissent par se contredire. */}
+      {/* ⚠⚠ Ce que l'écran taisait : ce qui s'est PASSÉ. Tout, ici, décrivait l'instant — run
+          vivant, régime de collecte, chantiers en cours — et rien ne disait combien de cycles
+          ont été bouclés ni si les passages précédents ont abouti. Un balayage qui échoue une
+          fois sur deux ressemblait exactement à un balayage sain, deux fois plus lent. Le
+          bandeau est celui du cockpit voisin, à l'identique : deux écrans qui comptent les
+          cycles chacun de leur côté finissent par se contredire.
+          ⚠ JUSTE SOUS le bandeau collant, pas dedans : il se lit en arrivant, mais trois
+          blocs figés en tête mangeaient un quart de l'écran pendant tout le défilement.
+          ⚠ Rien tant que la moisson n'a rien collecté : sans données, il annoncerait
+          « cycle n°1 en cours (0/0 concurrents bouclés) » sur un suivi qui n'a jamais
+          tourné — un cycle inventé. Même garde que le cockpit voisin (`hasData`). */}
+      {cockpit?.hasData && (
         <OpsRunHistory
-          cyclesDone={cockpit?.cyclesDone ?? 0}
-          sitesComplete={cockpit?.sitesComplete ?? 0}
-          sitesActive={cockpit?.sitesActive ?? 0}
-          cycleComplete={cockpit ? isCycleComplete(cockpit, sched?.cycleWaiting) : false}
+          cyclesDone={cockpit.cyclesDone}
+          sitesComplete={cockpit.sitesComplete}
+          sitesActive={cockpit.sitesActive}
+          cycleComplete={isCycleComplete(cockpit, sched?.cycleWaiting)}
           history={workflowId ? summary : null}
           locale={intlLocale(locale)}
         />
-      </div>
+      )}
       {/* ⚠ Les actions et les coûts partagent la rangée : la moitié droite restait vide sur
           toute la largeur de l'écran, pendant que le bloc des coûts occupait une rangée
           entière plus bas pour deux lignes de texte. Ils s'empilent sous `lg`. */}

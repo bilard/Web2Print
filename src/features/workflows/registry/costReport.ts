@@ -7,11 +7,11 @@ import { formatEur } from '@/lib/money'
 import { getBadgeKind, formatTokens, formatBillingDate, type BadgeKind } from '@/features/stats/usageFormat'
 import { httpsCallable } from 'firebase/functions'
 import { functions } from '@/lib/firebase/config'
-import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
+import { AI_MODELS, getModel, type AiProvider } from '@/lib/aiModels'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { fetchAiCost, fetchBrightData, type AiCostStats } from '@/features/stats/useUsageStats'
 import { fetchProviderBalances } from '@/features/stats/providerBalances'
-import { resolveModelCost, resolveProviderCost } from '@/features/stats/modelCost'
+import { resolveModelCost, resolveProviderCost, summarizeModels } from '@/features/stats/modelCost'
 import type { BrightDataAccountStats } from '@/features/stats/useBrightDataAccount'
 
 const USD_TO_EUR = 0.92
@@ -68,18 +68,20 @@ export function buildCostRows(
     const selectedInfo = AI_MODELS[p].find((m) => m.id === selectedModelId)
 
     if (p === 'gemini') {
-      const textLeaf = u.byModel[selectedModelId]
+      // ⚠⚠ TOUS les modèles texte, pas `byModel[modèle coché]` : une dépense faite sur un
+      // autre modèle Gemini que celui sélectionné donnait 0 token et 0 € — un rapport de
+      // coûts envoyé par mail ne peut pas taire une facture.
+      const text = summarizeModels(p, u.byModel, [GEMINI_IMAGE_MODEL_ID])
       const imageLeaf = u.byModel[GEMINI_IMAGE_MODEL_ID]
-      const hasByModel = Object.keys(u.byModel).length > 0
+      const textInfo = text.dominantId ? getModel(p, text.dominantId) : null
       result.push({
         provider: p,
-        title: selectedInfo?.label ?? selectedModelId,
+        title: textInfo?.label ?? text.dominantId ?? selectedInfo?.label ?? selectedModelId,
         subtitle: 'Gemini (Google) · texte',
-        tokensIn:  textLeaf?.tokensIn  ?? (hasByModel ? 0 : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0)),
-        tokensOut: textLeaf?.tokensOut ?? (hasByModel ? 0 : u.tokensOut - (imageLeaf?.tokensOut ?? 0)),
-        costUsd:   textLeaf ? resolveModelCost(p, selectedModelId, textLeaf).costUsd
-          : (hasByModel ? 0 : u.costUsd - (imageLeaf?.costUsd ?? 0)),
-        budget, pct, kind, pricing: selectedInfo?.pricing,
+        tokensIn:  text.hasDetail ? text.tokensIn  : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0),
+        tokensOut: text.hasDetail ? text.tokensOut : u.tokensOut - (imageLeaf?.tokensOut ?? 0),
+        costUsd:   text.hasDetail ? text.costUsd   : u.costUsd   - (imageLeaf?.costUsd   ?? 0),
+        budget, pct, kind, pricing: textInfo?.pricing ?? selectedInfo?.pricing,
       })
       const imageInfo = AI_MODELS.gemini.find((m) => m.id === GEMINI_IMAGE_MODEL_ID)
       result.push({
@@ -94,10 +96,13 @@ export function buildCostRows(
       continue
     }
 
+    // Le modèle qui a CONSOMMÉ prime sur celui qui est coché dans les Réglages.
+    const used = summarizeModels(p, u.byModel)
+    const usedInfo = used.dominantId ? getModel(p, used.dominantId) : null
     result.push({
       provider: p,
       title: PROVIDER_META[p].label,
-      subtitle: selectedInfo?.label ?? selectedModelId,
+      subtitle: used.dominantId ? (usedInfo?.label ?? used.dominantId) : (selectedInfo?.label ?? selectedModelId),
       tokensIn: u.tokensIn, tokensOut: u.tokensOut, costUsd: providerCost,
       budget, pct, kind, pricing: selectedInfo?.pricing,
     })

@@ -46,15 +46,63 @@ export function resolveModelCost(provider: AiProvider, modelId: string, leaf: Us
   }
 }
 
+export interface ModelsSummary {
+  tokensIn: number
+  tokensOut: number
+  /** Coûts rattrapés, sommés. */
+  costUsd: number
+  /** Le modèle qui a consommé le plus de tokens, `null` si aucun. */
+  dominantId: string | null
+  /** Au moins un modèle dont le montant a été relevé par recalcul. */
+  estimated: boolean
+  /** Au moins un modèle qu'aucun tarif ne permet de chiffrer. */
+  unpriced: boolean
+  /** Le détail par modèle existe (écritures postérieures à `byModel`). */
+  hasDetail: boolean
+}
+
+/**
+ * Agrège les modèles d'un fournisseur, `exclude` mis à part. PUR.
+ *
+ * ⚠⚠ `exclude` sert la ligne « Gemini texte », qui se lisait `byModel[modèle sélectionné]` :
+ * dès que la dépense venait d'un AUTRE modèle Gemini que celui coché dans les Réglages, la
+ * ligne affichait 0 token et 0 €, sans le moindre repli — la dépense disparaissait de
+ * l'écran, du total, et du rapport envoyé par mail. Une ligne qui prétend dire « le texte »
+ * doit sommer TOUT le texte.
+ */
+export function summarizeModels(
+  provider: AiProvider,
+  byModel: Record<string, UsageLeaf> | undefined,
+  exclude: readonly string[] = [],
+): ModelsSummary {
+  const skip = new Set(exclude)
+  const out: ModelsSummary = {
+    tokensIn: 0, tokensOut: 0, costUsd: 0, dominantId: null,
+    estimated: false, unpriced: false, hasDetail: false,
+  }
+  let bestTokens = 0
+  for (const [id, leaf] of Object.entries(byModel ?? {})) {
+    if (skip.has(id)) continue
+    out.hasDetail = true
+    const r = resolveModelCost(provider, id, leaf)
+    out.tokensIn += leaf.tokensIn
+    out.tokensOut += leaf.tokensOut
+    out.costUsd += r.costUsd
+    out.estimated ||= r.estimated
+    out.unpriced ||= r.unpriced
+    const tokens = leaf.tokensIn + leaf.tokensOut
+    if (tokens > bestTokens) { out.dominantId = id; bestTokens = tokens }
+  }
+  return out
+}
+
 /** Ce qu'un fournisseur a coûté, une fois ses modèles rattrapés. Le cumul de la BASE fait
- *  plancher : jamais moins que ce qu'elle affirme, jamais moins que la somme de ses lignes. */
+ *  plancher : jamais moins que ce qu'elle affirme, jamais moins que la somme de ses lignes.
+ *  ⚠ `byModel` peut MANQUER — écritures antérieures à son introduction, et fixtures. Sans
+ *  détail par modèle il n'y a rien à rattraper : le cumul de la base fait foi. */
 export function resolveProviderCost(
   provider: AiProvider,
-  /** ⚠ `byModel` peut MANQUER — écritures antérieures à son introduction, et fixtures. Sans
-   *  détail par modèle il n'y a rien à rattraper : le cumul de la base fait foi. */
   usage: { costUsd: number; byModel?: Record<string, UsageLeaf> },
 ): number {
-  const fromModels = Object.entries(usage.byModel ?? {})
-    .reduce((n, [id, leaf]) => n + resolveModelCost(provider, id, leaf).costUsd, 0)
-  return Math.max(usage.costUsd, fromModels)
+  return Math.max(usage.costUsd, summarizeModels(provider, usage.byModel).costUsd)
 }

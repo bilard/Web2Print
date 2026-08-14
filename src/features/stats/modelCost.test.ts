@@ -3,7 +3,7 @@
 // moins que la réalité, parce que le tarif n'est arrivé au catalogue qu'en cours de mois.
 // Un coût non nul n'est PAS la preuve qu'il est complet.
 import { describe, it, expect } from 'vitest'
-import { resolveModelCost, resolveProviderCost } from './modelCost'
+import { resolveModelCost, resolveProviderCost, summarizeModels } from './modelCost'
 
 describe('resolveModelCost', () => {
   it('rattrape un coût PARTIEL : le tarif est arrivé en cours de mois', () => {
@@ -62,5 +62,36 @@ describe('resolveProviderCost', () => {
   it('garde le cumul de la base quand aucun détail par modèle n’a été écrit', () => {
     // Écritures antérieures à `byModel` : rien à rattraper, rien à perdre non plus.
     expect(resolveProviderCost('claude', { costUsd: 1.23, byModel: {} })).toBeCloseTo(1.23, 6)
+  })
+})
+
+describe('summarizeModels — le texte Gemini ne peut pas dépendre du modèle COCHÉ', () => {
+  it('somme tous les modèles sauf ceux exclus', () => {
+    // ⚠⚠ Cas réel : la dépense vient de `gemini-3.1-pro-preview` alors que les Réglages
+    // cochent un autre modèle. En lisant `byModel[modèle coché]`, la ligne affichait 0 / 0.
+    const s = summarizeModels('gemini', {
+      'gemini-3.1-pro-preview': { tokensIn: 1000, tokensOut: 2000, costUsd: 0.05 },
+      'gemini-3.1-flash-image-preview': { tokensIn: 10, tokensOut: 20, costUsd: 0.6 },
+    }, ['gemini-3.1-flash-image-preview'])
+    expect(s.tokensIn).toBe(1000)
+    expect(s.tokensOut).toBe(2000)
+    expect(s.dominantId).toBe('gemini-3.1-pro-preview')
+    expect(s.hasDetail).toBe(true)
+  })
+
+  it('dit que le détail MANQUE quand rien n’a été écrit par modèle', () => {
+    // L'appelant doit alors retomber sur le cumul du fournisseur — sans quoi il afficherait
+    // zéro sur des écritures antérieures à `byModel`.
+    expect(summarizeModels('gemini', {}, ['gemini-3.1-flash-image-preview']))
+      .toMatchObject({ hasDetail: false, tokensIn: 0, costUsd: 0, dominantId: null })
+  })
+
+  it('remonte les drapeaux de TOUS les modèles, pas seulement du dominant', () => {
+    const s = summarizeModels('deepseek', {
+      'deepseek-chat': { tokensIn: 8017, tokensOut: 558, costUsd: 0.00278 },
+      'deepseek-v9-inconnu': { tokensIn: 5, tokensOut: 5, costUsd: 0 },
+    })
+    expect(s.unpriced).toBe(true)
+    expect(s.dominantId).toBe('deepseek-chat')
   })
 })
