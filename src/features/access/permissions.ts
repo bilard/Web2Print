@@ -34,6 +34,7 @@ export const MODULE_LABEL: Record<string, TranslationKey> = {
   'Finances': 'perm.module.17',
   'Équipe': 'perm.module.18',
   'Démo': 'perm.module.14',
+  'Dashboard BI': 'perm.module.19',
 }
 
 /**
@@ -111,6 +112,8 @@ export const PERMISSIONS: PermissionDef[] = [
   { key: 'priceWatch.opsAct', module: 'Veille tarifaire', labelKey: 'perm.priceWatch.opsAct',
     descriptionKey: 'perm.priceWatch.opsAct.desc' },
   { key: 'mfrInsights.view', module: 'Insights fabricant', labelKey: 'perm.mfrInsights.view' },
+  { key: 'bi.view', module: 'Dashboard BI', labelKey: 'perm.bi.view', descriptionKey: 'perm.bi.view.desc' },
+  { key: 'bi.edit', module: 'Dashboard BI', labelKey: 'perm.bi.edit', descriptionKey: 'perm.bi.edit.desc' },
   { key: 'demoExpress.view', module: 'Démo express', labelKey: 'perm.demoExpress.view',
     descriptionKey: 'perm.demoExpress.view.desc' },
   { key: 'retailPromo.view', module: 'Création studio', labelKey: 'perm.retailPromo.view' },

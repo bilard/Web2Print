@@ -36,6 +36,9 @@ const CONTEXT_TO_ARTICLE: Record<HelpContext, string> = {
   catalog: 'getting-started',
   'demo-express': 'getting-started',
   'mfr-insights': 'pim',
+  // Aucun article dédié pour l'instant : repli sur le défaut, comme les autres
+  // modules sans page d'aide propre.
+  bi: 'getting-started',
   finances: 'getting-started',
   editor: 'editor',
 }

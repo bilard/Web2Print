@@ -8,6 +8,7 @@ export const HIGHLIGHT_IDS = [
   'dashboard.sidebar.data',
   'dashboard.sidebar.taxonomies',
   'dashboard.sidebar.mfr-insights',
+  'dashboard.sidebar.bi',
   'dashboard.sidebar.scraping-templates',
   'dashboard.sidebar.scraping-hub',
   'dashboard.sidebar.chat',

@@ -423,6 +423,14 @@ service cloud.firestore {
       allow read, write: if isAuthenticated() && inMyWorkspace(uid);
     }
 
+    // Tableaux de bord BI : données de TRAVAIL, donc partagées dans l'espace de la société.
+    // ⚠️ La lecture suit l'espace de travail ; l'écriture exige en plus `bi.edit` — sans
+    // quoi n'importe quel membre pourrait réécrire les tableaux de bord de tous les autres.
+    match /users/{uid}/biDashboards/{dashboardId} {
+      allow read:  if isAuthenticated() && inMyWorkspace(uid);
+      allow write: if hasPermission('bi.edit') && inMyWorkspace(uid);
+    }
+
     // Historique des runs serveur (écrit par les Functions, lu par le propriétaire).
     match /users/{uid}/workflowRuns/{runId} {
       allow read: if isAuthenticated() && inMyWorkspace(uid);

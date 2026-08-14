@@ -20,7 +20,7 @@ export type Section =
   | 'blank' | 'import' | 'library' | 'images' | 'data' | 'chat' | 'settings'
   | 'taxonomies' | 'scraping-templates' | 'scraping-hub' | 'workflows'
   | 'hyperframes' | 'telegram' | 'access' | 'price-watch' | 'watch-ops' | 'retail-promo' | 'catalog'
-  | 'demo-express' | 'mfr-insights' | 'finances' | 'team'
+  | 'demo-express' | 'mfr-insights' | 'finances' | 'team' | 'bi'
 
 /**
  * Toutes les sections existantes — Y COMPRIS celles absentes de `MODULE_ITEMS`
@@ -36,7 +36,7 @@ const SECTION_SET: Record<Section, true> = {
   settings: true, taxonomies: true, 'scraping-templates': true, 'scraping-hub': true,
   workflows: true, hyperframes: true, telegram: true, access: true, 'price-watch': true,
   'watch-ops': true, 'retail-promo': true, catalog: true, 'demo-express': true, 'mfr-insights': true,
-  finances: true, team: true,
+  finances: true, team: true, bi: true,
 }
 export const ALL_SECTIONS = Object.keys(SECTION_SET) as Section[]
 
@@ -146,6 +146,8 @@ export const MODULE_ITEMS: ModuleItem[] = [
       { id: 'tab:products', labelKey: 'nav.mfrInsights.products', intent: 'mfr-insights:tab:products' },
     ],
   },
+  { id: 'bi', group: 'product-data', icon: BarChart3, labelKey: 'nav.bi', accent: 'text-cyan-400',
+    activeBg: 'bg-cyan-500/[0.1]', activeText: 'text-cyan-300' },
   // ── Web & veille ──
   { id: 'scraping-templates', group: 'web', icon: Database, labelKey: 'nav.scrapingTemplates', accent: 'text-indigo-400', activeBg: 'bg-indigo-500/[0.1]', activeText: 'text-indigo-300',
     children: [
@@ -262,6 +264,7 @@ export const SECTION_PERMISSION: Partial<Record<Section, string>> = {
   data: 'pim.view',
   taxonomies: 'taxonomies.view',
   'mfr-insights': 'mfrInsights.view',
+  bi: 'bi.view',
   'demo-express': 'demoExpress.view',
   'scraping-templates': 'scrapingTemplates.view',
   'scraping-hub': 'scrapingHub.view',

@@ -34,6 +34,7 @@ const MODULE_META: Record<string, ModuleMeta> = {
   'Workflows':    { icon: Workflow,        dot: 'bg-violet-500/15 text-violet-300', chipOn: 'bg-violet-500/20 border-violet-500/50 text-violet-100', bar: 'bg-violet-500', text: 'text-violet-300' },
   'Veille tarifaire': { icon: TrendingUpDown, dot: 'bg-orange-500/15 text-orange-300', chipOn: 'bg-orange-500/20 border-orange-500/50 text-orange-100', bar: 'bg-orange-500', text: 'text-orange-300' },
   'Insights fabricant': { icon: BarChart3,   dot: 'bg-indigo-500/15 text-indigo-300', chipOn: 'bg-indigo-500/20 border-indigo-500/50 text-indigo-100', bar: 'bg-indigo-500', text: 'text-indigo-300' },
+  'Dashboard BI': { icon: BarChart3,       dot: 'bg-cyan-500/15 text-cyan-300',   chipOn: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100',      bar: 'bg-cyan-500',    text: 'text-cyan-300' },
   'Démo express': { icon: Sparkles,        dot: 'bg-lime-500/15 text-lime-300',   chipOn: 'bg-lime-500/20 border-lime-500/50 text-lime-100',      bar: 'bg-lime-500',    text: 'text-lime-300' },
   'Création studio': { icon: Tag,          dot: 'bg-rose-500/15 text-rose-300',   chipOn: 'bg-rose-500/20 border-rose-500/50 text-rose-100',      bar: 'bg-rose-500',    text: 'text-rose-300' },
   'Catalogue studio': { icon: BookText,    dot: 'bg-cyan-500/15 text-cyan-300',   chipOn: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-100',      bar: 'bg-cyan-500',    text: 'text-cyan-300' },
@@ -56,7 +57,7 @@ export function moduleMeta(module: string): ModuleMeta {
  *  ⚠️ Un module ABSENT d'ici tombe en fin de liste (999) : le compléter à chaque
  *  nouveau groupe de permissions, sinon il s'échoue en bas de la matrice. */
 const MODULE_ORDER = [
-  'Import', 'Bibliothèque', 'DAM', 'PIM', 'Insights fabricant', 'Taxonomies', 'Scraping',
+  'Import', 'Bibliothèque', 'DAM', 'PIM', 'Insights fabricant', 'Dashboard BI', 'Taxonomies', 'Scraping',
   'Veille tarifaire', 'Démo express', 'Création studio', 'Catalogue studio', 'Animation',
   'Workflows', 'Chat IA', 'Telegram', 'Paramètres', 'Équipe', 'Finances', 'Démo',
 ]
