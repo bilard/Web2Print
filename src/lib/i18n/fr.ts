@@ -317,6 +317,10 @@ export const fr = {
   // — Dashboard BI (moteur d'agrégation) ————————————————————————————
   'bi.source.pim': 'Produits (PIM)',
   'bi.dim.brand': 'Marque',
+  // Repli générique : les dimensions issues des colonnes d'une feuille portent leur PROPRE
+  // libellé via `Dimension.label` (préféré par le consommateur) — cette clé ne s'affiche
+  // que si ce libellé est absent.
+  'bi.dim.column': 'Colonne',
   'bi.dim.taxo1': 'Univers',
   'bi.dim.taxo2': 'Famille',
   'bi.dim.taxo3': 'Sous-famille',

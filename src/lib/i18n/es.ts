@@ -306,6 +306,7 @@ export const es: Record<TranslationKey, string> = {
   // — Panel BI (motor de agregación) ————————————————————————————
   'bi.source.pim': 'Productos (PIM)',
   'bi.dim.brand': 'Marca',
+  'bi.dim.column': 'Columna',
   'bi.dim.taxo1': 'Universo',
   'bi.dim.taxo2': 'Familia',
   'bi.dim.taxo3': 'Subfamilia',

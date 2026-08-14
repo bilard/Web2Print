@@ -307,6 +307,7 @@ export const en: Record<TranslationKey, string> = {
   // — BI dashboard (aggregation engine) ————————————————————————————
   'bi.source.pim': 'Products (PIM)',
   'bi.dim.brand': 'Brand',
+  'bi.dim.column': 'Column',
   'bi.dim.taxo1': 'Universe',
   'bi.dim.taxo2': 'Family',
   'bi.dim.taxo3': 'Sub-family',

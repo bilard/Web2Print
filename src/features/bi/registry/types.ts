@@ -14,6 +14,9 @@ export type FieldKind = 'text' | 'number' | 'date' | 'bool'
 export interface Dimension {
   id: string
   labelKey: TranslationKey
+  /** Libellé qui vient de la DONNÉE plutôt que du catalogue i18n (ex. le nom d'une colonne
+   *  de feuille) — utilisé en priorité sur `labelKey` par le consommateur quand il est présent. */
+  label?: string
   kind: FieldKind
   /** Valeur brute portée par la ligne. `null`/`undefined` = valeur absente, groupe à part. */
   get: (row: Row) => unknown

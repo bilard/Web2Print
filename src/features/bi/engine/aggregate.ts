@@ -6,8 +6,11 @@ import type { TranslationKey } from '@/lib/i18n'
 export interface ResultColumn {
   key: string
   /** ⚠ Typée : sans quoi chaque composant consommateur casterait à l'affichage, et un
-   *  libellé absent du catalogue passerait sans bruit. */
+   *  libellé absent du catalogue passerait sans bruit. `labelKey` sert aux libellés du
+   *  catalogue i18n ; `label` (ci-dessous) aux noms qui viennent de la DONNÉE (une colonne
+   *  de feuille) — le consommateur préfère `label` quand il est présent. */
   labelKey: TranslationKey
+  label?: string
   role: 'dimension' | 'measure'
   format?: MeasureFormat
 }
@@ -74,7 +77,7 @@ export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): Ag
       // ⚠ Même règle que pour les mesures : une dimension inconnue lève plutôt que de
       // se rabattre sur son id brut, qui n'est pas une clé de traduction valide.
       if (!dim) throw new Error(`Dimension inconnue pour cette source : ${d.id}`)
-      return { key: d.id, labelKey: dim.labelKey, role: 'dimension' as const }
+      return { key: d.id, labelKey: dim.labelKey, label: dim.label, role: 'dimension' as const }
     }),
     ...measures.map(({ ref, m }) => ({
       key: ref.alias ?? ref.id, labelKey: m.labelKey, role: 'measure' as const, format: m.format,
