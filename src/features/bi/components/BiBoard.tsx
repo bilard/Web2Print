@@ -65,11 +65,13 @@ export function BiBoard({
 
   // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
   // glissement, voir le commentaire de `useLayoutDraft.addPlacement` pour le pourquoi.
-  const addTile = useCallback((kind: TileKind, measureId: string, dimensionId?: string) => {
+  const addTile = useCallback((
+    kind: TileKind, measureId: string, dimensionId?: string, columnDimensionId?: string,
+  ) => {
     // ⚠ Seule voie de CRÉATION du module : un refus muet laisserait croire que le clic n'a
     // rien fait, plutôt que de dire que l'espace de travail n'est pas encore prêt.
     if (!uid) { toast.error(t('bi.save.failed')); return }
-    const tile = newTile(kind, 'pim.products', measureId, dimensionId)
+    const tile = newTile(kind, 'pim.products', measureId, dimensionId, columnDimensionId)
     const measureLabel = t(source.measures.find((m) => m.id === measureId)?.labelKey ?? 'bi.add.measure')
     const dim = dimensionId ? source.dimensions.find((d) => d.id === dimensionId) : undefined
     // Le titre par défaut nomme la mesure ET la dimension : « Nombre de produits par

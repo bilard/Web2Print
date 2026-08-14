@@ -11,17 +11,29 @@ const SIZES: Record<TileKind, { w: number; h: number }> = {
   table: { w: 6, h: 7 }, pivot: { w: 8, h: 7 },
 }
 
-export function newTile(kind: TileKind, source: SourceId, measureId: string, dimensionId?: string): Tile {
+export function newTile(
+  kind: TileKind, source: SourceId, measureId: string,
+  dimensionId?: string, columnDimensionId?: string,
+): Tile {
   const s = getSource(source)
   const measure = s.measures.find((m) => m.id === measureId) ?? s.measures[0]
   // ⚠ Une tuile KPI montre UNE valeur : lui donner une dimension produirait plusieurs
   // lignes dont une seule serait affichée — un chiffre faux, sans avertissement.
   const dimensions = kind === 'kpi' || !dimensionId ? [] : [{ id: dimensionId }]
+  // ⚠⚠ Le tableau croisé croise DEUX axes : posé avec une seule dimension, il n'affichait
+  // que « un tableau croisé demande deux dimensions » — livré mais inatteignable.
+  // ⚠ Même dimension des deux côtés = pas de croisement : on l'ignore plutôt que de poser
+  // une spec dont le composant ne saurait tirer une ligne.
+  const crossed = kind === 'pivot' && columnDimensionId && columnDimensionId !== dimensionId
+  if (crossed) dimensions.push({ id: columnDimensionId })
   return {
     id: `t_${Date.now().toString(36)}_${Math.round(performance.now())}`,
     kind,
     title: '',
     query: { source, measures: [{ id: measure.id }], dimensions, filters: [] },
+    // La colonne est DÉSIGNÉE, jamais devinée : sans elle, `PivotTile` se rabat sur la
+    // seconde dimension — juste par hasard, faux dès qu'un troisième axe s'ajoute.
+    ...(crossed ? { options: { pivotColumn: columnDimensionId } } : {}),
   }
 }
 

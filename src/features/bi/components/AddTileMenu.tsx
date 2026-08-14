@@ -17,12 +17,13 @@ const KINDS: { kind: TileKind; Icon: typeof BarChart3 }[] = [
 
 export function AddTileMenu({ source, onAdd }: {
   source: DataSource
-  onAdd: (kind: TileKind, measureId: string, dimensionId?: string) => void
+  onAdd: (kind: TileKind, measureId: string, dimensionId?: string, columnDimensionId?: string) => void
 }) {
   const { t } = useTranslation()
   const [kind, setKind] = useState<TileKind>('bar')
   const [measureId, setMeasureId] = useState(source.measures[0].id)
   const [dimensionId, setDimensionId] = useState(source.dimensions[0].id)
+  const [columnDimensionId, setColumnDimensionId] = useState<string | null>(null)
 
   // ⚠ La feuille active peut changer pendant que le menu est ouvert (colonnes différentes) :
   // un `id` choisi avant n'existe alors peut-être plus dans `source`. Se replier sur le
@@ -30,6 +31,14 @@ export function AddTileMenu({ source, onAdd }: {
   // à la lecture (« Dimension inconnue pour cette source »).
   const measure = source.measures.find((m) => m.id === measureId) ?? source.measures[0]
   const dimension = source.dimensions.find((d) => d.id === dimensionId) ?? source.dimensions[0]
+
+  // ⚠⚠ Le tableau croisé exige DEUX axes : sans second choix, toute tuile « croisé » créée
+  // ici n'affichait que « un tableau croisé demande deux dimensions ». Les candidats
+  // excluent l'axe des lignes — se croiser avec soi-même ne produit aucun croisement.
+  const columnCandidates = source.dimensions.filter((d) => d.id !== dimension.id)
+  const columnDimension = kind === 'pivot'
+    ? columnCandidates.find((d) => d.id === columnDimensionId) ?? columnCandidates[0]
+    : undefined
 
   // ⚠ Une mesure non agrégeable (médiane, pourcentage) reste CORRECTE calculée par groupe —
   // le moteur agrège les lignes, jamais les valeurs déjà calculées (`aggregate.ts`). Ce
@@ -73,6 +82,18 @@ export function AddTileMenu({ source, onAdd }: {
         </label>
       )}
 
+      {kind === 'pivot' && columnDimension && (
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wider text-white/35">{t('bi.add.columnDimension')}</span>
+          <select value={columnDimension.id} onChange={(e) => setColumnDimensionId(e.target.value)}
+            className="bg-well border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
+            {columnCandidates.map((d) => (
+              <option key={d.id} value={d.id}>{d.label ?? t(d.labelKey)}</option>
+            ))}
+          </select>
+        </label>
+      )}
+
       {showAggregationWarning && (
         <p className="flex items-center gap-1.5 text-[11px] text-amber-200/80 max-w-[220px]">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -81,7 +102,11 @@ export function AddTileMenu({ source, onAdd }: {
       )}
 
       <button
-        onClick={() => onAdd(kind, measure.id, kind === 'kpi' ? undefined : dimension.id)}
+        onClick={() => onAdd(
+          kind, measure.id,
+          kind === 'kpi' ? undefined : dimension.id,
+          columnDimension?.id,
+        )}
         className="inline-flex items-center gap-1.5 text-xs bg-indigo-500 hover:bg-indigo-600 text-[#fff] rounded-lg px-3 py-1.5 transition-colors"
       >
         <Plus className="w-3.5 h-3.5" />{t('bi.add.button')}

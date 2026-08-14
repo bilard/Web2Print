@@ -339,6 +339,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.save.failed': 'Save failed.',
   'bi.add.measure': 'Measure',
   'bi.add.dimension': 'Split by',
+  'bi.add.columnDimension': 'In columns',
   'bi.add.button': 'Add',
   'bi.add.defaultTitle': '{measure} by {dimension}',
   'bi.add.defaultTitleKpi': '{measure}',

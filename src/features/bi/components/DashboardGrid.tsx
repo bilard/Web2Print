@@ -39,7 +39,9 @@ const TileBody = memo(function TileBody({ tile, editing, globalFilters, onClearF
       {result && (
         tile.kind === 'kpi' ? <KpiTile result={result} />
           : tile.kind === 'table' ? <TableTile result={result} />
-          : tile.kind === 'pivot' ? <PivotTile result={result} columnDim={tile.options?.pivotColumn} />
+          : tile.kind === 'pivot'
+            ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}
+                showTotals={tile.options?.showTotals} />
           : <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked} />
       )}
     </TileFrame>

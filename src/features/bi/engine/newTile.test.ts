@@ -26,3 +26,23 @@ describe('nouvelle tuile', () => {
     expect(placeTile([], 'k', 'kpi')[0].w).toBeLessThan(placeTile([], 'p', 'pivot')[0].w)
   })
 })
+
+// ⚠⚠ Le tableau croisé était livré mais INATTEIGNABLE : la seule voie de création ne posait
+// qu'une dimension, donc toute tuile « croisé » affichait « demande deux dimensions ».
+describe('tuile tableau croisé', () => {
+  it('pose les DEUX axes et désigne explicitement la colonne', () => {
+    const tile = newTile('pivot', 'pim.products', 'count', 'taxo.1', 'taxo.2')
+    expect(tile.query.dimensions.map((d) => d.id)).toEqual(['taxo.1', 'taxo.2'])
+    expect(tile.options?.pivotColumn).toBe('taxo.2')
+  })
+
+  it('ignore une colonne identique à l’axe des lignes — un axe ne se croise pas avec lui-même', () => {
+    const tile = newTile('pivot', 'pim.products', 'count', 'taxo.1', 'taxo.1')
+    expect(tile.query.dimensions).toHaveLength(1)
+    expect(tile.options?.pivotColumn).toBeUndefined()
+  })
+
+  it('n’ajoute pas de second axe aux autres types de visuel', () => {
+    expect(newTile('bar', 'pim.products', 'count', 'taxo.1', 'taxo.2').query.dimensions).toHaveLength(1)
+  })
+})

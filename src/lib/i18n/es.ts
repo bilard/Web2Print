@@ -338,6 +338,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.save.failed': 'Registro rechazado.',
   'bi.add.measure': 'Medida',
   'bi.add.dimension': 'Repartir por',
+  'bi.add.columnDimension': 'En columnas',
   'bi.add.button': 'Añadir',
   'bi.add.defaultTitle': '{measure} por {dimension}',
   'bi.add.defaultTitleKpi': '{measure}',

@@ -352,6 +352,7 @@ export const fr = {
   'bi.save.failed': 'Enregistrement refusé.',
   'bi.add.measure': 'Mesure',
   'bi.add.dimension': 'Répartir par',
+  'bi.add.columnDimension': 'En colonnes',
   'bi.add.button': 'Ajouter',
   'bi.add.defaultTitle': '{measure} par {dimension}',
   'bi.add.defaultTitleKpi': '{measure}',

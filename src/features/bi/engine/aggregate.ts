@@ -13,6 +13,13 @@ interface ResultColumn {
   label?: string
   role: 'dimension' | 'measure'
   format?: MeasureFormat
+  /**
+   * Reprend `Measure.aggregable` : une médiane ou un pourcentage ne se recompose pas entre
+   * groupes. ⚠⚠ À lire ici et JAMAIS à déduire du `format` : `pim.freshnessDays` est un
+   * `float` non agrégeable, `pim.filled` un `int` agrégeable. Un consommateur qui somme
+   * sans regarder ce drapeau affiche « Total 312 % ».
+   */
+  aggregable?: boolean
 }
 type ResultRow = Record<string, string | number | null>
 export interface AggregateResult { columns: ResultColumn[]; rows: ResultRow[] }
@@ -80,7 +87,8 @@ export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): Ag
       return { key: d.id, labelKey: dim.labelKey, label: dim.label, role: 'dimension' as const }
     }),
     ...measures.map(({ ref, m }) => ({
-      key: ref.alias ?? ref.id, labelKey: m.labelKey, role: 'measure' as const, format: m.format,
+      key: ref.alias ?? ref.id, labelKey: m.labelKey, role: 'measure' as const,
+      format: m.format, aggregable: m.aggregable,
     })),
   ]
 
