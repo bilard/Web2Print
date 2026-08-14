@@ -223,6 +223,92 @@ importer `src/`.
   d'Ariane permet de remonter.
 - **Voir les lignes** : toute tuile ouvre le détail derrière son chiffre, et l'exporte.
 
+## L'interface : un tableau de travail, pas une page de graphiques
+
+Exigence de premier rang, au même titre que la justesse des chiffres. Ce module se juge à la
+main autant qu'à l'œil : si poser une tuile, la redimensionner ou brancher un champ n'est pas
+**immédiat et physique**, l'outil ne sera pas utilisé.
+
+### Deux modes, jamais entre les deux
+
+**Consultation** — aucune poignée, aucune bordure de manipulation, la donnée occupe tout.
+**Édition** — la grille apparaît en filigrane, les poignées sortent, la palette s'ouvre.
+La bascule est explicite (bouton + `E`). Un dashboard consulté ne se déforme pas d'un clic
+malheureux.
+
+### Le geste de composition
+
+- **Grille 12 colonnes**, pas de 8 px, aimantation. Les tuiles se déplacent par leur barre de
+  titre et se redimensionnent par les bords **et** les quatre coins.
+- **Fantôme de destination** pendant le glissement : l'emplacement libéré se montre avant le
+  relâchement, les voisines s'écartent en transition. Jamais de saut brutal.
+- **Ajout par glisser** : on tire un visuel de la palette et on le **dépose là où on le veut**.
+  Un bouton « ajouter » qui pose la tuile au hasard en bas de page est un aveu d'échec.
+- **Clavier** : `⌘Z` / `⇧⌘Z` annuler-refaire (pile de 50 gestes), `⌘D` dupliquer, `⌫`
+  supprimer, flèches pour déplacer d'une cellule, `⇧`+flèches pour redimensionner. Sélection
+  multiple au lasso, alignement et distribution.
+- **Double-clic = plein écran** sur une tuile ; `Échap` en sort.
+- Le glissement ne repeint que la tuile déplacée : la mise en page vit en état **local**
+  pendant le geste et n'est persistée qu'au relâchement (écriture différée). Sans cela, vingt
+  tuiles branchées en direct se recalculent à chaque pixel parcouru.
+
+### Le constructeur : on branche des champs, on n'écrit pas des formules
+
+Le rail gauche liste les **champs** de la source, chacun avec son type (texte, nombre, date,
+booléen) et sa cardinalité. On les glisse dans quatre zones : **Mesures**, **Lignes**,
+**Colonnes**, **Filtres** — le geste de Power BI et de Tableau, parce qu'il est appris.
+
+- Une zone qui n'accepte pas le champ le **dit pendant le survol** (bordure barrée + motif),
+  elle ne le refuse pas en silence au relâchement.
+- Une mesure non agrégeable (une médiane, un pourcentage) porte son avertissement : on ne
+  peut pas en faire une somme. Le refus se voit avant le dépôt (cf. risque 1).
+- **Aperçu en direct** pendant la composition, sur un échantillon quand la source est grande.
+- Le type de visuel se change à tout moment sans reconstruire la requête : la spec survit au
+  changement de forme.
+
+### Le direct se voit
+
+- Chaque tuile branchée en direct porte un **point qui bat** et « il y a 12 s ». Une tuile
+  figée le dit aussi — un chiffre sans âge est invérifiable.
+- Les valeurs **s'animent** quand elles changent : le nombre roule (`AnimatedNumber` existe
+  déjà), la barre glisse, la ligne s'étend. On voit *que* ça bouge, pas seulement le résultat.
+- Aucun rechargement de page, aucun bouton « rafraîchir » obligatoire — la règle du projet.
+
+### Les états ne sont pas des trous
+
+- **Chargement** : squelette à la forme de la tuile (barres pour un graphe, lignes pour une
+  table), jamais un tourniquet centré.
+- **Vide** : « aucune donnée pour ces filtres », avec le filtre fautif retirable sur place.
+- **Erreur** : la cause en une phrase et un bouton réessayer, dans le cadre de la tuile —
+  jamais un dashboard entier en panne parce qu'une source a hoqueté.
+- **Débordement** : un tableau croisé large scrolle **dans son cadre**. La page ne défile
+  jamais horizontalement.
+
+### Les filtres se voient et se retirent
+
+Un bandeau de puces montre tout ce qui restreint la vue — filtres globaux, filtre croisé issu
+d'un clic, niveau de forage — chacune retirable d'un clic. Le filtrage croisé **estompe** les
+séries non retenues au lieu de les masquer : on garde le contexte de ce qu'on écarte.
+
+### Rendu visuel
+
+- Thème clair/sombre par tokens ; palettes lues depuis `useThemeStore` ; accent `#6366f1`.
+- Chiffres en **fonte tabulaire**, formats explicites (€, %, k/M, durées), même règle
+  d'arrondi partout.
+- Titre de tuile = la mesure **et** la période (« Complétude moyenne · 30 derniers jours »).
+- Sobriété : pas de dégradés ni d'ombres décoratives sur les graphes, une seule accentuation
+  par tuile, légendes cliquables pour isoler une série.
+- Densité **compacte / confortable** au choix, mémorisée par utilisateur.
+- Accessibilité : cibles ≥ 32 px, focus visible, contraste vérifié dans les deux thèmes,
+  déplacement de tuile au clavier.
+
+### Performance perçue
+
+Tables virtualisées, graphes en canvas (`chart.js`), agrégation mémoïsée par spec, et une
+seule requête serveur groupée par dashboard. Objectif tenu comme un critère de recette :
+**un dashboard de vingt tuiles reste fluide au glissement**, et une tuile branchée en direct
+se met à jour sans faire clignoter ses voisines.
+
 ## Diffusion
 
 - Export **PNG** (rendu déjà maîtrisé par le node « Graphique »), **PDF** et **Excel**.
@@ -257,8 +343,8 @@ prioritaire et repris verbatim, sans brief maison.
 | Lot | Contenu | Vérifiable par |
 |---|---|---|
 | **0** | Contrat + zod + registre + collections + **règles Firestore** + permissions + entrée de menu | un dashboard vide s'enregistre et se relit, un autre compte ne le voit pas |
-| **1** | Visionneuse : grille, KPI, barres, courbes, table, **tableau croisé**, source PIM | un dashboard lu avec de vraies données |
-| **2** | Constructeur : mesures, dimensions, filtres globaux, filtrage croisé, forage | un dashboard construit sans écrire de code |
+| **1** | Visionneuse : grille, KPI, barres, courbes, table, **tableau croisé**, source PIM, états (squelette / vide / erreur), direct visible | un dashboard lu avec de vraies données, une valeur qui bouge sous les yeux |
+| **2** | Constructeur : palette glissable, zones Mesures/Lignes/Colonnes/Filtres, filtres globaux, filtrage croisé, forage, annuler-refaire | un dashboard construit **au geste**, sans écrire de code |
 | **3** | Grandes sources : agrégation serveur (veille) + photos nocturnes + axe du temps | une courbe sur trois mois, un agrégat sur 1,3 M de lignes |
 | **4** | Diffusion : export, mail planifié, alertes, partage par jeton | un mail reçu, un lien public révoqué qui cesse de répondre |
 | **5** | Prompt → dashboard | une phrase produit un dashboard valide |
