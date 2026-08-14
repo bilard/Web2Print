@@ -16,6 +16,7 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
   ],
   gemini: [
     // Tarif calqué sur 3.5 Flash en attendant la grille officielle (à ajuster).
+    { id: 'gemini-3.7-flash',               label: 'Gemini 3.7 Flash',                pricing: { input: 1.50,  output: 9 } },
     { id: 'gemini-3.6-flash',               label: 'Gemini 3.6 Flash',                pricing: { input: 1.50,  output: 9 } },
     { id: 'gemini-3.5-flash',               label: 'Gemini 3.5 Flash',                pricing: { input: 1.50,  output: 9 },    isDefault: true },
     { id: 'gemini-3.1-pro-preview',         label: 'Gemini 3.1 Pro Preview',          pricing: { input: 1.25,  output: 10 } },
