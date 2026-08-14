@@ -44,6 +44,10 @@ export const AI_MODELS: Record<AiProvider, AiModelInfo[]> = {
     { id: 'o4-mini',     label: 'o4 Mini',     pricing: { input: 1.10, output: 4.40 } },
   ],
   deepseek: [
+    // ⚠ Tarif d'entrée = CACHE MISS (0,14 $). Un cache hit tombe à 0,0028 $/M, mais l'API
+    // ne dit pas lequel des deux s'applique : on facture au plus cher, jamais au moins —
+    // un compteur de coût qui sous-estime ne sert à rien.
+    { id: 'deepseek-v4-flash',  label: 'DeepSeek V4 Flash',  pricing: { input: 0.14, output: 0.28 } },
     { id: 'deepseek-chat',      label: 'DeepSeek Chat (V4)', pricing: { input: 0.27, output: 1.10 }, isDefault: true },
     { id: 'deepseek-reasoner',  label: 'DeepSeek Reasoner',  pricing: { input: 0.55, output: 2.19 } },
   ],
