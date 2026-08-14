@@ -12,6 +12,7 @@ import { useDashboards } from '../hooks/useDashboards'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { BiBoard } from './BiBoard'
+import { BoardActionsMenu } from './BoardActionsMenu'
 import { NewDashboardButton } from './NewDashboardButton'
 import { TemplateGallery } from '../templates/TemplateGallery'
 import { TemplatesButton } from '../templates/TemplatesButton'
@@ -53,6 +54,16 @@ export function BiScreen() {
   // Une page ajoutée s'affiche TOUT DE SUITE : les deux états dans le même gestionnaire,
   // React les regroupe en un seul rendu.
   const onPageCreated = useCallback((p: DashboardPage) => { setPendingPage(p); setPageId(p.id) }, [])
+
+  // ⚠⚠ Le tableau supprimé était peut-être celui qu'on regardait : l'écran désigne le
+  // SUIVANT tout de suite, sans attendre l'écho de la base. Le repli `items[0]` de `current`
+  // finirait par y arriver, mais entre-temps `currentId` désignerait un document mort et la
+  // page affichée serait celle d'un tableau qui n'existe plus.
+  const onDeleted = useCallback(() => {
+    setCurrentId(items.find((d) => d.id !== current?.id)?.id ?? null)
+    setPageId(null)
+    setPendingPage(null)
+  }, [items, current])
 
   // « E » bascule le mode, sauf pendant une saisie — et jamais sans le droit d'édition : le
   // segment de `BiModeSwitch` est déjà cadenassé par `canEdit`, le raccourci clavier doit
@@ -117,6 +128,11 @@ export function BiScreen() {
             <div className="flex items-center gap-2">
               <TemplatesButton onOpen={setCurrentId} canEdit={canEdit} />
               {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
+              <BoardActionsMenu
+                board={current} uid={uid} canEdit={canEdit}
+                onDuplicated={(id) => { setCurrentId(id); setPageId(null) }}
+                onDeleted={onDeleted}
+              />
             </div>
           )}
         />

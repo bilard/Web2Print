@@ -39,8 +39,12 @@ vi.mock('@/features/access/useAccess', () => ({ useCan: () => canEdit }))
 vi.mock('./BiBoard', () => ({ BiBoard: vi.fn(() => null) }))
 vi.mock('./NewDashboardButton', () => ({ NewDashboardButton: vi.fn(() => <button>nouveau</button>) }))
 vi.mock('../templates/TemplateGallery', () => ({ TemplateGallery: vi.fn(() => <div>modèles</div>) }))
+// ⚠ Mocké comme `NewDashboardButton` : le vrai menu tire l'authentification, les permissions
+// et Firestore, qui n'ont rien à faire dans un test du raccourci clavier.
+vi.mock('./BoardActionsMenu', () => ({ BoardActionsMenu: vi.fn(() => <button>actions</button>) }))
 
 const { BiBoard } = await import('./BiBoard')
+const { BoardActionsMenu } = await import('./BoardActionsMenu')
 const { TemplateGallery } = await import('../templates/TemplateGallery')
 const { NewDashboardButton } = await import('./NewDashboardButton')
 const lastEditingProp = () => vi.mocked(BiBoard).mock.calls.at(-1)![0].editing
@@ -163,5 +167,42 @@ describe('BiScreen — page en attente', () => {
 
     const after = vi.mocked(BiBoard).mock.calls.at(-1)![0]
     expect(after.pages.map((p) => p.id)).toEqual(['p1', 'p2'])
+  })
+})
+
+// ⚠⚠ Supprimer le tableau qu'on REGARDE : l'écran doit désigner le suivant tout de suite.
+// Le repli `items[0]` de `current` finirait par y arriver, mais entre-temps `currentId`
+// désignerait un document mort — et la page affichée serait celle d'un tableau disparu.
+describe('BiScreen — suppression du tableau courant', () => {
+  const TWO: Dashboard[] = [
+    ONE_DASHBOARD[0],
+    { ...ONE_DASHBOARD[0], id: 'd2', name: 'Achats', pages: [{ id: 'p1', name: 'Achats', tiles: [], layout: [] }] },
+  ]
+
+  beforeEach(() => {
+    canEdit = true
+    items = TWO
+    vi.mocked(BiBoard).mockClear()
+    vi.mocked(BoardActionsMenu).mockClear()
+  })
+
+  it('bascule sur le tableau SUIVANT sans attendre l’écho de la base', () => {
+    render(<BiScreen />)
+    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].current.id).toBe('d1')
+
+    // Le menu vit dans l'en-tête fourni par l'écran : on le monte pour saisir son rappel.
+    render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
+    act(() => vi.mocked(BoardActionsMenu).mock.calls.at(-1)![0].onDeleted())
+
+    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].current.id).toBe('d2')
+  })
+
+  it('la copie s’ouvre au CLIC, avant que la base ne la renvoie', () => {
+    items = [...TWO, { ...TWO[1], id: 'd3', name: 'Achats (copie)' }]
+    render(<BiScreen />)
+    render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
+
+    act(() => vi.mocked(BoardActionsMenu).mock.calls.at(-1)![0].onDuplicated('d3'))
+    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].current.id).toBe('d3')
   })
 })
