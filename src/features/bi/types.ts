@@ -175,6 +175,15 @@ const pageSchema = z.object({
   name: z.string().min(1),
   tiles: z.array(tileSchema),
   layout: z.array(placementSchema),
+  /**
+   * Filtres appliqués à TOUTES les tuiles de cette page — la portée intermédiaire entre le
+   * visuel et le tableau de bord entier.
+   *
+   * ⚠ OPTIONNEL, et il doit le rester : les pages enregistrées avant cette portée n'en
+   * portent pas, et un document que `parseDashboard` rejetterait disparaîtrait de la liste
+   * de l'utilisateur sans un mot.
+   */
+  filters: z.array(filterSchema).optional(),
 })
 export type DashboardPage = z.infer<typeof pageSchema>
 

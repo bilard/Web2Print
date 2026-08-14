@@ -181,3 +181,36 @@ describe('feuille source mémorisée', () => {
       .toBe('Catalogue 2026')
   })
 })
+
+describe('filtres de page — portée intermédiaire, ajoutée après coup', () => {
+  it('lit une page qui n’en porte PAS (documents antérieurs)', () => {
+    // ⚠⚠ Le test qui compte : un tableau enregistré avant cette portée doit continuer de
+    // s'ouvrir. Un document rejeté par `parseDashboard` disparaît de la liste sans un mot.
+    const d = parseDashboard(minimal)
+    expect(d.pages[0].filters).toBeUndefined()
+  })
+
+  it('conserve les filtres de page quand ils sont là', () => {
+    const withPageFilters = {
+      ...minimal,
+      pages: [{
+        id: FIRST_PAGE_ID, name: 'Page 1',
+        tiles: minimal.tiles, layout: minimal.layout,
+        filters: [{ field: 'brand', op: 'eq', value: 'Makita' }],
+      }],
+    }
+    const d = parseDashboard(withPageFilters)
+    expect(d.pages[0].filters).toEqual([{ field: 'brand', op: 'eq', value: 'Makita' }])
+  })
+
+  it('REFUSE un opérateur de filtre de page inventé', () => {
+    const bad = {
+      ...minimal,
+      pages: [{
+        id: FIRST_PAGE_ID, name: 'Page 1', tiles: minimal.tiles, layout: minimal.layout,
+        filters: [{ field: 'brand', op: 'ressemble', value: 'x' }],
+      }],
+    }
+    expect(() => parseDashboard(bad)).toThrow()
+  })
+})
