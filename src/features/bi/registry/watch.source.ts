@@ -213,7 +213,10 @@ export const watchSummarySource: DataSource = {
   // replient sur `measures[0]` quand un identifiant n'existe plus. Ce repli doit rester le
   // décompte, valable partout — jamais une agrégation sur une colonne particulière.
   measures: [
-    countMeasure,
+    // ⚠ Une ligne = un CONCURRENT ici. Le décompte gardait le libellé par défaut, « Nombre
+    // de produits » : la première mesure de la source, celle que toute tuile propose, se
+    // trompait d'objet. L'identifiant, lui, reste `count` partout (repli du constructeur).
+    { ...countMeasure, labelKey: 'bi.measure.watchCompetitors' },
     sumMeasure('watch.matched', 'bi.measure.watchMatched', 'matched'),
     sumMeasure('watch.cheaper', 'bi.measure.watchCheaper', 'cheaper'),
     sumMeasure('watch.ruptures', 'bi.measure.watchRuptures', 'ruptures'),

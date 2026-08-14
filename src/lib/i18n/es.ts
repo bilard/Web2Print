@@ -429,6 +429,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.measure.watchMedGap': 'Diferencia mediana (%)',
   'bi.measure.watchIndexed': 'Fichas indexadas',
   'bi.measure.watchPctPrice': 'Proporción de fichas con precio',
+  'bi.measure.watchCompetitors': 'Número de competidores',
   'bi.measure.watchProducts': 'Productos del catálogo',
   'bi.measure.watchListings': 'Fichas recopiladas',
   'bi.watch.noWatch': 'Ningún seguimiento de vigilancia: lance un flujo «Comparar catálogo» para crear uno.',

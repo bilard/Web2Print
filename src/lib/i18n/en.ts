@@ -430,6 +430,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.measure.watchMedGap': 'Median gap (%)',
   'bi.measure.watchIndexed': 'Indexed listings',
   'bi.measure.watchPctPrice': 'Share of listings with a price',
+  'bi.measure.watchCompetitors': 'Number of competitors',
   'bi.measure.watchProducts': 'Catalogue products',
   'bi.measure.watchListings': 'Collected listings',
   'bi.watch.noWatch': 'No price watch yet: run a “Compare catalogue” workflow to create one.',

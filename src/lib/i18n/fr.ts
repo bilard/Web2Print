@@ -448,6 +448,7 @@ export const fr = {
   'bi.measure.watchMedGap': 'Écart médian (%)',
   'bi.measure.watchIndexed': 'Fiches indexées',
   'bi.measure.watchPctPrice': 'Part de fiches avec prix',
+  'bi.measure.watchCompetitors': 'Nombre de concurrents',
   'bi.measure.watchProducts': 'Produits du catalogue',
   'bi.measure.watchListings': 'Fiches collectées',
   'bi.watch.noWatch': 'Aucun suivi de veille : lancez un workflow « Comparer catalogue » pour en créer un.',
