@@ -16,7 +16,8 @@ vi.mock('@/features/excel/useExcelFirebase', () => ({
 }))
 
 const sheet = (name: string): ExcelSheet => ({
-  name, columns: [{ key: 'ref', label: 'Réf', fieldType: 'text' }], rows: [], taxonomy: [],
+  name, rows: [], taxonomy: [],
+  columns: [{ key: 'ref', label: 'Réf', fieldType: 'text', detectedType: 'text', isPrimary: true, width: 160 }],
 })
 
 const LIST: PimDatabase[] = [
