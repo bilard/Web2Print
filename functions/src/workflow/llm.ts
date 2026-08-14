@@ -1,4 +1,5 @@
 // functions/src/workflow/llm.ts
+import { recordServerAiUsage } from './aiUsageServer'
 import { getFirestore } from 'firebase-admin/firestore'
 import { getUserApiKey } from './apiKeys'
 
@@ -49,10 +50,19 @@ async function fetchLlm(url: string, init: RequestInit): Promise<Response> {
   }
 }
 
+/** Ce qu'un adaptateur rapporte d'un appel. `usage` est la CONSOMMATION facturée par le
+ *  fournisseur — pas une estimation locale : c'est elle qui alimente le compteur mensuel,
+ *  donc le budget. Absente quand l'API ne la renvoie pas ; on n'invente alors rien. */
+interface LlmCall {
+  text: string
+  stopReason?: string
+  usage?: { tokensIn: number; tokensOut: number }
+}
+
 /** DeepSeek (OpenAI-compatible) avec JSON natif (response_format json_object) :
  *  garantit une réponse JSON pure (pas de prose ni de bloc markdown) → parse direct
  *  fiable. deepseek-chat plafonne à 8192 tokens de sortie → clamp. */
-async function callDeepSeek(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
+async function callDeepSeek(key: string, prompt: string, maxTokens: number, model: string): Promise<LlmCall> {
   const res = await fetchLlm('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
@@ -64,24 +74,40 @@ async function callDeepSeek(key: string, prompt: string, maxTokens: number, mode
     }),
   })
   if (!res.ok) throw new Error(`DeepSeek ${res.status}: ${await res.text()}`)
-  const json = (await res.json()) as { choices?: { message?: { content?: string }; finish_reason?: string }[] }
+  const json = (await res.json()) as {
+    choices?: { message?: { content?: string }; finish_reason?: string }[]
+    usage?: { prompt_tokens?: number; completion_tokens?: number }
+  }
   const c = json.choices?.[0]
-  return { text: c?.message?.content ?? '', stopReason: c?.finish_reason }
+  return {
+    text: c?.message?.content ?? '', stopReason: c?.finish_reason,
+    usage: json.usage
+      ? { tokensIn: json.usage.prompt_tokens ?? 0, tokensOut: json.usage.completion_tokens ?? 0 }
+      : undefined,
+  }
 }
 
-async function callAnthropic(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
+async function callAnthropic(key: string, prompt: string, maxTokens: number, model: string): Promise<LlmCall> {
   const res = await fetchLlm('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] }),
   })
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`)
-  const json = (await res.json()) as { content?: { text?: string }[]; stop_reason?: string }
-  return { text: json.content?.map((c) => c.text ?? '').join('') ?? '', stopReason: json.stop_reason }
+  const json = (await res.json()) as {
+    content?: { text?: string }[]; stop_reason?: string
+    usage?: { input_tokens?: number; output_tokens?: number }
+  }
+  return {
+    text: json.content?.map((c) => c.text ?? '').join('') ?? '', stopReason: json.stop_reason,
+    usage: json.usage
+      ? { tokensIn: json.usage.input_tokens ?? 0, tokensOut: json.usage.output_tokens ?? 0 }
+      : undefined,
+  }
 }
 
 /** OpenAI (gpt-5.1) avec JSON natif. Les modèles gpt-5.x utilisent max_completion_tokens. */
-async function callOpenAI(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
+async function callOpenAI(key: string, prompt: string, maxTokens: number, model: string): Promise<LlmCall> {
   const res = await fetchLlm('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${key}` },
@@ -93,12 +119,20 @@ async function callOpenAI(key: string, prompt: string, maxTokens: number, model:
     }),
   })
   if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`)
-  const json = (await res.json()) as { choices?: { message?: { content?: string }; finish_reason?: string }[] }
+  const json = (await res.json()) as {
+    choices?: { message?: { content?: string }; finish_reason?: string }[]
+    usage?: { prompt_tokens?: number; completion_tokens?: number }
+  }
   const c = json.choices?.[0]
-  return { text: c?.message?.content ?? '', stopReason: c?.finish_reason }
+  return {
+    text: c?.message?.content ?? '', stopReason: c?.finish_reason,
+    usage: json.usage
+      ? { tokensIn: json.usage.prompt_tokens ?? 0, tokensOut: json.usage.completion_tokens ?? 0 }
+      : undefined,
+  }
 }
 
-async function callGemini(key: string, prompt: string, maxTokens: number, model: string): Promise<{ text: string; stopReason?: string }> {
+async function callGemini(key: string, prompt: string, maxTokens: number, model: string): Promise<LlmCall> {
   const res = await fetchLlm(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
     {
@@ -111,13 +145,27 @@ async function callGemini(key: string, prompt: string, maxTokens: number, model:
     },
   )
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`)
-  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[] }
+  const json = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[]
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number }
+  }
   const cand = json.candidates?.[0]
-  return { text: cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? '', stopReason: cand?.finishReason }
+  const um = json.usageMetadata
+  return {
+    text: cand?.content?.parts?.map((p) => p.text ?? '').join('') ?? '', stopReason: cand?.finishReason,
+    // ⚠ Les tokens de RAISONNEMENT sont facturés comme de la sortie et comptés à part par
+    // Gemini : les omettre sous-estimerait la facture des modèles « thinking ».
+    usage: um
+      ? {
+          tokensIn: um.promptTokenCount ?? 0,
+          tokensOut: (um.candidatesTokenCount ?? 0) + (um.thoughtsTokenCount ?? 0),
+        }
+      : undefined,
+  }
 }
 
 /** Providers supportés côté serveur : keyId (users/{uid}.apiKeys.overrides), modèle, appel. */
-const PROVIDERS: Record<string, { keyId: string; model: string; call: (key: string, prompt: string, max: number, model: string) => Promise<{ text: string; stopReason?: string }> }> = {
+const PROVIDERS: Record<string, { keyId: string; model: string; call: (key: string, prompt: string, max: number, model: string) => Promise<LlmCall> }> = {
   deepseek: { keyId: 'deepseek', model: 'deepseek-chat', call: callDeepSeek },
   gemini: { keyId: 'gemini', model: 'gemini-3.1-pro-preview', call: callGemini },
   openai: { keyId: 'openai', model: 'gpt-5.1', call: callOpenAI },
@@ -176,6 +224,15 @@ export async function callLlm(uid: string, prompt: string, opts: { maxTokens?: n
       // sous la clé d'API, pas sous l'alias de cascade.
       const chosen = models[provider] ?? models[p.keyId] ?? p.model
       const r = await p.call(key, prompt, maxTokens, chosen)
+      // ⚠⚠ La consommation se compte ICI, même quand la réponse sera jugée vide plus bas :
+      // le fournisseur facture ce qu'il a produit, pas ce qu'on a su en faire. Le cron
+      // n'écrivait rien du tout — sa dépense manquait au Suivi, aux Finances ET au plafond
+      // mensuel que `llmProxy` fait respecter sur ce même document.
+      if (r.usage) {
+        await recordServerAiUsage({
+          uid, provider, model: chosen, tokensIn: r.usage.tokensIn, tokensOut: r.usage.tokensOut,
+        })
+      }
       if (r.text.trim()) return { text: r.text, provider, model: chosen, stopReason: r.stopReason }
     } catch (e) {
       console.warn(`[llm] ${provider} KO → provider suivant :`, e instanceof Error ? e.message.slice(0, 200) : e)
