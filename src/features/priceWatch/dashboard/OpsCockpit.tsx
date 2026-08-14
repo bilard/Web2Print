@@ -11,6 +11,8 @@ import { buildOpsCockpit, scopeCockpit, competitorCountsLabel } from './opsMetri
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { useWorkflowSchedule } from './useWorkflowSchedule'
+import { useWatchRunHistory } from './useWatchRunHistory'
+import { OpsRunHistory } from './OpsRunHistory'
 import { duration, ago, compactNum, agoShort } from './format'
 import { formatCountdown } from '@/features/workflows/runtime/cronLabels'
 import { intlLocale, useTranslation } from '@/lib/i18n'
@@ -65,6 +67,9 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const spend = useScrapeSpend()
   // Clé = workflowId ; pour F1 Pro le watchId EST l'id du workflow.
   const sched = useWorkflowSchedule(watchId)
+  // Ce qui s'est PASSÉ : les runs précédents et leur statut. Le cockpit ne montrait que
+  // l'instant — un balayage qui échoue une fois sur deux y ressemblait à un balayage sain.
+  const runHistory = useWatchRunHistory(watchId)
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
@@ -162,6 +167,14 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
         </p>
       ) : (
         <>
+          {/* Cycles bouclés et statut des runs PASSÉS — la seule partie de cet écran qui
+              ne parle pas du présent. */}
+          <div className="mb-3">
+            <OpsRunHistory
+              cyclesDone={ck.cyclesDone} sitesComplete={ck.sitesComplete} sitesActive={ck.sitesActive}
+              cycleComplete={cycleComplete} history={runHistory} locale={intlLocale(locale)} />
+          </div>
+
           {/* Deux jauges rondes (ratios) + tuiles compteurs. */}
           <div className="flex flex-wrap items-stretch gap-3">
             {/* Balayage : ce qui RESTE à traiter (moyenne des concurrents actifs). */}
