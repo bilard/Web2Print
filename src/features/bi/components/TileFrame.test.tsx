@@ -45,3 +45,29 @@ describe('âge de la donnée', () => {
     expect(container.querySelector('.animate-pulse')).toBeTruthy()
   })
 })
+
+// ⚠⚠ Une réserve (relevé incomplet) doit se lire EN MÊME TEMPS que les chiffres : un total
+// sous-compté sans avertissement est le pire résultat, et un écran qui refuse tout n'apprend
+// rien à l'acheteur — il rouvre l'ancien écran.
+describe('réserve affichée avec les chiffres', () => {
+  const withNotice = (
+    <TileFrame
+      title="Produits du catalogue" updatedAt={1} live={false} state="ready" skeleton="kpi"
+      message={{ kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 87_412, expected: 115_814 } }}
+      editing={false} hasFilters={false} onRetry={vi.fn()} onClearFilters={vi.fn()}
+    >
+      <span>87 412</span>
+    </TileFrame>
+  )
+
+  it('rend la réserve AU-DESSUS du contenu, sans le remplacer', () => {
+    render(withNotice)
+    expect(screen.getByText('87 412')).toBeTruthy()
+    expect(screen.getByText(/Relevé INCOMPLET/)).toBeTruthy()
+  })
+
+  it('n’affiche rien de tel quand la tuile n’a aucune réserve', () => {
+    render(frame(Date.now()))
+    expect(screen.queryByText(/INCOMPLET/)).toBeNull()
+  })
+})

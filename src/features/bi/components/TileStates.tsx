@@ -49,6 +49,23 @@ export function TileEmpty({ message, hasFilters, onClearFilters }: {
   )
 }
 
+/**
+ * Réserve affichée AU-DESSUS des chiffres, jamais à leur place.
+ *
+ * ⚠⚠ Un total incomplet est exploitable, un écran qui refuse tout ne l'est pas : « 87 412
+ * fiches — relevé incomplet » fait travailler, « erreur » fait rouvrir l'ancien écran. La
+ * règle « aucun chiffre faux en silence » tient dès lors que l'incomplétude est dite À CÔTÉ
+ * du chiffre, en permanence — donc jamais dans un `title=` que personne ne survole.
+ */
+export function TileNotice({ text }: { text: string }) {
+  return (
+    <p className="flex items-start gap-1.5 mb-2 rounded bg-amber-400/10 border border-amber-400/25 px-2 py-1 text-[10px] leading-snug text-amber-200">
+      <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-px" />
+      {text}
+    </p>
+  )
+}
+
 export function TileError({ message, onRetry }: { message: string; onRetry: () => void }) {
   const { t } = useTranslation()
   return (

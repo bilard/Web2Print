@@ -38,7 +38,8 @@ export interface WatchSourceState {
   rows: Row[]
   /** État TEL QUE la tuile doit le rendre. `idle` = personne ne réclame encore la source. */
   state: 'idle' | 'loading' | 'empty' | 'error' | 'ready'
-  /** Cause de l'état, en CLÉ : traduite au rendu (le moteur et les hooks sont muets). */
+  /** Cause de l'état, en CLÉ : traduite au rendu (le moteur et les hooks sont muets). En état
+   *  `ready`, c'est la RÉSERVE qui accompagne les chiffres (relevé incomplet), pas leur cause. */
   message?: BiMessage
   /** Avancement de la relecture : tranches lues, produits reçus / annoncés. */
   progress: { done: number; total: number; loaded: number; expected: number }
@@ -217,23 +218,25 @@ export function useWatchLoader(demanded: SourceId[]): WatchContext {
         const progress = {
           done: 0, total: 0, loaded: src.products.length, expected: src.expected,
         }
-        // ⚠⚠ Tranches manquantes = TOTAL SOUS-COMPTÉ. On REFUSE de mesurer plutôt que
-        // d'afficher un chiffre amputé : un nombre faux ne se voit pas, une erreur se
-        // corrige (même règle que les colonnes réservées de la source PIM).
+        // ⚠⚠ Tranches manquantes = TOTAL SOUS-COMPTÉ. Les chiffres sont RENDUS QUAND MÊME,
+        // avec leur réserve affichée à côté d'eux en permanence : « 87 412 fiches — relevé
+        // incomplet » fait travailler, un écran qui refuse tout n'apprend rien et renvoie
+        // l'acheteur vers l'ancien écran. La règle « aucun chiffre faux en silence » tient
+        // par l'avertissement, pas par le refus — celui-ci reste pour ce qui est vraiment
+        // inexploitable (catalogue jamais écrit, source illisible).
         if (src.partial) {
           console.warn('[bi-watch] catalogue source AMPUTÉ :', src.products.length, '/', src.expected)
-          patch('watch.catalog', {
-            ...IDLE, progress, state: 'error',
-            message: { kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: src.products.length, expected: src.expected } },
-          })
-          return
         }
         const rows = catalogRows(src.products)
         debugLog('[bi-watch] catalogue source', rows.length, 'produits en', src.ms, 'ms')
         patch('watch.catalog', {
           ...IDLE, rows, progress, updatedAt: Date.now(),
           state: rows.length ? 'ready' : 'empty',
-          message: rows.length ? undefined : { kind: 'key', key: 'bi.watch.catalogAbsent' },
+          message: rows.length
+            ? (src.partial
+              ? { kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: src.products.length, expected: src.expected } }
+              : undefined)
+            : { kind: 'key', key: 'bi.watch.catalogAbsent' },
         })
       })
       .catch((e: unknown) => {

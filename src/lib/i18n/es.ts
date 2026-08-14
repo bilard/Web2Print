@@ -398,7 +398,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.watch.noWatch': 'Ningún seguimiento de vigilancia: lance un flujo «Comparar catálogo» para crear uno.',
   'bi.watch.noReport': 'Este seguimiento aún no tiene informe: ejecute el nodo «Comparar catálogo» del flujo.',
   'bi.watch.catalogAbsent': 'El catálogo de origen nunca se escribió para este seguimiento: ejecute el nodo «Comparar catálogo», que es quien lo persiste.',
-  'bi.watch.catalogPartial': 'Catálogo de origen incompleto: {loaded} productos releídos de {expected} anunciados. Cualquier total quedaría corto; vuelva a lanzar «Comparar catálogo».',
+  'bi.watch.catalogPartial': 'Lectura INCOMPLETA: {loaded} productos releídos de {expected} anunciados. Los totales mostrados se quedan cortos; vuelva a lanzar «Comparar catálogo» para completarlos.',
   'bi.watch.noSite': 'Ningún competidor elegido: designe uno en el selector de origen.',
   'bi.watch.siteFailed': 'Fichas del competidor ilegibles: {error}',
   'bi.source.picker': 'Origen de los mosaicos',

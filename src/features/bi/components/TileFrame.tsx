@@ -5,7 +5,7 @@
 // lui qui porte `useTileData`, et un état qui s'y rafraîchit relancerait l'agrégation de la
 // tuile toutes les dix secondes. Le cadre ne sait rien de la donnée, il ne fait que compter.
 import { useEffect, useState } from 'react'
-import { TileSkeleton, TileEmpty, TileError } from './TileStates'
+import { TileSkeleton, TileEmpty, TileError, TileNotice } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
 import type { BiMessage } from '../types'
 
@@ -21,9 +21,16 @@ interface Props {
   live: boolean
   state: 'loading' | 'empty' | 'error' | 'ready'
   skeleton: 'chart' | 'table' | 'kpi'
-  /** Cause de l'état : erreur technique, ou raison d'un cadre vide (« ouvrez une base… »).
-   *  ⚠ Traduite ICI, au rendu : le moteur est pur et `useTileData` mémoïse — ni l'un ni
-   *  l'autre ne peut appeler `t` sans figer la langue ou casser la mémoïsation. */
+  /**
+   * Ce que la tuile a à DIRE. Selon l'état : la cause d'une erreur, la raison d'un cadre vide
+   * (« ouvrez une base… ») — ou, sur une tuile qui rend bien des chiffres, la RÉSERVE qui les
+   * accompagne (relevé incomplet).
+   *
+   * ⚠⚠ En état `ready`, il s'affiche AU-DESSUS du contenu et non à sa place : un total
+   * sous-compté doit être lu avec son avertissement, pas remplacé par lui.
+   * ⚠ Traduite ICI, au rendu : le moteur est pur et `useTileData` mémoïse — ni l'un ni
+   * l'autre ne peut appeler `t` sans figer la langue ou casser la mémoïsation.
+   */
   message?: BiMessage
   /** ⚠ Le bouton « retirer les filtres » ne retire que les filtres GLOBAUX : sans aucun, il
    *  ne ferait rien. Un booléen (primitif) plutôt que la liste : `TileBody` est mémoïsé. */
@@ -89,7 +96,7 @@ export function TileFrame({
           : state === 'error' ? <TileError message={text ?? ''} onRetry={onRetry} />
           : state === 'empty'
             ? <TileEmpty message={text} hasFilters={hasFilters} onClearFilters={onClearFilters} />
-          : children}
+          : <>{text && <TileNotice text={text} />}{children}</>}
       </div>
     </div>
   )

@@ -96,11 +96,12 @@ function SourceStatus({ sourceId, sites }: { sourceId: SourceId; sites: WatchCon
     )
   }
 
-  // ⚠⚠ Un total sous-compté est le pire des résultats : la cause s'affiche en AVERTISSEMENT,
-  // pas en note de bas de page, et les tuiles refusent de mesurer tant qu'elle tient.
+  // ⚠⚠ Une réserve se dit AUSSI quand la source rend des chiffres (relevé incomplet) : c'est
+  // le seul cas où l'avertissement accompagne des totaux au lieu de les remplacer, et le
+  // taire ici ferait d'un catalogue amputé un catalogue comme un autre.
   const text = data.message === undefined ? ''
     : data.message.kind === 'key' ? t(data.message.key, data.message.params) : data.message.text
-  if (text && (data.state === 'error' || data.state === 'empty')) {
+  if (text) {
     // Plusieurs sources peuvent alimenter le même tableau : l'avertissement NOMME la sienne.
     return <Warning text={`${name} — ${text}`} />
   }

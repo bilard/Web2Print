@@ -93,15 +93,17 @@ describe('useTileData — sources de veille', () => {
     expect(result.current.live).toBe(false)
   })
 
-  it('transmet la CLÉ du refus quand le catalogue source est amputé', () => {
+  it('⚠⚠ rend les chiffres d’un relevé incomplet AVEC leur réserve', () => {
+    // La tuile affiche son total ET dit qu'il est sous-compté (`TileFrame` rend la réserve
+    // au-dessus du contenu) : ni chiffre muet, ni écran qui refuse tout.
     setWatchState('watch.catalog', {
-      rows: [], state: 'error', updatedAt: null,
+      rows: [{ famille: 'Filtration' }, { famille: 'Air' }], state: 'ready', updatedAt: 9,
       message: { kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 12, expected: 115_814 } },
       progress: { done: 0, total: 0, loaded: 12, expected: 115_814 },
     })
     const { result } = renderHook(() => useTileData({ ...watchQuery, source: 'watch.catalog' }, []))
-    expect(result.current.state).toBe('error')
-    expect(result.current.result).toBeNull()
+    expect(result.current.state).toBe('ready')
+    expect(result.current.result?.rows).toEqual([{ count: 2 }])
     expect(result.current.message).toEqual({
       kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 12, expected: 115_814 },
     })

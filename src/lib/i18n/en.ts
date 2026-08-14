@@ -399,7 +399,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.watch.noWatch': 'No price watch yet: run a “Compare catalogue” workflow to create one.',
   'bi.watch.noReport': 'This watch has no report yet: run the workflow’s “Compare catalogue” node.',
   'bi.watch.catalogAbsent': 'The source catalogue was never written for this watch: run the “Compare catalogue” node, which persists it.',
-  'bi.watch.catalogPartial': 'Source catalogue truncated: {loaded} products read back out of {expected} announced. Any total would undercount — re-run “Compare catalogue”.',
+  'bi.watch.catalogPartial': 'INCOMPLETE reading: {loaded} products read back out of {expected} announced. The totals shown undercount — re-run “Compare catalogue” to complete them.',
   'bi.watch.noSite': 'No competitor chosen: pick one in the source selector.',
   'bi.watch.siteFailed': 'Competitor listings unreadable: {error}',
   'bi.source.picker': 'Tile source',

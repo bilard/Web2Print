@@ -59,6 +59,10 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
         // un flux qui n'existe pas — seule la synthèse, tirée d'un `onSnapshot`, coule.
         return {
           result, state: result.rows.length > 0 ? 'ready' : 'empty',
+          // ⚠⚠ La réserve VOYAGE avec les chiffres : sur un relevé incomplet, la tuile affiche
+          // ses totaux ET dit qu'ils sont sous-comptés (`TileFrame` la rend au-dessus du
+          // contenu). Les taire ferait d'un total amputé un total comme un autre.
+          message: watch.message,
           updatedAt: watch.updatedAt, live: query.source === 'watch.summary', retry,
         }
       }

@@ -147,19 +147,31 @@ describe('watch.catalog', () => {
     expect(result.current.message).toEqual({ kind: 'key', key: 'bi.watch.catalogAbsent' })
   })
 
-  it('⚠⚠ REFUSE de mesurer un catalogue amputé, et chiffre l’écart', async () => {
-    // Un total sous-compté sans avertissement est le pire résultat possible : la tuile
-    // n'affiche AUCUN chiffre, elle affiche la cause et le geste.
+  it('⚠⚠ rend les chiffres d’un catalogue amputé AVEC leur réserve, jamais en silence', async () => {
+    // Un total sous-compté SANS avertissement est le pire résultat ; un écran qui refuse tout
+    // n'apprend rien. Les lignes sont là, et la réserve voyage avec elles.
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     loadSourceCatalog.mockResolvedValue(catalog({ partial: true, expected: 115_814 }))
     const { result } = renderHook(() => {
       useWatchLoader(['watch.catalog'])
       return useWatchSourceState('watch.catalog')
     })
-    await waitFor(() => expect(result.current.state).toBe('error'))
-    expect(result.current.rows).toEqual([])
+    await waitFor(() => expect(result.current.state).toBe('ready'))
+    expect(result.current.rows).toHaveLength(1)
     expect(result.current.message).toEqual({
       kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 1, expected: 115_814 },
+    })
+  })
+
+  it('ne pose AUCUNE réserve sur un catalogue complet', () => {
+    // Un avertissement permanent finirait par ne plus rien vouloir dire.
+    const { result } = renderHook(() => {
+      useWatchLoader(['watch.catalog'])
+      return useWatchSourceState('watch.catalog')
+    })
+    return waitFor(() => {
+      expect(result.current.state).toBe('ready')
+      expect(result.current.message).toBeUndefined()
     })
   })
 

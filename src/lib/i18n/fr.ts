@@ -417,7 +417,7 @@ export const fr = {
   'bi.watch.noWatch': 'Aucun suivi de veille : lancez un workflow « Comparer catalogue » pour en créer un.',
   'bi.watch.noReport': 'Ce suivi n’a pas encore de rapport : lancez le node « Comparer catalogue » du workflow.',
   'bi.watch.catalogAbsent': 'Catalogue source jamais écrit pour ce suivi : lancez le node « Comparer catalogue », c’est lui qui le persiste.',
-  'bi.watch.catalogPartial': 'Catalogue source amputé : {loaded} produits relus sur {expected} annoncés. Tout total serait sous-compté — relancez « Comparer catalogue ».',
+  'bi.watch.catalogPartial': 'Relevé INCOMPLET : {loaded} produits relus sur {expected} annoncés. Les totaux affichés sont sous-comptés — relancez « Comparer catalogue » pour les compléter.',
   'bi.watch.noSite': 'Aucun concurrent choisi : désignez-en un dans le sélecteur de source.',
   'bi.watch.siteFailed': 'Fiches du concurrent illisibles : {error}',
   'bi.source.picker': 'Source des tuiles',
