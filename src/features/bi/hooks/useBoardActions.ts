@@ -11,14 +11,53 @@
 // et l'inclure recréerait chaque rappel — ce qui romprait la mémoïsation de `DashboardGrid`
 // que `BiBoard` existe pour préserver. Ces libellés ne servent qu'à un message d'erreur ou à
 // un nom par défaut, jamais pendant un geste.
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/lib/i18n'
 import { saveDashboard } from '../store/dashboardsStore'
-import { appendPage, replacePage, type Dashboard, type DashboardPage, type FilterClause, type TilePlacement } from '../types'
+import { appendPage, replacePage, type Dashboard, type DashboardPage, type FilterClause, type Tile, type TilePlacement } from '../types'
 
 export function useBoardActions(uid: string | null, current: Dashboard, pageId: string) {
   const { t } = useTranslation()
+
+  /**
+   * ⚠⚠ Ce que l'écran montre RÉELLEMENT de la page courante.
+   *
+   * `saveDashboard` écrit avec `setDoc`, qui REMPLACE le document : TOUTE écriture réécrit
+   * donc les pages, y compris celle qu'elle ne prétend pas toucher. Or `current` vient de
+   * l'abonnement Firestore et retarde d'un aller-retour — renommer juste après un
+   * déplacement remettait la tuile à sa place d'avant, et juste après une reconfiguration
+   * lui rendait sa requête d'avant. Même famille que les défauts vus en recette sur
+   * `setTileKind` et sur le clic qui déclenche `onDragStop`.
+   */
+  const live = useRef<{ pageId: string; tiles: Tile[]; layout: TilePlacement[] } | null>(null)
+
+  /**
+   * Publie l'état affiché de la page courante. `BiBoard` l'appelle dans un effet, à chaque
+   * rendu : c'est la seule voie qui voie AUSSI les écritures faites hors de ce hook
+   * (`useTileEdits`, `useAddTile`), lesquelles laissent `current` en retard tout autant.
+   *
+   * ⚠ Référence STABLE : elle ne recrée aucun rappel, donc ne casse pas la mémoïsation de
+   * `DashboardGrid` que ce hook existe pour préserver.
+   */
+  const trackPage = useCallback((tiles: Tile[], layout: TilePlacement[]) => {
+    live.current = { pageId, tiles, layout }
+  }, [pageId])
+
+  /**
+   * Le document tel qu'il faut l'ÉCRIRE : `current` recousu avec ce que l'écran montre.
+   *
+   * ⚠ Le `pageId` publié est vérifié : `BiBoard` est remontée à chaque changement de page,
+   * mais une publication venue d'une autre page ne doit jamais atterrir sur celle-ci.
+   */
+  const fresh = useCallback((pages?: DashboardPage[]): Dashboard => {
+    const base = pages
+      ? { ...current, pages, tiles: pages[0].tiles, layout: pages[0].layout }
+      : current
+    const p = live.current
+    if (!p || p.pageId !== pageId) return base
+    return replacePage(base, pageId, { tiles: p.tiles, layout: p.layout })
+  }, [current, pageId])
 
   const write = useCallback((next: Dashboard) => {
     // ⚠ Un refus d'écriture doit se VOIR : sans règle Firestore, l'échec est silencieux.
@@ -28,21 +67,36 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
     })
   }, [uid])
 
-  /** Mise en page de la page COURANTE, au relâchement d'un geste. */
-  const persistLayout = useCallback((layout: TilePlacement[]) => {
-    write(replacePage(current, pageId, { layout }))
+  /**
+   * Mise en page de la page COURANTE, au relâchement d'un geste.
+   *
+   * ⚠⚠ Les TUILES sont fournies par l'appelant et réécrites avec — jamais laissées à celles
+   * de `current`. Vu en recette : un simple CLIC sur une tuile déclenche le `onDragStop` de
+   * `react-grid-layout` (poignée pressée puis relâchée sans mouvement), donc cette écriture ;
+   * `current` vient de l'abonnement Firestore et retarde d'un aller-retour, si bien qu'un
+   * champ tout juste déposé était RÉÉCRIT À L'ANCIEN par le clic suivant, sans un mot. Le
+   * mal est symétrique de celui que documentait `setTileKind` pour la mise en page.
+   */
+  const persistLayout = useCallback((layout: TilePlacement[], tiles: Tile[]) => {
+    // ⚠ La publication est rafraîchie AVANT l'écriture : `undo`/`redo` appellent ce rappel de
+    // façon SYNCHRONE, avant tout re-rendu — l'effet de `BiBoard` n'a donc pas encore
+    // republié, et une écriture enchaînée repartirait de l'état d'avant l'annulation.
+    live.current = { pageId, tiles, layout }
+    write(replacePage(current, pageId, { layout, tiles }))
   }, [write, current, pageId])
 
   const persistFilters = useCallback((filters: FilterClause[]) => {
-    write({ ...current, filters })
-  }, [write, current])
+    write({ ...fresh(), filters })
+  }, [write, fresh])
 
   /** Retire les filtres globaux — le geste proposé par une tuile vide. */
   const clearFilters = useCallback(() => persistFilters([]), [persistFilters])
 
-  // ⚠ `{ ...current }` sans toucher aux pages : renommer ne réécrit AUCUNE mise en page,
-  // donc rien à retarder — contrairement aux gestes du constructeur, qui en réécrivent une.
-  const rename = useCallback((name: string) => write({ ...current, name }), [write, current])
+  // ⚠⚠ `fresh()` et non `current` : renommer ne PRÉTEND toucher à aucune page, mais `setDoc`
+  // les réécrit toutes. Sans ce recousage, renommer juste après un déplacement remettait la
+  // tuile à sa place d'avant — et juste après une reconfiguration, lui rendait sa requête
+  // d'avant. Un geste anodin ne doit jamais défaire le geste précédent.
+  const rename = useCallback((name: string) => write({ ...fresh(), name }), [write, fresh])
 
   /**
    * Retient la BASE du module « Données » qui alimente ce tableau de bord.
@@ -52,8 +106,8 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
    * active, exactement comme les tableaux enregistrés avant ce champ.
    */
   const setSourceDb = useCallback((dbId?: string, dbName?: string) => {
-    write({ ...current, sourceDbId: dbId, sourceDbName: dbName })
-  }, [write, current])
+    write({ ...fresh(), sourceDbId: dbId, sourceDbName: dbName })
+  }, [write, fresh])
 
   /**
    * Ajoute une page vide et la RETOURNE, pour que l'appelant l'affiche sans attendre l'écho.
@@ -64,10 +118,13 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
    * effacerait la page précédente sans un mot.
    */
   const addPage = useCallback((pages: DashboardPage[]): DashboardPage => {
-    const next = appendPage({ ...current, pages }, t('bi.page.defaultName', { n: pages.length + 1 }))
+    // ⚠ `fresh(pages)` : les pages viennent de l'appelant, mais la page COURANTE y est
+    // recousue avec ce que l'écran montre — ajouter un onglet ne doit pas défaire le
+    // déplacement ni la reconfiguration qu'on vient de faire sur celle qu'on quitte.
+    const next = appendPage(fresh(pages), t('bi.page.defaultName', { n: pages.length + 1 }))
     write(next)
     return next.pages[next.pages.length - 1]
-  }, [write, current])
+  }, [write, fresh])
 
   // ⚠⚠ Changer le type d'un visuel n'est PLUS ici : c'est devenu un geste du constructeur
   // (`retypeTile` + `useTileEdits`), pour trois raisons qui tiennent ensemble — la requête
@@ -76,5 +133,7 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
   // changer AU CLIC plutôt qu'à l'écho de la base, et le geste doit être annulable par les
   // mêmes flèches que le reste.
 
-  return { write, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage }
+  // ⚠ `write` n'est PAS rendu : c'était l'échappatoire générique par laquelle un appelant
+  // pouvait réécrire le document sans passer par `fresh()` — donc réintroduire le défaut.
+  return { trackPage, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage }
 }

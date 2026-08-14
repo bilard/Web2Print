@@ -5,7 +5,7 @@
 // parent, et `onClearFilters`/`onSelectTile` sont mémoïsés — sans ça, chaque frame de
 // glissement fournirait une fonction fraîche à `TileBody` (mémoïsé) et chaque tuile referait
 // son agrégation.
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useRef, useState, type ReactNode } from 'react'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
@@ -28,7 +28,7 @@ import { BiPageTabs } from './BiPageTabs'
 import { BiStatusBar } from './BiStatusBar'
 import { DashboardGrid } from './DashboardGrid'
 import { useTranslation } from '@/lib/i18n'
-import type { Dashboard, DashboardPage, Tile, TileKind } from '../types'
+import type { Dashboard, DashboardPage, Tile, TileKind, TilePlacement } from '../types'
 
 interface BiBoardProps {
   current: Dashboard
@@ -56,7 +56,15 @@ export function BiBoard({
 }: BiBoardProps) {
   const { t } = useTranslation()
   const act = useBoardActions(uid, current, page.id)
-  const draft = useLayoutDraft(page.layout, act.persistLayout)
+  // ⚠⚠ Les tuiles TELLES QU'AFFICHÉES, lues au moment de l'écriture. Elles sont calculées
+  // plus bas (`usePendingTiles` puis `useTileEdits`), alors que `useLayoutDraft` réclame son
+  // rappel d'écriture ICI : d'où la référence. Sans elle, l'écriture de mise en page
+  // repartirait des tuiles de `current` — en retard d'un aller-retour Firestore — et le
+  // premier clic sur une tuile effacerait le champ qu'on venait d'y déposer.
+  const shownTiles = useRef<Tile[]>(page.tiles)
+  const persistLayout = useCallback(
+    (l: TilePlacement[]) => act.persistLayout(l, shownTiles.current), [act.persistLayout])
+  const draft = useLayoutDraft(page.layout, persistLayout)
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null)
 
   const sheets = useExcelStore((s) => s.sheets)
@@ -75,6 +83,14 @@ export function BiBoard({
   // tuile continuerait d'afficher les chiffres d'avant.
   const edits = useTileEdits({ uid, current, pageId: page.id, tiles: posed, layout: draft.layout })
   const tiles = edits.tiles
+  shownTiles.current = tiles
+  // ⚠⚠ La page TELLE QU'AFFICHÉE, publiée aux écritures qui ne prétendent toucher NI aux
+  // tuiles NI à la mise en page (renommer, changer de base source, vider les filtres, ajouter
+  // un onglet). `setDoc` REMPLACE le document : sans cette publication, ces gestes anodins
+  // réécrivent les pages de `current` — en retard d'un aller-retour Firestore — et défont le
+  // déplacement ou la reconfiguration qu'on vient de faire. Même référence que `shownTiles`,
+  // posée au même endroit et donc toujours d'accord avec elle.
+  act.trackPage(tiles, draft.layout)
   // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille : le menu doit
   // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
   // lectures réclamées par les tuiles POSÉES, jamais par la source seulement choisie.
