@@ -2,6 +2,8 @@
 // (ChartPreview, react-chartjs-2) : agrégation des données + construction de la config
 // Chart.js. Aucune dépendance à React ni à chart.js ici (juste des types/objets).
 
+import { toFiniteNumber } from '@/lib/numberValue'
+
 export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'doughnut'
 type ChartAggregation = 'none' | 'sum' | 'avg' | 'count'
 
@@ -35,13 +37,12 @@ const CHART_PALETTE = [
   '#a855f7', '#ec4899', '#84cc16', '#f97316', '#14b8a6',
 ]
 
-/** Convertit une valeur de cellule en nombre (gère « 12,5 », « 1 299 € »…). */
+/** Convertit une valeur de cellule en nombre (gère « 12,5 », « 1 299 € »…).
+ *  ⚠ La lecture elle-même vit dans `toFiniteNumber` (partagée avec le module BI) ; le repli
+ *  à 0 reste PROPRE À CE NODE : un graphique trace une série continue, un trou n'y a pas de
+ *  place. Le BI, lui, doit écarter la valeur plutôt que la compter comme zéro. */
 function numberFrom(v: unknown): number {
-  if (typeof v === 'number') return Number.isFinite(v) ? v : 0
-  const s = String(v ?? '').trim()
-  if (!s) return 0
-  const n = Number(s.replace(/\s/g, '').replace(',', '.').replace(/[^\d.+-]/g, ''))
-  return Number.isFinite(n) ? n : 0
+  return toFiniteNumber(v) ?? 0
 }
 
 /** Résout un nom (clé OU libellé) vers la clé de colonne. Retourne le nom tel quel si absent. */
