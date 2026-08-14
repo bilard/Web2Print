@@ -476,6 +476,8 @@ export const es: Record<TranslationKey, string> = {
   'bi.filters.onPage': 'En esta página',
   'bi.filters.onAllPages': 'En todas las páginas',
   'bi.filters.none': 'Ningún filtro',
+  'bi.filters.remove': 'Quitar este filtro',
+  'bi.filters.emptyValue': 'sin rellenar',
   'bi.filters.pickVisual': 'Elija un visual para filtrar lo que muestra.',
   'bi.filters.pageSoon': 'Los filtros de página llegan con el constructor.',
   'bi.visuals.type': 'Tipo de visual',

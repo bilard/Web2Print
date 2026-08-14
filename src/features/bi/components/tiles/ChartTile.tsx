@@ -26,10 +26,19 @@ Chart.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement
 
 const EMPTY: ReadonlySet<string> = new Set()
 
-export function ChartTile({ result, kind, stacked, tooltipKeys }: {
+export function ChartTile({ result, kind, stacked, tooltipKeys, onPick }: {
   result: AggregateResult; kind: TileKind; stacked?: boolean
   /** Clés des mesures montrées AU SURVOL seulement. */
   tooltipKeys?: ReadonlySet<string>
+  /**
+   * Clic sur une barre, une part ou un point : la valeur de la dimension sous le curseur.
+   *
+   * ⚠ La tuile ne décide de RIEN — elle rapporte ce qui a été cliqué. C'est le tableau de
+   * bord qui en fait un filtre, l'applique aux autres tuiles et l'affiche dans le bandeau ;
+   * sans cela, un filtre pourrait exister sans se voir, ce qui fait mentir tous les chiffres
+   * de la page.
+   */
+  onPick?: (field: string, value: string | null) => void
 }) {
   const { t, locale } = useTranslation()
   const dark = useThemeStore((s) => s.resolvedTheme) === 'dark'
@@ -86,10 +95,22 @@ export function ChartTile({ result, kind, stacked, tooltipKeys }: {
       x: { stacked, ticks: { color: tick }, grid: { color: grid } },
       y: { stacked, ticks: { color: tick }, grid: { color: grid } },
     },
+    // Filtrage croisé : ce qui est cliqué est rapporté, jamais interprété ici.
+    // ⚠ `onPick` absent ⇒ pas de curseur « main » : une tuile qui a l'air cliquable sans
+    // l'être est plus déroutante qu'une tuile inerte.
+    onClick: onPick
+      ? (_e: unknown, els: { index: number }[]) => {
+          const el = els[0]
+          if (!el) return
+          const value = model.dimensionValueAt(el.index)
+          if (value !== undefined) onPick(model.dimensionKey ?? '', value)
+        }
+      : undefined,
   }
+  const cursor = onPick ? { cursor: 'pointer' } : undefined
 
-  if (kind === 'pie') return <Pie data={data} options={options} />
-  if (kind === 'doughnut') return <Doughnut data={data} options={options} />
-  if (kind === 'line' || kind === 'area') return <Line data={data} options={options} />
-  return <Bar data={data} options={options} />
+  if (kind === 'pie') return <Pie data={data} options={options} style={cursor} />
+  if (kind === 'doughnut') return <Doughnut data={data} options={options} style={cursor} />
+  if (kind === 'line' || kind === 'area') return <Line data={data} options={options} style={cursor} />
+  return <Bar data={data} options={options} style={cursor} />
 }

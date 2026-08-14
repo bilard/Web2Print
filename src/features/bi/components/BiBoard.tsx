@@ -5,9 +5,12 @@
 // parent, et `onClearFilters`/`onSelectTile` sont mémoïsés — sans ça, chaque frame de
 // glissement fournirait une fonction fraîche à `TileBody` (mémoïsé) et chaque tuile referait
 // son agrégation.
-import { useCallback, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
+import { upsertFilter, describeFilter } from '../filters/filterOptions'
+import { CrossFilterChip } from './CrossFilterChip'
+import { dimensionLabel } from '../filters/dimensionLabel'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
 import { usePendingTiles } from '../hooks/usePendingTiles'
 import { useBoardActions } from '../hooks/useBoardActions'
@@ -66,6 +69,32 @@ export function BiBoard({
     (l: TilePlacement[]) => act.persistLayout(l, shownTiles.current), [act.persistLayout])
   const draft = useLayoutDraft(page.layout, persistLayout)
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null)
+  /**
+   * Filtre posé par un CLIC dans une tuile (« filtrage croisé »).
+   *
+   * ⚠ Volontairement en état d'écran, non persisté : c'est une exploration, pas une
+   * configuration. Il disparaît au rechargement, comme dans les outils décisionnels — un
+   * filtre de lecture qui survivrait sans qu'on l'ait posé délibérément ferait douter de
+   * tous les chiffres à la réouverture.
+   */
+  const [crossFilter, setCrossFilter] = useState<
+    { tileId: string; field: string; value: string | null } | null
+  >(null)
+  /** Ce qui filtre réellement la page : les filtres enregistrés PLUS celui du clic. */
+  const effectiveFilters = useMemo(
+    () => (crossFilter
+      ? upsertFilter(current.filters, { field: crossFilter.field, op: 'eq', value: crossFilter.value })
+      : current.filters),
+    [current.filters, crossFilter],
+  )
+  const pick = useCallback((tileId: string, field: string, value: string | null) => {
+    // Re-cliquer la même valeur annule : le geste doit être réversible sans passer par le
+    // bandeau, sinon on reste prisonnier d'un filtre posé par mégarde.
+    setCrossFilter((cur) =>
+      cur && cur.tileId === tileId && cur.field === field && cur.value === value
+        ? null
+        : { tileId, field, value })
+  }, [])
 
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
@@ -156,13 +185,28 @@ export function BiBoard({
                n'ont pas dans le bandeau — et qui parlent du jeu de données, comme la barre. */
             trailing={<><SourceStatusList context={context} demanded={demanded} sourceId={sourceId}
               dbName={current.sourceDbName} />
+              {/* ⚠ Le filtre du clic AVANT le reste : c'est lui qui restreint ce que montrent
+                  les tuiles à cet instant, et il doit se lire sans survol. */}
+              {crossFilter && (
+                <CrossFilterChip
+                  label={describeFilter(
+                    { field: crossFilter.field, op: 'eq', value: crossFilter.value },
+                    dimensionLabel(source, crossFilter.field, t),
+                    (v) => (v === null || v === undefined ? t('bi.filters.emptyValue') : String(v)),
+                  )}
+                  onClear={() => setCrossFilter(null)}
+                />
+              )}
               {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}</>}
           />
         )}
         canvas={(width) => (
           <DashboardGrid
             tiles={tiles} layout={draft.layout} editing={editing} width={width}
-            globalFilters={current.filters} selectedTileId={selectedTileId}
+            /* ⚠ Les filtres du tableau ET celui du clic : les tuiles calculent avec les deux,
+               sinon le graphe cliqué serait le seul à changer et la page se contredirait. */
+            globalFilters={effectiveFilters} selectedTileId={selectedTileId}
+            crossFilter={crossFilter} onPick={pick}
             onDrag={hist.onDrag} onCommit={hist.onCommit}
             onClearFilters={act.clearFilters} onSelectTile={setSelectedTileId}
           />

@@ -495,6 +495,8 @@ export const fr = {
   'bi.filters.onPage': 'Sur cette page',
   'bi.filters.onAllPages': 'Sur toutes les pages',
   'bi.filters.none': 'Aucun filtre',
+  'bi.filters.remove': 'Retirer ce filtre',
+  'bi.filters.emptyValue': 'non renseigné',
   'bi.filters.pickVisual': 'Choisissez un visuel pour filtrer ce qu’il montre.',
   'bi.filters.pageSoon': 'Les filtres de page arrivent avec le constructeur.',
   'bi.visuals.type': 'Type de visuel',

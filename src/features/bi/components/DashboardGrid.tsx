@@ -26,12 +26,17 @@ const ROW_HEIGHT = 40
 // `React.memo` : converti en rendus SAUTÉS les références stables que le parent doit fournir
 // (`tile`, `globalFilters`, `onClearFilters`) — sans lui, chaque `onLayoutChange` pendant un
 // geste re-rendrait les vingt tuiles (et leurs graphes chart.js) même quand aucune n'a bougé.
-const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect }: {
+const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect, onPick, dimmed }: {
   tile: Tile; editing: boolean; selected: boolean
   globalFilters: FilterClause[]; onClearFilters: () => void
   /** ⚠ Reçoit l'IDENTIFIANT plutôt qu'une fermeture par tuile : le parent transmet UNE
    *  fonction stable, et la mémoïsation de `React.memo` tient pendant un geste. */
   onSelect: (tileId: string) => void
+  /** Clic sur un élément du visuel : filtre la PAGE sur la valeur cliquée. */
+  onPick: (field: string, value: string | null) => void
+  /** La tuile est estompée parce qu'une AUTRE porte le filtre croisé actif. On estompe au
+   *  lieu de masquer : le contexte de ce qu'on écarte reste visible. */
+  dimmed: boolean
 }) {
   // ⚠⚠ Les mesures d'INFO-BULLE rejoignent `measures` pour être CALCULÉES — le moteur ne
   // connaît pas `query.tooltips` — puis `ChartTile` les écarte des séries. Mémoïsé, et rendu
@@ -47,6 +52,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   const { result, state, message, updatedAt, live, retry } = useTileData(query, globalFilters)
   const skeleton = tile.kind === 'kpi' ? 'kpi' : tile.kind === 'table' || tile.kind === 'pivot' ? 'table' : 'chart'
   return (
+    <div className={`h-full transition-opacity duration-200 ${dimmed ? 'opacity-40' : ''}`}>
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
       skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected}
@@ -59,9 +65,10 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
             ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}
                 showTotals={tile.options?.showTotals} />
           : <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked}
-              tooltipKeys={tooltipKeys} />
+              tooltipKeys={tooltipKeys} onPick={onPick} />
       )}
     </TileFrame>
+    </div>
   )
 })
 
@@ -76,8 +83,8 @@ function layoutsEqual(a: Layout[], b: Layout[]): boolean {
 }
 
 export function DashboardGrid({
-  tiles, layout, editing, width, globalFilters, selectedTileId,
-  onDrag, onCommit, onClearFilters, onSelectTile,
+  tiles, layout, editing, width, globalFilters, selectedTileId, crossFilter,
+  onDrag, onCommit, onClearFilters, onSelectTile, onPick,
 }: {
   tiles: Tile[]
   layout: TilePlacement[]
@@ -86,6 +93,10 @@ export function DashboardGrid({
   globalFilters: FilterClause[]
   /** Tuile décrite par les volets de droite. `null` = aucune. */
   selectedTileId: string | null
+  /** Filtre croisé actif, posé par un clic dans une tuile. `null` = aucun. */
+  crossFilter: { tileId: string; field: string; value: string | null } | null
+  /** Un clic dans une tuile : le tableau de bord décide ce qu'il en fait. */
+  onPick: (tileId: string, field: string, value: string | null) => void
   onDrag: (l: TilePlacement[]) => void
   onCommit: () => void
   onClearFilters: () => void
@@ -126,6 +137,10 @@ export function DashboardGrid({
                laisserait croire à une tuile mise en avant pour une raison. */
             tile={t} editing={editing} selected={editing && t.id === selectedTileId}
             globalFilters={globalFilters} onClearFilters={onClearFilters} onSelect={onSelectTile}
+            /* ⚠ La tuile d'où part le filtre reste PLEINE : c'est elle qu'on regarde. Les
+               autres s'estompent pour dire « je montre moins », sans se dérober. */
+            dimmed={!!crossFilter && crossFilter.tileId !== t.id}
+            onPick={(field, value) => onPick(t.id, field, value)}
           />
         </div>
       ))}
