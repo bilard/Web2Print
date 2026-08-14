@@ -204,7 +204,11 @@ const dashboardSchema = z.object({
   createdAt: z.number(), updatedAt: z.number(), createdBy: z.string(),
 })
 /** ⚠ `pages` est optionnel À L'ENTRÉE, garanti À LA SORTIE : `parseDashboard` normalise. */
-export type Dashboard = z.infer<typeof dashboardSchema> & { pages: DashboardPage[] }
+export type Dashboard = Omit<z.infer<typeof dashboardSchema>, 'pages'> & { pages: DashboardPage[] }
+
+/** Ce qu'on a le droit d'ENVOYER à l'écriture : les pages y restent facultatives, puisque
+ *  `parseDashboard` les reconstitue depuis la racine — c'est la forme d'un document ancien. */
+export type DashboardDraft = z.infer<typeof dashboardSchema>
 
 /**
  * Valide une spec venue de la base, d'un import ou d'un modèle. Lève avec un message

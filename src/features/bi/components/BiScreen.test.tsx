@@ -19,6 +19,7 @@ let items: Dashboard[] = []
 const ONE_DASHBOARD: Dashboard[] = [{
   id: 'd1', name: 'Ventes', accountId: 'acme', workspaceUid: 'u1',
   tiles: [], layout: [], filters: [], version: 1, createdAt: 1, updatedAt: 1, createdBy: 'u1',
+  pages: [{ id: 'p1', name: 'Ventes', tiles: [], layout: [] }],
 }]
 
 // jsdom ne fournit pas `ResizeObserver` : `BiScreen` en a besoin pour mesurer la largeur de

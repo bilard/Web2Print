@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { assertWritable, dashboardDoc } from './dashboardsStore'
-import { DASHBOARD_VERSION, MAX_DASHBOARD_BYTES, type Dashboard } from '../types'
+import { DASHBOARD_VERSION, MAX_DASHBOARD_BYTES, type DashboardDraft } from '../types'
 
-const base: Dashboard = {
+const base: DashboardDraft = {
   id: 'd1', name: 'Complétude', accountId: 'acme', workspaceUid: 'u1',
   version: DASHBOARD_VERSION, createdAt: 1, updatedAt: 2, createdBy: 'u1',
   tiles: [], layout: [], filters: [],
@@ -16,7 +16,7 @@ describe('garde-fous d’écriture', () => {
   it('REFUSE un document trop lourd AVANT l’envoi, avec un message lisible', () => {
     // ⚠ Firestore refuse tout document au-delà de 1 048 576 octets. Sans ce garde-fou,
     // l'écriture échouerait côté serveur et l'écran laisserait croire à un enregistrement.
-    const fat: Dashboard = { ...base, description: 'x'.repeat(MAX_DASHBOARD_BYTES) }
+    const fat: DashboardDraft = { ...base, description: 'x'.repeat(MAX_DASHBOARD_BYTES) }
     expect(() => assertWritable(fat)).toThrow(/trop volumineux/i)
   })
 

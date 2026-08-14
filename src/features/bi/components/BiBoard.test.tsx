@@ -14,7 +14,7 @@ import { act } from 'react'
 import { BiBoard } from './BiBoard'
 import { useExcelStore } from '@/stores/excel.store'
 import type { ExcelColumn } from '@/features/excel/types'
-import type { Dashboard, TilePlacement } from '../types'
+import { parseDashboard, type Dashboard, type TilePlacement } from '../types'
 
 // ⚠ Une feuille SANS colonne n'est pas exploitable : le moteur se replie alors sur le
 // catalogue master, et il n'y a pas de nom de feuille à mémoriser.
@@ -32,13 +32,16 @@ const { saveDashboard } = await import('../store/dashboardsStore')
 const gridCalls = () => vi.mocked(DashboardGrid).mock.calls
 
 function makeDashboard(id: string, layout: TilePlacement[]): Dashboard {
+  const tiles: Dashboard['tiles'] = [{
+    id: 't1', kind: 'kpi', title: 'Total',
+    query: { source: 'pim.products', measures: [{ id: 'count' }], dimensions: [], filters: [] },
+  }]
   return {
     id, name: id, accountId: 'acme', workspaceUid: 'u1',
-    tiles: [{
-      id: 't1', kind: 'kpi', title: 'Total',
-      query: { source: 'pim.products', measures: [{ id: 'count' }], dimensions: [], filters: [] },
-    }],
-    layout, filters: [], version: 1, createdAt: 1, updatedAt: 1, createdBy: 'u1',
+    tiles, layout, filters: [], version: 1, createdAt: 1, updatedAt: 1, createdBy: 'u1',
+    // ⚠ La racine est le MIROIR de la première page : la fixture doit le respecter, sinon
+    // elle testerait une forme que `parseDashboard` ne produit jamais.
+    pages: [{ id: 'p1', name: id, tiles, layout }],
   }
 }
 
@@ -175,7 +178,9 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     act(() => onAdd('bar', { id: 'count' }, 'taxo.1'))
 
     // L'écho Firestore : le document rapatrie enfin la tuile ET son placement.
-    const saved = vi.mocked(saveDashboard).mock.calls.at(-1)![1]
+    // ⚠ `parseDashboard` comme le ferait la lecture : c'est lui qui normalise les pages, et
+    // l'écho doit donc être rejoué SOUS SA FORME NORMALISÉE, jamais telle qu'envoyée.
+    const saved = parseDashboard(vi.mocked(saveDashboard).mock.calls.at(-1)![1])
     rerender(props(saved))
 
     for (const [gridProps] of gridCalls()) {
