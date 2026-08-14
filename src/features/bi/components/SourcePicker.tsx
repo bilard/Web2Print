@@ -28,7 +28,8 @@ const WATCH_IDS: SourceId[] = WATCH_SOURCES.map((s) => s.id)
 const pimInvolved = (sourceId: SourceId, demanded: SourceId[]) =>
   sourceId === pimSource.id || demanded.includes(pimSource.id)
 
-export interface SourcePickerProps {
+// ⚠ Non exportée : elle ne sert qu'ici (convention du projet, cf. `npm run dead`).
+interface SourcePickerProps {
   /** Ce que `useWatchLoader` sait du suivi actif : ses concurrents, la liste des suivis. */
   context: WatchContext
   /** Sources RÉELLEMENT citées par les tuiles posées — ce que l'écran est en train de lire. */

@@ -26,7 +26,7 @@ export interface PimDatabase {
   path: string[]
 }
 
-export interface PimDbState {
+interface PimDbState {
   state: 'idle' | 'loading' | 'ready' | 'error'
   /** Base RÉELLEMENT en mémoire (ou en cours de lecture), pour la nommer dans l'avancement. */
   name: string | null
