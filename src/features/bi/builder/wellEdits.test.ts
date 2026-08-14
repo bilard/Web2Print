@@ -140,7 +140,32 @@ describe('retypeTile', () => {
 
   it('ramène un camembert à UNE mesure', () => {
     const two = dropInWell(testTile('bar', ['brand']), 'values', price, testSource)
-    expect(retypeTile(two, 'pie').query.measures).toHaveLength(1)
+    const pie = retypeTile(two, 'pie')
+    expect(pie.query.measures).toHaveLength(1)
+    assertValid(pie)
+  })
+
+  it('dépouille un CROISÉ passé en indicateur — deux axes ET sa colonne de croisement', () => {
+    const pivot = dropInWell(dropInWell(testTile('pivot'), 'axis', brand, testSource),
+      'legend', price, testSource)
+    const kpi = retypeTile(pivot, 'kpi')
+    expect(kpi.query.dimensions).toEqual([])
+    expect(kpi.options?.pivotColumn).toBeUndefined()
+    assertValid(kpi)
+  })
+
+  it('garde les options SURVIVANTES en effaçant la seule colonne de croisement', () => {
+    // ⚠ Un visuel empilé passé en camembert : `stacked` reste, `pivotColumn` part. L'objet
+    // porte alors une clé à `undefined` — `parseDashboard` l'accepte, et `useTileEdits`
+    // la neutralise dans sa comparaison (sinon la surcharge locale ne s'élaguerait jamais).
+    const stacked: Tile = {
+      ...dropInWell(testTile('bar', ['brand']), 'values', price, testSource),
+      options: { stacked: true },
+    }
+    const pie = retypeTile(stacked, 'pie')
+    expect(pie.options?.stacked).toBe(true)
+    expect(pie.options?.pivotColumn).toBeUndefined()
+    assertValid(pie)
   })
 
   it('redésigne la colonne du croisé quand elle a survécu à la coupe', () => {
@@ -154,6 +179,8 @@ describe('retypeTile', () => {
 
   it('jette les info-bulles d’un type qui n’en affiche pas', () => {
     const t = dropInWell(testTile('bar', ['brand']), 'tooltips', medianPrice, testSource)
-    expect(retypeTile(t, 'table').query.tooltips).toBeUndefined()
+    const table = retypeTile(t, 'table')
+    expect(table.query.tooltips).toBeUndefined()
+    assertValid(table)
   })
 })

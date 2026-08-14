@@ -10,10 +10,16 @@ import { measureRefOf, wellCapacity, type DraggedField, type WellId } from './we
 
 type Dims = Tile['query']['dimensions']
 
-/** La tuile dont la requête a été retouchée, avec le tri REMIS D'APLOMB. */
-function withQuery(
-  tile: Tile, patch: Partial<Tile['query']>, options: Tile['options'] = tile.options,
-): Tile {
+/**
+ * La tuile dont la requête a été retouchée, avec le tri REMIS D'APLOMB.
+ *
+ * ⚠⚠ `options` est REQUIS, sans valeur par défaut, et ce n'est pas un détail de style : une
+ * valeur par défaut ne distingue pas « paramètre omis » de « passé à `undefined` », si bien
+ * qu'EFFACER les options rétablissait celles de la tuile d'origine. Défaut réel : un tableau
+ * croisé passé en indicateur gardait sa colonne de croisement, laquelle ne désignait plus
+ * aucune dimension.
+ */
+function withQuery(tile: Tile, patch: Partial<Tile['query']>, options: Tile['options']): Tile {
   const query = { ...tile.query, ...patch }
   // ⚠ Un `sort.by` qui désigne une mesure retirée ne lève pas : le moteur compare des
   // `undefined` et l'ordre devient arbitraire, ce qui est pire — un tri silencieusement faux.
