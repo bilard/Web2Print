@@ -15,7 +15,7 @@ export type BuilderDrop =
 
 type Loose = Record<string, unknown> | undefined
 
-const isWellId = (v: unknown): v is WellId =>
+export const isWellId = (v: unknown): v is WellId =>
   v === 'axis' || v === 'values' || v === 'legend' || v === 'tooltips' || v === 'visualFilters'
 
 export function readDrag(data: Loose): BuilderDrag | null {

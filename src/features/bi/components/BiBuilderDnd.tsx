@@ -9,15 +9,33 @@
 // la tuile sélectionnée peut avoir changé de type sous un raccourci clavier.
 import { useState, type ReactNode } from 'react'
 import {
-  DndContext, DragOverlay, PointerSensor, pointerWithin, useSensor, useSensors,
+  DndContext, DragOverlay, MeasuringStrategy, PointerSensor, pointerWithin,
+  useSensor, useSensors,
   type DragEndEvent, type DragOverEvent, type DragStartEvent,
 } from '@dnd-kit/core'
 import { Ban, GripVertical } from 'lucide-react'
-import { readDrag, readDrop, type BuilderDrag } from '../builder/dndPayload'
+import { isWellId, readDrag, readDrop, type BuilderDrag } from '../builder/dndPayload'
 import { acceptField } from '../builder/wellRules'
 import { dropInWell, reorderWell } from '../builder/wellEdits'
 import type { DataSource } from '../registry/types'
 import type { Tile } from '../types'
+
+/**
+ * La zone SOUS LE POINTEUR au relâchement — le repli quand dnd-kit n'a désigné aucune cible.
+ *
+ * ⚠⚠ dnd-kit ne connaît sa cible qu'APRÈS un rendu : le capteur pose la saisie dans l'état,
+ * et la détection de collision se fait au rendu suivant. Un geste plus bref qu'un rendu — un
+ * lancer au pavé tactile, une souris rapide, tout ce qui tient dans une seule image — se
+ * relâche donc avec `over` à `null`, et le champ retombait SANS UN MOT. Vérifié à l'écran :
+ * un glissement dont tous les événements tiennent dans la même frame ne déposait rien.
+ */
+function wellUnderPointer(e: DragEndEvent) {
+  const start = e.activatorEvent
+  if (typeof document === 'undefined' || !(start instanceof MouseEvent)) return null
+  const el = document.elementFromPoint(start.clientX + e.delta.x, start.clientY + e.delta.y)
+  const well = el?.closest('[data-bi-well]')?.getAttribute('data-bi-well')
+  return isWellId(well) ? ({ kind: 'well', well } as const) : null
+}
 
 export function BiBuilderDnd({ tile, source, onApply, children }: {
   /** Tuile SÉLECTIONNÉE, celle que le geste reconfigure. `null` = toutes les zones refusent. */
@@ -49,7 +67,7 @@ export function BiBuilderDnd({ tile, source, onApply, children }: {
 
   const onDragEnd = (e: DragEndEvent) => {
     const from = readDrag(e.active.data.current)
-    const to = readDrop(e.over?.data.current)
+    const to = readDrop(e.over?.data.current) ?? wellUnderPointer(e)
     setDrag(null)
     setRefused(false)
     if (!from || !to || !tile) return
@@ -65,6 +83,12 @@ export function BiBuilderDnd({ tile, source, onApply, children }: {
   return (
     <DndContext
       sensors={sensors} collisionDetection={pointerWithin}
+      /* ⚠⚠ Mesure CONTINUE des zones, et non une seule fois au démarrage du glissement. Deux
+         raisons, vérifiées à l'écran : les trois volets DÉFILENT (une zone mesurée avant le
+         défilement n'est plus là où on croit — c'est le piège de géométrie documenté dans ce
+         dépôt), et un geste bref déclenche l'activation puis le relâchement avant que la
+         mesure initiale ait été posée : le lâcher ne trouve alors AUCUNE cible, en silence. */
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
       onDragCancel={() => { setDrag(null); setRefused(false) }}
     >

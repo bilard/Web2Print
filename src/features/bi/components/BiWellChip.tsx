@@ -25,7 +25,11 @@ export function BiWellChip({ dndId, chip, well, tile, canEdit, onApply }: {
   onApply: (next: Tile) => void
 }) {
   const { t } = useTranslation()
-  const label = biLabel(chip, t)
+  // ⚠ Une colonne DÉCLARÉE par la source n'a pas de nom dans la donnée : `wells` rend sa clé
+  // de catalogue, et c'est ici — le seul endroit qui sache traduire — qu'on compose.
+  const label = chip.columnLabelKey
+    ? t('bi.measure.derived', { agg: t(chip.labelKey), column: t(chip.columnLabelKey) })
+    : biLabel(chip, t)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: dndId, disabled: !canEdit,
     data: { kind: 'chip', well, index: chip.index, label },

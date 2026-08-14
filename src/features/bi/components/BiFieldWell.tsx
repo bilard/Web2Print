@@ -32,10 +32,17 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
   onApply: (next: Tile) => void
 }) {
   const { t } = useTranslation()
-  const { active } = useDndContext()
+  const { active, over } = useDndContext()
   const { isOver, setNodeRef } = useDroppable({
     id: `well:${well}:${slot}`, data: { kind: 'well', well },
   })
+  // ⚠⚠ Survoler une puce, c'est survoler SA ZONE. Vu à l'écran : au-dessus d'une zone déjà
+  // pleine, le pointeur tombe sur la puce — une cible dnd-kit à part entière — et `isOver`
+  // restait faux : la zone se bordait de rouge SANS dire pourquoi, ce qui est précisément le
+  // refus muet qu'on veut éviter.
+  const chipPrefix = `chip:${well}:${slot}:`
+  const hovering = isOver
+    || (typeof over?.id === 'string' && over.id.startsWith(chipPrefix))
 
   const drag = readDrag(active?.data.current)
   // ⚠ Le verdict est recalculé à CHAQUE rendu du glissement, jamais mémorisé : le type du
@@ -48,12 +55,12 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
   const refused = verdict !== null && !verdict.ok
 
   const chips = tile ? wellChips(well, tile, source) : []
-  const ids = chips.map((c) => `chip:${well}:${slot}:${c.id}`)
+  const ids = chips.map((c) => `${chipPrefix}${c.id}`)
   const label = t(WELL_LABEL_KEY[well])
 
   const border = refused
     ? 'border-red-500/60 cursor-no-drop'
-    : verdict?.ok && isOver
+    : verdict?.ok && hovering
       ? 'border-indigo-400/70 bg-indigo-500/10'
       : verdict?.ok
         ? 'border-indigo-400/30'
@@ -63,8 +70,10 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
     <div>
       <BiEyebrow>{label}</BiEyebrow>
       <div
-        ref={setNodeRef} aria-label={label}
-        style={refused && isOver ? REFUSED_STRIPES : undefined}
+        /* ⚠ `data-bi-well` : le repli du relâchement (cf. `BiBuilderDnd`) retrouve la zone
+           SOUS LE POINTEUR quand dnd-kit n'a pas eu le temps de désigner une cible. */
+        ref={setNodeRef} aria-label={label} data-bi-well={well}
+        style={refused && hovering ? REFUSED_STRIPES : undefined}
         className={`mt-1.5 min-h-[34px] rounded-lg border border-dashed bg-well p-1.5 flex flex-col gap-1 transition-colors ${border}`}
       >
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -82,7 +91,7 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
       </div>
 
       {/* La RAISON, en clair, tant que le champ survole la zone qui le refuse. */}
-      {refused && isOver && verdict && !verdict.ok && (
+      {refused && hovering && verdict && !verdict.ok && (
         <p className="mt-1 text-[10.5px] leading-snug text-red-300/90">{t(verdict.reasonKey)}</p>
       )}
     </div>

@@ -41,6 +41,9 @@ export interface WellChip {
   labelKey: TranslationKey
   /** Nom qui vient de la DONNÉE (une colonne de feuille), prioritaire sur `labelKey`. */
   label?: string
+  /** Clé de catalogue de la COLONNE agrégée, quand son nom ne vient pas de la donnée. Le
+   *  composant compose alors « Somme · Ruptures » — `labelKey` porte l'agrégation. */
+  columnLabelKey?: TranslationKey
   index: number
   /** Agrégation courante d'une mesure DÉRIVÉE. Absente = puce sans menu d'agrégation. */
   agg?: Aggregation
@@ -110,13 +113,19 @@ function measureChip(
   // ⚠ Les agrégations proposées viennent du TYPE de la colonne, jamais d'une liste figée :
   // sommer une colonne de texte n'a pas de sens, et le moteur le refuserait au calcul.
   const dim = derived ? source.dimensions.find((d) => d.id === derived.field) : undefined
+  // ⚠⚠ Nom de la COLONNE agrégée, en trois recours. Vu à l'écran : la puce affichait « Somme »
+  // toute seule. Une colonne de FEUILLE porte son nom dans la donnée (`label`), mais une
+  // colonne DÉCLARÉE par une source (les champs de la veille) ne le porte que dans le
+  // CATALOGUE — et un module pur ne traduit pas. On rend donc la clé, et le composant compose.
+  const columnLabel = found?.label ?? dim?.label
+  const columnLabelKey = columnLabel ? undefined : dim?.labelKey
   return {
     id: key,
     // ⚠ Repli sur le nom BRUT de la colonne : une tuile bâtie sur une feuille et rouverte
     // avec une autre porte une colonne absente. Le dire vaut mieux qu'une puce sans nom.
     labelKey: found?.labelKey ?? 'bi.dim.column',
-    // ⚠ Idem : une mesure DÉCLARÉE n'a pas de `label` (son nom vient du catalogue).
-    label: found ? found.label : derived?.field,
+    label: columnLabel ?? (columnLabelKey ? undefined : derived?.field),
+    columnLabelKey,
     index,
     agg: derived?.agg,
     aggOptions: dim ? allowedAggregations(dim.kind) : [],
