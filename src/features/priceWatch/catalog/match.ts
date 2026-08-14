@@ -273,12 +273,50 @@ export function vetoReason(
 }
 
 export function vetoedPair(
-  source: { name?: string; price?: number },
+  source: SourceFacts,
   candidate: { name?: string; price?: number },
   proof: MatchProof,
   rules: PairingRules = DEFAULT_PAIRING_RULES,
 ): boolean {
   return vetoReason(source, candidate, proof, rules) !== null
+}
+
+/** Ce qu'un démenti a besoin de savoir du produit source. Les champs de NATURE (rangement,
+ *  références d'origine) comptent autant que le libellé : sans eux, un adaptable qui ne dit
+ *  pas son nom passe pour muet. */
+type SourceFacts = {
+  name?: string; price?: number; description?: string; taxo?: string[]; originRefs?: string[]
+}
+
+/**
+ * Démentis des chemins DIRIGÉS : recherche dirigée et passe Kramp authentifiée. Ils
+ * interrogent un moteur de recherche au lieu de balayer des catégories, mais ils
+ * alimentent le MÊME rapport — ce qu'ils acceptent doit tenir face aux mêmes règles.
+ *
+ * ⚠⚠ RÈGLE MÉTIER, appliquée quel que soit le réglage : une pièce d'ORIGINE et une pièce
+ * ADAPTABLE ne sont pas le même article et ne s'apparient jamais. Elle ne relève pas de
+ * `unifyDirectedVetoes` — ce réglage gouverne le gouffre de prix et la corroboration, deux
+ * garde-fous de PARSING dont le défaut historique est assumé. La nature, elle, n'est pas un
+ * garde-fou : c'est ce que le rapport compare.
+ *
+ * Le reste du comportement historique est intact : seul le veto des familles s'ajoute, et
+ * seul le code-barres déclaré exempte de tout (il identifie un article unique, là où une
+ * référence constructeur est réutilisée d'un fabricant à l'autre).
+ */
+export function directedVetoedPair(
+  source: SourceFacts,
+  candidate: { name?: string; price?: number },
+  proof: MatchProof,
+  rules: PairingRules = DEFAULT_PAIRING_RULES,
+): boolean {
+  if (rules.unifyDirectedVetoes) return vetoedPair(source, candidate, proof, rules)
+  if (proof.evidence === 'gtin13') return false
+  const sourceName = source.name ?? ''
+  if (rules.natureVeto
+    && natureMismatch(productNature({ ...source, name: sourceName }), partNature(candidate.name))) {
+    return true
+  }
+  return rules.familyVeto && familiesConflict(sourceName, candidate.name, rules.extraFamilies)
 }
 
 /**

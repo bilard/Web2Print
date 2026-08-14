@@ -4,8 +4,7 @@
 // repli — fetch PARESSEUX : dès qu'une requête apparie, on ne fetch pas les suivantes.
 // Le prix retenu est celui de la CARTE prouvée (proveMatch exact), jamais un € d'ailleurs.
 // Serveur-only.
-import { familiesConflict } from './partFamily'
-import { vetoedPair } from './match'
+import { directedVetoedPair } from './match'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { DirectedSourceProduct } from './searchDirected'
 import type { CompetitorListing } from './competitorListing'
@@ -73,16 +72,11 @@ export async function krampAuthPass(
       // la carte appariée — corrige le rattachement de prix ET les résultats multiples.
       for (const c of parseKrampSearchCards(md)) {
         const proof = proveMatch(keys, { sku: c.ref, url: c.url, name: c.name }, rules)
-        // Même veto que les deux autres chemins d'appariement : une carte dont le libellé
-        // nomme une pièce incompatible est écartée, même si la référence correspond. Sans
-        // lui, le canal Kramp authentifié serait le seul à laisser passer ce que les
-        // autres refusent — cf. `matchProduct`.
-        // Réglage « démentis unifiés » : ce canal applique alors EXACTEMENT la règle de
-        // la matrice, au lieu du seul veto des familles.
-        if (proof && (rules.unifyDirectedVetoes
-          ? vetoedPair(p, c, proof, rules)
-          : proof.evidence !== 'gtin13'
-            && rules.familyVeto && familiesConflict(p.name, c.name, rules.extraFamilies))) continue
+        // Même démenti que l'autre chemin dirigé (recherche dirigée) : une carte dont le
+        // libellé nomme une pièce incompatible — ou une pièce d'une AUTRE NATURE — est
+        // écartée, même si la référence correspond. Sans lui, le canal Kramp authentifié
+        // serait le seul à laisser passer ce que les autres refusent.
+        if (proof && directedVetoedPair(p, c, proof, rules)) continue
         if (proof) {
           hit = {
             productId: p.id,

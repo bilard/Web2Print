@@ -200,6 +200,10 @@ registerServerNode({
         ref: refCol ? String(r[refCol] ?? '').trim() || undefined : undefined,
         ean: eanCol ? String(r[eanCol] ?? '').trim() || undefined : undefined,
         originRefs: descCol ? extractOriginRefs(String(r[descCol] ?? '')) : undefined,
+        // ⚠⚠ La description sert AUSSI à établir la nature (origine / adaptable) : le
+        // démenti de nature s'applique ici comme dans la matrice, et sans ce champ il ne
+        // verrait que le libellé. Aucune copie : c'est la chaîne déjà lue pour les réfs.
+        description: descCol ? String(r[descCol] ?? '') || undefined : undefined,
         // Le libellé ne sert pas à CHERCHER (aucune requête ne part dessus) mais à
         // REFUSER : une fiche qui nomme une pièce incompatible est écartée, même quand
         // la référence figure dans son adresse.

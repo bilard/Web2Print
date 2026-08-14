@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseListingPage } from './competitorListing'
 import { searchProductOnSite, searchUrl, directedPass } from './searchDirected'
+import { DEFAULT_PAIRING_RULES } from './pairingRules'
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, '__fixtures__', `listing-${name}.html`), 'utf-8')
@@ -230,5 +231,55 @@ describe('directedPass — parallélisme borné sur les produits', () => {
       },
     })
     expect(r.results.map((x) => x.productId)).toEqual(['p0', 'p1', 'p2'])
+  })
+})
+
+describe('recherche dirigée — démenti de NATURE (règle métier)', () => {
+  // ⚠⚠ Origine avec origine, adaptable avec adaptable : ce chemin alimente le MÊME rapport
+  // que la matrice, il ne peut pas apparier ce qu'elle refuse. Le veto de nature ne dépend
+  // PAS du réglage « démentis unifiés » (qui, lui, gouverne le gouffre de prix et la
+  // corroboration, deux garde-fous de parsing dont le défaut historique est assumé).
+  const card = (name: string, ref: string) => `<article class="product-miniature">
+    <h3 class="product-title"><a href="https://x.fr/${ref}.html">${name}</a></h3>
+    <p>Référence: ${ref}</p><span class="price">19,50 €</span></article>`
+
+  it('refuse une fiche ADAPTABLE au produit d’ORIGINE, réglages par DÉFAUT', async () => {
+    const hit = await searchProductOnSite(
+      { ref: '754-04038', name: 'Courroie MTD 754-04038', taxo: ['PIECES ORIGINE'] },
+      'x.fr',
+      { fetchHtml: async () => card('Courroie adaptable pour MTD 754-04038', '754-04038') },
+    )
+    expect(hit).toBeNull()
+  })
+
+  it('refuse une fiche d’ORIGINE au produit ADAPTABLE — la règle joue dans les deux sens', async () => {
+    const hit = await searchProductOnSite(
+      // Le produit ne se dit pas adaptable : ce sont ses RÉFÉRENCES D'ORIGINE qui le disent.
+      { ref: 'CL5815', name: 'COURROIE LISSE 5/8 1015MM', originRefs: ['754-04038'] },
+      'x.fr',
+      { fetchHtml: async () => card('Courroie MTD 754-04038 — pièce d’origine', '754-04038') },
+    )
+    expect(hit).toBeNull()
+  })
+
+  it('laisse passer quand la fiche ne qualifie RIEN — un silence ne dément jamais', async () => {
+    const hit = await searchProductOnSite(
+      { ref: '754-04038', name: 'Courroie MTD 754-04038', taxo: ['PIECES ORIGINE'] },
+      'x.fr',
+      { fetchHtml: async () => card('Courroie 754-04038', '754-04038') },
+    )
+    expect(hit).not.toBeNull()
+  })
+
+  it('le veto désarmé rend le comportement d’avant', async () => {
+    const hit = await searchProductOnSite(
+      { ref: '754-04038', name: 'Courroie MTD 754-04038', taxo: ['PIECES ORIGINE'] },
+      'x.fr',
+      {
+        fetchHtml: async () => card('Courroie adaptable pour MTD 754-04038', '754-04038'),
+        rules: { ...DEFAULT_PAIRING_RULES, natureVeto: false },
+      },
+    )
+    expect(hit).not.toBeNull()
   })
 })

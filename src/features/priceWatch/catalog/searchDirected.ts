@@ -12,8 +12,7 @@
 import { parseListingPage, type CompetitorListing } from './competitorListing'
 import { t } from '@/lib/i18n'
 import { candidateKeys, proveMatch, type SourceProductKeys, type MatchProof } from './keys'
-import { familiesConflict } from './partFamily'
-import { vetoedPair } from './match'
+import { directedVetoedPair } from './match'
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import { mapWithConcurrency } from '../concurrency'
 
@@ -74,41 +73,18 @@ export function preferProductUrls(urls: string[]): string[] {
  * renvoie le premier apparié par PREUVE EXACTE. Ciblé par réf → coût borné (crédits).
  */
 /** Produit source, clés + LIBELLÉ. Le nom ne prouve jamais un appariement — mais il peut
- *  le DÉMENTIR : cf. `rejectedByName`. */
+ *  le DÉMENTIR : cf. `directedVetoedPair`. */
 export type DirectedProductInput = SourceProductKeys & {
   name?: string
   /** Prix source HT. Sert UNIQUEMENT au démenti par gouffre de prix, et seulement quand
    *  les démentis sont unifiés — absent, ce test-là ne se déclenche pas. */
   price?: number
-}
-
-/**
- * La fiche trouvée nomme-t-elle une pièce incompatible avec le produit cherché ?
- *
- * Une recherche « site:x 5208301 » ramène tout ce qui porte ce nombre quelque part — chez
- * un marchand, l'identifiant de page suffit. Cas VÉCU : « CARBURATEUR » rendu comme
- * « Mousse pré-filtre à air CUB CADET ». `proveMatch` valide (le nombre est bien dans
- * l'adresse), et sans ce garde-fou le faux prix entrait dans le comparatif.
- *
- * Seul le code-barres déclaré échappe au veto : il identifie un article unique, là où
- * une référence constructeur est réutilisée par d'autres fabricants pour d'autres pièces.
- */
-function rejectedByName(
-  product: DirectedProductInput,
-  listing: CompetitorListing,
-  proof: MatchProof,
-  rules: PairingRules = DEFAULT_PAIRING_RULES,
-): boolean {
-  // Réglage « démentis unifiés » : ce chemin applique EXACTEMENT la règle de la matrice —
-  // gouffre de prix et corroboration compris, et exemption de toute clé EAN plutôt que du
-  // seul `gtin13` déclaré. Sans lui, une fiche acceptée ici peut être refusée plus tard
-  // par « Comparer catalogue », et le compteur de hits ment sur le contenu du rapport.
-  if (rules.unifyDirectedVetoes) return vetoedPair(product, listing, proof, rules)
-  // Comportement HISTORIQUE (défaut) : seul le veto des familles, et seul le code-barres
-  // déclaré en est exempté. Un EAN-13 identifie un article unique, une référence
-  // constructeur est réutilisée d'un fabricant à l'autre (cf. `match.ts`).
-  return proof.evidence !== 'gtin13'
-    && rules.familyVeto && familiesConflict(product.name, listing.name, rules.extraFamilies)
+  /** Description F1 et rangement du catalogue : ils ne servent pas à CHERCHER, mais à
+   *  établir la NATURE du produit (origine / adaptable). Sans eux, le démenti de nature
+   *  ne dispose que du libellé — et un adaptable qui déclare « Remplace origine : … »
+   *  passerait pour muet. */
+  description?: string
+  taxo?: string[]
 }
 
 async function searchProductGeneric(
@@ -133,7 +109,11 @@ async function searchProductGeneric(
       const listing = await deps.extractProduct(url)
       if (!listing) continue
       const proof = proveMatch(keys, toIdentity(listing), rules)
-      if (proof && rejectedByName(product, listing, proof, rules)) continue
+      // Une recherche « site:x 5208301 » ramène tout ce qui porte ce nombre quelque part —
+      // chez un marchand, l'identifiant de page suffit. Cas VÉCU : « CARBURATEUR » rendu
+      // comme « Mousse pré-filtre à air CUB CADET ». `proveMatch` valide (le nombre EST
+      // dans l'adresse) : seul le démenti l'écarte. Même règle que la passe Kramp.
+      if (proof && directedVetoedPair(product, listing, proof, rules)) continue
       if (proof) {
         deps.log?.(t('run.directed.genericHit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
@@ -188,7 +168,11 @@ export async function searchProductOnSite(
     if (!html) continue
     for (const listing of parseListingPage(html)) {
       const proof = proveMatch(keys, toIdentity(listing), rules)
-      if (proof && rejectedByName(product, listing, proof, rules)) continue
+      // Une recherche « site:x 5208301 » ramène tout ce qui porte ce nombre quelque part —
+      // chez un marchand, l'identifiant de page suffit. Cas VÉCU : « CARBURATEUR » rendu
+      // comme « Mousse pré-filtre à air CUB CADET ». `proveMatch` valide (le nombre EST
+      // dans l'adresse) : seul le démenti l'écarte. Même règle que la passe Kramp.
+      if (proof && directedVetoedPair(product, listing, proof, rules)) continue
       if (proof) {
         deps.log?.(t('run.directed.hit', { domain, query, name: listing.name, evidence: proof.evidence }))
         return { listing, evidence: proof.evidence, query }
@@ -202,11 +186,15 @@ export async function searchProductOnSite(
 export interface DirectedSourceProduct extends SourceProductKeys {
   /** Identifiant stable de la ligne source (pour rattacher le hit au produit). */
   id: string
-  /** Libellé F1. Ne prouve rien, mais peut DÉMENTIR une fiche trouvée (`rejectedByName`). */
+  /** Libellé F1. Ne prouve rien, mais peut DÉMENTIR une fiche trouvée (`directedVetoedPair`). */
   name?: string
   /** Prix source HT — utilisé par le démenti de gouffre de prix quand les démentis sont
    *  unifiés avec ceux de la matrice. */
   price?: number
+  /** Description F1 et rangement du catalogue : ils établissent la NATURE du produit
+   *  (origine / adaptable), que le démenti applique sur ce chemin comme sur la matrice. */
+  description?: string
+  taxo?: string[]
 }
 
 export interface DirectedSite {

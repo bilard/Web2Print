@@ -338,3 +338,30 @@ describe('arbitrage ORIGINE ↔ ADAPTABLE (parité serveur)', () => {
     expect(run.totals.natureYielded).toBe(0)
   })
 })
+
+describe('démenti de NATURE sur les chemins dirigés (parité serveur)', () => {
+  // ⚠⚠ Recherche dirigée et passe Kramp alimentent le MÊME rapport que la matrice : elles
+  // ne peuvent pas apparier ce qu'elle refuse. Le veto de nature y est armé quel que soit
+  // le réglage « démentis unifiés ».
+  const card = (name: string, ref: string) => `<article class="product-miniature">
+    <h3 class="product-title"><a href="https://x.fr/${ref}.html">${name}</a></h3>
+    <p>Référence: ${ref}</p><span class="price">19,50 €</span></article>`
+
+  it('refuse une fiche ADAPTABLE au produit d’ORIGINE, réglages par défaut', async () => {
+    const hit = await searchProductOnSite(
+      { ref: '754-04038', name: 'Courroie MTD 754-04038', taxo: ['PIECES ORIGINE'] },
+      'x.fr',
+      { fetchHtml: async () => card('Courroie adaptable pour MTD 754-04038', '754-04038') },
+    )
+    expect(hit).toBeNull()
+  })
+
+  it('laisse passer quand la fiche ne qualifie rien', async () => {
+    const hit = await searchProductOnSite(
+      { ref: '754-04038', name: 'Courroie MTD 754-04038', taxo: ['PIECES ORIGINE'] },
+      'x.fr',
+      { fetchHtml: async () => card('Courroie 754-04038', '754-04038') },
+    )
+    expect(hit).not.toBeNull()
+  })
+})
