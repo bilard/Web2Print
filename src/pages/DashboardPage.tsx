@@ -57,6 +57,7 @@ const CatalogHome = lazy(() => import('@/features/catalog/CatalogHome').then((m)
 const DemoExpressPage = lazy(() => import('@/features/demo-express/DemoExpressPage').then((m) => ({ default: m.DemoExpressPage })))
 const TeamAdminPage = lazy(() => import('@/features/access/admin/TeamAdminPage').then((m) => ({ default: m.TeamAdminPage })))
 const ManufacturerInsightsScreen = lazy(() => import('@/features/manufacturer-verify/insights/ManufacturerInsightsScreen').then((m) => ({ default: m.ManufacturerInsightsScreen })))
+const BiScreen = lazy(() => import('@/features/bi/components/BiScreen').then((m) => ({ default: m.BiScreen })))
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user)
@@ -697,6 +698,16 @@ export default function DashboardPage() {
             </div>
           }>
             <WatchOpsScreen />
+          </Suspense>
+        </div>
+      ) : activeSection === 'bi' && canSee('bi') ? (
+        <div className="flex-1 overflow-auto px-8 pb-8 bg-background">
+          <Suspense fallback={
+            <div className="flex-1 flex items-center justify-center h-full bg-background">
+              <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+            </div>
+          }>
+            <BiScreen />
           </Suspense>
         </div>
       ) : activeSection === 'finances' && canSee('finances') ? (
