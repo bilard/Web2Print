@@ -91,26 +91,23 @@ interface LoaderArgs {
   sheetName: string | undefined
   list: PimDatabase[]
   listLoading: boolean
-  /**
-   * ⚠⚠ Le chargement se MÉRITE : une base de plusieurs dizaines de milliers de lignes n'est
-   * lue que si une tuile posée réclame la source PIM — ou si l'utilisateur vient de choisir
-   * cette base, ce qui EST une demande explicite (sans quoi la première tuile ne pourrait
-   * être construite : le menu des champs n'aurait aucune colonne à proposer).
-   */
-  wanted: boolean
 }
 
 /**
- * Charge la base retenue dans `useExcelStore`, d'où les tuiles la lisent. À appeler UNE fois
- * par tableau de bord.
+ * Charge la base retenue dans `useExcelStore`, d'où les tuiles la lisent.
+ *
+ * ⚠⚠ Le chargement se MÉRITE : ce hook n'est appelé que par `PimDbPicker`, lui-même monté
+ * seulement quand le PIM est EN JEU (une tuile posée le réclame, ou l'utilisateur vient de le
+ * choisir dans la liste des sources). Un tableau de veille rouvert ne monte donc rien et ne
+ * lit aucune base — dont certaines pèsent des dizaines de milliers de lignes.
  */
-export function usePimDbLoader({ dbId, sheetName, list, listLoading, wanted }: LoaderArgs): void {
+export function usePimDbLoader({ dbId, sheetName, list, listLoading }: LoaderArgs): void {
   const { loadFromFirebase } = useExcelFirebase()
   const patch = usePimDbStore((s) => s.patch)
   const currentDocId = useExcelStore((s) => s.currentDocId)
 
   useEffect(() => {
-    if (!wanted || !dbId) { patch(IDLE); return }
+    if (!dbId) { patch(IDLE); return }
     const db = list.find((f) => f.docId === dbId)
     if (!db) {
       // Tant que la liste arrive, on ne conclut rien : la base n'est introuvable qu'APRÈS.
@@ -166,5 +163,5 @@ export function usePimDbLoader({ dbId, sheetName, list, listLoading, wanted }: L
         })
       })
     return () => { cancelled = true }
-  }, [wanted, dbId, sheetName, list, listLoading, currentDocId, patch])
+  }, [dbId, sheetName, list, listLoading, currentDocId, patch])
 }

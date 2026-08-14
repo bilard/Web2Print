@@ -75,10 +75,7 @@ export function SourcePicker({
         {/* ⚠⚠ Monté seulement quand le PIM est en jeu : c'est lui qui porte le CHARGEMENT de
             la base, et un tableau de veille n'a aucune raison d'en lire une. */}
         {onDbChange && pimInvolved(sourceId, demanded) && (
-          <PimDbPicker
-            dbId={dbId} sheetName={sheetName}
-            wantedByTiles={demanded.includes(pimSource.id)} onChange={onDbChange}
-          />
+          <PimDbPicker dbId={dbId} sheetName={sheetName} onChange={onDbChange} />
         )}
         {shown.length > 0 && (
           <BiPicker

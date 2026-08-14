@@ -4,10 +4,11 @@
 // seule entrée « Produits (PIM) » qui désignait, sans le dire, la feuille ouverte AILLEURS.
 // Le tableau de bord désigne désormais la sienne, la retient (`sourceDbId`) et la charge.
 //
-// ⚠ Rien ne se charge tant qu'aucune tuile ne réclame la source PIM — ou tant que
-// l'utilisateur n'a pas choisi une base, ce qui EST une demande explicite : sans cela, la
-// première tuile serait impossible à construire (aucune colonne à proposer).
-import { useState } from 'react'
+// ⚠⚠ Rien ne se charge tant que le PIM n'est pas EN JEU : ce composant n'est monté que si une
+// tuile posée réclame la source, ou si l'utilisateur vient de la choisir dans la liste. Sa
+// présence EST donc la demande — un tableau de veille rouvert ne le monte jamais, et ne lit
+// aucune base. La condition inverse (n'obéir qu'aux tuiles) rendrait la PREMIÈRE tuile
+// impossible à construire : le menu des champs n'aurait aucune colonne à proposer.
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker } from './BiPicker'
 import { Loading, Warning } from './SourceStatus'
@@ -16,23 +17,17 @@ import { usePimDbList, usePimDbLoader, usePimDbState } from '../hooks/usePimData
 /** Valeur du sélecteur quand aucune base n'est retenue : la feuille ouverte, comme avant. */
 const ACTIVE_SHEET = ''
 
-export function PimDbPicker({ dbId, sheetName, wantedByTiles, onChange }: {
+export function PimDbPicker({ dbId, sheetName, onChange }: {
   /** Base retenue par le tableau de bord (`sourceDbId`), `undefined` si aucune. */
   dbId: string | undefined
   /** Feuille de construction (`sourceSheetName`) : celle sur laquelle retomber au chargement. */
   sheetName: string | undefined
-  /** Une tuile posée réclame-t-elle déjà la source PIM ? */
-  wantedByTiles: boolean
   /** `undefined` efface le choix et rend la main à la feuille ouverte. */
   onChange: (dbId?: string, dbName?: string) => void
 }) {
   const { t } = useTranslation()
   const { items, loading } = usePimDbList()
-  // ⚠ Le choix explicite VAUT demande : il autorise le chargement d'une base qu'aucune tuile
-  // ne réclame encore. L'état est local au tableau affiché (`BiBoard` remonte à chaque
-  // changement de tableau), donc il ne survit pas à un changement de tableau de bord.
-  const [picked, setPicked] = useState(false)
-  usePimDbLoader({ dbId, sheetName, list: items, listLoading: loading, wanted: wantedByTiles || picked })
+  usePimDbLoader({ dbId, sheetName, list: items, listLoading: loading })
 
   const options = [
     { id: ACTIVE_SHEET, label: t('bi.db.activeSheet') },
@@ -43,7 +38,6 @@ export function PimDbPicker({ dbId, sheetName, wantedByTiles, onChange }: {
     <BiPicker
       label={t('bi.db.picker')} value={dbId ?? ACTIVE_SHEET} options={options}
       onChange={(id) => {
-        setPicked(true)
         const db = items.find((f) => f.docId === id)
         onChange(db?.docId, db?.name)
       }}

@@ -115,7 +115,8 @@ function measureChip(
     // ⚠ Repli sur le nom BRUT de la colonne : une tuile bâtie sur une feuille et rouverte
     // avec une autre porte une colonne absente. Le dire vaut mieux qu'une puce sans nom.
     labelKey: found?.labelKey ?? 'bi.dim.column',
-    label: found?.label ?? derived?.field,
+    // ⚠ Idem : une mesure DÉCLARÉE n'a pas de `label` (son nom vient du catalogue).
+    label: found ? found.label : derived?.field,
     index,
     agg: derived?.agg,
     aggOptions: dim ? allowedAggregations(dim.kind) : [],
@@ -153,7 +154,11 @@ export function wellChips(well: WellId, tile: Tile, source: DataSource): WellChi
       const dim = source.dimensions.find((d) => d.id === f.field)
       return {
         id: `${f.field}:${i}`, labelKey: dim?.labelKey ?? 'bi.dim.column',
-        label: dim?.label ?? f.field, index: i, aggOptions: [], removable: true,
+        // ⚠⚠ `label` ne se REPLIE sur la clé brute que si la colonne est INTROUVABLE. Vu à
+        // l'écran : une dimension déclarée (dont le nom vient du catalogue, pas de la donnée)
+        // porte `label: undefined`, et un `??` sur l'identifiant affichait « domain » là où
+        // toute l'application lit « Concurrent ».
+        label: dim ? dim.label : f.field, index: i, aggOptions: [], removable: true,
         filter: f, kind: dim?.kind,
       }
     })
@@ -169,7 +174,7 @@ export function wellChips(well: WellId, tile: Tile, source: DataSource): WellChi
     const d = tile.query.dimensions[i]
     const dim = source.dimensions.find((x) => x.id === d.id)
     return {
-      id: d.id, labelKey: dim?.labelKey ?? 'bi.dim.column', label: dim?.label ?? d.id,
+      id: d.id, labelKey: dim?.labelKey ?? 'bi.dim.column', label: dim ? dim.label : d.id,
       index: i, aggOptions: [], removable: true,
     }
   })

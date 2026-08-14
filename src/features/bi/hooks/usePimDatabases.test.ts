@@ -27,7 +27,7 @@ const LIST: PimDatabase[] = [
 const load = (over: Partial<Parameters<typeof usePimDbLoader>[0]> = {}) =>
   renderHook(() => {
     usePimDbLoader({
-      dbId: 'db1', sheetName: undefined, list: LIST, listLoading: false, wanted: true, ...over,
+      dbId: 'db1', sheetName: undefined, list: LIST, listLoading: false, ...over,
     })
     return usePimDbState()
   })
@@ -52,15 +52,13 @@ beforeEach(() => {
 })
 
 describe('usePimDbLoader', () => {
-  it('⚠⚠ ne lit RIEN tant qu’aucune tuile ne réclame la source (ni aucun choix explicite)', () => {
-    const { result } = load({ wanted: false })
+  // ⚠⚠ « Rien ne se charge tant que le PIM n'est pas en jeu » tient au MONTAGE : ce hook
+  // n'est appelé que par `PimDbPicker`, que `SourcePicker` ne monte que si le PIM est
+  // sélectionné ou réclamé par une tuile (couvert dans `SourcePicker.test.tsx`).
+  it('ne lit rien quand le tableau ne retient aucune base (comportement d’avant)', () => {
+    const { result } = load({ dbId: undefined })
     expect(loadFromFirebase).not.toHaveBeenCalled()
     expect(result.current.state).toBe('idle')
-  })
-
-  it('ne lit rien non plus quand le tableau ne retient aucune base (comportement d’avant)', () => {
-    load({ dbId: undefined })
-    expect(loadFromFirebase).not.toHaveBeenCalled()
   })
 
   it('⚠⚠ recopie l’identité de la base : sans elle, l’auto-save du module Données écraserait l’ancienne', async () => {
