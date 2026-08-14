@@ -15,7 +15,7 @@ import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/lib/i18n'
 import { saveDashboard } from '../store/dashboardsStore'
-import { appendPage, replacePage, type Dashboard, type DashboardPage, type FilterClause, type Tile, type TileKind, type TilePlacement } from '../types'
+import { appendPage, replacePage, type Dashboard, type DashboardPage, type FilterClause, type TilePlacement } from '../types'
 
 export function useBoardActions(uid: string | null, current: Dashboard, pageId: string) {
   const { t } = useTranslation()
@@ -41,7 +41,7 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
   const clearFilters = useCallback(() => persistFilters([]), [persistFilters])
 
   // ⚠ `{ ...current }` sans toucher aux pages : renommer ne réécrit AUCUNE mise en page,
-  // donc rien à retarder — contrairement à `setTileKind`, qui en réécrit une.
+  // donc rien à retarder — contrairement aux gestes du constructeur, qui en réécrivent une.
   const rename = useCallback((name: string) => write({ ...current, name }), [write, current])
 
   /**
@@ -69,22 +69,12 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
     return next.pages[next.pages.length - 1]
   }, [write, current])
 
-  /**
-   * Change le TYPE du visuel sélectionné. ⚠ La requête reste intacte : c'est la même mesure
-   * et la même dimension rendues autrement. Seul le tableau croisé exige deux dimensions, et
-   * `PivotTile` le dit déjà de lui-même plutôt que de rendre un chiffre faux.
-   *
-   * ⚠⚠ La MISE EN PAGE est réécrite avec, depuis le brouillon — jamais laissée à celle de
-   * `current`. Vu en recette : déplacer une tuile puis changer son type REMETTAIT la tuile
-   * où elle était. `current` vient de l'abonnement Firestore et retarde d'un aller-retour ;
-   * `draft.layout` est la seule vérité entre le relâchement du geste et l'écho.
-   */
-  const setTileKind = useCallback((
-    tiles: Tile[], tileId: string, kind: TileKind, layout: TilePlacement[],
-  ) => {
-    const next: Tile[] = tiles.map((x) => (x.id === tileId ? { ...x, kind } : x))
-    write(replacePage(current, pageId, { tiles: next, layout }))
-  }, [write, current, pageId])
+  // ⚠⚠ Changer le type d'un visuel n'est PLUS ici : c'est devenu un geste du constructeur
+  // (`retypeTile` + `useTileEdits`), pour trois raisons qui tiennent ensemble — la requête
+  // doit être remise d'aplomb avec le type (un indicateur ne garde pas d'axe, sous peine
+  // d'afficher la première ligne d'un regroupement comme si c'était le total), la tuile doit
+  // changer AU CLIC plutôt qu'à l'écho de la base, et le geste doit être annulable par les
+  // mêmes flèches que le reste.
 
-  return { write, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage, setTileKind }
+  return { write, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage }
 }

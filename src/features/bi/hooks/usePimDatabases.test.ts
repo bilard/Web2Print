@@ -32,10 +32,23 @@ const load = (over: Partial<Parameters<typeof usePimDbLoader>[0]> = {}) =>
     return usePimDbState()
   })
 
+/**
+ * ⚠⚠ Le doublon POSE LES FEUILLES avant de rendre la main, comme le vrai `loadFromFirebase`.
+ * Sans cette fidélité, le test ne verrait jamais le défaut trouvé en recette : l'effet se
+ * relançait au milieu de sa propre lecture, son nettoyage l'annulait, et l'identité de la
+ * base n'était jamais enregistrée.
+ */
+const loadsAnd = (...names: string[]) => loadFromFirebase.mockImplementation(async () => {
+  const sheets = names.map(sheet)
+  useExcelStore.getState().setSheets(sheets)
+  return sheets
+})
+
 beforeEach(() => {
   resetPimDbStateForTest()
   useExcelStore.getState().reset()
-  loadFromFirebase.mockReset().mockResolvedValue([sheet('Feuille 1'), sheet('Prix'), sheet('Stock')])
+  loadFromFirebase.mockReset()
+  loadsAnd('Feuille 1', 'Prix', 'Stock')
 })
 
 describe('usePimDbLoader', () => {
@@ -78,9 +91,15 @@ describe('usePimDbLoader', () => {
     expect(loadFromFirebase).not.toHaveBeenCalled()
   })
 
+  it('⚠⚠ finit sur « prête », jamais sur l’avertissement que sa propre lecture a déclenché', async () => {
+    const { result } = load()
+    await waitFor(() => expect(result.current.state).toBe('ready'))
+    expect(result.current.message).toBeUndefined()
+  })
+
   it('annonce le chargement AVEC le nom et la volumétrie — un écran muet se lit comme une panne', async () => {
     let resolve: (v: ExcelSheet[]) => void = () => {}
-    loadFromFirebase.mockReturnValue(new Promise((r) => { resolve = r }))
+    loadFromFirebase.mockReset().mockReturnValue(new Promise((r) => { resolve = r }))
     const { result } = load()
     await waitFor(() => expect(result.current.state).toBe('loading'))
     expect(result.current.name).toBe('Catalogue_GSB_2026')

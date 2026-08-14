@@ -1,16 +1,20 @@
-// Volet « Champs » : ce que la source active offre, cherchable, typé.
+// Volet « Champs » : ce que la source active offre, cherchable, typé — et GLISSABLE.
 //
-// ⚠⚠ La liste est en LECTURE à ce stade — les champs ne se glissent pas encore. Le volet le
-// DIT plutôt que de laisser un utilisateur tirer une ligne qui ne partira jamais.
 // ⚠ La source est celle DÉRIVÉE de la feuille active (`effectivePimSource`), fournie par le
 // tableau de bord : afficher le registre statique proposerait des colonnes que le moteur ne
-// connaît pas.
+// connaît pas, et la tuile reconfigurée tomberait en erreur au premier calcul.
 import { useState } from 'react'
 import { Search, Sigma, Type, Calendar, ToggleLeft } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTranslation } from '@/lib/i18n'
 import { BiPanel, BiEyebrow } from './BiPanel'
+import { BiDraggableField } from './BiDraggableField'
 import { biLabel } from './biLabel'
+import { bestWellFor } from '../builder/wellRules'
+import { dropInWell } from '../builder/wellEdits'
+import type { DraggedField } from '../builder/wells'
 import type { DataSource, FieldKind } from '../registry/types'
+import type { Tile } from '../types'
 
 /** Largeur reprise de la maquette validée. */
 const WIDTH = 246
@@ -19,7 +23,13 @@ const KIND_ICON: Record<FieldKind, typeof Type> = {
   text: Type, number: Sigma, date: Calendar, bool: ToggleLeft,
 }
 
-export function BiFieldsPanel({ source }: { source: DataSource }) {
+export function BiFieldsPanel({ source, tile, canEdit, onApply }: {
+  source: DataSource
+  /** Tuile sélectionnée — celle que le double-clic reconfigure. */
+  tile: Tile | null
+  canEdit: boolean
+  onApply: (next: Tile) => void
+}) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
 
@@ -27,12 +37,22 @@ export function BiFieldsPanel({ source }: { source: DataSource }) {
   // mettre en dépendance recalculerait quand même. Filtrer une centaine de libellés ne coûte
   // rien — ce volet ne porte aucun graphe, contrairement aux tuiles que la grille mémoïse.
   const q = query.trim().toLowerCase()
+  const keep = (label: string) => !q || label.toLowerCase().includes(q)
   const dimensions = source.dimensions
-    .map((d) => ({ id: d.id, label: biLabel(d, t), kind: d.kind }))
-    .filter((d) => !q || d.label.toLowerCase().includes(q))
+    .map((d) => ({ field: { role: 'dimension' as const, id: d.id, label: biLabel(d, t) }, kind: d.kind }))
+    .filter((d) => keep(d.field.label))
   const measures = source.measures
-    .map((m) => ({ id: m.id, label: biLabel(m, t) }))
-    .filter((m) => !q || m.label.toLowerCase().includes(q))
+    .map((m) => ({ role: 'measure' as const, id: m.id, label: biLabel(m, t) }))
+    .filter((m) => keep(m.label))
+
+  /** Double-clic : la zone la plus probable. ⚠ Un refus se DIT — sans un mot, le double-clic
+   *  se lit comme un geste sans effet, et l'utilisateur recommence. */
+  const add = (field: DraggedField) => {
+    if (!tile) { toast.info(t('bi.well.refuse.noSelection')); return }
+    const well = bestWellFor(tile, field, source)
+    if (!well) { toast.info(t('bi.fields.noWell')); return }
+    onApply(dropInWell(tile, well, field, source))
+  }
 
   return (
     <BiPanel label={t('bi.panel.fields')} width={WIDTH} visibility="hidden lg:flex">
@@ -46,19 +66,27 @@ export function BiFieldsPanel({ source }: { source: DataSource }) {
       </div>
 
       <Group label={t('bi.fields.dimensions')}>
-        {dimensions.map((d) => {
-          const Icon = KIND_ICON[d.kind]
-          return <Field key={d.id} label={d.label} icon={<Icon className="w-3 h-3 text-white/30" />} />
+        {dimensions.map(({ field, kind }) => {
+          const Icon = KIND_ICON[kind]
+          return (
+            <BiDraggableField
+              key={field.id} field={field} disabled={!canEdit} onAdd={() => add(field)}
+              icon={<Icon className="w-3 h-3 text-white/30" />}
+            />
+          )
         })}
       </Group>
 
       <Group label={t('bi.fields.measures')}>
-        {measures.map((m) => (
-          <Field key={m.id} label={m.label} icon={<Sigma className="w-3 h-3 text-indigo-400" />} />
+        {measures.map((field) => (
+          <BiDraggableField
+            key={field.id} field={field} disabled={!canEdit} onAdd={() => add(field)}
+            icon={<Sigma className="w-3 h-3 text-indigo-400" />}
+          />
         ))}
       </Group>
 
-      <p className="text-[11px] text-white/25 leading-snug">{t('bi.fields.dragSoon')}</p>
+      <p className="text-[11px] text-white/25 leading-snug">{t('bi.fields.drag')}</p>
     </BiPanel>
   )
 }
@@ -68,15 +96,6 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
     <div className="flex flex-col gap-0.5">
       <BiEyebrow>{label}</BiEyebrow>
       <div className="mt-1 flex flex-col">{children}</div>
-    </div>
-  )
-}
-
-function Field({ label, icon }: { label: string; icon: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-1.5 rounded-md px-1 py-1 text-[11.5px] text-white/55 hover:bg-white/[0.04]">
-      <span className="shrink-0">{icon}</span>
-      <span className="truncate">{label}</span>
     </div>
   )
 }

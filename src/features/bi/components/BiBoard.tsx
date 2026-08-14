@@ -15,19 +15,20 @@ import { useTickingNow } from '../hooks/useTickingNow'
 import { useAddTile } from '../hooks/useAddTile'
 import { useBoardSource, useWatchSourceState, isWatchSource } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
+import { useTileEdits } from '../builder/useTileEdits'
+import { useBuilderHistory } from '../builder/useBuilderHistory'
+import { retypeTile } from '../builder/wellEdits'
 import { AddTileMenu } from './AddTileMenu'
 import { SourcePicker, SourceStatusList } from './SourcePicker'
 import { BiTopBar } from './BiTopBar'
 import { BiCrossbar } from './BiCrossbar'
 import { BiWorkspace } from './BiWorkspace'
-import { BiFiltersPanel } from './BiFiltersPanel'
-import { BiVisualsPanel } from './BiVisualsPanel'
-import { BiFieldsPanel } from './BiFieldsPanel'
+import { BiPanels } from './BiPanels'
 import { BiPageTabs } from './BiPageTabs'
 import { BiStatusBar } from './BiStatusBar'
 import { DashboardGrid } from './DashboardGrid'
 import { useTranslation } from '@/lib/i18n'
-import type { Dashboard, DashboardPage, TileKind } from '../types'
+import type { Dashboard, DashboardPage, Tile, TileKind } from '../types'
 
 interface BiBoardProps {
   current: Dashboard
@@ -68,7 +69,12 @@ export function BiBoard({
   const hasProducts = usePimStore((s) => s.products.length > 0)
 
   // ⚠⚠ Poser une tuile est ATOMIQUE au rendu : la tuile et son placement ensemble.
-  const { tiles, add: addPending } = usePendingTiles(page.tiles)
+  const { tiles: posed, add: addPending } = usePendingTiles(page.tiles)
+  // ⚠⚠ La tuile RECONFIGURÉE s'affiche au geste, pas à l'écho de la base : même décalage que
+  // pour la pose, et sans cette surcharge la puce apparaîtrait dans la zone pendant que la
+  // tuile continuerait d'afficher les chiffres d'avant.
+  const edits = useTileEdits({ uid, current, pageId: page.id, tiles: posed, layout: draft.layout })
+  const tiles = edits.tiles
   // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille : le menu doit
   // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
   // lectures réclamées par les tuiles POSÉES, jamais par la source seulement choisie.
@@ -79,18 +85,30 @@ export function BiBoard({
   const rowCount = onWatch ? (watch.rows.length || null) : hasSheet ? sheet.rows.length : null
   const now = useTickingNow(true)
 
-  // ⚠ `draft.addPlacement`/`draft.layout` et non `draft` : ce littéral est RECRÉÉ à chaque
-  // rendu, le passer en entier annulerait la mémoïsation du rappel.
+  // ⚠⚠ UNE seule paire de flèches pour DEUX piles : la mise en page et la configuration des
+  // champs. Le journal d'ordre rend aux flèches la chronologie que l'utilisateur attend.
+  const hist = useBuilderHistory({
+    setDraft: draft.setDraft, commit: draft.commit, addPlacement: draft.addPlacement,
+    layoutUndo: draft.undo, layoutRedo: draft.redo,
+    canLayoutUndo: draft.canUndo, canLayoutRedo: draft.canRedo, edits,
+  })
+
+  // ⚠ `draft.layout` et non `draft` : ce littéral est RECRÉÉ à chaque rendu, le passer en
+  // entier annulerait la mémoïsation du rappel.
   const addTile = useAddTile({
     uid, current, pageId: page.id, tiles, layout: draft.layout, source, sourceId, onWatch,
-    sheet, hasSheet, addPending, addPlacement: draft.addPlacement, onCreated: setSelectedTileId,
+    sheet, hasSheet, addPending, addPlacement: hist.onAddPlacement, onCreated: setSelectedTileId,
   })
 
   const selected = tiles.find((x) => x.id === selectedTileId) ?? null
-  const onChangeKind = useCallback(
-    (kind: TileKind) => {
-      if (selectedTileId) act.setTileKind(tiles, selectedTileId, kind, draft.layout)
-    }, [act, tiles, selectedTileId, draft.layout])
+  const applyEdit = useCallback((next: Tile) => { edits.apply(next); hist.note() },
+    [edits, hist])
+  // ⚠⚠ Le type change ET la requête est remise d'aplomb (`retypeTile`) : une tuile à barres
+  // réglée sur une dimension, passée en indicateur, n'afficherait que la PREMIÈRE ligne du
+  // regroupement — un chiffre faux, sans le moindre avertissement.
+  const onChangeKind = useCallback((kind: TileKind) => {
+    if (selected) applyEdit(retypeTile(selected, kind))
+  }, [selected, applyEdit])
   const onAddPage = useCallback(() => onPageCreated(act.addPage(pages)), [act, pages, onPageCreated])
 
   return (
@@ -98,10 +116,14 @@ export function BiBoard({
       <BiTopBar
         current={current} items={items} canEdit={canEdit} onSelectBoard={onSelect}
         onRename={act.rename} updatedAt={onWatch ? watch.updatedAt : null} now={now}
+        /* ⚠ `onDbChange` seulement pour qui peut écrire : le choix de base est PERSISTÉ dans
+           le document, un rôle consultation seule ne doit pas tenter l'écriture. */
         sourcePicker={<SourcePicker context={context} demanded={demanded} sourceId={sourceId}
-          onSourceChange={setSourceId} withStatus={false} />}
+          onSourceChange={setSourceId} withStatus={false}
+          dbId={current.sourceDbId} sheetName={current.sourceSheetName}
+          onDbChange={canEdit ? act.setSourceDb : undefined} />}
         editing={editing} onToggleEdit={onToggleEdit}
-        undo={draft.undo} redo={draft.redo} canUndo={draft.canUndo} canRedo={draft.canRedo}
+        undo={hist.undo} redo={hist.redo} canUndo={hist.canUndo} canRedo={hist.canRedo}
         actions={headerAction}
       />
 
@@ -116,7 +138,8 @@ export function BiBoard({
                disparaître le menu à l'identique du bouton et du raccourci clavier. */
             /* L'état des sources de veille : des PHRASES, qui ont ici la place qu'elles
                n'ont pas dans le bandeau — et qui parlent du jeu de données, comme la barre. */
-            trailing={<><SourceStatusList context={context} demanded={demanded} sourceId={sourceId} />
+            trailing={<><SourceStatusList context={context} demanded={demanded} sourceId={sourceId}
+              dbName={current.sourceDbName} />
               {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}</>}
           />
         )}
@@ -124,16 +147,15 @@ export function BiBoard({
           <DashboardGrid
             tiles={tiles} layout={draft.layout} editing={editing} width={width}
             globalFilters={current.filters} selectedTileId={selectedTileId}
-            onDrag={draft.setDraft} onCommit={draft.commit}
+            onDrag={hist.onDrag} onCommit={hist.onCommit}
             onClearFilters={act.clearFilters} onSelectTile={setSelectedTileId}
           />
         )}
         panels={(
-          <>
-            <BiFiltersPanel hasSelection={selected !== null} globalFilters={current.filters} />
-            <BiVisualsPanel kind={selected?.kind ?? null} onChangeKind={onChangeKind} canEdit={canEdit} />
-            <BiFieldsPanel source={source} />
-          </>
+          <BiPanels
+            tile={selected} source={source} globalFilters={current.filters}
+            canEdit={canEdit} onChangeKind={onChangeKind} onApply={applyEdit}
+          />
         )}
       />
 

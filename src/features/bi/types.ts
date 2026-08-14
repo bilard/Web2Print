@@ -118,6 +118,16 @@ const querySchema = z.object({
   source: z.enum(SOURCE_IDS),
   measures: z.array(measureRefSchema).min(1),
   dimensions: z.array(dimensionRefSchema),
+  /**
+   * Mesures montrées AU SURVOL seulement, jamais tracées comme série.
+   *
+   * ⚠⚠ OPTIONNEL, et il doit le rester : aucun tableau déjà enregistré ne le porte, et un
+   * champ requis les rendrait tous illisibles d'un coup. Le moteur (`aggregate`) ne le
+   * connaît pas : c'est `DashboardGrid` qui fusionne ces mesures dans `measures` avant le
+   * calcul, et `ChartTile` qui les écarte des jeux de données pour ne les rendre qu'au
+   * survol. Les laisser atteindre le moteur telles quelles en ferait des séries visibles.
+   */
+  tooltips: z.array(measureRefSchema).optional(),
   filters: z.array(filterSchema),
   sort: z.array(z.object({ by: z.string(), dir: z.enum(['asc', 'desc']) })).optional(),
   limit: z.number().int().positive().max(10_000).optional(),

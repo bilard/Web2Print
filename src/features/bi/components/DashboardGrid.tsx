@@ -8,7 +8,7 @@
 // chaque rendu) jusqu'à `useTileData`, qui mémoïse sur l'égalité RÉFÉRENTIELLE de `query` et
 // `globalFilters`. Seules `rgl`/`toPlacements`, qui ne nourrissent QUE `react-grid-layout`
 // (jamais `useTileData`), sont recalculées à chaque rendu — sans conséquence.
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import GridLayout, { type Layout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -18,7 +18,7 @@ import { ChartTile } from './tiles/ChartTile'
 import { TableTile } from './tiles/TableTile'
 import { PivotTile } from './tiles/PivotTile'
 import { useTileData } from '../hooks/useTileData'
-import type { FilterClause, Tile, TilePlacement } from '../types'
+import { measureKey, type FilterClause, type Tile, type TilePlacement } from '../types'
 
 const COLS = 12
 const ROW_HEIGHT = 40
@@ -33,7 +33,18 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
    *  fonction stable, et la mémoïsation de `React.memo` tient pendant un geste. */
   onSelect: (tileId: string) => void
 }) {
-  const { result, state, message, updatedAt, live, retry } = useTileData(tile.query, globalFilters)
+  // ⚠⚠ Les mesures d'INFO-BULLE rejoignent `measures` pour être CALCULÉES — le moteur ne
+  // connaît pas `query.tooltips` — puis `ChartTile` les écarte des séries. Mémoïsé, et rendu
+  // PAR IDENTITÉ quand la tuile n'en porte pas : `useTileData` mémoïse sur la référence de
+  // `query`, et un littéral frais à chaque rendu referait l'agrégation à chaque frame.
+  const query = useMemo(() => {
+    const tips = tile.query.tooltips
+    return tips?.length ? { ...tile.query, measures: [...tile.query.measures, ...tips] } : tile.query
+  }, [tile.query])
+  const tooltipKeys = useMemo(
+    () => new Set((tile.query.tooltips ?? []).map((m) => measureKey(m))), [tile.query])
+
+  const { result, state, message, updatedAt, live, retry } = useTileData(query, globalFilters)
   const skeleton = tile.kind === 'kpi' ? 'kpi' : tile.kind === 'table' || tile.kind === 'pivot' ? 'table' : 'chart'
   return (
     <TileFrame
@@ -47,7 +58,8 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
           : tile.kind === 'pivot'
             ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}
                 showTotals={tile.options?.showTotals} />
-          : <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked} />
+          : <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked}
+              tooltipKeys={tooltipKeys} />
       )}
     </TileFrame>
   )

@@ -125,6 +125,12 @@ export function usePimDbLoader({ dbId, sheetName, list, listLoading, wanted }: L
     }
     // ⚠⚠ Import local jamais enregistré (`currentDocId` nul mais des feuilles en mémoire) :
     // le remplacer le DÉTRUIRAIT sans retour possible. On refuse, et on dit pourquoi.
+    //
+    // ⚠⚠ Le nombre de feuilles est lu à l'INSTANT du contrôle, jamais suivi en dépendance :
+    // `loadFromFirebase` pose les feuilles AVANT de rendre la main, l'effet se relançait donc
+    // au milieu de sa propre lecture, son nettoyage l'annulait, et `.then` — qui pose
+    // `currentDocId` — n'était JAMAIS exécuté. La base s'affichait sans que rien n'enregistre
+    // à quelle base elle appartient, et l'écran restait sur cet avertissement. Vu en recette.
     if (currentDocId === null && sheetCount > 0) {
       patch({ ...IDLE, state: 'error', message: { kind: 'key', key: 'bi.db.unsavedSheets' } })
       return

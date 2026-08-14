@@ -1,27 +1,29 @@
-// Volet « Visualisations » : le type du visuel sélectionné, et les zones où ses champs iront.
+// Volet « Visualisations » : le type du visuel sélectionné, et les zones où ses champs vont.
 //
-// ⚠⚠ Le SEUL geste vivant à ce stade est le changement de type — il agit vraiment sur la
-// tuile sélectionnée. Les cinq zones sont des EMPLACEMENTS : le constructeur les remplira,
-// et les afficher pleines aujourd'hui laisserait croire à un réglage déjà en place.
+// ⚠ Les cinq zones se branchent sur la MÊME tuile que la galerie de types : changer le type
+// peut vider une zone de son sens (un indicateur n'a pas d'axe), et les zones le disent
+// d'elles-mêmes au survol plutôt que d'accepter un champ qui ne s'afficherait nulle part.
 import { useTranslation } from '@/lib/i18n'
 import { BiPanel } from './BiPanel'
 import { BiFieldWell } from './BiFieldWell'
 import { BiVizGallery, kindLabelKey } from './BiVizGallery'
-import type { TileKind } from '../types'
+import { WELL_IDS } from '../builder/wells'
+import type { DataSource } from '../registry/types'
+import type { Tile, TileKind } from '../types'
 
 /** Largeur reprise de la maquette validée : les trois volets ne sont pas égaux. */
 const WIDTH = 236
 
-const WELLS = ['bi.well.axis', 'bi.well.values', 'bi.well.legend',
-  'bi.well.tooltips', 'bi.well.visualFilters'] as const
-
-export function BiVisualsPanel({ kind, onChangeKind, canEdit }: {
-  /** Type de la tuile sélectionnée — `null` quand aucune ne l'est. */
-  kind: TileKind | null
+export function BiVisualsPanel({ tile, source, onChangeKind, onApply, canEdit }: {
+  /** Tuile sélectionnée — `null` quand aucune ne l'est. */
+  tile: Tile | null
+  source: DataSource
   onChangeKind: (kind: TileKind) => void
+  onApply: (next: Tile) => void
   canEdit: boolean
 }) {
   const { t } = useTranslation()
+  const kind = tile?.kind ?? null
   return (
     <BiPanel label={t('bi.panel.visuals')} width={WIDTH} visibility="hidden xl:flex">
       <BiVizGallery kind={kind} onChange={onChangeKind} disabled={kind === null || !canEdit} />
@@ -32,7 +34,12 @@ export function BiVisualsPanel({ kind, onChangeKind, canEdit }: {
         {kind === null ? t('bi.visuals.noSelection') : t(kindLabelKey(kind))}
       </p>
 
-      {WELLS.map((key) => <BiFieldWell key={key} label={t(key)} />)}
+      {WELL_IDS.map((well) => (
+        <BiFieldWell
+          key={well} well={well} tile={tile} source={source}
+          canEdit={canEdit} onApply={onApply}
+        />
+      ))}
     </BiPanel>
   )
 }
