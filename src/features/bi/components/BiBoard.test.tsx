@@ -8,16 +8,19 @@
 //
 // `DashboardGrid` est mocké : ce fichier teste l'ASSEMBLAGE (les props transmises), pas le
 // rendu de la grille elle-même, déjà couvert par `DashboardGrid.test.tsx`.
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import { act } from 'react'
 import { BiBoard } from './BiBoard'
 import type { Dashboard, TilePlacement } from '../types'
 
 vi.mock('./DashboardGrid', () => ({ DashboardGrid: vi.fn(() => null) }))
+vi.mock('./AddTileMenu', () => ({ AddTileMenu: vi.fn(() => null) }))
 vi.mock('../store/dashboardsStore', () => ({ saveDashboard: vi.fn().mockResolvedValue(undefined) }))
 
 const { DashboardGrid } = await import('./DashboardGrid')
+const { AddTileMenu } = await import('./AddTileMenu')
+const { saveDashboard } = await import('../store/dashboardsStore')
 const gridCalls = () => vi.mocked(DashboardGrid).mock.calls
 
 function makeDashboard(id: string, layout: TilePlacement[]): Dashboard {
@@ -87,5 +90,71 @@ describe('BiBoard', () => {
 
     rerender(<Wrapper current={b} />)
     expect(gridCalls().at(-1)![0].layout).toEqual(b.layout)
+  })
+})
+
+// ⚠⚠ Tâche 11 : le menu d'ajout est le SEUL chemin de création du module — sans lui, poser
+// une tuile exigerait d'écrire dans Firestore à la main. Ces tests couvrent l'assemblage
+// bout en bout (`AddTileMenu.onAdd` → `newTile`/`placeTile` → `addPlacement` → persistance)
+// ET le cadenas d'édition, qui n'avait encore AUCUNE couverture.
+describe('BiBoard — menu d’ajout de tuile', () => {
+  beforeEach(() => {
+    vi.mocked(AddTileMenu).mockClear()
+    vi.mocked(saveDashboard).mockClear()
+  })
+
+  it('n’apparaît qu’EN ÉDITION et AVEC le droit d’écrire — jamais un seul des deux', () => {
+    const dashboard = makeDashboard('d3', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
+    const { rerender } = render(
+      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
+        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+    )
+    expect(AddTileMenu).not.toHaveBeenCalled() // édition seule ne suffit pas sans le droit
+
+    rerender(
+      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
+        editing onToggleEdit={vi.fn()} canEdit={false} onSelect={vi.fn()} />,
+    )
+    expect(AddTileMenu).not.toHaveBeenCalled() // le droit seul ne suffit pas hors édition
+
+    rerender(
+      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+    )
+    expect(AddTileMenu).toHaveBeenCalled()
+  })
+
+  it('onAdd pose la tuile SOUS l’existante, la sauve, et la grille l’affiche immédiatement', () => {
+    const dashboard = makeDashboard('d4', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
+    render(
+      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+    )
+    const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
+
+    act(() => onAdd('bar', 'count', 'taxo.1'))
+
+    // Persisté : deux tuiles, et la nouvelle a bien une place (sinon `parseDashboard`
+    // refuserait cette écriture à la relecture — la tuile orpheline recherchée en tâche 11).
+    const saved = vi.mocked(saveDashboard).mock.calls.at(-1)![1]
+    expect(saved.tiles).toHaveLength(2)
+    const newTileId = saved.tiles.find((t) => t.id !== 't1')!.id
+    expect(saved.layout.find((l) => l.tileId === newTileId)).toMatchObject({ y: 4 })
+
+    // Affiché tout de suite : `draft.layout` (source de la grille) contient déjà le
+    // placement, sans attendre l'écho asynchrone de Firestore via `current.layout`.
+    expect(gridCalls().at(-1)![0].layout.find((l) => l.tileId === newTileId)).toBeTruthy()
+  })
+
+  it('sans espace de travail (uid null), refuse et le dit — jamais un clic silencieux', () => {
+    const dashboard = makeDashboard('d5', [])
+    render(
+      <BiBoard current={dashboard} items={[dashboard]} uid={null} width={1200}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+    )
+    const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
+
+    act(() => onAdd('kpi', 'count'))
+    expect(saveDashboard).not.toHaveBeenCalled()
   })
 })

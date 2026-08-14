@@ -59,8 +59,25 @@ export function useLayoutDraft(initial: TilePlacement[], onCommit: (l: TilePlace
     force((n) => n + 1)
   }, [onCommit])
 
+  // ⚠⚠ Poser une tuile n'est PAS un geste de glissement : l'appelant (le menu d'ajout)
+  // persiste lui-même le tableau de bord complet (tuiles + mise en page). Réutiliser
+  // `setDraft` seul laisserait `committed` en retard d'un cran — un `commit()` déclenché
+  // ensuite par un geste pousserait l'ancienne mise en page (SANS la tuile ajoutée) sur la
+  // pile, et un `undo()` la referait persister : `parseDashboard` lèverait alors sur une
+  // tuile orpheline (présente dans `tiles`, absente de `layout`). On fixe donc `committed`
+  // au nouvel état ET on vide les piles : l'ajout d'une tuile n'est pas annulable au lot 1,
+  // c'est honnête plutôt que de risquer un `undo()` qui casse l'écriture suivante.
+  const addPlacement = useCallback((next: TilePlacement[]) => {
+    draft.current = null
+    committed.current = next
+    past.current = []
+    future.current = []
+    setLayout(next)
+    force((n) => n + 1)
+  }, [])
+
   return {
-    layout, setDraft, commit, undo, redo,
+    layout, setDraft, commit, undo, redo, addPlacement,
     canUndo: past.current.length > 0, canRedo: future.current.length > 0,
   }
 }

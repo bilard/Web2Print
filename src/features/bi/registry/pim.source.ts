@@ -113,3 +113,16 @@ export function pimSourceFromSheet(sheet: ExcelSheet | null): DataSource {
     measures: baseMeasures,
   }
 }
+
+/**
+ * Source PIM RÉELLEMENT utilisée par le moteur : la feuille active si elle porte des
+ * colonnes, sinon le catalogue PIM déclaratif complet (avec dates et ancienneté).
+ *
+ * ⚠⚠ Point de décision UNIQUE, appelé à la fois par `useTileData` (pour le calcul) et par
+ * `AddTileMenu` (pour la liste des dimensions/mesures proposées) : les faire diverger
+ * proposerait des colonnes que le moteur ne connaît pas, et la tuile créée tomberait en
+ * erreur (« Dimension inconnue pour cette source »).
+ */
+export function effectivePimSource(sheet: ExcelSheet | null): DataSource {
+  return sheet && sheet.columns.length > 0 ? pimSourceFromSheet(sheet) : pimSource
+}

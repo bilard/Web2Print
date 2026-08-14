@@ -6,7 +6,7 @@ import { useExcelStore } from '@/stores/excel.store'
 import { aggregate, type AggregateResult } from '../engine/aggregate'
 import { pimRows, rowsFromSheet } from '../engine/rowsFromPim'
 import { getSource } from '../registry/sources'
-import { pimSourceFromSheet } from '../registry/pim.source'
+import { effectivePimSource } from '../registry/pim.source'
 import type { FilterClause, QuerySpec } from '../types'
 
 export interface TileData {
@@ -45,7 +45,9 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
           error: 'Aucune donnée chargée : ouvrez une base dans le module Données ou importez un catalogue.',
           updatedAt: null, live: true, retry }
       }
-      const source = hasSheet ? pimSourceFromSheet(sheet) : registered
+      // ⚠⚠ `effectivePimSource` est le point de décision UNIQUE (partagé avec `AddTileMenu`) :
+      // sans lui, le menu et le moteur pourraient diverger sur les dimensions disponibles.
+      const source = registered.id === 'pim.products' ? effectivePimSource(sheet) : registered
       const rows = hasSheet ? rowsFromSheet(sheet) : pimRows(products, [])
       const merged: QuerySpec = { ...query, filters: [...query.filters, ...globalFilters] }
       const result = aggregate(rows, merged, source)
