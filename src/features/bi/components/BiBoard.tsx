@@ -33,6 +33,9 @@ interface BiBoardProps {
   current: Dashboard
   /** Page AFFICHÉE. `BiScreen` la choisit et remonte le composant quand elle change. */
   page: DashboardPage
+  /** ⚠⚠ Pages TELLES QUE l'écran les connaît : celles du document PLUS celle qu'on vient
+   *  d'ajouter, que l'écho n'a pas ramenée. Lire `current.pages` ferait clignoter l'onglet. */
+  pages: DashboardPage[]
   items: Dashboard[]
   uid: string | null
   editing: boolean
@@ -40,12 +43,15 @@ interface BiBoardProps {
   canEdit: boolean
   onSelect: (id: string) => void
   onSelectPage: (id: string) => void
+  /** La page ajoutée, remontée à l'écran qui l'affiche AVANT l'écho de la base. */
+  onPageCreated: (page: DashboardPage) => void
   /** Le bouton « Nouveau tableau de bord » de `BiScreen`, qui possède seul `onCreated`. */
   headerAction?: ReactNode
 }
 
 export function BiBoard({
-  current, page, items, uid, editing, onToggleEdit, canEdit, onSelect, onSelectPage, headerAction,
+  current, page, pages, items, uid, editing, onToggleEdit, canEdit,
+  onSelect, onSelectPage, onPageCreated, headerAction,
 }: BiBoardProps) {
   const { t } = useTranslation()
   const act = useBoardActions(uid, current, page.id)
@@ -56,40 +62,38 @@ export function BiBoard({
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const sheet = sheets[activeSheetIndex] ?? null
   // ⚠ MÊME condition que `useTileData`/`effectivePimSource` : une feuille sans colonne n'est
-  // pas exploitable, le moteur se replie alors sur le catalogue master. La barre doit dire
-  // ce que le moteur lit VRAIMENT, sinon elle ment sur le jeu de données.
+  // pas exploitable, le moteur se replie alors sur le catalogue master — la barre doit dire
+  // ce que le moteur lit VRAIMENT.
   const hasSheet = sheet !== null && sheet.columns.length > 0
   const hasProducts = usePimStore((s) => s.products.length > 0)
 
   // ⚠⚠ Poser une tuile doit être ATOMIQUE du point de vue du rendu : la tuile et son
   // placement dans le même rendu. Voir `usePendingTiles` pour ce que coûtait le décalage.
   const { tiles, add: addPending } = usePendingTiles(page.tiles)
-  // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille — le menu doit
+  // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille : le menu doit
   // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
   // lectures réclamées par les tuiles POSÉES, jamais par la source seulement sélectionnée.
   const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
   const watch = useWatchSourceState(sourceId)
   const onWatch = isWatchSource(sourceId)
-  // ⚠ `null` plutôt que 0 quand rien n'est chargé : « 0 lignes » se lirait comme une source
-  // vide, alors que personne ne l'a encore lue.
+  // ⚠ `null` et non 0 : « 0 lignes » se lirait comme une source vide, jamais comme non lue.
   const rowCount = onWatch ? (watch.rows.length || null) : hasSheet ? sheet.rows.length : null
   const updatedAt = onWatch ? watch.updatedAt : null
   const now = useTickingNow(true)
 
-  // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
-  // glissement, voir le commentaire de `useLayoutDraft.addPlacement` pour le pourquoi.
-  // ⚠ `draft.layout`/`draft.addPlacement` plutôt que `draft` : cet objet est un littéral
-  // RECRÉÉ à chaque rendu — le passer en entier annulerait la mémoïsation du rappel.
+  // ⚠ `draft.addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
+  // glissement — et `draft` est un littéral RECRÉÉ à chaque rendu, le passer en entier
+  // annulerait la mémoïsation du rappel.
   const addTile = useAddTile({
     uid, current, pageId: page.id, tiles, layout: draft.layout, source, sourceId, onWatch,
     sheet, hasSheet, addPending, addPlacement: draft.addPlacement, onCreated: setSelectedTileId,
   })
 
   const selected = tiles.find((x) => x.id === selectedTileId) ?? null
-  const onChangeKind = useCallback((kind: TileKind) => {
-    if (selectedTileId) act.setTileKind(tiles, selectedTileId, kind)
-  }, [act, tiles, selectedTileId])
-  const onAddPage = useCallback(() => onSelectPage(act.addPage().id), [act, onSelectPage])
+  const onChangeKind = useCallback(
+    (kind: TileKind) => { if (selectedTileId) act.setTileKind(tiles, selectedTileId, kind) },
+    [act, tiles, selectedTileId])
+  const onAddPage = useCallback(() => onPageCreated(act.addPage(pages)), [act, pages, onPageCreated])
 
   return (
     <>
@@ -109,8 +113,8 @@ export function BiBoard({
             activeSheetName={hasSheet && !onWatch ? sheet.name : undefined}
             usesMasterCatalogue={!onWatch && !hasSheet && hasProducts}
             builtOnSheetName={onWatch ? undefined : current.sourceSheetName}
-            /* ⚠ Le geste, jamais le seul état local `editing` : un droit révoqué en cours de
-               session doit faire disparaître le menu à l'identique du bouton et du raccourci. */
+            /* ⚠ Le geste ET le droit : un droit révoqué en cours de session doit faire
+               disparaître le menu à l'identique du bouton et du raccourci clavier. */
             trailing={editing && canEdit ? <AddTileMenu source={source} onAdd={addTile} /> : undefined}
           />
         )}
@@ -132,7 +136,7 @@ export function BiBoard({
       />
 
       <BiPageTabs
-        pages={current.pages} activeId={page.id} onSelect={onSelectPage}
+        pages={pages} activeId={page.id} onSelect={onSelectPage}
         onAdd={onAddPage} canAdd={editing && canEdit}
         status={(
           <BiStatusBar

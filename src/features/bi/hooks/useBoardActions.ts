@@ -4,6 +4,9 @@
 // valide : aucune ne compose un document à la main. Une page écrite de travers ne serait
 // détectée qu'à la relecture, c'est-à-dire une fois le contenu déjà perdu.
 //
+// ⚠⚠ L'objet RENDU est un littéral recréé à chaque rendu ; seuls les rappels qu'il porte sont
+// stables. On passe donc `act.clearFilters` à un composant mémoïsé, jamais `act` lui-même.
+//
 // ⚠ `t` est volontairement hors des dépendances : la fermeture est RECRÉÉE à chaque rendu,
 // et l'inclure recréerait chaque rappel — ce qui romprait la mémoïsation de `DashboardGrid`
 // que `BiBoard` existe pour préserver. Ces libellés ne servent qu'à un message d'erreur ou à
@@ -39,8 +42,16 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
 
   const rename = useCallback((name: string) => write({ ...current, name }), [write, current])
 
-  const addPage = useCallback((): DashboardPage => {
-    const next = appendPage(current, t('bi.page.defaultName', { n: current.pages.length + 1 }))
+  /**
+   * Ajoute une page vide et la RETOURNE, pour que l'appelant l'affiche sans attendre l'écho.
+   *
+   * ⚠⚠ `pages` est fourni par l'appelant plutôt que lu dans `current` : entre le clic et
+   * l'écho Firestore, `current` ne porte pas encore la page qu'on vient d'ajouter. La lire
+   * ici ferait retomber un second clic sur le MÊME identifiant — et l'écriture suivante
+   * effacerait la page précédente sans un mot.
+   */
+  const addPage = useCallback((pages: DashboardPage[]): DashboardPage => {
+    const next = appendPage({ ...current, pages }, t('bi.page.defaultName', { n: pages.length + 1 }))
     write(next)
     return next.pages[next.pages.length - 1]
   }, [write, current])

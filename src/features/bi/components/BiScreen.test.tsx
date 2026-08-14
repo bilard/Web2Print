@@ -7,6 +7,7 @@
 // permissions, pas le rendu de la grille (couvert par `BiBoard.test.tsx`/`DashboardGrid.test.tsx`).
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent, screen } from '@testing-library/react'
+import { act } from 'react'
 import { BiScreen } from './BiScreen'
 import type { Dashboard } from '../types'
 
@@ -117,5 +118,42 @@ describe('BiScreen — bouton de création', () => {
     // c'est la création VIERGE, qui écrit dès le clic.
     render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
     expect(screen.queryByText('nouveau')).toBeNull()
+  })
+})
+
+// ⚠⚠ Le pont entre le clic sur « + » et l'affichage : `BiBoard` remonte la page neuve, et
+// l'écran doit la MONTRER avant que la base ne la renvoie. Sans ce pont, le repli sur la
+// première page reprend la main et le bouton se lit comme mort.
+describe('BiScreen — page en attente', () => {
+  beforeEach(() => {
+    canEdit = true
+    items = ONE_DASHBOARD
+    vi.mocked(BiBoard).mockClear()
+  })
+
+  it('affiche la page neuve DANS LE MÊME rendu, avant l’écho de la base', () => {
+    render(<BiScreen />)
+    const before = vi.mocked(BiBoard).mock.calls.at(-1)![0]
+    expect(before.pages).toHaveLength(1)
+
+    const fresh = { id: 'p2', name: 'Page 2', tiles: [], layout: [] }
+    act(() => before.onPageCreated(fresh))
+
+    const after = vi.mocked(BiBoard).mock.calls.at(-1)![0]
+    expect(after.pages.map((p) => p.id)).toEqual(['p1', 'p2'])
+    expect(after.page.id).toBe('p2') // …et c'est elle qu'on regarde
+  })
+
+  it('l’écho arrivé, la page en attente s’efface du composé — jamais en double', () => {
+    render(<BiScreen />)
+    const fresh = { id: 'p2', name: 'Page 2', tiles: [], layout: [] }
+    act(() => vi.mocked(BiBoard).mock.calls.at(-1)![0].onPageCreated(fresh))
+
+    // La base renvoie enfin le document, page neuve comprise.
+    items = [{ ...ONE_DASHBOARD[0], pages: [...ONE_DASHBOARD[0].pages, fresh] }]
+    render(<BiScreen />)
+
+    const after = vi.mocked(BiBoard).mock.calls.at(-1)![0]
+    expect(after.pages.map((p) => p.id)).toEqual(['p1', 'p2'])
   })
 })
