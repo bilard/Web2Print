@@ -152,14 +152,40 @@ const placementSchema = z.object({
 })
 export type TilePlacement = z.infer<typeof placementSchema>
 
+/**
+ * Une PAGE : ses tuiles et sa mise en page. Un tableau de bord en porte plusieurs, et les
+ * onglets du pied les nomment.
+ *
+ * ⚠⚠ Le champ est OPTIONNEL sur le document, et il doit le rester : tous les tableaux déjà
+ * enregistrés portent `tiles` + `layout` à la RACINE, sans la moindre page. `parseDashboard`
+ * les normalise en une page unique — un champ requis les rendrait illisibles d'un coup.
+ */
+const pageSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  tiles: z.array(tileSchema),
+  layout: z.array(placementSchema),
+})
+export type DashboardPage = z.infer<typeof pageSchema>
+
+/** Identifiant donné à la page unique reconstituée depuis un document ANTÉRIEUR aux pages. */
+export const FIRST_PAGE_ID = 'p1'
+
 const dashboardSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   description: z.string().optional(),
   accountId: z.string().min(1),
   workspaceUid: z.string().min(1),
+  /**
+   * ⚠⚠ Racine = MIROIR de la première page, jamais une seconde vérité. Elle survit pour deux
+   * raisons : les documents antérieurs ne portent qu'elle, et un onglet resté sur l'ancien
+   * code pendant un déploiement continue d'y lire quelque chose de sensé plutôt que rien.
+   * Toute écriture passe par `parseDashboard`, qui la recopie depuis `pages[0]`.
+   */
   tiles: z.array(tileSchema),
   layout: z.array(placementSchema),
+  pages: z.array(pageSchema).min(1).optional(),
   filters: z.array(filterSchema),
   /**
    * Nom de la feuille du module « Données » sur laquelle le tableau de bord a été CONSTRUIT.
@@ -177,18 +203,58 @@ const dashboardSchema = z.object({
   version: z.number().int().positive(),
   createdAt: z.number(), updatedAt: z.number(), createdBy: z.string(),
 })
-export type Dashboard = z.infer<typeof dashboardSchema>
+/** ⚠ `pages` est optionnel À L'ENTRÉE, garanti À LA SORTIE : `parseDashboard` normalise. */
+export type Dashboard = z.infer<typeof dashboardSchema> & { pages: DashboardPage[] }
 
 /**
  * Valide une spec venue de la base, d'un import ou d'un modèle. Lève avec un message
  * lisible — l'appelant l'affiche tel quel plutôt que de tomber en marche.
+ *
+ * ⚠⚠ NORMALISE au passage : un document antérieur aux pages (`tiles` + `layout` à la racine)
+ * en ressort avec une page unique, et la racine est toujours recopiée depuis `pages[0]`.
  */
 export function parseDashboard(input: unknown): Dashboard {
   const d = dashboardSchema.parse(input)
+  const pages: DashboardPage[] = d.pages?.length
+    ? d.pages
+    : [{ id: FIRST_PAGE_ID, name: d.name, tiles: d.tiles, layout: d.layout }]
+
+  // ⚠ L'onglet actif est désigné par son identifiant : deux pages homonymes rendraient le
+  // choix ambigu, et une écriture atterrirait sur la mauvaise.
+  if (new Set(pages.map((p) => p.id)).size !== pages.length) {
+    throw new Error('Deux pages portent le même identifiant')
+  }
+
   // ⚠ Une tuile sans emplacement n'apparaît nulle part : elle serait perdue en silence,
-  // et la première réécriture de la mise en page l'effacerait pour de bon.
-  const placed = new Set(d.layout.map((l) => l.tileId))
-  const orphan = d.tiles.find((t) => !placed.has(t.id))
-  if (orphan) throw new Error(`Tuile « ${orphan.title || orphan.id} » absente de la mise en page`)
-  return d
+  // et la première réécriture de la mise en page l'effacerait pour de bon. La garde vaut
+  // pour CHAQUE page — une page au fond du classeur est aussi facile à vider qu'une autre.
+  for (const p of pages) {
+    const placed = new Set(p.layout.map((l) => l.tileId))
+    const orphan = p.tiles.find((t) => !placed.has(t.id))
+    if (orphan) throw new Error(`Tuile « ${orphan.title || orphan.id} » absente de la mise en page`)
+  }
+
+  return { ...d, pages, tiles: pages[0].tiles, layout: pages[0].layout }
+}
+
+/** Le tableau de bord dont la page `pageId` a été modifiée. PUR — la racine reste en miroir. */
+export function replacePage(
+  d: Dashboard, pageId: string, patch: Partial<Omit<DashboardPage, 'id'>>,
+): Dashboard {
+  if (!d.pages.some((p) => p.id === pageId)) return d
+  const pages = d.pages.map((p) => (p.id === pageId ? { ...p, ...patch } : p))
+  return { ...d, pages, tiles: pages[0].tiles, layout: pages[0].layout }
+}
+
+/**
+ * Le tableau de bord augmenté d'une page VIDE, nommée. PUR.
+ *
+ * ⚠ L'identifiant se dérive du RANG le plus élevé déjà pris, jamais du simple nombre de
+ * pages : après une suppression, `p${n+1}` retomberait sur un identifiant encore vivant.
+ */
+export function appendPage(d: Dashboard, name: string): Dashboard {
+  const taken = new Set(d.pages.map((p) => p.id))
+  let n = d.pages.length + 1
+  while (taken.has(`p${n}`)) n += 1
+  return { ...d, pages: [...d.pages, { id: `p${n}`, name, tiles: [], layout: [] }] }
 }
