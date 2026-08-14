@@ -45,6 +45,17 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
   const rename = useCallback((name: string) => write({ ...current, name }), [write, current])
 
   /**
+   * Retient la BASE du module « Données » qui alimente ce tableau de bord.
+   *
+   * ⚠ `undefined` efface le choix : `saveDashboard` écrit avec `setDoc`, qui REMPLACE le
+   * document, et `stripUndefined` retire le champ — le tableau retombe alors sur la feuille
+   * active, exactement comme les tableaux enregistrés avant ce champ.
+   */
+  const setSourceDb = useCallback((dbId?: string, dbName?: string) => {
+    write({ ...current, sourceDbId: dbId, sourceDbName: dbName })
+  }, [write, current])
+
+  /**
    * Ajoute une page vide et la RETOURNE, pour que l'appelant l'affiche sans attendre l'écho.
    *
    * ⚠⚠ `pages` est fourni par l'appelant plutôt que lu dans `current` : entre le clic et
@@ -75,5 +86,5 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
     write(replacePage(current, pageId, { tiles: next, layout }))
   }, [write, current, pageId])
 
-  return { write, persistLayout, persistFilters, clearFilters, rename, addPage, setTileKind }
+  return { write, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage, setTileKind }
 }

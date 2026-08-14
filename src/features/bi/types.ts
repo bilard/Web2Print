@@ -200,6 +200,23 @@ const dashboardSchema = z.object({
    * un champ requis les rendrait illisibles d'un coup (`parseDashboard` les écarterait tous).
    */
   sourceSheetName: z.string().optional(),
+  /**
+   * Base du module « Données » (`excel_data/{docId}`) qui alimente ce tableau de bord.
+   *
+   * ⚠⚠ Sans elle, les tuiles PIM lisaient la feuille OUVERTE AILLEURS : un utilisateur qui
+   * gère dix bases devait aller ouvrir la bonne dans le module Données avant que ses chiffres
+   * veuillent dire quelque chose. Le tableau désigne désormais la sienne, et la charge.
+   *
+   * ⚠ OPTIONNELLE, et elle doit le rester : aucun tableau déjà enregistré ne la porte, et un
+   * champ requis les rendrait tous illisibles d'un coup. Absente, on retombe exactement sur
+   * le comportement d'avant (la feuille active, quelle qu'elle soit).
+   *
+   * ⚠ Le NOM est conservé à côté de l'identifiant : il nomme la base dans un avertissement
+   * (« base introuvable ») même quand la liste ne la contient plus. L'affichage courant, lui,
+   * lit toujours le nom VIVANT de la liste — celui-ci a pu être renommé depuis.
+   */
+  sourceDbId: z.string().optional(),
+  sourceDbName: z.string().optional(),
   version: z.number().int().positive(),
   createdAt: z.number(), updatedAt: z.number(), createdBy: z.string(),
 })

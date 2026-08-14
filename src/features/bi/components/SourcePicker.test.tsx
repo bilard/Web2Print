@@ -5,6 +5,16 @@ import { resetWatchDataForTest, useWatchSelection, type WatchContext } from '../
 import type { SourceId } from '../types'
 
 vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => 'uid-1' }))
+// ⚠ Sans ce doublon, le sélecteur de base interrogerait Firestore depuis jsdom.
+vi.mock('@/features/excel/useExcelFirebase', () => ({
+  useExcelFirebase: () => ({
+    listSavedFiles: () => Promise.resolve([
+      { fileName: 'Catalogue_GSB_2026', docId: 'db1', totalRows: 43210, updatedAt: null, path: [] },
+      { fileName: 'Makita', docId: 'db2', totalRows: 812, updatedAt: null, path: [] },
+    ]),
+    loadFromFirebase: () => Promise.resolve(null),
+  }),
+}))
 
 const context = (over: Partial<WatchContext> = {}): WatchContext => ({
   watches: [{ watchId: 'f1', label: 'F1 Veille', updatedAt: 1 }],
@@ -84,5 +94,58 @@ describe('SourcePicker', () => {
     selectWatch('f1')
     show('watch.catalog')
     expect(screen.getByText(/Rien n’est chargé/)).toBeTruthy()
+  })
+})
+
+// ⚠⚠ Vu chez l'utilisateur : dix bases dans le module Données, et une seule entrée
+// « Produits (PIM) » qui désignait implicitement la feuille ouverte AILLEURS.
+describe('SourcePicker — choix de la base du PIM', () => {
+  const showDb = (sourceId: SourceId, demanded: SourceId[] = [], onDbChange = () => {}) =>
+    render(
+      <SourcePicker
+        context={context()} demanded={demanded} sourceId={sourceId} onSourceChange={() => {}}
+        onDbChange={onDbChange} withStatus={false}
+      />,
+    )
+
+  it('liste les bases du module Données, sans menu natif', async () => {
+    const { container } = showDb('pim.products')
+    expect(container.querySelector('select')).toBeNull()
+    fireEvent.click(screen.getByText('Base de données').parentElement!.querySelector('button')!)
+    expect(await screen.findByText(/Catalogue_GSB_2026/)).toBeTruthy()
+    expect(screen.getByText(/Makita/)).toBeTruthy()
+  })
+
+  it('offre toujours de rendre la main à la feuille ouverte', async () => {
+    showDb('pim.products')
+    fireEvent.click(screen.getByText('Base de données').parentElement!.querySelector('button')!)
+    // Deux occurrences : le libellé du bouton fermé, et l'entrée de la liste ouverte.
+    expect(await screen.findAllByText(/Feuille ouverte/)).toHaveLength(2)
+  })
+
+  it('⚠ le choix REMONTE, identifiant ET nom : le nom sert à nommer une base disparue', async () => {
+    const onDbChange = vi.fn()
+    showDb('pim.products', [], onDbChange)
+    fireEvent.click(screen.getByText('Base de données').parentElement!.querySelector('button')!)
+    fireEvent.click(await screen.findByText(/Makita/))
+    expect(onDbChange).toHaveBeenCalledWith('db2', 'Makita')
+  })
+
+  it('⚠ absent d’un tableau de veille : aucune base n’a de raison d’y être lue', () => {
+    showDb('watch.summary')
+    expect(screen.queryByText('Base de données')).toBeNull()
+  })
+
+  it('présent dès qu’une TUILE réclame le PIM, même si la liste montre la veille', () => {
+    showDb('watch.summary', ['pim.products'])
+    expect(screen.getByText('Base de données')).toBeTruthy()
+  })
+
+  it('⚠⚠ invisible pour un rôle consultation seule : le choix est PERSISTÉ dans le document', () => {
+    render(
+      <SourcePicker context={context()} demanded={[]} sourceId="pim.products"
+        onSourceChange={() => {}} withStatus={false} />,
+    )
+    expect(screen.queryByText('Base de données')).toBeNull()
   })
 })
