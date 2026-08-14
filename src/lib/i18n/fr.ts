@@ -583,6 +583,7 @@ export const fr = {
   'live.apiBalance': 'solde API',
   'live.remaining': 'restant',
   'live.noBalanceApi': 'Aucune API de solde ; saisis un budget via « Définir alerte »',
+  'live.openai.noBalance': 'OpenAI ne donne pas le solde de crédit à une clé de projet — il se lit dans la console de facturation. Réponse de l’API : {reason}',
   'live.sharedBudget': 'budget partagé',
   'live.setAlert': 'Définir alerte',
   'live.setAlert.title': "Définir un seuil d'alerte mensuel pour {label} — local, ne recharge pas le compte",

@@ -554,6 +554,7 @@ export const en: Record<TranslationKey, string> = {
   'live.apiBalance': 'API balance',
   'live.remaining': 'left',
   'live.noBalanceApi': 'No balance API; enter a budget through "Set alert"',
+  'live.openai.noBalance': 'OpenAI does not expose the credit balance to a project key — read it in the billing console. API response: {reason}',
   'live.sharedBudget': 'shared budget',
   'live.setAlert': 'Set alert',
   'live.setAlert.title': 'Set a monthly alert threshold for {label} — local, does not top up the account',

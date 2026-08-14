@@ -1,9 +1,21 @@
-// Soldes RÉELS récupérés par API — uniquement DeepSeek et OpenRouter (seuls providers
-// à exposer un endpoint de solde ; Claude/OpenAI/Gemini/Qwen/Kimi gèrent le solde dans
-// leur console de facturation, pas via API). Les autres → restant calculé (budget −
-// dépensé) côté composant. Appels CORS-OK depuis le navigateur (mêmes endpoints que les
-// tests de clé existants).
+// Soldes RÉELS récupérés par API — DeepSeek, OpenRouter (endpoints publics, CORS-OK) et
+// OpenAI (par Cloud Function : ses endpoints de facturation refusent le navigateur).
+// Claude/Gemini/Qwen/Kimi ne publient leur solde que dans leur console : pour eux, la
+// colonne montre le restant calculé (budget − dépensé), côté composant.
+import { httpsCallable } from 'firebase/functions'
+import { functions } from '@/lib/firebase/config'
 import { getApiKey } from '@/lib/apiKeys'
+
+/** Détail du dernier appel OpenAI — pourquoi le solde manque, quand il manque. Lu par le
+ *  panneau live pour ne pas se contenter d'un tiret muet. */
+export interface OpenAiBalanceInfo {
+  balanceUsd: number | null
+  spentThisMonthUsd: number | null
+  source: 'credit_grants' | 'costs' | null
+  errors: { creditGrants?: string; costs?: string }
+}
+let lastOpenAi: OpenAiBalanceInfo | null = null
+export function lastOpenAiBalanceInfo(): OpenAiBalanceInfo | null { return lastOpenAi }
 
 export async function fetchProviderBalances(): Promise<Record<string, number | null>> {
   const out: Record<string, number | null> = {}
@@ -37,6 +49,24 @@ export async function fetchProviderBalances(): Promise<Record<string, number | n
         if (typeof rem === 'number') out.openrouter = rem
       }
     } catch { /* ignore */ }
+  }
+
+  // OpenAI : passe par la Function `getOpenAiBalance` — ses endpoints de facturation ne
+  // portent pas d'en-tête CORS, un `fetch` du navigateur échoue avant même l'authentification.
+  // ⚠ L'échec est ATTENDU sur une clé de projet ordinaire (OpenAI réserve le solde à une clé
+  // de session) : on garde alors la raison plutôt que de laisser croire à une panne.
+  if (getApiKey('openai')) {
+    try {
+      const call = httpsCallable<undefined, OpenAiBalanceInfo>(functions, 'getOpenAiBalance')
+      const info = (await call()).data
+      lastOpenAi = info
+      if (typeof info.balanceUsd === 'number') out.openai = info.balanceUsd
+    } catch (e) {
+      lastOpenAi = {
+        balanceUsd: null, spentThisMonthUsd: null, source: null,
+        errors: { creditGrants: e instanceof Error ? e.message : String(e) },
+      }
+    }
   }
 
   return out

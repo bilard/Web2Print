@@ -553,6 +553,7 @@ export const es: Record<TranslationKey, string> = {
   'live.apiBalance': 'saldo API',
   'live.remaining': 'restante',
   'live.noBalanceApi': 'Ninguna API de saldo; introduzca un presupuesto mediante «Definir alerta»',
+  'live.openai.noBalance': 'OpenAI no expone el saldo de crédito a una clave de proyecto: se consulta en la consola de facturación. Respuesta de la API: {reason}',
   'live.sharedBudget': 'presupuesto compartido',
   'live.setAlert': 'Definir alerta',
   'live.setAlert.title': 'Definir un umbral de alerta mensual para {label} — local, no recarga la cuenta',

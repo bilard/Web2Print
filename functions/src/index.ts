@@ -67,6 +67,7 @@ export { llmProxy } from './llm/llmProxy'
 
 // --- Listing des modèles par provider (GET /models serveur, sans CORS) ---
 export { listModels } from './llm/listModels'
+export { getOpenAiBalance } from './llm/openaiBalance'
 
 // --- Fetch authentifié (login cookie PrestaShop) pour sites à prix connectés ---
 export { fetchPageHtmlAuth } from './scraper/fetchPageHtmlAuth'

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Pencil, Globe, ExternalLink, Eraser, Clapperboard } from 'lucide-react'
 import { useUsageStats } from '@/features/stats/useUsageStats'
-import { fetchProviderBalances } from '@/features/stats/providerBalances'
+import { fetchProviderBalances, lastOpenAiBalanceInfo } from '@/features/stats/providerBalances'
 import { useBrightDataAccount } from '@/features/stats/useBrightDataAccount'
 import { useFirecrawlAccount } from '@/features/stats/useFirecrawlAccount'
 import { ScrapeUsageCards } from './ScrapeUsageCards'
@@ -154,6 +154,15 @@ export function LiveLlmUsagePanel() {
     staleTime: 60_000,
     refetchInterval: 60_000,
   })
+
+  // Pourquoi le solde OpenAI manque, le cas échéant. Relu à chaque rendu (le panneau se
+  // repeint toutes les 15 s) : c'est une explication d'infobulle, pas une donnée d'écran.
+  const openAiInfo = balances ? lastOpenAiBalanceInfo() : null
+  const openAiBalanceHint = openAiInfo && openAiInfo.balanceUsd === null
+    ? t('live.openai.noBalance', {
+        reason: openAiInfo.errors.creditGrants ?? openAiInfo.errors.costs ?? '—',
+      })
+    : null
 
   // Auto-refresh toutes les 15s pour la "vue live"
   useEffect(() => {
@@ -506,7 +515,13 @@ export function LiveLlmUsagePanel() {
                     <p className="text-[8px] text-white/30">{t('live.remaining')}</p>
                   </>
                 ) : (
-                  <span className="text-[10px] text-white/20" title={t('live.noBalanceApi')}>—</span>
+                  // ⚠ Pour OpenAI, le tiret a une RAISON : ses endpoints de facturation
+                  // réservent le solde à une clé de session, et le message d'OpenAI dit
+                  // quoi faire. Un tiret muet laissait croire à une panne de l'écran.
+                  <span
+                    className="text-[10px] text-white/20"
+                    title={(row.provider === 'openai' && openAiBalanceHint) || t('live.noBalanceApi')}
+                  >—</span>
                 )}
               </div>
               <div className="col-span-2 flex flex-col items-end gap-1">
