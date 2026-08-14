@@ -206,6 +206,45 @@ describe('cas réels — appariements FAUX qui ne doivent pas exister', () => {
     expect(row.source, 'un trou vaut mieux qu’un faux prix').toBeNull()
   })
 
+  it('joint MTD ↔ foret Makita : la STRUCTURE de la référence ne survit pas au dépaddage', () => {
+    // manomano.fr, +922 % d'écart. « 000.25.177 » a l'air structurée — trois groupes, deux
+    // points — mais elle joint sous « 25177 » : points retirés, puis zéros de tête. Chez
+    // Makita, « D-25177 » rend le même nombre dans l'adresse de la fiche. La forme brute
+    // faisait passer la clé pour distinctive, et le libellé n'avait plus rien à confirmer.
+    const [row] = pair(
+      [{ id: 'p', name: 'JOINT MTD', ref: '000.25.177', ean: '4049582966522', price: 2.51 }],
+      [{
+        url: 'https://www.manomano.fr/p/makita-foret-a-verre-12x80-d-25177-13094522',
+        name: 'Makita Foret à verre 12x80 D-25177', ref: '088381335799', price: 30.79,
+      }],
+    )
+    expect(row.source, 'un trou vaut mieux qu’un faux prix').toBeNull()
+  })
+
+  it('circlip Gutbrod ↔ filtre à gaz Toyota : même piège, même refus', () => {
+    // Le premier des deux, relevé sur le même site : « 000.11.036 » → « 11036 », cinq
+    // chiffres retrouvés dans le slug du concurrent.
+    const [row] = pair(
+      [{ id: 'p', name: 'CIRCLIP GUTBROD', ref: '000.11.036', price: 0.9 }],
+      [{ url: 'https://c.fr/p/filtre-a-gaz-toyota-90917-11036', name: 'Filtre à gaz Toyota 90917-11036', price: 14.9 }],
+    )
+    expect(row.source, 'un trou vaut mieux qu’un faux prix').toBeNull()
+  })
+
+  it('⚠ LIMITE CONNUE : un libellé qui recoupe le nôtre fait encore passer la clé courte', () => {
+    // Ce que la correction ci-dessus ne couvre PAS, et qu'il faut savoir avant de le
+    // redécouvrir à l'écran : le garde-fou exige que le libellé CONFIRME, il ne compare pas
+    // la FORME des deux références. Si le foret Makita s'appelait « Joint … D-25177 », le
+    // mot commun suffirait et l'appariement tiendrait. Comparer « 000.25.177 » (groupes
+    // 3-2-3) à « D-25177 » (lettre + 5 chiffres) demanderait un modèle de structure par
+    // constructeur — à construire sur des cas mesurés, pas sur un échantillon.
+    const [row] = pair(
+      [{ id: 'p', name: 'JOINT MTD', ref: '000.25.177', price: 2.51 }],
+      [{ url: 'https://c.fr/p/joint-torique-d-25177', name: 'Joint torique D-25177', price: 30.79 }],
+    )
+    expect(row.source?.id, 'le libellé confirme : la paire passe, à raison ou non').toBe('p')
+  })
+
   it('l’adaptable ne rafle pas la fiche de la pièce d’origine', () => {
     const [row] = pair(
       [

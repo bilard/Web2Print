@@ -34,6 +34,21 @@ export const MIN_REF_LEN = 3
 const WEAK_REF_LEN = 5
 
 /**
+ * Longueur en deçà de laquelle une suite de CHIFFRES NUS ne discrimine plus rien.
+ *
+ * Sept : un code-barres en fait treize, une référence constructeur numérique sept à dix ;
+ * en dessous, le nombre appartient au bruit des adresses et des libellés (identifiants de
+ * page, cotes, millésimes, quantités).
+ *
+ * ⚠ Distincte de `WEAK_REF_LEN`, qui compte des CARACTÈRES sans regarder leur nature :
+ * « A35B7 » et « 25177 » font cinq signes, et l'un des deux appartient à un constructeur.
+ * Exportée parce que le moteur (`keyIsDistinctive`) et l'indice de fiabilité
+ * (`explorer/confidence`) doivent tracer la MÊME frontière — deux seuils recopiés
+ * divergent, et l'écran expliquerait alors un appariement que le moteur ne fait plus.
+ */
+export const NUMERIC_KEY_MIN_LEN = 7
+
+/**
  * Forme canonique d'une référence : majuscules, séparateurs retirés.
  * `112794117/0` → `1127941170`, `00.1857.40` → `00185740`, `bs-790287` → `BS790287`.
  */

@@ -101,6 +101,14 @@ describe('parité appariement client / serveur — veto compris', () => {
       listing: { url: 'https://c.fr/12-mousse-prefiltre-5208301.html', name: 'Mousse pré-filtre à air' },
     },
     {
+      label: 'référence structurée réduite à un nombre court + libellé étranger → refusé',
+      // « 000.25.177 » joint sous « 25177 » (points, puis zéros de tête) et se retrouve
+      // dans l'adresse d'un foret Makita « D-25177 ». Le seuil qui décide est un LITTÉRAL
+      // dans chaque projet : sans ce cas, un seul des deux moteurs le tiendrait.
+      source: { id: 'p', name: 'JOINT MTD', ref: '000.25.177' },
+      listing: { url: 'https://c.fr/p/makita-foret-a-verre-12x80-d-25177', name: 'Makita Foret à verre 12x80 D-25177' },
+    },
+    {
       label: 'code-barres déclaré → gardé malgré le libellé',
       source: { id: 'p', name: 'FILTRE A AIR', ean: '3582321853475' },
       listing: { url: 'https://c.fr/b.html', name: 'Démarreur KOHLER', ref: 'ZZ1', gtin13: '3582321853475' },

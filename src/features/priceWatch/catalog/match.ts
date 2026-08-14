@@ -9,6 +9,7 @@
 import {
   candidateKeys, proveMatch, normalizeRef, stripLeadingZeros, normalizeEan,
   isInternalBarcode, refTokensFromUrl, refTokensFromText, declaredRefTokens, MIN_REF_LEN,
+  NUMERIC_KEY_MIN_LEN,
   type JoinKey, type MatchProof, type SourceProductKeys,
 } from './keys'
 import { familiesConflict, partFamilies } from './partFamily'
@@ -165,6 +166,22 @@ function keyIsDistinctive(proof: MatchProof): boolean {
   // (« 36-25 ») suffisait à faire passer une telle clé pour structurée, et elle échappait
   // alors à toute confirmation du libellé. Quatre caractères ne distinguent rien.
   if (proof.key.weak) return false
+  // ⚠⚠ La forme brute ne dit plus rien quand la normalisation n'en a laissé qu'un NOMBRE
+  // COURT. « 000.25.177 » a toutes les allures d'une référence structurée — trois groupes,
+  // deux points — mais la clé qui joint vaut « 25177 » : les points retirés, PUIS les zéros
+  // de tête. Deux retailles enchaînées, exactement la forme d'échec de « KL060004 »
+  // (cf. `BRAND_DRESSED` dans keys.ts) — et une clé qu'il faut retailler deux fois n'est
+  // pas une clé. Cas VÉCU sur manomano.fr, deux fois : « CIRCLIP GUTBROD » 000.11.036 ↔
+  // « Filtre à gaz Toyota 90917-11036 », et « JOINT MTD » 000.25.177 ↔ « Makita Foret à
+  // verre 12x80 D-25177 » à +922 %. Cinq chiffres se rencontrent dans n'importe quelle
+  // adresse ; c'est la STRUCTURE qui distingue, et elle n'a pas survécu à la normalisation.
+  //
+  // Un champ d'identité DÉCLARÉ échappe à la règle : un marchand qui écrit « 25177 » sous
+  // « Référence » ne l'a pas écrit par hasard. Même frontière que l'indice de fiabilité
+  // (`INDIRECT` dans `explorer/confidence`), et seules `sku`/`mpn` arrivent ici — les
+  // preuves par code-barres sont déjà sorties plus haut (`keyIsBarcode`).
+  if (proof.evidence !== 'sku' && proof.evidence !== 'mpn'
+    && /^\d+$/.test(proof.key.value) && proof.key.value.length < NUMERIC_KEY_MIN_LEN) return false
   return !/^\d+$/.test(proof.key.raw.trim())
 }
 

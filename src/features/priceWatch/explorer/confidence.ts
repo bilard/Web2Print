@@ -12,7 +12,9 @@
 // norme, pas un indice. Pénaliser dessus condamnerait en masse des appariements justes,
 // et le premier écran d'audit serait rouge à tort. Les mots communs ne peuvent que
 // MONTER le score.
-import { normalizeEan, normalizeRef, isInternalBarcode, type MatchEvidence } from '../catalog/keys'
+import {
+  normalizeEan, normalizeRef, isInternalBarcode, NUMERIC_KEY_MIN_LEN, type MatchEvidence,
+} from '../catalog/keys'
 import { nameTokens } from '../catalog/nameMatch'
 import { familiesConflict } from '../catalog/partFamily'
 
@@ -179,10 +181,11 @@ export interface PairSignals {
  *  déclaré (`sku`, `mpn`, `gtin13`) où la valeur ne peut pas être là par hasard. */
 const INDIRECT = new Set(['ref-in-url', 'ref-in-title', 'ref-in-name', 'ean-in-url'])
 
-/** Longueur en deçà de laquelle une suite de CHIFFRES ne discrimine plus rien. Sept :
- *  un EAN en fait treize, une référence constructeur numérique sept à dix ; en dessous,
- *  le nombre appartient au bruit des URL et des libellés. */
-const NUMERIC_MIN_LEN = 7
+/** Longueur en deçà de laquelle une suite de CHIFFRES ne discrimine plus rien. Lue du
+ *  moteur, jamais recopiée : c'est LE MÊME seuil qui décide d'apparier (`keyIsDistinctive`)
+ *  et de douter. Deux copies divergeraient, et l'écran expliquerait alors un appariement
+ *  que le moteur ne fait plus — ou l'inverse. */
+const NUMERIC_MIN_LEN = NUMERIC_KEY_MIN_LEN
 
 function isNumericShort(value?: string): boolean {
   return !!value && /^\d+$/.test(value) && value.length < NUMERIC_MIN_LEN
