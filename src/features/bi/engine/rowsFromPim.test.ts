@@ -87,11 +87,32 @@ describe('clés réservées', () => {
   })
 
   it('nomme la colonne fautive : un refus muet ne se corrige pas', () => {
-    expect(() => rowsFromSheet(sheet({ columns: [col('_sku')] }))).toThrow(/_sku/)
+    expect(() => rowsFromSheet(sheet({ columns: [col('taxo.1')] }))).toThrow(/taxo\.1/)
   })
 
   it('vaut aussi pour le catalogue master (productToRow via pimRows)', () => {
     expect(() => pimRows([p('a', { _total: '3' })], [])).toThrow(/réservée/)
+  })
+
+  // ⚠⚠ Les deux chemins ne réservent PAS les mêmes clés : `rowsFromSheet` ne pose ni `_sku`
+  // ni `_createdAt` ni `_updatedAt`, une colonne qui les porterait ne corromprait donc rien.
+  // Les réserver côté feuille ferait échouer TOUTES ses tuiles pour une corruption impossible.
+  // Côté produits, en revanche, `productToRow` les pose ET `pimSource` les expose en
+  // dimensions : elles y sont légitimement interdites.
+  it('`_sku` passe côté FEUILLE — la feuille ne pose jamais cette clé', () => {
+    const s = sheet({ columns: [col('marque'), col('_sku')], rows: [{ _id: 'a', marque: 'X', _sku: 'REF-1' }] })
+    expect(() => rowsFromSheet(s)).not.toThrow()
+    expect(rowsFromSheet(s)[0]._sku).toBe('REF-1') // la valeur de la feuille survit
+  })
+
+  it('`_createdAt` et `_updatedAt` aussi : ce sont des notions de PRODUIT, pas de feuille', () => {
+    for (const key of ['_createdAt', '_updatedAt']) {
+      expect(() => rowsFromSheet(sheet({ columns: [col(key)] }))).not.toThrow()
+    }
+  })
+
+  it('mais `_sku` ÉCHOUE côté catalogue master — `productToRow` le pose et le PIM l’expose', () => {
+    expect(() => pimRows([p('a', { _sku: 'REF-1' })], [])).toThrow(/_sku/)
   })
 
   it('laisse passer une colonne au nom simplement proche', () => {

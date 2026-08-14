@@ -9,8 +9,8 @@ import type { DataSource, Dimension, FieldKind, Measure, Row } from './types'
 export const TAXO_LEVELS = 4
 
 /**
- * Clés que le moteur pose LUI-MÊME sur chaque ligne et qu'une colonne de données ne doit
- * jamais occuper : identité, complétude, taxonomie.
+ * Clés que le moteur pose LUI-MÊME sur une ligne de FEUILLE, et qu'une colonne ne doit donc
+ * pas occuper : identité, complétude, taxonomie.
  *
  * ⚠⚠ Une colonne nommée `_total` écrasait la complétude POSÉE APRÈS la copie des colonnes —
  * la mesure « Complétude » rendait alors un pourcentage faux, sans le moindre bruit. Un
@@ -22,22 +22,41 @@ export const TAXO_LEVELS = 4
  * enregistrées (cf. `taxoDimensions`), et les colonnes de feuille portent leur propre clé
  * telle quelle (`pimSourceFromSheet`). Les préfixer casserait toutes les tuiles en base.
  */
-const RESERVED_ROW_KEYS: readonly string[] = [
-  '_id', '_sku', '_createdAt', '_updatedAt', '_filled', '_total',
+const SHEET_RESERVED_KEYS: readonly string[] = [
+  '_id', '_filled', '_total',
   ...Array.from({ length: TAXO_LEVELS }, (_, i) => `taxo.${i + 1}`),
 ]
 
 /**
- * Lève si une colonne de données porte une clé réservée. Appelée par les DEUX fabriques de
- * lignes : `useTileData` attrape et la tuile affiche la cause, colonne nommée.
+ * Idem pour une ligne de PRODUIT. `_sku`, `_createdAt` et `_updatedAt` s'y ajoutent :
+ * `productToRow` les pose, et `pimSource` les EXPOSE comme dimensions (`dateDimensions`).
+ *
+ * ⚠ Ce jeu est volontairement PLUS LARGE que celui des feuilles, et les deux ne doivent pas
+ * être fusionnés : une feuille ne pose aucune de ces trois clés, une colonne qui les porterait
+ * ne corromprait donc RIEN. Les réserver partout ferait échouer toutes les tuiles d'une
+ * feuille pour une corruption impossible.
  */
-export function assertNoReservedColumn(columns: string[]): void {
-  const clash = columns.find((c) => RESERVED_ROW_KEYS.includes(c))
+const PRODUCT_RESERVED_KEYS: readonly string[] = [
+  ...SHEET_RESERVED_KEYS, '_sku', '_createdAt', '_updatedAt',
+]
+
+function assertNoneReserved(columns: string[], reserved: readonly string[]): void {
+  const clash = columns.find((c) => reserved.includes(c))
   if (clash) {
     throw new Error(
       `Colonne « ${clash} » réservée au moteur : renommez-la, sinon la complétude serait fausse.`,
     )
   }
+}
+
+/** Colonnes d'une FEUILLE. `useTileData` attrape et la tuile affiche la cause, colonne nommée. */
+export function assertNoReservedSheetColumn(columns: string[]): void {
+  assertNoneReserved(columns, SHEET_RESERVED_KEYS)
+}
+
+/** Colonnes du CATALOGUE MASTER (champs de produits). */
+export function assertNoReservedProductColumn(columns: string[]): void {
+  assertNoneReserved(columns, PRODUCT_RESERVED_KEYS)
 }
 
 /**
@@ -48,7 +67,7 @@ export function assertNoReservedColumn(columns: string[]): void {
  * sans le champ « poids » doit compter comme non renseigné, pas être ignoré.
  */
 export function productToRow(p: Product, columns: string[]): Row {
-  assertNoReservedColumn(columns)
+  assertNoReservedProductColumn(columns)
   const row: Row = { _id: p._id, _sku: p.masterSku, _createdAt: p.createdAt, _updatedAt: p.updatedAt }
   let filled = 0
   for (const c of columns) {
