@@ -71,7 +71,7 @@ export function BiBoard({
   // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille — le menu doit
   // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
   // lectures réclamées par les tuiles POSÉES, jamais par la source seulement sélectionnée.
-  const { sourceId, setSourceId, source, context } = useBoardSource(tiles, sheet)
+  const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
 
   // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
   // glissement, voir le commentaire de `useLayoutDraft.addPlacement` pour le pourquoi.
@@ -128,7 +128,7 @@ export function BiBoard({
     <>
       <BiBoardHeader
         headerAction={<div className="flex flex-col gap-2">{headerAction}
-          <SourcePicker context={context} sourceId={sourceId} onSourceChange={setSourceId} /></div>}
+          <SourcePicker context={context} demanded={demanded} sourceId={sourceId} onSourceChange={setSourceId} /></div>}
         activeSheetName={hasSheet ? sheet.name : undefined}
         usesMasterCatalogue={!hasSheet && hasProducts}
         builtOnSheetName={current.sourceSheetName}

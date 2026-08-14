@@ -83,6 +83,11 @@ export function resetWatchDataForTest(): void {
   })
 }
 
+/** Pose l'état d'une source. Réservé aux tests : en vrai, seul `useWatchLoader` écrit ici. */
+export function setWatchStateForTest(id: WatchSourceId, next: WatchSourceState): void {
+  useWatchStore.getState().patch(id, next)
+}
+
 /** Suivi actif + concurrent choisi, et les gestes pour en changer (le sélecteur de source). */
 export function useWatchSelection() {
   const watchId = useWatchStore((s) => s.watchId)
@@ -126,7 +131,9 @@ export interface WatchContext {
  * ne doit pas relire 115 814 produits tant qu'aucune tuile ne les regarde.
  */
 export function useBoardSource(tiles: Tile[], sheet: ExcelSheet | null) {
-  const [sourceId, setSourceId] = useState<SourceId>('pim.products')
+  // ⚠ Amorcé sur la source des tuiles DÉJÀ POSÉES : rouvrir un tableau de veille sur
+  // « Produits (PIM) » ferait mentir la liste sur ce qui alimente l'écran.
+  const [sourceId, setSourceId] = useState<SourceId>(() => tiles[0]?.query.source ?? 'pim.products')
   const demanded = useMemo(() => tiles.map((t) => t.query.source), [tiles])
   const context = useWatchLoader(demanded)
   // ⚠⚠ `effectivePimSource` reste le point de décision UNIQUE pour le PIM : le menu doit
@@ -136,7 +143,11 @@ export function useBoardSource(tiles: Tile[], sheet: ExcelSheet | null) {
     () => (sourceId === 'pim.products' ? effectivePimSource(sheet) : getSource(sourceId)),
     [sourceId, sheet],
   )
-  return { sourceId, setSourceId, source, context }
+  // ⚠⚠ `demanded` remonte au sélecteur : c'est ce qui ALIMENTE les tuiles, pas ce que la
+  // liste affiche. Sans lui, un tableau de veille rouvert relirait 115 814 produits pendant
+  // que le bandeau, resté sur la source sélectionnée, n'annoncerait rien — l'écran figé sans
+  // explication que ce lot existe pour éviter.
+  return { sourceId, setSourceId, source, context, demanded }
 }
 
 /**

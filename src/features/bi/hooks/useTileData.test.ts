@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useTileData } from './useTileData'
+import { resetWatchDataForTest, setWatchStateForTest as setWatchState } from './useWatchData'
 import { usePimStore } from '@/stores/pim.store'
 import { useExcelStore } from '@/stores/excel.store'
 import type { QuerySpec } from '../types'
@@ -30,6 +31,7 @@ const product = (id: string): Product => ({
 beforeEach(() => {
   useExcelStore.setState({ sheets: [], activeSheetIndex: 0 })
   usePimStore.setState({ products: [] })
+  resetWatchDataForTest()
 })
 
 describe('useTileData', () => {
@@ -73,5 +75,60 @@ describe('useTileData', () => {
     const { result } = renderHook(() => useTileData(baseQuery, []))
     expect(result.current.state).toBe('ready')
     expect(result.current.result?.rows).toEqual([{ count: 2 }])
+  })
+})
+
+// ⚠⚠ Les sources de veille ne se chargent PAS ici : `useWatchLoader` (appelé une fois par
+// tableau de bord) remplit le store, ce hook ne fait que le lire. Ces cas verrouillent le
+// branchement — vingt tuiles ne doivent jamais déclencher vingt relectures.
+describe('useTileData — sources de veille', () => {
+  const watchQuery: QuerySpec = {
+    source: 'watch.summary', measures: [{ id: 'count' }], dimensions: [], filters: [],
+  }
+
+  it('`idle` (chargement pas encore parti) se rend en `loading`, jamais en cadre vide', () => {
+    // Un « aucune donnée » affiché le temps qu'un effet démarre serait une explication fausse.
+    const { result } = renderHook(() => useTileData(watchQuery, []))
+    expect(result.current.state).toBe('loading')
+    expect(result.current.live).toBe(false)
+  })
+
+  it('transmet la CLÉ du refus quand le catalogue source est amputé', () => {
+    setWatchState('watch.catalog', {
+      rows: [], state: 'error', updatedAt: null,
+      message: { kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 12, expected: 115_814 } },
+      progress: { done: 0, total: 0, loaded: 12, expected: 115_814 },
+    })
+    const { result } = renderHook(() => useTileData({ ...watchQuery, source: 'watch.catalog' }, []))
+    expect(result.current.state).toBe('error')
+    expect(result.current.result).toBeNull()
+    expect(result.current.message).toEqual({
+      kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 12, expected: 115_814 },
+    })
+  })
+
+  it('agrège les lignes chargées, et ne bat EN DIRECT que pour la synthèse', () => {
+    setWatchState('watch.summary', {
+      rows: [{ domain: 'a.fr', matched: 10 }, { domain: 'b.fr', matched: 5 }],
+      state: 'ready', message: undefined, updatedAt: 42,
+      progress: { done: 0, total: 0, loaded: 2, expected: 2 },
+    })
+    const { result } = renderHook(() => useTileData(watchQuery, []))
+    expect(result.current.state).toBe('ready')
+    expect(result.current.result?.rows).toEqual([{ count: 2 }])
+    // Le rapport vient d'un `onSnapshot` : lui seul coule. Le catalogue et les fiches d'un
+    // site sont des photos relues à la demande — un point clignotant y mentirait.
+    expect(result.current.updatedAt).toBe(42)
+    expect(result.current.live).toBe(true)
+  })
+
+  it('un catalogue relu n’est PAS en direct', () => {
+    setWatchState('watch.catalog', {
+      rows: [{ famille: 'Filtration', price: 10 }], state: 'ready', message: undefined,
+      updatedAt: 7, progress: { done: 0, total: 0, loaded: 1, expected: 1 },
+    })
+    const { result } = renderHook(() => useTileData({ ...watchQuery, source: 'watch.catalog' }, []))
+    expect(result.current.state).toBe('ready')
+    expect(result.current.live).toBe(false)
   })
 })
