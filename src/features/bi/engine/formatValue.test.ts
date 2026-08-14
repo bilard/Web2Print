@@ -13,4 +13,11 @@ describe('formatMeasure', () => {
     expect(formatMeasure(0, 'int', 'fr-FR')).toBe('0')
     expect(formatMeasure(null, 'int', 'fr-FR')).toBe('—')
   })
+
+  it('respecte la locale pour le décimal — pas de virgule figée hors français', () => {
+    // ⚠ `pct` et `ms` (secondes) composaient un séparateur français en dur ; l'anglais
+    // britannique et l'espagnol attendent un point, pas une virgule.
+    expect(formatMeasure(75.5, 'pct', 'en-GB')).toBe('75.5%')
+    expect(formatMeasure(1500, 'ms', 'en-GB')).toBe('1.5 s')
+  })
 })
