@@ -17,7 +17,7 @@ import type { FilterClause, SourceId, Tile, TilePlacement } from '../types'
 export type TemplateTile = Omit<Tile, 'title'> & { titleKey: TranslationKey }
 
 /** Une page de modèle : ses tuiles et leur mise en page (grille de 12 colonnes). */
-export interface TemplatePage {
+interface TemplatePage {
   nameKey: TranslationKey
   tiles: TemplateTile[]
   layout: TilePlacement[]

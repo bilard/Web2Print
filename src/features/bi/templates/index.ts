@@ -76,4 +76,4 @@ export function buildDashboard(tpl: DashboardTemplate, ctx: BuildContext): Dashb
   }
 }
 
-export type { DashboardTemplate, TemplateKey, TemplatePage, TemplateTile } from './types'
+export type { DashboardTemplate, TemplateKey } from './types'
