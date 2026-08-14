@@ -82,6 +82,19 @@ const dashboardSchema = z.object({
   tiles: z.array(tileSchema),
   layout: z.array(placementSchema),
   filters: z.array(filterSchema),
+  /**
+   * Nom de la feuille du module « Données » sur laquelle le tableau de bord a été CONSTRUIT.
+   *
+   * ⚠⚠ Les tuiles interrogent la feuille ACTIVE, et les identifiants de dimension sont les
+   * intitulés de colonnes : deux feuilles aux mêmes en-têtes (un catalogue et celui d'un
+   * concurrent — le cas normal) sont donc interchangeables sans que rien ne le signale. Un
+   * tableau bâti sur l'une, rouvert avec l'autre active, recalcule dessus sous le même titre
+   * et avec les mêmes libellés. Ce champ est la seule trace qui permette d'AVERTIR.
+   *
+   * ⚠ OPTIONNEL, et il doit le rester : les tableaux déjà enregistrés ne le portent pas, et
+   * un champ requis les rendrait illisibles d'un coup (`parseDashboard` les écarterait tous).
+   */
+  sourceSheetName: z.string().optional(),
   version: z.number().int().positive(),
   createdAt: z.number(), updatedAt: z.number(), createdBy: z.string(),
 })

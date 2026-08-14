@@ -12,7 +12,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import { act } from 'react'
 import { BiBoard } from './BiBoard'
+import { useExcelStore } from '@/stores/excel.store'
+import type { ExcelColumn } from '@/features/excel/types'
 import type { Dashboard, TilePlacement } from '../types'
+
+// ⚠ Une feuille SANS colonne n'est pas exploitable : le moteur se replie alors sur le
+// catalogue master, et il n'y a pas de nom de feuille à mémoriser.
+const col = (key: string): ExcelColumn => ({
+  key, label: key, fieldType: 'text', detectedType: 'text', isPrimary: false, width: 160,
+})
 
 vi.mock('./DashboardGrid', () => ({ DashboardGrid: vi.fn(() => null) }))
 vi.mock('./AddTileMenu', () => ({ AddTileMenu: vi.fn(() => null) }))
@@ -101,6 +109,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
   beforeEach(() => {
     vi.mocked(AddTileMenu).mockClear()
     vi.mocked(saveDashboard).mockClear()
+    useExcelStore.setState({ sheets: [], activeSheetIndex: 0 })
   })
 
   it('n’apparaît qu’EN ÉDITION et AVEC le droit d’écrire — jamais un seul des deux', () => {
@@ -181,6 +190,37 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     // …et la taille de départ du type « barres » est intacte (jamais reposée en 1×1).
     const added = last.tiles.find((t) => t.id !== 't1')!
     expect(last.layout.find((l) => l.tileId === added.id)).toMatchObject({ w: 6, h: 6 })
+  })
+
+  // ⚠⚠ Sans cette mémoire, un tableau bâti sur un catalogue et rouvert avec la feuille d'un
+  // concurrent active recalculait dessus, sous le même titre et avec les mêmes libellés.
+  it('mémorise la feuille à la POSE DE LA PREMIÈRE TUILE, et n’y touche plus ensuite', () => {
+    useExcelStore.setState({
+      sheets: [{ name: 'Catalogue 2026', columns: [col('marque')], rows: [], taxonomy: [] }],
+      activeSheetIndex: 0,
+    })
+    const dashboard = makeDashboard('d7', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
+    const first = render(
+      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+    )
+    act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', 'count'))
+    first.unmount() // sinon ce premier tableau, abonné à la feuille active, se rendrait encore
+    expect(vi.mocked(saveDashboard).mock.calls.at(-1)![1].sourceSheetName).toBe('Catalogue 2026')
+
+    // Feuille déjà mémorisée : elle FAIT FOI, une autre feuille active ne la réécrit pas —
+    // sinon l'avertissement s'effacerait de lui-même au premier ajout de tuile.
+    useExcelStore.setState({
+      sheets: [{ name: 'Concurrent A', columns: [col('marque')], rows: [], taxonomy: [] }],
+      activeSheetIndex: 0,
+    })
+    const built = { ...dashboard, sourceSheetName: 'Catalogue 2026' }
+    render(
+      <BiBoard current={built} items={[built]} uid="u1" width={1200}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+    )
+    act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', 'count'))
+    expect(vi.mocked(saveDashboard).mock.calls.at(-1)![1].sourceSheetName).toBe('Catalogue 2026')
   })
 
   it('sans espace de travail (uid null), refuse et le dit — jamais un clic silencieux', () => {

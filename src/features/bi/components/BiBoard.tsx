@@ -1,15 +1,14 @@
 // Corps du module BI pour UN tableau de bord donné : toolbar (dont annulation/rétablissement)
 // et grille. `BiScreen` la monte avec `key={current.id}` : voir son en-tête pour le pourquoi.
 //
-// ⚠ Références stables vers `DashboardGrid` : `current.tiles`/`current.filters` viennent tels
-// quels du parent (pas de littéral recréé), et `onClearFilters` est mémoïsé par `useCallback` —
-// sans ça, chaque frame de glissement (mise à jour de `draft.layout`, donc re-rendu de ce
-// composant) fournirait une fonction fraîche à `TileBody`, mémoïsé par `React.memo` côté
-// `DashboardGrid`, et annulerait la mémoïsation : chaque tuile referait son agrégation pendant
-// le geste.
+// ⚠ Références stables vers `DashboardGrid` : `tiles`/`current.filters` viennent tels quels
+// du parent (pas de littéral recréé), et `onClearFilters` est mémoïsé — sans ça, chaque frame
+// de glissement fournirait une fonction fraîche à `TileBody` (mémoïsé par `React.memo`) et
+// annulerait la mémoïsation : chaque tuile referait son agrégation pendant le geste.
 import { useCallback, useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
+import { usePimStore } from '@/stores/pim.store'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
 import { usePendingTiles } from '../hooks/usePendingTiles'
 import { saveDashboard } from '../store/dashboardsStore'
@@ -41,13 +40,11 @@ export function BiBoard({
 }: BiBoardProps) {
   const { t } = useTranslation()
 
-  // ⚠ `t` (issu de `useTranslation`) est une fonction RECRÉÉE à chaque rendu (voir
-  // `lib/i18n/index.ts`) : l'inclure ici recréerait `persist`/`persistFilters` — et donc
-  // `onClearFilters` — à chaque rendu, et romprait la mémoïsation de `DashboardGrid` que ce
-  // composant existe justement pour préserver. Le seul usage de `t` est un message d'erreur
-  // affiché au clic (jamais pendant un geste) : le lire au moment de l'appel plutôt que de le
-  // capturer en dépendance ne coûte rien de réel — au pire un libellé dans l'ancienne langue si
-  // l'utilisateur change de langue entre-temps.
+  // ⚠ `t` est RECRÉÉE à chaque rendu (`lib/i18n/index.ts`) : l'inclure en dépendance
+  // recréerait `persist`/`persistFilters` — donc `onClearFilters` — à chaque rendu, et
+  // romprait la mémoïsation de `DashboardGrid` que ce composant existe pour préserver. Son
+  // seul usage est un message d'erreur affiché au clic, jamais pendant un geste : la lire au
+  // moment de l'appel ne coûte au pire qu'un libellé dans l'ancienne langue.
   const persist = useCallback((layout: TilePlacement[]) => {
     if (!uid) return
     saveDashboard(uid, { ...current, layout }).catch((e: unknown) => {
@@ -57,13 +54,17 @@ export function BiBoard({
   }, [uid, current])
   const draft = useLayoutDraft(current.layout, persist)
 
-  // ⚠⚠ Source DÉRIVÉE de la feuille active (module Données) — jamais le registre statique :
-  // c'est elle que `useTileData` consulte réellement (cf. `pim.source.ts`). Le menu doit
-  // proposer EXACTEMENT les mêmes dimensions/mesures, sous peine de tuiles créées en erreur.
+  // ⚠⚠ Source DÉRIVÉE de la feuille active — jamais le registre statique : c'est elle que
+  // `useTileData` lit. Le menu doit proposer EXACTEMENT les mêmes champs, sinon tuile en erreur.
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const sheet = sheets[activeSheetIndex] ?? null
   const source = useMemo(() => effectivePimSource(sheet), [sheet])
+  // ⚠ MÊME condition que `useTileData`/`effectivePimSource` : une feuille sans colonne n'est
+  // pas exploitable, le moteur se replie alors sur le catalogue master. L'en-tête doit dire
+  // ce que le moteur lit VRAIMENT, sinon il ment sur le jeu de données.
+  const hasSheet = sheet !== null && sheet.columns.length > 0
+  const hasProducts = usePimStore((s) => s.products.length > 0)
 
   // ⚠⚠ Poser une tuile doit être ATOMIQUE du point de vue du rendu : la tuile et son
   // placement dans le même rendu. Voir `usePendingTiles` pour ce que coûtait le décalage.
@@ -80,9 +81,8 @@ export function BiBoard({
     const tile = newTile(kind, 'pim.products', measureId, dimensionId, columnDimensionId)
     const measureLabel = t(source.measures.find((m) => m.id === measureId)?.labelKey ?? 'bi.add.measure')
     const dim = dimensionId ? source.dimensions.find((d) => d.id === dimensionId) : undefined
-    // Le titre par défaut nomme la mesure ET la dimension : « Nombre de produits par
-    // Univers » se lit, « Sans titre » non. `dim?.label` prime sur `labelKey` : une colonne
-    // de feuille porte son nom dans la donnée, pas dans le catalogue i18n.
+    // Le titre nomme la mesure ET la dimension. `dim?.label` prime sur `labelKey` : une
+    // colonne de feuille porte son nom dans la donnée, pas dans le catalogue i18n.
     tile.title = dim
       ? t('bi.add.defaultTitle', { measure: measureLabel, dimension: dim.label ?? t(dim.labelKey) })
       : t('bi.add.defaultTitleKpi', { measure: measureLabel })
@@ -91,14 +91,19 @@ export function BiBoard({
     // grille reçoit la tuile et son placement ensemble. C'est tout l'objet du correctif.
     addPending(tile)
     draft.addPlacement(layout)
-    // ⚠ `tiles` (composé) et non `current.tiles` : deux ajouts rapprochés, avant tout écho
-    // de la base, perdraient sinon le premier.
-    saveDashboard(uid, { ...current, tiles: [...tiles, tile], layout })
+    // ⚠ `tiles` (composé), pas `current.tiles` : deux ajouts rapprochés, avant tout écho de
+    // la base, perdraient sinon le premier.
+    // ⚠⚠ Feuille mémorisée à la POSE DE LA PREMIÈRE TUILE, jamais à la création : créé avec
+    // la feuille A active mais bâti sur la B, le tableau avertirait à tort. Une fois posée,
+    // la valeur ne bouge plus — c'est elle qui fait foi pour l'avertissement.
+    saveDashboard(uid, {
+      ...current, tiles: [...tiles, tile], layout,
+      sourceSheetName: current.sourceSheetName ?? (hasSheet ? sheet.name : undefined),
+    })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('bi.save.failed')))
-    // ⚠ `draft.layout`/`draft.addPlacement` plutôt que `draft` : l'objet retourné par
-    // `useLayoutDraft` est un littéral RECRÉÉ à chaque rendu (contrairement à `addPlacement`,
-    // mémoïsé lui) — le dépendre en entier annulerait toute mémoïsation de ce callback.
-  }, [uid, current, tiles, source, draft.layout, draft.addPlacement, addPending, t])
+    // ⚠ `draft.layout`/`draft.addPlacement` plutôt que `draft` : cet objet est un littéral
+    // RECRÉÉ à chaque rendu — le dépendre en entier annulerait la mémoïsation du callback.
+  }, [uid, current, tiles, hasSheet, sheet, source, draft.layout, draft.addPlacement, addPending, t])
 
   const persistFilters = useCallback((filters: FilterClause[]) => {
     if (!uid) return
@@ -113,6 +118,9 @@ export function BiBoard({
     <>
       <BiBoardHeader
         headerAction={headerAction}
+        activeSheetName={hasSheet ? sheet.name : undefined}
+        usesMasterCatalogue={!hasSheet && hasProducts}
+        builtOnSheetName={current.sourceSheetName}
         toolbar={(
           <BiToolbar
             items={items} currentId={current.id} onSelect={onSelect}

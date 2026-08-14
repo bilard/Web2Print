@@ -33,3 +33,16 @@ describe('parseDashboard', () => {
     expect(() => parseDashboard(bad)).toThrow()
   })
 })
+
+// ⚠ `sourceSheetName` est OPTIONNEL, et doit le rester : les tableaux de bord enregistrés
+// avant son introduction ne le portent pas, et un champ requis les rendrait tous illisibles.
+describe('feuille source mémorisée', () => {
+  it('accepte un tableau ANTÉRIEUR, dépourvu du champ', () => {
+    expect(() => parseDashboard(minimal)).not.toThrow()
+  })
+
+  it('conserve le nom de la feuille quand il est présent', () => {
+    expect(parseDashboard({ ...minimal, sourceSheetName: 'Catalogue 2026' }).sourceSheetName)
+      .toBe('Catalogue 2026')
+  })
+})
