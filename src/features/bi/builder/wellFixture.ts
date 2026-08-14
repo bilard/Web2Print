@@ -28,6 +28,13 @@ export const testSource: DataSource = {
   ],
 }
 
+/** Les huit types du contrat. ⚠ Écrits ici plutôt qu'importés : `TILE_KINDS` n'est pas
+ *  exporté par `types.ts`, et un test qui n'en couvrirait que la moitié laisserait passer
+ *  exactement le genre de défaut qu'il existe pour attraper. */
+export const TILE_KINDS_FOR_TEST: TileKind[] = [
+  'kpi', 'bar', 'line', 'area', 'pie', 'doughnut', 'table', 'pivot',
+]
+
 /** Une tuile minimale et VALIDE : une mesure, la dimension demandée. */
 export function testTile(kind: TileKind, dimensionIds: string[] = []): Tile {
   return {
