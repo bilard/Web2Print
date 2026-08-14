@@ -268,6 +268,9 @@ describe('règles d’appariement (parité serveur)', () => {
         'ref-in-name': true, 'ref-in-url': true, 'ref-in-title': true,
       },
       familyVeto: true,
+      // Règle métier : origine ↔ origine, adaptable ↔ adaptable. Armée par défaut des
+      // deux côtés — un cron qui l'ignorerait apparierait des articles différents.
+      natureVeto: true,
       extraFamilies: {},
       priceAbyssRatio: 21,
       corroborateNumericKeys: true,
