@@ -406,7 +406,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.source.pickSite': 'Competidor',
   'bi.source.noSite': 'Ningún competidor indexado',
   'bi.source.oneSiteAtATime': 'Un solo competidor en memoria a la vez: varios MB por sitio.',
-  'bi.source.loadingCatalog': 'Lectura del catálogo de origen — bloque {done}/{total}, {loaded} productos',
+  'bi.source.loadingCatalog': 'Lectura del catálogo de origen — bloque {done}/{total}, {expected} productos anunciados',
   'bi.source.loadingSite': 'Lectura de las fichas de {site}…',
   'bi.source.idle': 'No se carga nada mientras ningún mosaico solicite este origen.',
   'bi.source.serverNeeded': 'Cruzar TODOS los competidores a nivel de ficha requiere el motor de servidor (lote 3): cada origen anterior se lee por separado.',

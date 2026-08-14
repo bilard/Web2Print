@@ -425,7 +425,7 @@ export const fr = {
   'bi.source.pickSite': 'Concurrent',
   'bi.source.noSite': 'Aucun concurrent indexé',
   'bi.source.oneSiteAtATime': 'Un seul concurrent en mémoire à la fois : plusieurs Mo par site.',
-  'bi.source.loadingCatalog': 'Lecture du catalogue source — tranche {done}/{total}, {loaded} produits',
+  'bi.source.loadingCatalog': 'Lecture du catalogue source — tranche {done}/{total}, {expected} produits annoncés',
   'bi.source.loadingSite': 'Lecture des fiches de {site}…',
   'bi.source.idle': 'Rien n’est chargé tant qu’aucune tuile ne réclame cette source.',
   'bi.source.serverNeeded': 'Croiser TOUS les concurrents à la maille fiche demande le moteur serveur (lot 3) : chaque source ci-dessus se lit isolément.',

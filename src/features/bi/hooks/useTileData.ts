@@ -7,6 +7,7 @@ import { aggregate, type AggregateResult } from '../engine/aggregate'
 import { pimRows, rowsFromSheet } from '../engine/rowsFromPim'
 import { getSource } from '../registry/sources'
 import { effectivePimSource } from '../registry/pim.source'
+import { isWatchSource, useWatchSourceState } from './useWatchData'
 import { BiKeyedError, type BiMessage, type FilterClause, type QuerySpec } from '../types'
 
 export interface TileData {
@@ -32,12 +33,35 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const sheet = sheets[activeSheetIndex] ?? null
+  // ⚠ Appelé sans condition (règle des hooks) : une source hors veille rend un état inerte.
+  // Ce hook ne CHARGE rien — les lectures appartiennent à `useWatchLoader`, appelé une fois
+  // par tableau de bord, sans quoi vingt tuiles reliraient vingt fois le même catalogue.
+  const watch = useWatchSourceState(query.source)
   const [attempt, setAttempt] = useState(0)
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
 
   return useMemo<TileData>(() => {
     try {
       const registered = getSource(query.source)
+      if (isWatchSource(query.source)) {
+        // `idle` = le chargement n'a pas encore démarré (l'effet du tableau part au même
+        // rendu) : un squelette, jamais un cadre vide qui dirait « aucune donnée ».
+        if (watch.state !== 'ready') {
+          return {
+            result: null, state: watch.state === 'idle' ? 'loading' : watch.state,
+            message: watch.message, updatedAt: null, live: false, retry,
+          }
+        }
+        const merged: QuerySpec = { ...query, filters: [...query.filters, ...globalFilters] }
+        const result = aggregate(watch.rows, merged, registered)
+        // ⚠ `live: false` : ces lignes sont une PHOTO relue à la demande (le catalogue source
+        // et les fiches d'un site ne sont pas des abonnements). Un point qui bat affirmerait
+        // un flux qui n'existe pas — seule la synthèse, tirée d'un `onSnapshot`, coule.
+        return {
+          result, state: result.rows.length > 0 ? 'ready' : 'empty',
+          updatedAt: watch.updatedAt, live: query.source === 'watch.summary', retry,
+        }
+      }
       // Lot 1 : seule la source client est branchée. Les sources `server` et `snapshot`
       // arrivent au lot 3 — le dire vaut mieux que rendre une tuile vide.
       if (registered.engine !== 'client') {
@@ -84,5 +108,5 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       return { result: null, state: 'error', message, updatedAt: null, live: false, retry }
     }
     // `attempt` est une dépendance VOLONTAIRE : c'est ce qui rejoue le calcul sur « réessayer ».
-  }, [sheet, products, query, globalFilters, attempt, retry])
+  }, [sheet, products, watch, query, globalFilters, attempt, retry])
 }

@@ -1,11 +1,11 @@
 // Corps du module BI pour UN tableau de bord donné : toolbar (dont annulation/rétablissement)
 // et grille. `BiScreen` la monte avec `key={current.id}` : voir son en-tête pour le pourquoi.
 //
-// ⚠ Références stables vers `DashboardGrid` : `tiles`/`current.filters` viennent tels quels
-// du parent (pas de littéral recréé), et `onClearFilters` est mémoïsé — sans ça, chaque frame
-// de glissement fournirait une fonction fraîche à `TileBody` (mémoïsé par `React.memo`) et
+// ⚠ Références stables vers `DashboardGrid` : `tiles`/`current.filters` viennent tels quels du
+// parent (pas de littéral recréé), et `onClearFilters` est mémoïsé — sans ça, chaque frame de
+// glissement fournirait une fonction fraîche à `TileBody` (mémoïsé par `React.memo`) et
 // annulerait la mémoïsation : chaque tuile referait son agrégation pendant le geste.
-import { useCallback, useMemo, type ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
@@ -13,8 +13,9 @@ import { useLayoutDraft } from '../hooks/useLayoutDraft'
 import { usePendingTiles } from '../hooks/usePendingTiles'
 import { saveDashboard } from '../store/dashboardsStore'
 import { newTile, placeTile } from '../engine/newTile'
-import { effectivePimSource } from '../registry/pim.source'
+import { useBoardSource } from '../hooks/useWatchData'
 import { AddTileMenu } from './AddTileMenu'
+import { SourcePicker } from './SourcePicker'
 import { biLabel } from './biLabel'
 import { BiBoardHeader } from './BiBoardHeader'
 import { BiToolbar } from './BiToolbar'
@@ -55,12 +56,9 @@ export function BiBoard({
   }, [uid, current])
   const draft = useLayoutDraft(current.layout, persist)
 
-  // ⚠⚠ Source DÉRIVÉE de la feuille active — jamais le registre statique : c'est elle que
-  // `useTileData` lit. Le menu doit proposer EXACTEMENT les mêmes champs, sinon tuile en erreur.
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const sheet = sheets[activeSheetIndex] ?? null
-  const source = useMemo(() => effectivePimSource(sheet), [sheet])
   // ⚠ MÊME condition que `useTileData`/`effectivePimSource` : une feuille sans colonne n'est
   // pas exploitable, le moteur se replie alors sur le catalogue master. L'en-tête doit dire
   // ce que le moteur lit VRAIMENT, sinon il ment sur le jeu de données.
@@ -70,6 +68,10 @@ export function BiBoard({
   // ⚠⚠ Poser une tuile doit être ATOMIQUE du point de vue du rendu : la tuile et son
   // placement dans le même rendu. Voir `usePendingTiles` pour ce que coûtait le décalage.
   const { tiles, add: addPending } = usePendingTiles(current.tiles)
+  // ⚠⚠ Source DÉRIVÉE de la feuille active pour le PIM, registre pour la veille — le menu doit
+  // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
+  // chargements réclamés par les tuiles POSÉES (jamais par la source juste sélectionnée).
+  const { sourceId, setSourceId, source, context } = useBoardSource(tiles, sheet)
 
   // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
   // glissement, voir le commentaire de `useLayoutDraft.addPlacement` pour le pourquoi.
@@ -79,7 +81,7 @@ export function BiBoard({
     // ⚠ Seule voie de CRÉATION du module : un refus muet laisserait croire que le clic n'a
     // rien fait, plutôt que de dire que l'espace de travail n'est pas encore prêt.
     if (!uid) { toast.error(t('bi.save.failed')); return }
-    const tile = newTile(kind, 'pim.products', measure, dimensionId, columnDimensionId)
+    const tile = newTile(kind, sourceId, measure, dimensionId, columnDimensionId)
     // ⚠ Le titre nomme la mesure comme le menu la nommait : une mesure DÉRIVÉE porte son
     // agrégation ET sa colonne (« Somme · Prix »). Prendre le seul `labelKey` aurait intitulé
     // toutes les tuiles de somme « Somme par Marque », quelle que soit la colonne.
@@ -108,7 +110,7 @@ export function BiBoard({
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('bi.save.failed')))
     // ⚠ `draft.layout`/`draft.addPlacement` plutôt que `draft` : cet objet est un littéral
     // RECRÉÉ à chaque rendu — le dépendre en entier annulerait la mémoïsation du callback.
-  }, [uid, current, tiles, hasSheet, sheet, source, draft.layout, draft.addPlacement, addPending, t])
+  }, [uid, current, tiles, hasSheet, sheet, source, sourceId, draft.layout, draft.addPlacement, addPending, t])
 
   const persistFilters = useCallback((filters: FilterClause[]) => {
     if (!uid) return
@@ -119,10 +121,12 @@ export function BiBoard({
   /** Retire les filtres globaux — le geste proposé par une tuile vide. */
   const onClearFilters = useCallback(() => persistFilters([]), [persistFilters])
 
+  // ⚠ Le sélecteur de source vit À CÔTÉ du titre : ce qui alimente les tuiles ne se devine pas.
   return (
     <>
       <BiBoardHeader
-        headerAction={headerAction}
+        headerAction={<div className="flex flex-col gap-2">{headerAction}
+          <SourcePicker context={context} sourceId={sourceId} onSourceChange={setSourceId} /></div>}
         activeSheetName={hasSheet ? sheet.name : undefined}
         usesMasterCatalogue={!hasSheet && hasProducts}
         builtOnSheetName={current.sourceSheetName}
@@ -135,19 +139,14 @@ export function BiBoard({
         )}
       />
 
-      {/* ⚠ Le geste, jamais le seul état local `editing` : un droit révoqué en cours de
-          session (cf. `BiScreen`) doit faire disparaître le menu à l'identique du bouton et
-          du raccourci clavier — pas de fenêtre où un rôle consultation seule pourrait écrire. */}
+      {/* ⚠ Le geste, jamais le seul état local `editing` : un droit révoqué en cours de session
+          (cf. `BiScreen`) doit faire disparaître le menu à l'identique du bouton et du raccourci
+          clavier — pas de fenêtre où un rôle consultation seule pourrait écrire. */}
       {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}
 
       <DashboardGrid
-        tiles={tiles}
-        layout={draft.layout}
-        editing={editing}
-        width={width}
-        globalFilters={current.filters}
-        onDrag={draft.setDraft}
-        onCommit={draft.commit}
+        tiles={tiles} layout={draft.layout} editing={editing} width={width}
+        globalFilters={current.filters} onDrag={draft.setDraft} onCommit={draft.commit}
         onClearFilters={onClearFilters}
       />
     </>

@@ -407,7 +407,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.source.pickSite': 'Competitor',
   'bi.source.noSite': 'No indexed competitor',
   'bi.source.oneSiteAtATime': 'One competitor in memory at a time: several MB per site.',
-  'bi.source.loadingCatalog': 'Reading the source catalogue — slice {done}/{total}, {loaded} products',
+  'bi.source.loadingCatalog': 'Reading the source catalogue — slice {done}/{total}, {expected} products announced',
   'bi.source.loadingSite': 'Reading {site}’s listings…',
   'bi.source.idle': 'Nothing loads until a tile asks for this source.',
   'bi.source.serverNeeded': 'Cross-referencing EVERY competitor at listing level needs the server engine (batch 3): each source above is read on its own.',

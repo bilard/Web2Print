@@ -3,8 +3,9 @@
 import type { SourceId } from '../types'
 import type { DataSource } from './types'
 import { pimSource } from './pim.source'
+import { WATCH_SOURCES } from './watch.source'
 
-const ALL_SOURCES: DataSource[] = [pimSource]
+const ALL_SOURCES: DataSource[] = [pimSource, ...WATCH_SOURCES]
 
 export function getSource(id: SourceId): DataSource {
   const s = ALL_SOURCES.find((x) => x.id === id)
