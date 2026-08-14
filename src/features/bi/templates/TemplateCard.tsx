@@ -15,16 +15,20 @@ export interface TemplateCardProps {
   /** Identifiant du tableau déjà créé pour ce modèle : la carte propose alors de l'OUVRIR. */
   existingId: string | null
   busy: boolean
+  /** Droit d'édition : sans lui, CRÉER est refusé par les règles Firestore — OUVRIR reste dû. */
+  canEdit: boolean
   onCreate: () => void
   onOpen: (id: string) => void
 }
 
 export function TemplateCard({
-  tpl, icon: Icon, availability, existingId, busy, onCreate, onOpen,
+  tpl, icon: Icon, availability, existingId, busy, canEdit, onCreate, onOpen,
 }: TemplateCardProps) {
   const { t } = useTranslation()
   const sources = tpl.sources.map((s) => t(getSource(s).labelKey)).join(' · ')
-  const blocked = !availability.ready && !existingId
+  // ⚠ Un rôle en consultation seule garde le droit d'OUVRIR ce qui existe : seul le geste de
+  // création lui est fermé, et il l'est AVANT le clic plutôt que par un refus de Firestore.
+  const blocked = !existingId && (!availability.ready || !canEdit)
   const action = () => (existingId ? onOpen(existingId) : onCreate())
 
   return (
@@ -41,7 +45,7 @@ export function TemplateCard({
 
       <p className="text-xs text-white/60 leading-relaxed flex-1">{t(tpl.descKey)}</p>
 
-      {blocked && availability.reasonKey && (
+      {blocked && availability.ready === false && availability.reasonKey && (
         <p className="flex items-start gap-1.5 text-[11px] text-amber-400/90 leading-relaxed">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" />
           {t(availability.reasonKey)}

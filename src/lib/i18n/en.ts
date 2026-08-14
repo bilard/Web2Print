@@ -490,7 +490,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.tpl.coverage.matchedBySite': 'Coverage of our catalogue, by competitor',
   'bi.tpl.coverage.indexedBySite': 'Shop-window size, by competitor',
   'bi.tpl.coverage.byFamily': 'Volume by family (top 15)',
-  'bi.tpl.coverage.medianByFamily': 'Median price by family (top 15)',
+  'bi.tpl.coverage.medianByFamily': 'Median price: the 15 most expensive families',
   'bi.tpl.coverage.table': 'Coverage and quality, by competitor',
   'bi.tpl.pim.name': 'PIM completeness',
   'bi.tpl.pim.desc': 'What is filled in across your product data, and above all where it is missing.',

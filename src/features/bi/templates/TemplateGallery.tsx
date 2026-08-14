@@ -20,9 +20,11 @@ export interface TemplateGalleryProps {
   onOpen: (id: string) => void
   /** Rendu SANS son titre ni son introduction (usage en volet, à côté d'un écran déjà rempli). */
   compact?: boolean
+  /** Droit d'édition (`useCan('bi.edit')`). Par défaut oui — la création reste alors ouverte. */
+  canEdit?: boolean
 }
 
-export function TemplateGallery({ onOpen, compact }: TemplateGalleryProps) {
+export function TemplateGallery({ onOpen, compact, canEdit = true }: TemplateGalleryProps) {
   const { t } = useTranslation()
   const availabilityOf = useTemplateAvailability()
   const { existingId, create, busy } = useCreateFromTemplate(onOpen)
@@ -44,6 +46,7 @@ export function TemplateGallery({ onOpen, compact }: TemplateGalleryProps) {
             availability={availabilityOf(tpl)}
             existingId={existingId(tpl)}
             busy={busy === tpl.key}
+            canEdit={canEdit}
             onCreate={() => void create(tpl)}
             onOpen={onOpen}
           />

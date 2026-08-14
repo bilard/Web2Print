@@ -47,6 +47,15 @@ export interface BuildContext {
    * rendu. Les titres de tuiles sont PERSISTÉS — ils doivent naître dans la bonne langue.
    */
   translate: (key: TranslationKey) => string
+  /**
+   * Feuille du module « Données » sur laquelle le tableau est bâti.
+   *
+   * ⚠⚠ Un modèle arrive avec ses tuiles DÉJÀ POSÉES : personne d'autre ne stampillera ce
+   * champ ensuite (`BiBoard` ne le fait qu'à la pose d'une tuile). Sans lui, un tableau créé
+   * avec la feuille A, rouvert avec la feuille B active, recalcule sur B sous les mêmes
+   * titres — et l'avertissement de l'écran ne part jamais.
+   */
+  sourceSheetName?: string
 }
 
 /** Un modèle + le contexte de l'utilisateur → le document prêt à écrire. PUR. */
@@ -69,6 +78,7 @@ export function buildDashboard(tpl: DashboardTemplate, ctx: BuildContext): Dashb
     layout: pages[0].layout,
     pages,
     filters: tpl.filters,
+    sourceSheetName: ctx.sourceSheetName,
     version: DASHBOARD_VERSION,
     createdAt: ctx.now,
     updatedAt: ctx.now,

@@ -508,7 +508,7 @@ export const fr = {
   'bi.tpl.coverage.matchedBySite': 'Couverture de notre catalogue, par concurrent',
   'bi.tpl.coverage.indexedBySite': 'Taille de la vitrine, par concurrent',
   'bi.tpl.coverage.byFamily': 'Volumétrie par famille (15 premières)',
-  'bi.tpl.coverage.medianByFamily': 'Prix médian par famille (15 premières)',
+  'bi.tpl.coverage.medianByFamily': 'Prix médian : les 15 familles les plus chères',
   'bi.tpl.coverage.table': 'Couverture et qualité, par concurrent',
   'bi.tpl.pim.name': 'Complétude PIM',
   'bi.tpl.pim.desc': 'Ce qui est renseigné dans vos données produit, et surtout où ça manque.',

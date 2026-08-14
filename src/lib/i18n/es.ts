@@ -489,7 +489,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.tpl.coverage.matchedBySite': 'Cobertura de nuestro catálogo, por competidor',
   'bi.tpl.coverage.indexedBySite': 'Tamaño del escaparate, por competidor',
   'bi.tpl.coverage.byFamily': 'Volumen por familia (15 primeras)',
-  'bi.tpl.coverage.medianByFamily': 'Precio mediano por familia (15 primeras)',
+  'bi.tpl.coverage.medianByFamily': 'Precio mediano: las 15 familias más caras',
   'bi.tpl.coverage.table': 'Cobertura y calidad, por competidor',
   'bi.tpl.pim.name': 'Completitud del PIM',
   'bi.tpl.pim.desc': 'Lo que está cumplimentado en sus datos de producto y, sobre todo, dónde falta.',

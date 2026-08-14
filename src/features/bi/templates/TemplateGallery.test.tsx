@@ -7,14 +7,17 @@ import { render, fireEvent, waitFor } from '@testing-library/react'
 import { toast } from 'sonner'
 import { TemplateGallery } from './TemplateGallery'
 import { templateDocId } from './index'
-import { saveDashboard } from '../store/dashboardsStore'
+import { dashboardExists, saveDashboard } from '../store/dashboardsStore'
 import { parseDashboard, type Dashboard } from '../types'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAccessStore } from '@/stores/access.store'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 
-vi.mock('../store/dashboardsStore', () => ({ saveDashboard: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../store/dashboardsStore', () => ({
+  saveDashboard: vi.fn().mockResolvedValue(undefined),
+  dashboardExists: vi.fn().mockResolvedValue(false),
+}))
 vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => mockUid }))
 vi.mock('../hooks/useDashboards', () => ({ useDashboards: () => mockDashboards }))
 vi.mock('@/features/priceWatch/useCatalogReport', () => ({ useWatchList: () => mockWatches }))
@@ -28,6 +31,7 @@ beforeEach(() => {
   mockDashboards = []
   mockWatches = [{ watchId: 'w1' }]
   vi.mocked(saveDashboard).mockClear().mockResolvedValue(undefined)
+  vi.mocked(dashboardExists).mockClear().mockResolvedValue(false)
   useAuthStore.setState({ user: { uid: 'user-1' } } as never)
   useAccessStore.setState({ accountId: 'acme' } as never)
   useExcelStore.setState({ sheets: [], activeSheetIndex: 0 } as never)
@@ -62,6 +66,47 @@ describe('TemplateGallery', () => {
     fireEvent.click(cardButton(container, 0))
 
     await waitFor(() => expect(onOpen).toHaveBeenCalledWith(templateDocId('watchGaps')))
+    expect(saveDashboard).not.toHaveBeenCalled()
+  })
+
+  it('n’écrase PAS un tableau existant que la liste n’a pas encore reçu', async () => {
+    // ⚠⚠ Le cas RÉEL : `useDashboards` part de `[]` et se remplit au premier instantané.
+    // Sans le contrôle sur la base, `setDoc` remplacerait le tableau déjà bâti sur ce modèle.
+    vi.mocked(dashboardExists).mockResolvedValue(true)
+    const onOpen = vi.fn()
+    const { container } = render(<TemplateGallery onOpen={onOpen} />)
+
+    fireEvent.click(cardButton(container, 0))
+
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith(templateDocId('watchGaps')))
+    expect(saveDashboard).not.toHaveBeenCalled()
+  })
+
+  it('stampille la feuille active sur le modèle PIM, jamais sur un modèle de veille', async () => {
+    useExcelStore.setState({
+      sheets: [{
+        name: 'Catalogue F1', columns: [{ key: 'a' }], rows: [], taxonomy: [],
+        taxonomyLevels: { a: 1 },
+      }],
+      activeSheetIndex: 0,
+    } as never)
+    const { container } = render(<TemplateGallery onOpen={vi.fn()} />)
+
+    fireEvent.click(cardButton(container, 2))
+    await waitFor(() => expect(saveDashboard).toHaveBeenCalledTimes(1))
+    // ⚠ Un modèle arrive avec ses tuiles DÉJÀ POSÉES : personne d'autre ne stampillera ce
+    // champ, et sans lui l'écran n'avertirait jamais qu'on lit une AUTRE feuille.
+    expect(vi.mocked(saveDashboard).mock.calls[0]![1].sourceSheetName).toBe('Catalogue F1')
+
+    fireEvent.click(cardButton(container, 0))
+    await waitFor(() => expect(saveDashboard).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(saveDashboard).mock.calls[1]![1].sourceSheetName).toBeUndefined()
+  })
+
+  it('sans droit d’édition, la création est fermée AVANT le clic', () => {
+    const { container } = render(<TemplateGallery onOpen={vi.fn()} canEdit={false} />)
+
+    expect((cardButton(container, 0) as HTMLButtonElement).disabled).toBe(true)
     expect(saveDashboard).not.toHaveBeenCalled()
   })
 

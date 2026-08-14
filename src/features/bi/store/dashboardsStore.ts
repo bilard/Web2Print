@@ -2,7 +2,7 @@
 //
 // ⚠ Sous `users/{workspaceUid}/…` : les tableaux de bord sont des DONNÉES DE TRAVAIL, donc
 // partagées par les membres d'une société, jamais rangées sous l'identité de leur auteur.
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { stripUndefined } from '@/lib/stripUndefined'
 import { MAX_DASHBOARD_BYTES, parseDashboard, type DashboardDraft } from '../types'
@@ -17,6 +17,19 @@ export function assertWritable(d: DashboardDraft): void {
   if (bytes > MAX_DASHBOARD_BYTES) {
     throw new Error(`Tableau de bord trop volumineux (${Math.round(bytes / 1024)} ko) — retire des tuiles.`)
   }
+}
+
+/**
+ * Ce document existe-t-il DÉJÀ ? Lecture DIRECTE, jamais l'abonnement de la liste.
+ *
+ * ⚠⚠ `useDashboards` part de `[]` et se remplit APRÈS le premier instantané : une création à
+ * identifiant déterministe (un modèle) décidée sur cette liste écraserait, au premier rendu,
+ * le tableau que l'utilisateur avait déjà bâti dessus — `setDoc` remplace, il ne fusionne pas.
+ * La liste écarte en outre en silence tout document illisible, qui paraîtrait donc absent.
+ */
+export async function dashboardExists(uid: string, id: string): Promise<boolean> {
+  const snap = await getDoc(doc(db, dashboardDoc(uid, id)))
+  return snap.exists()
 }
 
 // ⚠ `DashboardDraft` et non `Dashboard` : l'appelant qui CRÉE un tableau n'a pas encore de
