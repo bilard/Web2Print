@@ -1,5 +1,13 @@
 // La mise en page vit en état LOCAL pendant le geste et n'est persistée qu'au relâchement.
 // Pile d'annulation bornée : cinquante gestes suffisent, et la mémoire reste plate.
+//
+// ⚠⚠ `committed` retient le dernier état VALIDÉ, EXPLICITEMENT — jamais déduit de `layout`
+// (l'état affiché, qui peut être un brouillon non validé) ni de `initial` (l'état de
+// montage, jamais mis à jour ensuite). Une version antérieure empilait `layout`/`initial` par
+// déduction : après re-rendu entre `setDraft` et `commit` — donc toujours, en usage réel —
+// `commit` empilait le mauvais état, et un deuxième geste rendait l'état intermédiaire
+// irrécupérable, ni par `undo` ni par `redo`. `undo`/`redo` déplacent `committed` EN MÊME
+// TEMPS que la pile : il n'y a qu'une seule source de vérité pour « l'état validé courant ».
 import { useCallback, useRef, useState } from 'react'
 import type { TilePlacement } from '../types'
 
@@ -7,6 +15,7 @@ const UNDO_MAX = 50
 
 export function useLayoutDraft(initial: TilePlacement[], onCommit: (l: TilePlacement[]) => void) {
   const [layout, setLayout] = useState<TilePlacement[]>(initial)
+  const committed = useRef<TilePlacement[]>(initial)
   const past = useRef<TilePlacement[][]>([])
   const future = useRef<TilePlacement[][]>([])
   const [, force] = useState(0)
@@ -20,32 +29,35 @@ export function useLayoutDraft(initial: TilePlacement[], onCommit: (l: TilePlace
   const commit = useCallback(() => {
     const next = draft.current
     if (!next) return
-    past.current = [...past.current, layout === next ? initial : layout].slice(-UNDO_MAX)
+    past.current = [...past.current, committed.current].slice(-UNDO_MAX)
     future.current = []
+    committed.current = next
     draft.current = null
     onCommit(next)
     force((n) => n + 1)
-  }, [layout, initial, onCommit])
+  }, [onCommit])
 
   const undo = useCallback(() => {
     const prev = past.current.at(-1)
     if (!prev) return
     past.current = past.current.slice(0, -1)
-    future.current = [layout, ...future.current]
+    future.current = [committed.current, ...future.current]
+    committed.current = prev
     setLayout(prev)
     onCommit(prev)
     force((n) => n + 1)
-  }, [layout, onCommit])
+  }, [onCommit])
 
   const redo = useCallback(() => {
     const next = future.current[0]
     if (!next) return
     future.current = future.current.slice(1)
-    past.current = [...past.current, layout]
+    past.current = [...past.current, committed.current].slice(-UNDO_MAX)
+    committed.current = next
     setLayout(next)
     onCommit(next)
     force((n) => n + 1)
-  }, [layout, onCommit])
+  }, [onCommit])
 
   return {
     layout, setDraft, commit, undo, redo,

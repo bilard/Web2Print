@@ -26,14 +26,14 @@ const ROW_HEIGHT = 40
 // `React.memo` : converti en rendus SAUTÉS les références stables que le parent doit fournir
 // (`tile`, `globalFilters`, `onClearFilters`) — sans lui, chaque `onLayoutChange` pendant un
 // geste re-rendrait les vingt tuiles (et leurs graphes chart.js) même quand aucune n'a bougé.
-const TileBody = memo(function TileBody({ tile, globalFilters, onClearFilters }: {
-  tile: Tile; globalFilters: FilterClause[]; onClearFilters: () => void
+const TileBody = memo(function TileBody({ tile, editing, globalFilters, onClearFilters }: {
+  tile: Tile; editing: boolean; globalFilters: FilterClause[]; onClearFilters: () => void
 }) {
   const { result, state, error, updatedAt, live, retry } = useTileData(tile.query, globalFilters)
   const skeleton = tile.kind === 'kpi' ? 'kpi' : tile.kind === 'table' || tile.kind === 'pivot' ? 'table' : 'chart'
   return (
     <TileFrame
-      title={tile.title} updatedAt={updatedAt} live={live} state={state} error={error}
+      title={tile.title} updatedAt={updatedAt} live={live} state={state} error={error} editing={editing}
       skeleton={skeleton} onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
@@ -93,7 +93,7 @@ export function DashboardGrid({ tiles, layout, editing, width, globalFilters, on
     >
       {tiles.map((t) => (
         <div key={t.id}>
-          <TileBody tile={t} globalFilters={globalFilters} onClearFilters={onClearFilters} />
+          <TileBody tile={t} editing={editing} globalFilters={globalFilters} onClearFilters={onClearFilters} />
         </div>
       ))}
     </GridLayout>

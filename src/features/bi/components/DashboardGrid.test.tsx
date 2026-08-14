@@ -48,4 +48,25 @@ describe('DashboardGrid', () => {
     )
     expect(onDrag).not.toHaveBeenCalled()
   })
+
+  it('en consultation, aucune poignée de déplacement — le curseur ne ment pas', () => {
+    // ⚠ `isDraggable={editing}` bloque déjà le comportement ; sans ce test, l'affordance
+    // visuelle (curseur « déplaçable ») pouvait rester affichée alors que le geste est
+    // impossible.
+    const { container, rerender } = render(
+      <DashboardGrid
+        tiles={[tile]} layout={layout} editing={false} width={1200} globalFilters={[]}
+        onDrag={vi.fn()} onCommit={vi.fn()} onClearFilters={vi.fn()}
+      />,
+    )
+    expect(container.querySelector('.bi-tile-handle')).toBeNull()
+
+    rerender(
+      <DashboardGrid
+        tiles={[tile]} layout={layout} editing width={1200} globalFilters={[]}
+        onDrag={vi.fn()} onCommit={vi.fn()} onClearFilters={vi.fn()}
+      />,
+    )
+    expect(container.querySelector('.bi-tile-handle')).not.toBeNull()
+  })
 })

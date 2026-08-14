@@ -12,6 +12,8 @@ interface Props {
   state: 'loading' | 'empty' | 'error' | 'ready'
   skeleton: 'chart' | 'table' | 'kpi'
   error?: string
+  /** Mode édition de la grille : seul ce mode autorise le déplacement (`isDraggable`). */
+  editing: boolean
   onRetry: () => void
   onClearFilters: () => void
   children: React.ReactNode
@@ -26,13 +28,16 @@ function ageLabel(updatedAt: number | null): string {
 }
 
 export function TileFrame({
-  title, updatedAt, live, state, skeleton, error, onRetry, onClearFilters, children,
+  title, updatedAt, live, state, skeleton, error, editing, onRetry, onClearFilters, children,
 }: Props) {
   const { t } = useTranslation()
+  // ⚠ En consultation (`editing` faux), aucun déplacement n'est possible (`isDraggable`
+  // reste faux côté grille) : l'affordance visuelle ne doit pas non plus l'annoncer, sous
+  // peine d'un curseur « déplaçable » qui ment sur ce que le clic va faire.
+  const handleClass = editing ? 'cursor-move bi-tile-handle' : ''
   return (
     <div className="h-full flex flex-col bg-surface rounded-lg border border-white/[0.06] overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.05] shrink-0
-        cursor-move bi-tile-handle">
+      <div className={`flex items-center gap-2 px-3 py-2 border-b border-white/[0.05] shrink-0 ${handleClass}`}>
         <h3 className="text-[12px] font-semibold text-white truncate flex-1">{title}</h3>
         {live && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />}
         <span className="text-[10px] tabular-nums text-white/35 shrink-0" title={t('bi.tile.ageTitle')}>
