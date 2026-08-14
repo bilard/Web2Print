@@ -111,7 +111,7 @@ export function BiBoard({
             builtOnSheetName={onWatch ? undefined : current.sourceSheetName}
             /* ⚠ Le geste, jamais le seul état local `editing` : un droit révoqué en cours de
                session doit faire disparaître le menu à l'identique du bouton et du raccourci. */
-            filterChips={editing && canEdit ? <AddTileMenu source={source} onAdd={addTile} /> : undefined}
+            trailing={editing && canEdit ? <AddTileMenu source={source} onAdd={addTile} /> : undefined}
           />
         )}
         canvas={(width) => (

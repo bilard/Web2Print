@@ -8,7 +8,7 @@ import { useTranslation } from '@/lib/i18n'
 import type { ReactNode } from 'react'
 
 export function BiCrossbar({
-  activeSheetName, usesMasterCatalogue, builtOnSheetName, filterChips,
+  activeSheetName, usesMasterCatalogue, builtOnSheetName, trailing,
 }: {
   /** Feuille du module « Données » que les tuiles interrogent RÉELLEMENT, en ce moment. */
   activeSheetName?: string
@@ -18,8 +18,9 @@ export function BiCrossbar({
   usesMasterCatalogue?: boolean
   /** Feuille sur laquelle le tableau a été construit (`Dashboard.sourceSheetName`). */
   builtOnSheetName?: string
-  /** Filtres actifs, chacun retirable — posés par le tableau de bord. */
-  filterChips?: ReactNode
+  /** Ce que le tableau de bord pose à droite de la barre : aujourd'hui le menu d'ajout de
+   *  tuile, demain les puces de filtres actifs (chacune retirable, cf. spec lot 2, D4). */
+  trailing?: ReactNode
 }) {
   const { t } = useTranslation()
   // ⚠⚠ Deux feuilles aux mêmes en-têtes (un catalogue et celui d'un concurrent) sont
@@ -49,7 +50,7 @@ export function BiCrossbar({
           {t('bi.screen.sheetMismatch', { sheet: builtOnSheetName ?? '' })}
         </span>
       )}
-      {filterChips}
+      {trailing}
     </div>
   )
 }
