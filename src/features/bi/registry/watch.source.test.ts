@@ -168,6 +168,11 @@ describe('catalogRows', () => {
     expect(row.originRefs).toBe('754-04038 · 954-04038')
     expect(row.originRefsCount).toBe(2)
     expect(catalogRows([product()])[0].originRefs).toBeNull()
+    // ⚠ Champ ABSENT = `null`, jamais 0 : la plupart des fiches n'en citent aucune, et un
+    // zéro partout ferait annoncer « 100 % renseigné » à leur taux de remplissage.
+    expect(catalogRows([product()])[0].originRefsCount).toBeNull()
+    // Une liste VIDE, en revanche, est une information : zéro référence d'origine citée.
+    expect(catalogRows([product({ originRefs: [] })])[0].originRefsCount).toBe(0)
   })
 
   it('rend les colonnes d’affichage du catalogue source', () => {

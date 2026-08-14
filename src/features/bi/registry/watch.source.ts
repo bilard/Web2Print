@@ -285,7 +285,11 @@ export function catalogRows(products: SourceProduct[]): Row[] {
     // Rendues en texte joint pour se compter et se filtrer, et comptées à part : « combien
     // de références d'origine cette fiche cite-t-elle » est la question qui se pose.
     originRefs: text(p.originRefs?.join(' · ')),
-    originRefsCount: p.originRefs?.length ?? 0,
+    // ⚠ `null` — et non 0 — quand le champ est ABSENT : la plupart des fiches n'en citent
+    // aucune, et un zéro partout ferait dire au taux de remplissage « 100 % renseigné » sur
+    // un catalogue qui ne porte l'information nulle part. Une liste VIDE, elle, compte 0 :
+    // là, on sait qu'aucune référence d'origine n'est citée.
+    originRefsCount: p.originRefs ? p.originRefs.length : null,
     url: text(p.url),
     description: text(p.description),
     image: text(p.image),
