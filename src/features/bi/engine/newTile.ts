@@ -1,7 +1,6 @@
 // Fabrique d'une tuile par défaut. PUR — et son résultat DOIT passer `parseDashboard` :
 // une tuile invalide serait écartée à la lecture, donc invisible sans un mot.
-import { getSource } from '../registry/sources'
-import type { SourceId, Tile, TileKind, TilePlacement } from '../types'
+import type { MeasureRef, SourceId, Tile, TileKind, TilePlacement } from '../types'
 
 /** Taille de départ par type, en cellules de la grille (12 colonnes). */
 const SIZES: Record<TileKind, { w: number; h: number }> = {
@@ -11,12 +10,17 @@ const SIZES: Record<TileKind, { w: number; h: number }> = {
   table: { w: 6, h: 7 }, pivot: { w: 8, h: 7 },
 }
 
+/**
+ * ⚠⚠ La mesure arrive TELLE QUELLE, jamais re-résolue contre le registre : celui-ci est
+ * STATIQUE et ne connaît pas les colonnes de la feuille active. Il la cherchait auparavant
+ * par identifiant et se repliait sur `measures[0]` — toute mesure dérivée d'une colonne
+ * serait redevenue « Nombre de produits », sans un mot. La validation, elle, appartient à
+ * `parseDashboard` (forme) et au moteur (existence de la colonne).
+ */
 export function newTile(
-  kind: TileKind, source: SourceId, measureId: string,
+  kind: TileKind, source: SourceId, measure: MeasureRef,
   dimensionId?: string, columnDimensionId?: string,
 ): Tile {
-  const s = getSource(source)
-  const measure = s.measures.find((m) => m.id === measureId) ?? s.measures[0]
   // ⚠ Une tuile KPI montre UNE valeur : lui donner une dimension produirait plusieurs
   // lignes dont une seule serait affichée — un chiffre faux, sans avertissement.
   const dimensions = kind === 'kpi' || !dimensionId ? [] : [{ id: dimensionId }]
@@ -30,7 +34,7 @@ export function newTile(
     id: `t_${Date.now().toString(36)}_${Math.round(performance.now())}`,
     kind,
     title: '',
-    query: { source, measures: [{ id: measure.id }], dimensions, filters: [] },
+    query: { source, measures: [measure], dimensions, filters: [] },
     // La colonne est DÉSIGNÉE, jamais devinée : sans elle, `PivotTile` se rabat sur la
     // seconde dimension — juste par hasard, faux dès qu'un troisième axe s'ajoute.
     ...(crossed ? { options: { pivotColumn: columnDimensionId } } : {}),

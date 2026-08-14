@@ -2,6 +2,7 @@
 // direct, on doit voir que ça bouge, pas seulement le résultat.
 import { AnimatedNumber } from '@/components/shared/AnimatedNumber'
 import { formatMeasure } from '../../engine/formatValue'
+import { biLabel } from '../biLabel'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import type { AggregateResult } from '../../engine/aggregate'
 
@@ -10,8 +11,7 @@ export function KpiTile({ result }: { result: AggregateResult }) {
   const col = result.columns.find((c) => c.role === 'measure')
   const raw = col ? result.rows[0]?.[col.key] ?? null : null
   const value = typeof raw === 'number' ? raw : null
-  // ⚠ `label` (venu de la donnée) prime sur `labelKey` (catalogue i18n) quand il est présent.
-  const label = col ? col.label ?? t(col.labelKey) : null
+  const label = col ? biLabel(col, t) : null
 
   return (
     <div className="h-full flex flex-col justify-center">

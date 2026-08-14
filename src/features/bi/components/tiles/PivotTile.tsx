@@ -3,6 +3,7 @@
 // hauteur forcée ici, l'en-tête `sticky` reste lisible pendant le défilement.
 import { toPivot } from '../../engine/pivot'
 import { formatMeasure } from '../../engine/formatValue'
+import { biLabel } from '../biLabel'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import type { AggregateResult } from '../../engine/aggregate'
 
@@ -35,8 +36,7 @@ export function PivotTile({ result, columnDim, showTotals: showTotalsOption }: {
   // ligne, ni en colonne, ni général. `showTotals: false` les retire aussi explicitement.
   const showTotals = measure.aggregable !== false && showTotalsOption !== false
   const fmt = (v: number | null) => formatMeasure(v, measure.format, intlLocale(locale))
-  // ⚠ `label` (venu de la donnée) prime sur `labelKey` (catalogue i18n) quand il est présent.
-  const rowLabel = rowCol.label ?? t(rowCol.labelKey)
+  const rowLabel = biLabel(rowCol, t)
 
   return (
     <table className="w-full text-[11px] tabular-nums">

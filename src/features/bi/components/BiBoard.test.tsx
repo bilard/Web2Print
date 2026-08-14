@@ -141,7 +141,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     )
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
-    act(() => onAdd('bar', 'count', 'taxo.1'))
+    act(() => onAdd('bar', { id: 'count' }, 'taxo.1'))
 
     // Persisté : deux tuiles, et la nouvelle a bien une place (sinon `parseDashboard`
     // refuserait cette écriture à la relecture — la tuile orpheline recherchée en tâche 11).
@@ -172,7 +172,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const { rerender } = render(props(dashboard))
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
-    act(() => onAdd('bar', 'count', 'taxo.1'))
+    act(() => onAdd('bar', { id: 'count' }, 'taxo.1'))
 
     // L'écho Firestore : le document rapatrie enfin la tuile ET son placement.
     const saved = vi.mocked(saveDashboard).mock.calls.at(-1)![1]
@@ -204,7 +204,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
       <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
         editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
     )
-    act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', 'count'))
+    act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', { id: 'count' }))
     first.unmount() // sinon ce premier tableau, abonné à la feuille active, se rendrait encore
     expect(vi.mocked(saveDashboard).mock.calls.at(-1)![1].sourceSheetName).toBe('Catalogue 2026')
 
@@ -219,7 +219,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
       <BiBoard current={built} items={[built]} uid="u1" width={1200}
         editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
     )
-    act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', 'count'))
+    act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', { id: 'count' }))
     expect(vi.mocked(saveDashboard).mock.calls.at(-1)![1].sourceSheetName).toBe('Catalogue 2026')
   })
 
@@ -231,7 +231,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     )
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
-    act(() => onAdd('kpi', 'count'))
+    act(() => onAdd('kpi', { id: 'count' }))
     expect(saveDashboard).not.toHaveBeenCalled()
   })
 })

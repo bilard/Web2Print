@@ -15,11 +15,12 @@ import { saveDashboard } from '../store/dashboardsStore'
 import { newTile, placeTile } from '../engine/newTile'
 import { effectivePimSource } from '../registry/pim.source'
 import { AddTileMenu } from './AddTileMenu'
+import { biLabel } from './biLabel'
 import { BiBoardHeader } from './BiBoardHeader'
 import { BiToolbar } from './BiToolbar'
 import { DashboardGrid } from './DashboardGrid'
 import { useTranslation } from '@/lib/i18n'
-import type { Dashboard, FilterClause, TileKind, TilePlacement } from '../types'
+import { measureKey, type Dashboard, type FilterClause, type MeasureRef, type TileKind, type TilePlacement } from '../types'
 
 interface BiBoardProps {
   current: Dashboard
@@ -73,13 +74,17 @@ export function BiBoard({
   // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
   // glissement, voir le commentaire de `useLayoutDraft.addPlacement` pour le pourquoi.
   const addTile = useCallback((
-    kind: TileKind, measureId: string, dimensionId?: string, columnDimensionId?: string,
+    kind: TileKind, measure: MeasureRef, dimensionId?: string, columnDimensionId?: string,
   ) => {
     // ⚠ Seule voie de CRÉATION du module : un refus muet laisserait croire que le clic n'a
     // rien fait, plutôt que de dire que l'espace de travail n'est pas encore prêt.
     if (!uid) { toast.error(t('bi.save.failed')); return }
-    const tile = newTile(kind, 'pim.products', measureId, dimensionId, columnDimensionId)
-    const measureLabel = t(source.measures.find((m) => m.id === measureId)?.labelKey ?? 'bi.add.measure')
+    const tile = newTile(kind, 'pim.products', measure, dimensionId, columnDimensionId)
+    // ⚠ Le titre nomme la mesure comme le menu la nommait : une mesure DÉRIVÉE porte son
+    // agrégation ET sa colonne (« Somme · Prix »). Prendre le seul `labelKey` aurait intitulé
+    // toutes les tuiles de somme « Somme par Marque », quelle que soit la colonne.
+    const found = source.measures.find((m) => m.id === measureKey({ ...measure, alias: undefined }))
+    const measureLabel = found ? biLabel(found, t) : t('bi.add.measure')
     const dim = dimensionId ? source.dimensions.find((d) => d.id === dimensionId) : undefined
     // Le titre nomme la mesure ET la dimension. `dim?.label` prime sur `labelKey` : une
     // colonne de feuille porte son nom dans la donnée, pas dans le catalogue i18n.

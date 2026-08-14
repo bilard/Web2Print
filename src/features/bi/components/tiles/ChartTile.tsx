@@ -10,6 +10,7 @@ import type { ChartType, TooltipItem } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import { formatMeasure } from '../../engine/formatValue'
+import { biLabel } from '../biLabel'
 import type { AggregateResult } from '../../engine/aggregate'
 import type { TileKind } from '../../types'
 
@@ -29,8 +30,7 @@ export function ChartTile({ result, kind, stacked }: {
 
   const dimKey = result.columns.find((c) => c.role === 'dimension')?.key
   const measures = result.columns.filter((c) => c.role === 'measure')
-  // ⚠ `label` (venu de la donnée) prime sur `labelKey` (catalogue i18n) quand il est présent.
-  const measureLabel = (m: (typeof measures)[number]) => m.label ?? t(m.labelKey)
+  const measureLabel = (m: (typeof measures)[number]) => biLabel(m, t)
   const labels = result.rows.map((r) => (dimKey ? String(r[dimKey] ?? '—') : ''))
   const data = {
     labels,

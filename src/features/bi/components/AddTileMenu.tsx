@@ -1,23 +1,29 @@
-// Choix du visuel, de la mesure et de la dimension. Le geste complet (glisser un visuel sur
-// la grille, brancher les champs) arrive au lot 2 ; ici on pose une tuile utilisable.
+// Choix du visuel, de la mesure et de la dimension. Le geste complet (glisser un champ dans
+// une zone de dépôt) arrive avec le constructeur ; ici on pose une tuile utilisable.
 //
 // ⚠⚠ `source` DOIT être la source DÉRIVÉE de la feuille active (`effectivePimSource`), pas le
 // registre statique : sinon ce menu proposerait des colonnes que le moteur ne connaît pas
 // (`useTileData` les rejette avec « Dimension inconnue pour cette source »).
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AlertTriangle, BarChart3, LineChart, PieChart, Hash, Table2, Grid3x3, Plus } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
-import type { DataSource } from '../registry/types'
-import type { TileKind } from '../types'
+import { BiPicker, type PickerOption } from './BiPicker'
+import { biLabel } from './biLabel'
+import type { DataSource, Measure } from '../registry/types'
+import type { MeasureRef, TileKind } from '../types'
 
 const KINDS: { kind: TileKind; Icon: typeof BarChart3 }[] = [
   { kind: 'kpi', Icon: Hash }, { kind: 'bar', Icon: BarChart3 }, { kind: 'line', Icon: LineChart },
   { kind: 'pie', Icon: PieChart }, { kind: 'table', Icon: Table2 }, { kind: 'pivot', Icon: Grid3x3 },
 ]
 
+/** Une mesure du registre → la `MeasureRef` que la tuile enregistre : la colonne et son
+ *  agrégation pour une mesure dérivée, l'identifiant pour une mesure déclarée. */
+const refOf = (m: Measure): MeasureRef => m.derivedFrom ?? { id: m.id }
+
 export function AddTileMenu({ source, onAdd }: {
   source: DataSource
-  onAdd: (kind: TileKind, measureId: string, dimensionId?: string, columnDimensionId?: string) => void
+  onAdd: (kind: TileKind, measure: MeasureRef, dimensionId?: string, columnDimensionId?: string) => void
 }) {
   const { t } = useTranslation()
   const [kind, setKind] = useState<TileKind>('bar')
@@ -32,6 +38,17 @@ export function AddTileMenu({ source, onAdd }: {
   const measure = source.measures.find((m) => m.id === measureId) ?? source.measures[0]
   const dimension = source.dimensions.find((d) => d.id === dimensionId) ?? source.dimensions[0]
 
+  // ⚠⚠ Les mesures DÉRIVÉES sont groupées PAR COLONNE : sur un catalogue de 21 colonnes, la
+  // liste dépasse la centaine d'entrées, et « Somme », « Moyenne », « Médiane » répétés vingt
+  // fois d'affilée sans en-tête ne se lisent pas. `BiPicker` ouvre sa recherche au-delà de dix.
+  const measureOptions = useMemo<PickerOption[]>(() => source.measures.map((m) => ({
+    id: m.id,
+    label: biLabel(m, t),
+    group: m.label ?? t('bi.measure.declared'),
+  })), [source.measures, t])
+  const dimensionOptions = useMemo<PickerOption[]>(
+    () => source.dimensions.map((d) => ({ id: d.id, label: biLabel(d, t) })), [source.dimensions, t])
+
   // ⚠⚠ Le tableau croisé exige DEUX axes : sans second choix, toute tuile « croisé » créée
   // ici n'affichait que « un tableau croisé demande deux dimensions ». Les candidats
   // excluent l'axe des lignes — se croiser avec soi-même ne produit aucun croisement.
@@ -43,8 +60,6 @@ export function AddTileMenu({ source, onAdd }: {
   // ⚠ Une mesure non agrégeable (médiane, pourcentage) reste CORRECTE calculée par groupe —
   // le moteur agrège les lignes, jamais les valeurs déjà calculées (`aggregate.ts`). Ce
   // qu'elle ne supporte pas, c'est d'être recomposée ENTRE groupes (un total, un empilement).
-  // La spec exige que l'interface le dise ; le refus complet du geste est un livrable du
-  // constructeur (lot 2) — ici, un avertissement visible suffit.
   const showAggregationWarning = kind !== 'kpi' && !measure.aggregable
 
   return (
@@ -62,36 +77,24 @@ export function AddTileMenu({ source, onAdd }: {
         ))}
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[10px] uppercase tracking-wider text-white/35">{t('bi.add.measure')}</span>
-        <select value={measure.id} onChange={(e) => setMeasureId(e.target.value)}
-          className="bg-well border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
-          {source.measures.map((m) => <option key={m.id} value={m.id}>{t(m.labelKey)}</option>)}
-        </select>
-      </label>
+      <BiPicker
+        label={t('bi.add.measure')} value={measure.id}
+        options={measureOptions} onChange={setMeasureId}
+      />
 
       {kind !== 'kpi' && (
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-white/35">{t('bi.add.dimension')}</span>
-          <select value={dimension.id} onChange={(e) => setDimensionId(e.target.value)}
-            className="bg-well border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
-            {source.dimensions.map((d) => (
-              <option key={d.id} value={d.id}>{d.label ?? t(d.labelKey)}</option>
-            ))}
-          </select>
-        </label>
+        <BiPicker
+          label={t('bi.add.dimension')} value={dimension.id}
+          options={dimensionOptions} onChange={setDimensionId}
+        />
       )}
 
       {kind === 'pivot' && columnDimension && (
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] uppercase tracking-wider text-white/35">{t('bi.add.columnDimension')}</span>
-          <select value={columnDimension.id} onChange={(e) => setColumnDimensionId(e.target.value)}
-            className="bg-well border border-white/10 rounded-lg px-2 py-1 text-xs text-white">
-            {columnCandidates.map((d) => (
-              <option key={d.id} value={d.id}>{d.label ?? t(d.labelKey)}</option>
-            ))}
-          </select>
-        </label>
+        <BiPicker
+          label={t('bi.add.columnDimension')} value={columnDimension.id}
+          options={dimensionOptions.filter((o) => o.id !== dimension.id)}
+          onChange={setColumnDimensionId}
+        />
       )}
 
       {showAggregationWarning && (
@@ -103,7 +106,7 @@ export function AddTileMenu({ source, onAdd }: {
 
       <button
         onClick={() => onAdd(
-          kind, measure.id,
+          kind, refOf(measure),
           kind === 'kpi' ? undefined : dimension.id,
           columnDimension?.id,
         )}

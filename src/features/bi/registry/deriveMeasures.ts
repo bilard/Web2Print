@@ -44,6 +44,7 @@ export function measureOf(col: DerivableColumn, agg: Aggregation): Measure {
     // donnée) : le composant compose les deux.
     labelKey: `bi.agg.${agg}` as Measure['labelKey'],
     label: col.label,
+    derivedFrom: { field: col.key, agg },
     format: aggregationFormat(agg, col.format),
     aggregable: isAggregable(agg),
     compute: (rows: Row[]) => computeAggregation(rows, col.key, agg),

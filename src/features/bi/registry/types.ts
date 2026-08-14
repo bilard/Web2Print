@@ -4,7 +4,7 @@
 // fonction pure qui fait déjà autorité ailleurs dans l'application (médiane d'écart,
 // durée de cycle, coût rattrapé). Un moteur générique qui recalculerait ces valeurs
 // naïvement contredirait les écrans en place.
-import type { SourceId } from '../types'
+import type { DerivedMeasureRef, SourceId } from '../types'
 import type { TranslationKey } from '@/lib/i18n'
 
 export type Row = Record<string, unknown>
@@ -32,6 +32,10 @@ export interface Measure {
    *  (« Prix »). Le consommateur compose les deux (`bi.measure.derived`). */
   label?: string
   format: MeasureFormat
+  /** Ce qu'une tuile doit ENREGISTRER pour redemander cette mesure. Absent sur une mesure
+   *  DÉCLARÉE : son identifiant suffit (`{ id }`). Présent sur une mesure dérivée, il évite
+   *  au constructeur de reconstruire `{ field, agg }` en découpant l'identifiant. */
+  derivedFrom?: DerivedMeasureRef
   /**
    * `false` pour une médiane, un pourcentage, un taux : additionner ou moyenner ces
    * valeurs entre groupes n'a pas de sens. Le constructeur refuse le geste (spec, risque 1).

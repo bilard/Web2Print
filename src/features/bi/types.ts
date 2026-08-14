@@ -81,7 +81,6 @@ const derivedMeasureRefSchema = z.object({
 })
 const measureRefSchema = z.union([declaredMeasureRefSchema, derivedMeasureRefSchema])
 export type MeasureRef = z.infer<typeof measureRefSchema>
-export type DeclaredMeasureRef = z.infer<typeof declaredMeasureRefSchema>
 export type DerivedMeasureRef = z.infer<typeof derivedMeasureRefSchema>
 
 export function isDerivedMeasure(ref: MeasureRef): ref is DerivedMeasureRef {
@@ -94,7 +93,7 @@ export function isDerivedMeasure(ref: MeasureRef): ref is DerivedMeasureRef {
  *
  * ⚠ Pour une mesure déclarée, elle reste `alias ?? id` : la changer casserait le tri de tous
  * les tableaux en base. La forme `agg:field` est NOUVELLE, elle n'entre donc en collision
- * avec rien (aucun id déclaré ne porte de deux-points).
+ * avec rien (aucune source n'expose d'identifiant déclaré portant un deux-points).
  */
 export function measureKey(ref: MeasureRef): string {
   if (ref.alias) return ref.alias

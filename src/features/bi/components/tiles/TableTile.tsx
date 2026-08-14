@@ -2,13 +2,13 @@
 // défile jamais horizontalement. Pas de conteneur défilant ni de hauteur forcée ici — l'en-
 // tête `sticky` reste lisible pendant que `TileFrame` fait défiler le corps.
 import { formatMeasure } from '../../engine/formatValue'
+import { biLabel } from '../biLabel'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import type { AggregateResult } from '../../engine/aggregate'
 
 export function TableTile({ result }: { result: AggregateResult }) {
   const { t, locale } = useTranslation()
-  // ⚠ `label` (venu de la donnée) prime sur `labelKey` (catalogue i18n) quand il est présent.
-  const columnLabel = (c: (typeof result.columns)[number]) => c.label ?? t(c.labelKey)
+  const columnLabel = (c: (typeof result.columns)[number]) => biLabel(c, t)
 
   return (
     <table className="w-full text-[11px] tabular-nums">
