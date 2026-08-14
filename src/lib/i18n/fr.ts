@@ -2814,6 +2814,7 @@ export const fr = {
   'run.compareCatalog.taxoColumns': 'Taxonomie : {list}',
   'run.compareCatalog.noTaxoColumn': "Aucune colonne de taxonomie reconnue : l'arbre de familles de l'écran « Concurrents » restera vide. Renseigne « Colonnes Taxonomie » dans ce node (du plus large au plus fin, séparées par « > »).",
   'run.compareCatalog.indexLoaded': '{count} fiche(s) concurrentes en mémoire pour {sites} site(s), lues en {s} s.',
+  'run.compareCatalog.natureArbitrated': 'Arbitrage origine ↔ adaptable : {count} appariement(s) écarté(s) au profit du produit dont la nature répond à celle de la fiche. Origine avec origine, adaptable avec adaptable — ce ne sont pas les mêmes articles.',
   'run.compareCatalog.matching': "Appariement de {products} produit(s) source avec {sites} concurrent(s) — étape ininterrompue : le journal ne reprend qu'à la fin.",
   'run.compareCatalog.reportBuilding': 'Construction du rapport du tableau de bord (seconde passe sur les mêmes index)…',
   'run.compareCatalog.sourceSaving': 'Catalogue source : {done}/{total} tranche(s) écrites.',

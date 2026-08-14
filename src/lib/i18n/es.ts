@@ -2693,6 +2693,7 @@ export const es: Record<TranslationKey, string> = {
   'run.compareCatalog.taxoColumns': 'Taxonomía: {list}',
   'run.compareCatalog.noTaxoColumn': 'Ninguna columna de taxonomía reconocida: el árbol de familias de la pantalla «Competidores» quedará vacío. Rellene «Columnas de taxonomía» en este nodo (de la más amplia a la más fina, separadas por «>»).',
   'run.compareCatalog.indexLoaded': '{count} ficha(s) de la competencia en memoria para {sites} sitio(s), leídas en {s} s.',
+  'run.compareCatalog.natureArbitrated': 'Arbitraje origen ↔ adaptable: {count} emparejamiento(s) descartado(s) en favor del producto cuya naturaleza responde a la de la ficha. Origen con origen, adaptable con adaptable: no son los mismos artículos.',
   'run.compareCatalog.matching': 'Emparejando {products} producto(s) de origen con {sites} competidor(es): etapa ininterrumpida, el registro solo se reanuda al final.',
   'run.compareCatalog.reportBuilding': 'Construcción del informe del panel (segunda pasada sobre los mismos índices)…',
   'run.compareCatalog.sourceSaving': 'Catálogo de origen: {done}/{total} porción(es) escritas.',

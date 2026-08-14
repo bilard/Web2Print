@@ -17,6 +17,9 @@ import { searchUrl, directedPass, searchProductOnSite } from './searchDirected'
 import { DEFAULT_PAIRING_RULES, resolvePairingRules, rulesDifferFromDefault, summarizeRules } from './pairingRules'
 import { pickDisplayColumns, taxoPathOf, trimDescription, DESCRIPTION_MAX } from './displayColumns'
 import { parseListingDomCards } from './genericCards'
+import { pairAllSites } from './pairingRun'
+import type { SourceProduct } from './match'
+import type { CompetitorListing } from './competitorListing'
 
 describe('competitorListing (parité serveur)', () => {
   it('parse les prix marchands', () => {
@@ -301,5 +304,37 @@ describe('règles d’appariement (parité serveur)', () => {
 
     const rules = resolvePairingRules({ evidence: { 'ref-in-title': false } as never })
     expect(matchProduct(product, 's', buildMemoryIndex(listings, rules), rules).outcome).toBe('not-found')
+  })
+})
+
+describe('arbitrage ORIGINE ↔ ADAPTABLE (parité serveur)', () => {
+  // ⚠⚠ Règle métier : origine avec origine, adaptable avec adaptable. Le cron doit trancher
+  // comme le navigateur, sinon un même suivi rend deux rapports différents selon qu'il a
+  // été calculé par l'onglet ou par la tâche planifiée.
+  const site = [{ siteId: 's1', domain: '123courroies.fr' }]
+  const origine: SourceProduct = {
+    id: 'o', name: 'Courroie MTD 754-04038', ref: '754-04038', price: 12.48,
+    taxo: ['PIECES ORIGINE', 'COURROIES'],
+  }
+  const muet: SourceProduct = { id: 'm', name: 'Courroie 5/8 1015 mm', ref: '754-04038', price: 18 }
+  const ficheOrigine: CompetitorListing[] = [
+    { url: 'https://123courroies.fr/o', name: 'Courroie MTD 754-04038 — pièce d’origine', ref: '754-04038', price: 12.9 },
+  ]
+
+  it('à rang égal, la pièce d’origine l’emporte sur le produit muet', () => {
+    for (const cat of [[muet, origine], [origine, muet]]) {
+      const run = pairAllSites(cat, site, new Map([['s1', ficheOrigine]]), {})
+      expect([...run.cellsByProduct.keys()].map((i) => cat[i].id)).toEqual(['o'])
+      expect(run.totals.natureYielded).toBe(1)
+    }
+  })
+
+  it('une fiche qui ne dit pas sa nature ne départage rien', () => {
+    const muette: CompetitorListing[] = [
+      { url: 'https://123courroies.fr/x', name: 'Courroie 754-04038', ref: '754-04038', price: 12.48 },
+    ]
+    const run = pairAllSites([muet, origine], site, new Map([['s1', muette]]), {})
+    expect([...run.cellsByProduct.keys()]).toHaveLength(2)
+    expect(run.totals.natureYielded).toBe(0)
   })
 })

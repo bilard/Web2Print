@@ -116,3 +116,49 @@ export function yieldsToBetter(claim: Claim, best: Map<string, number>): boolean
   const top = best.get(claim.url)
   return top != null && claimRank(claim) < top
 }
+
+/**
+ * Les fiches où le litige de rang égal PEUT se trancher par la nature : au moins un
+ * prétendant du meilleur rang affirme la même nature que la fiche.
+ *
+ * Se calcule en une passe séparée, avant tout retrait, pour la même raison que
+ * `bestRankByListing` : l'issue ne doit pas dépendre de l'ordre dans lequel les
+ * prétendants arrivent, sinon deux runs rendraient deux listes.
+ */
+export function natureFittingListings(
+  claims: Iterable<Claim>,
+  best: Map<string, number>,
+  listingNature: (url: string) => PartNature,
+): Set<string> {
+  const out = new Set<string>()
+  for (const c of claims) {
+    if (best.get(c.url) !== claimRank(c)) continue
+    if (natureFits(c, listingNature(c.url))) out.add(c.url)
+  }
+  return out
+}
+
+/**
+ * Cette revendication doit-elle s'effacer parce qu'une AUTRE, de même rang, colle à la
+ * nature de la fiche alors qu'elle-même ne colle pas ?
+ *
+ * ⚠⚠ RÈGLE MÉTIER : une pièce d'ORIGINE et son équivalent ADAPTABLE ne sont pas le même
+ * article. Ils portent pourtant la même référence constructeur — c'est la définition d'un
+ * adaptable —, donc aucune clé ne les sépare et le rang les laisse à égalité. Sans ce
+ * départage, l'ordre du fichier décidait : cas VÉCU sur 123courroies, la fiche « Courroie
+ * spécifique MTD 754-04038 » revenait à une courroie adaptable de 20,15 € au lieu de la
+ * pièce MTD à 12,48 €, et le rapport annonçait −38 % — un écart qui ne compare rien.
+ *
+ * Ne se déclenche JAMAIS sur un silence : si personne ne colle (`fitting` ne contient pas
+ * la fiche), l'ordre du catalogue reprend la main, exactement comme avant.
+ */
+export function yieldsToNature(
+  claim: Claim,
+  best: Map<string, number>,
+  fitting: Set<string>,
+  listingNature: PartNature,
+): boolean {
+  if (!fitting.has(claim.url)) return false
+  if (best.get(claim.url) !== claimRank(claim)) return false
+  return !natureFits(claim, listingNature)
+}

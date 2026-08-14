@@ -14,7 +14,7 @@ import type { MatchProof } from '../catalog/keys'
 import type { CompetitorListing } from '../catalog/competitorListing'
 import { scorePair, type Confidence } from './confidence'
 import { claimRank, natureFits } from '../catalog/originYield'
-import { partNature, natureMismatch, type PartNature } from '../catalog/partNature'
+import { partNature, productNature, natureMismatch, type PartNature } from '../catalog/partNature'
 
 /** Nature de la preuve d'appariement (même classement que le rapport). */
 type PairKind = 'exact-ean' | 'exact-ref' | 'origin'
@@ -133,7 +133,10 @@ export function pairSiteListings(
     // Rang de la revendication : direct > variante du même code > référence d'origine
     // pure. Le même classement que le rapport — l'écran ne doit jamais désigner un autre
     // produit que lui pour une fiche donnée.
-    const myNature = partNature(product.name, product.description)
+    // Rangement du catalogue d'abord, références d'origine ensuite, libellé en dernier —
+    // la MÊME lecture que le démenti et que le rapport. Un adaptable qui ne dit pas son
+    // nom mais déclare « Remplace origine : … » est reconnu comme tel (15 117 produits).
+    const myNature = productNature(product)
     const rank = claimRank({
       url: m.listing.url, origin: m.proof.key.origin,
       ownRef: product.ref, keyValue: m.proof.key.value, nature: myNature,
@@ -195,7 +198,9 @@ export function pairSiteListings(
       claims: hit && hit.claims.length > 1 ? hit.claims : undefined,
       natures: (() => {
         if (!p) return undefined
-        const mine = partNature(p.name, description)
+        // Même lecture que l'arbitrage et que le démenti : un produit qui déclare
+        // « Remplace origine : … » EST un adaptable, quoi que dise son libellé.
+        const mine = productNature({ ...p, description })
         const theirs = partNature(listing.name)
         return natureMismatch(mine, theirs) ? { mine, theirs } : undefined
       })(),

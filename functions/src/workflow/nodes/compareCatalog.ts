@@ -199,6 +199,12 @@ registerServerNode({
     ctx.log('info', t(ctx.locale, 'run.compareCatalog.indexLoaded', {
       count: readCount, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
     }))
+    // ⚠⚠ Jumeau du client : l'arbitrage origine ↔ adaptable DIT ce qu'il a écarté. Le cron
+    // tourne sans personne devant l'écran — si cette ligne n'est pas dans le journal du
+    // run, la règle métier n'est mesurable nulle part.
+    if (pairing.totals.natureYielded > 0) {
+      ctx.log('info', t(ctx.locale, 'run.compareCatalog.natureArbitrated', { count: pairing.totals.natureYielded }))
+    }
 
     // Garde-fou (jumeau du client) : index vide sur TOUS les sites = la moisson n'a rien
     // écrit sous CE suivi (identifiant de suivi divergent, casse/espace, ou moisson non

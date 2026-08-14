@@ -17,8 +17,8 @@ import { matchProduct, comparePrices, buildMemoryIndex, type SourceProduct, type
 import { DEFAULT_PAIRING_RULES, type PairingRules } from './pairingRules'
 import type { MatchProof } from './keys'
 import type { CompetitorListing } from './competitorListing'
-import { bestRankByListing, yieldsToBetter } from './originYield'
-import { partNature } from './partNature'
+import { bestRankByListing, yieldsToBetter, natureFittingListings, yieldsToNature } from './originYield'
+import { partNature, productNature } from './partNature'
 
 /** Taux de remplissage des champs attendus sur les fiches collectées d'un site. Mesuré ICI
  *  parce que c'est le seul endroit qui voit encore les fiches : l'index du site est relâché
@@ -75,6 +75,11 @@ export interface PairingTotals {
    *  même fiche (cf. `originYield`). Compté, jamais silencieux : c'est une perte VOULUE,
    *  et son ampleur doit pouvoir se lire dans le journal du run. */
   yielded: number
+  /** Appariements effacés parce qu'un prétendant de MÊME RANG colle à la nature de la
+   *  fiche (origine ↔ origine, adaptable ↔ adaptable) alors qu'eux non. Compté à part de
+   *  `yielded` : c'est le seul moyen de mesurer ce que la règle métier change sur un
+   *  rapport de production, où le catalogue ne tient dans aucune fixture. */
+  natureYielded: number
 }
 
 export interface PairingRun {
@@ -94,7 +99,7 @@ export function createPairingRun(
   const rules = opts.rules ?? DEFAULT_PAIRING_RULES
   const cellsByProduct = new Map<number, PairedCell[]>()
   const auditBySite = new Map<string, CompetitorAudit>()
-  const totals: PairingTotals = { vetoed: 0, sawKey: new Array(products.length).fill(false), yielded: 0 }
+  const totals: PairingTotals = { vetoed: 0, sawKey: new Array(products.length).fill(false), yielded: 0, natureYielded: 0 }
 
   const addSite = (site: { siteId: string; domain: string }, listings: CompetitorListing[]) => {
     auditBySite.set(site.siteId, auditListings(listings))
@@ -122,14 +127,34 @@ export function createPairingRun(
     const claimOf = (c: PairedCell) => ({
       url: c.url, origin: c.proof.key.origin,
       ownRef: products[c.productIdx].ref, keyValue: c.proof.key.value,
-      // La nature affirmée par le libellé : elle départage deux prétendants de même rang
-      // (adaptable ↔ pièce d'origine), cf. `originYield`.
-      nature: partNature(products[c.productIdx].name, products[c.productIdx].description),
+      // La nature du produit source : elle départage deux prétendants de même rang
+      // (adaptable ↔ pièce d'origine), cf. `originYield`. Le RANGEMENT du catalogue prime,
+      // les références d'origine ensuite, le libellé en dernier — la même lecture que le
+      // démenti de `match.ts`, sans quoi le rapport refuserait une paire par un signal
+      // qu'il ignorerait ensuite pour trancher un litige.
+      nature: productNature(products[c.productIdx]),
     })
-    const best = bestRankByListing(siteCells.map(claimOf))
+    const claims = siteCells.map(claimOf)
+    const best = bestRankByListing(claims)
+    // La nature de chaque fiche concurrente, lue une fois : son libellé est tout ce qu'on
+    // a d'elle, et il est relu pour chaque prétendant sans ça.
+    const natureOfListing = new Map(siteCells.map((c) => [c.url, partNature(c.name)]))
+    const natureOf = (url: string) => natureOfListing.get(url) ?? 'unknown'
+    const fitting = rules.natureVeto
+      ? natureFittingListings(claims, best, natureOf)
+      : new Set<string>()
     for (const cell of siteCells) {
-      if (yieldsToBetter(claimOf(cell), best)) {
+      const claim = claimOf(cell)
+      if (yieldsToBetter(claim, best)) {
         totals.yielded++
+        continue
+      }
+      // ⚠⚠ Origine et adaptable ne sont pas le même article : à rang égal, celui dont la
+      // nature répond à celle de la fiche l'emporte. Le même arbitrage que l'écran
+      // « Concurrents » — sans quoi l'écran et le rapport désignent deux produits
+      // différents pour une même fiche, avec deux écarts de prix différents.
+      if (yieldsToNature(claim, best, fitting, natureOf(cell.url))) {
+        totals.natureYielded++
         continue
       }
       const list = cellsByProduct.get(cell.productIdx)

@@ -2694,6 +2694,7 @@ export const en: Record<TranslationKey, string> = {
   'run.compareCatalog.taxoColumns': 'Taxonomy: {list}',
   'run.compareCatalog.noTaxoColumn': 'No taxonomy column recognised: the family tree on the "Competitors" screen will stay empty. Fill in "Taxonomy columns" on this node (broadest to finest, separated by ">").',
   'run.compareCatalog.indexLoaded': '{count} competitor listing(s) held in memory for {sites} site(s), read in {s} s.',
+  'run.compareCatalog.natureArbitrated': 'Origin ↔ aftermarket arbitration: {count} match(es) set aside in favour of the product whose nature answers the listing’s. Origin with origin, aftermarket with aftermarket — they are not the same articles.',
   'run.compareCatalog.matching': 'Matching {products} source product(s) against {sites} competitor(s) — an uninterrupted step: the log only resumes once it is done.',
   'run.compareCatalog.reportBuilding': 'Building the dashboard report (second pass over the same indexes)…',
   'run.compareCatalog.sourceSaving': 'Source catalogue: {done}/{total} slice(s) written.',

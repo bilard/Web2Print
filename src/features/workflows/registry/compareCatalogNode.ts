@@ -342,6 +342,12 @@ const compareCatalogNode: NodeSpec<CompareConfig, CompareInputs, CompareOutputs>
     ctx.log('info', t('run.compareCatalog.indexLoaded', {
       count: readCount, sites: siteRefs.length, s: ((Date.now() - tIndex) / 1000).toFixed(1),
     }))
+    // ⚠⚠ Règle métier : origine avec origine, adaptable avec adaptable. Ce que l'arbitrage
+    // a écarté se DIT — c'est une perte voulue, et c'est le seul endroit où son ampleur se
+    // mesure sur un vrai catalogue (aucune fixture ne porte 400 000 fiches).
+    if (pairing.totals.natureYielded > 0) {
+      ctx.log('info', t('run.compareCatalog.natureArbitrated', { count: pairing.totals.natureYielded }))
+    }
 
     // Garde-fou : index vide sur TOUS les sites = la moisson n'a rien écrit sous CE
     // suivi. Cause classique : l'« Identifiant du suivi » de « Moisson concurrents »

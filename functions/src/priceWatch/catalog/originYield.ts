@@ -1,7 +1,5 @@
 // functions/src/priceWatch/catalog/originYield.ts
 // ⚠ COPIE de src/features/priceWatch/catalog/originYield.ts (bundles séparés).
-// ⚠ `natureFits` n'est PAS repris ici : seul l'explorateur de concurrents l'appelle,
-// et c'est un écran client sans jumeau serveur. Les deux `pairingRun` s'en passent.
 // Arbitrage entre produits qui revendiquent LA MÊME fiche concurrent. PUR.
 //
 // Le cas, relevé en production (123courroies) : la fiche « Courroie spécifique MTD
@@ -83,6 +81,25 @@ export function claimRank(c: Claim): number {
   return sameUpToHabit(norm(c.ownRef), norm(c.keyValue)) ? 1 : 0
 }
 
+/**
+ * Départage DEUX prétendants de même rang : celui dont la NATURE correspond à celle de la
+ * fiche l'emporte.
+ *
+ * C'est le cœur du métier de ce catalogue. Une pièce d'origine et son équivalent adaptable
+ * portent la même référence constructeur ; à rang égal, rien ne les distinguait et l'ordre
+ * du fichier décidait — donc un adaptable pouvait être mis en face d'une pièce
+ * constructeur, et l'écart de prix affiché ne mesurait plus un positionnement mais la
+ * différence entre deux articles.
+ *
+ * ⚠ N'intervient QUE si la fiche affirme sa nature ET que le prétendant affirme la sienne.
+ * Le silence ne départage rien : c'est le cas le plus fréquent, et il retombe sur l'ordre
+ * du catalogue — donc sur un résultat stable d'un run à l'autre.
+ */
+export function natureFits(claim: Claim, listingNature: PartNature): boolean {
+  if (listingNature === 'unknown' || !claim.nature || claim.nature === 'unknown') return false
+  return claim.nature === listingNature
+}
+
 /** Le meilleur rang atteint sur chaque fiche. */
 export function bestRankByListing(claims: Iterable<Claim>): Map<string, number> {
   const best = new Map<string, number>()
@@ -100,4 +117,50 @@ export function bestRankByListing(claims: Iterable<Claim>): Map<string, number> 
 export function yieldsToBetter(claim: Claim, best: Map<string, number>): boolean {
   const top = best.get(claim.url)
   return top != null && claimRank(claim) < top
+}
+
+/**
+ * Les fiches où le litige de rang égal PEUT se trancher par la nature : au moins un
+ * prétendant du meilleur rang affirme la même nature que la fiche.
+ *
+ * Se calcule en une passe séparée, avant tout retrait, pour la même raison que
+ * `bestRankByListing` : l'issue ne doit pas dépendre de l'ordre dans lequel les
+ * prétendants arrivent, sinon deux runs rendraient deux listes.
+ */
+export function natureFittingListings(
+  claims: Iterable<Claim>,
+  best: Map<string, number>,
+  listingNature: (url: string) => PartNature,
+): Set<string> {
+  const out = new Set<string>()
+  for (const c of claims) {
+    if (best.get(c.url) !== claimRank(c)) continue
+    if (natureFits(c, listingNature(c.url))) out.add(c.url)
+  }
+  return out
+}
+
+/**
+ * Cette revendication doit-elle s'effacer parce qu'une AUTRE, de même rang, colle à la
+ * nature de la fiche alors qu'elle-même ne colle pas ?
+ *
+ * ⚠⚠ RÈGLE MÉTIER : une pièce d'ORIGINE et son équivalent ADAPTABLE ne sont pas le même
+ * article. Ils portent pourtant la même référence constructeur — c'est la définition d'un
+ * adaptable —, donc aucune clé ne les sépare et le rang les laisse à égalité. Sans ce
+ * départage, l'ordre du fichier décidait : cas VÉCU sur 123courroies, la fiche « Courroie
+ * spécifique MTD 754-04038 » revenait à une courroie adaptable de 20,15 € au lieu de la
+ * pièce MTD à 12,48 €, et le rapport annonçait −38 % — un écart qui ne compare rien.
+ *
+ * Ne se déclenche JAMAIS sur un silence : si personne ne colle (`fitting` ne contient pas
+ * la fiche), l'ordre du catalogue reprend la main, exactement comme avant.
+ */
+export function yieldsToNature(
+  claim: Claim,
+  best: Map<string, number>,
+  fitting: Set<string>,
+  listingNature: PartNature,
+): boolean {
+  if (!fitting.has(claim.url)) return false
+  if (best.get(claim.url) !== claimRank(claim)) return false
+  return !natureFits(claim, listingNature)
 }

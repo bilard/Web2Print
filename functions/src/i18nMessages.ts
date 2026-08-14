@@ -379,6 +379,10 @@ const MESSAGES = {
     fr: 'Le port « Sites sources » est branché mais ne porte pas de liste de sites — le node amont a probablement échoué. Écrire les règles maintenant les rangerait sous un autre suivi que celui de la moisson, où elles ne s’appliqueraient jamais.',
     en: 'The “Source sites” port is wired but carries no site list — the upstream node has probably failed. Writing the rules now would file them under a different watch from the harvest\'s, where they would never apply.',
   },
+  'run.compareCatalog.natureArbitrated': {
+    fr: 'Arbitrage origine \u2194 adaptable : {count} appariement(s) \u00e9cart\u00e9(s) au profit du produit dont la nature r\u00e9pond \u00e0 celle de la fiche. Origine avec origine, adaptable avec adaptable \u2014 ce ne sont pas les m\u00eames articles.',
+    en: 'Origin \u2194 aftermarket arbitration: {count} match(es) set aside in favour of the product whose nature answers the listing\u2019s. Origin with origin, aftermarket with aftermarket \u2014 they are not the same articles.',
+  },
   'run.compareCatalog.rules': {
     fr: "R\u00e8gles d\u2019appariement du suivi : {summary}",
     en: 'Watch matching rules: {summary}',
