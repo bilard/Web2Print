@@ -13,6 +13,10 @@ interface ResultColumn {
    *  de feuille) — le consommateur préfère `label` quand il est présent. */
   labelKey: TranslationKey
   label?: string
+  /** Nom de la colonne agrégée quand il vient du catalogue i18n (source déclarée en dur) et
+   *  non de la donnée. Repris de `Measure.columnKey` — sans lui, une mesure dérivée d'une
+   *  source de veille s'afficherait « Somme », sans dire de quoi. */
+  columnKey?: TranslationKey
   role: 'dimension' | 'measure'
   format?: MeasureFormat
   /**
@@ -93,7 +97,15 @@ function resolveMeasure(ref: MeasureRef, source: DataSource, dimById: Map<string
   if (!allowedAggregations(dim.kind).includes(ref.agg)) {
     throw new BiKeyedError('bi.error.aggNotAllowed', { column: dim.label ?? ref.field })
   }
-  return measureOf({ key: ref.field, label: dim.label ?? ref.field, kind: dim.kind }, ref.agg)
+  // ⚠ Le nom de la colonne suit sa PROVENANCE : `label` quand il vient de la donnée (feuille),
+  // sinon la clé de catalogue de la dimension. Poser `label: ref.field` en repli afficherait
+  // « Somme · medGapPct » — un identifiant technique en pleine tuile.
+  // ⚠ L'unité de la dimension est transmise : sans elle, la moyenne d'un taux repassait
+  // agrégeable et une tuile pouvait de nouveau la totaliser entre groupes.
+  return measureOf({
+    key: ref.field, kind: dim.kind, format: dim.format,
+    label: dim.label, labelKey: dim.label ? undefined : dim.labelKey,
+  }, ref.agg)
 }
 
 export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): AggregateResult {
@@ -109,7 +121,8 @@ export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): Ag
       return { key: d.id, labelKey: dim.labelKey, label: dim.label, role: 'dimension' as const }
     }),
     ...measures.map(({ ref, m }) => ({
-      key: measureKey(ref), labelKey: m.labelKey, label: m.label, role: 'measure' as const,
+      key: measureKey(ref), labelKey: m.labelKey, label: m.label, columnKey: m.columnKey,
+      role: 'measure' as const,
       format: m.format, aggregable: m.aggregable,
     })),
   ]

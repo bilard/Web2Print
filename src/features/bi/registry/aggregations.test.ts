@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { aggregationFormat, allowedAggregations, computeAggregation, isAggregable } from './aggregations'
+import {
+  aggregationFormat, allowedAggregations, allowedAggregationsFor, computeAggregation,
+  isAggregable, isAggregableFor,
+} from './aggregations'
 import type { Row } from './types'
 
 const rows: Row[] = [
@@ -92,6 +95,28 @@ describe('traits des agrégations', () => {
     expect(allowedAggregations('date')).toEqual(['count', 'countDistinct', 'filledPct'])
     expect(allowedAggregations('number')).toContain('sum')
     expect(allowedAggregations('number')).toHaveLength(8)
+  })
+
+  it('⚠⚠ une colonne de POURCENTAGE ne se somme jamais', () => {
+    // Additionner des taux ne produit aucune grandeur — et c'est le geste qui affichait
+    // « −312 % » en totalisant vingt-quatre écarts médians.
+    expect(allowedAggregationsFor('number', 'pct')).not.toContain('sum')
+    expect(allowedAggregationsFor('number', 'pct')).toContain('median')
+    // Les autres unités gardent la somme, et le type continue de commander.
+    expect(allowedAggregationsFor('number', 'eur')).toContain('sum')
+    expect(allowedAggregationsFor('number')).toEqual(allowedAggregations('number'))
+    expect(allowedAggregationsFor('text', 'pct')).toEqual(['count', 'countDistinct', 'filledPct'])
+  })
+
+  it('⚠ ce qui rend une valeur d’une colonne de pourcentage ne se recompose pas', () => {
+    // Moyenne, minimum, maximum d'un taux ne se totalisent pas plus qu'une médiane…
+    for (const agg of ['avg', 'min', 'max', 'median'] as const) {
+      expect(isAggregableFor(agg, 'pct')).toBe(false)
+      expect(isAggregableFor(agg, 'eur')).toBe(isAggregable(agg))
+    }
+    // … mais COMPTER des lignes reste additif, quelle que soit l'unité comptée.
+    expect(isAggregableFor('count', 'pct')).toBe(true)
+    expect(isAggregableFor('countDistinct', 'pct')).toBe(true)
   })
 
   it('l’unité de la colonne survit aux agrégations qui rendent une de ses valeurs', () => {

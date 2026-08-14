@@ -36,6 +36,16 @@ const derivable: DataSource = {
   measures: source.measures.filter((m) => m.id === 'count'),
 }
 
+/** Source dont les colonnes se nomment par le CATALOGUE i18n (la veille tarifaire) et
+ *  portent une unité : le repli du moteur doit conserver l'une comme l'autre. */
+const catalogNamed: DataSource = {
+  ...source,
+  dimensions: [
+    { id: 'gap', labelKey: 'bi.measure.watchMedGap', kind: 'number', format: 'pct', get: (r) => r.gap },
+  ],
+  measures: source.measures.filter((m) => m.id === 'count'),
+}
+
 const rows: Row[] = [
   { brand: 'Makita', price: 100, createdAt: Date.UTC(2026, 0, 5) },
   { brand: 'Makita', price: 300, createdAt: Date.UTC(2026, 0, 20) },
@@ -127,6 +137,25 @@ describe('aggregate', () => {
   it('rend « aucune valeur » plutôt que zéro quand rien n’est mesurable', () => {
     const r = aggregate([{ brand: 'Makita', price: '' }], q({ measures: [{ field: 'price', agg: 'avg' }] }), derivable)
     expect(r.rows[0]['avg:price']).toBeNull()
+  })
+
+  it('fabrique une mesure au nom du CATALOGUE quand la colonne n’en vient pas', () => {
+    // ⚠ Sans cela, le repli du moteur affichait « Somme · gap » — un identifiant technique
+    // en pleine tuile — et perdait l'unité, donc l'interdiction de recomposer un taux.
+    const r = aggregate([{ gap: -10 }, { gap: 30 }], q({ measures: [{ field: 'gap', agg: 'avg' }] }), catalogNamed)
+    const [col] = r.columns
+    expect(col.label).toBeUndefined()
+    expect(col.columnKey).toBe('bi.measure.watchMedGap')
+    expect(col.format).toBe('pct')
+    expect(col.aggregable).toBe(false)
+    expect(r.rows).toEqual([{ 'avg:gap': 10 }])
+  })
+
+  it('⚠ continue d’exécuter une tuile ENREGISTRÉE qui somme un pourcentage', () => {
+    // Le menu ne l'offre plus (`allowedAggregationsFor`) ; ce qui a été enregistré avant
+    // doit continuer de rendre son chiffre plutôt que de tomber en erreur à la réouverture.
+    const r = aggregate([{ gap: -10 }, { gap: 30 }], q({ measures: [{ field: 'gap', agg: 'sum' }] }), catalogNamed)
+    expect(r.rows).toEqual([{ 'sum:gap': 20 }])
   })
 
   it('lève sur une colonne absente de la source — la feuille a changé', () => {

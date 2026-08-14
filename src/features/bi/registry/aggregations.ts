@@ -44,6 +44,36 @@ export function allowedAggregations(kind: FieldKind): Aggregation[] {
   return AGGREGATIONS.filter((a) => !TRAITS[a].numericOnly || kind === 'number')
 }
 
+/**
+ * Agrégations que le type ET L'UNITÉ de la colonne autorisent.
+ *
+ * ⚠⚠ La SOMME d'une colonne en POURCENTAGE n'est jamais proposée : additionner des taux ne
+ * produit aucune grandeur. Sans ce filtre, dériver les colonnes de la veille mettait
+ * « Somme · Écart médian (%) » dans le menu — exactement le geste que tout ce module
+ * s'emploie à interdire (vingt-quatre concurrents totalisés à « −312 % »).
+ *
+ * ⚠ Le MOTEUR, lui, reste permissif (`allowedAggregations`) : une tuile déjà enregistrée qui
+ * somme une colonne de pourcentage doit continuer de rendre son chiffre plutôt que de tomber
+ * en erreur à la réouverture. Ce qui n'est plus OFFERT ne peut plus être créé, ce qui l'a été
+ * continue de vivre.
+ */
+export function allowedAggregationsFor(kind: FieldKind, format?: MeasureFormat): Aggregation[] {
+  return allowedAggregations(kind).filter((a) => !(format === 'pct' && a === 'sum'))
+}
+
+/**
+ * Une mesure dérivée se recompose-t-elle ENTRE groupes ?
+ *
+ * ⚠⚠ Une agrégation qui rend une valeur DE la colonne (somme, moyenne, médiane, extrema)
+ * hérite de son unité — donc de sa non-additivité : moyenne, minimum ou maximum d'un
+ * POURCENTAGE ne se totalisent pas davantage qu'une médiane. Le décompte des lignes, lui,
+ * reste additif quelle que soit l'unité de la colonne comptée.
+ */
+export function isAggregableFor(agg: Aggregation, format?: MeasureFormat): boolean {
+  if (!TRAITS[agg].aggregable) return false
+  return !(TRAITS[agg].keepsUnit && format === 'pct')
+}
+
 /** Valeur PRÉSENTE ? Une chaîne d'espaces ne l'est pas — même règle que la complétude. */
 const isPresent = (v: unknown): boolean => v !== null && v !== undefined && String(v).trim() !== ''
 

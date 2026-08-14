@@ -18,6 +18,10 @@ export interface Dimension {
    *  de feuille) — utilisé en priorité sur `labelKey` par le consommateur quand il est présent. */
   label?: string
   kind: FieldKind
+  /** Unité de la colonne (monnaie, pourcentage, durée) quand elle est connue. Portée par la
+   *  DIMENSION et non par la seule mesure : c'est elle qui décide des agrégations offertes
+   *  (pas de somme sur un taux) et de l'unité qu'elles conservent. */
+  format?: MeasureFormat
   /** Valeur brute portée par la ligne. `null`/`undefined` = valeur absente, groupe à part. */
   get: (row: Row) => unknown
 }
@@ -31,6 +35,16 @@ export interface Measure {
    *  mesures DÉRIVÉES : `labelKey` y porte alors l'agrégation (« Somme »), `label` la colonne
    *  (« Prix »). Le consommateur compose les deux (`bi.measure.derived`). */
   label?: string
+  /**
+   * Nom de la colonne agrégée quand il vient du CATALOGUE i18n et non de la donnée — le cas
+   * des sources déclarées en dur (veille tarifaire), dont les colonnes portent un nom traduit
+   * là où une feuille porte le nom saisi par l'utilisateur.
+   *
+   * ⚠ Même rôle que `label`, autre provenance : `biLabel` prend `label` s'il existe, sinon
+   * traduit `columnKey`. Sans lui, les cent trente mesures dérivées de la veille s'affichaient
+   * toutes « Somme », « Moyenne », « Médiane » — sans jamais dire de QUOI.
+   */
+  columnKey?: TranslationKey
   format: MeasureFormat
   /** Ce qu'une tuile doit ENREGISTRER pour redemander cette mesure. Absent sur une mesure
    *  DÉCLARÉE : son identifiant suffit (`{ id }`). Présent sur une mesure dérivée, il évite

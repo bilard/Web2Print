@@ -43,6 +43,25 @@ describe('deriveMeasures', () => {
     expect(avg?.compute([{ price: 100 }, { price: '' }, { price: 300 }])).toBe(200)
   })
 
+  it('porte le nom d’une colonne de CATALOGUE dans `columnKey`, pas dans `label`', () => {
+    // Les sources déclarées en dur (veille tarifaire) n'ont aucun nom « venu de la donnée » :
+    // leur colonne se nomme par une clé i18n, que le consommateur traduit et compose avec
+    // l'agrégation. Sans ce champ, toutes leurs mesures s'appelaient « Somme ».
+    const [m] = deriveMeasures([{ key: 'indexed', labelKey: 'bi.measure.watchIndexed', kind: 'number' }])
+    expect(m.columnKey).toBe('bi.measure.watchIndexed')
+    expect(m.label).toBeUndefined()
+  })
+
+  it('⚠⚠ ne dérive AUCUNE somme d’une colonne de pourcentage', () => {
+    const m = deriveMeasures([{ key: 'medGapPct', label: 'Écart médian', kind: 'number', format: 'pct' }])
+    expect(m.map((x) => x.id)).not.toContain('sum:medGapPct')
+    // Ce qui reste garde l'unité, et refuse d'être recomposé entre groupes.
+    const avg = m.find((x) => x.id === 'avg:medGapPct')
+    expect(avg?.format).toBe('pct')
+    expect(avg?.aggregable).toBe(false)
+    expect(m.find((x) => x.id === 'count:medGapPct')?.aggregable).toBe(true)
+  })
+
   it('sans colonne, aucune mesure — et surtout pas d’erreur', () => {
     expect(deriveMeasures([])).toEqual([])
   })

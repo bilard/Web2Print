@@ -41,10 +41,14 @@ export function AddTileMenu({ source, onAdd }: {
   // ⚠⚠ Les mesures DÉRIVÉES sont groupées PAR COLONNE : sur un catalogue de 21 colonnes, la
   // liste dépasse la centaine d'entrées, et « Somme », « Moyenne », « Médiane » répétés vingt
   // fois d'affilée sans en-tête ne se lisent pas. `BiPicker` ouvre sa recherche au-delà de dix.
+  // ⚠ Le nom du groupe est celui de la COLONNE, d'où qu'il vienne : la donnée (`label`, une
+  // colonne de feuille) ou le catalogue (`columnKey`, une colonne de source déclarée en dur
+  // comme la veille). Sans le second, les cent trente mesures de la veille se seraient
+  // entassées sous « Mesures de l'application », sans un seul intertitre pour s'y retrouver.
   const measureOptions = useMemo<PickerOption[]>(() => source.measures.map((m) => ({
     id: m.id,
     label: biLabel(m, t),
-    group: m.label ?? t('bi.measure.declared'),
+    group: m.label ?? (m.columnKey ? t(m.columnKey) : t('bi.measure.declared')),
   })), [source.measures, t])
   const dimensionOptions = useMemo<PickerOption[]>(
     () => source.dimensions.map((d) => ({ id: d.id, label: biLabel(d, t) })), [source.dimensions, t])
