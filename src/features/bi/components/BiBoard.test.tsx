@@ -146,6 +146,43 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     expect(gridCalls().at(-1)![0].layout.find((l) => l.tileId === newTileId)).toBeTruthy()
   })
 
+  // ⚠⚠ Le défaut : l'ajout se faisait en DEUX rendus (placement d'abord, tuile ensuite).
+  // `react-grid-layout` élaguait le placement orphelin de son état interne, puis, l'écho
+  // Firestore arrivé, repartait de son état élagué et reposait la tuile en 1×1 tout en bas —
+  // et l'événement de mise en page émis dans la foulée armait le brouillon, si bien que le
+  // premier glissement suivant persistait une mise en page dégénérée.
+  //
+  // Le test vérifie l'invariant sur TOUS les rendus, jamais sur le seul dernier : c'est un
+  // rendu INTERMÉDIAIRE qui rompait le contrat.
+  it('pose la tuile et son placement dans le MÊME rendu, écho de la base compris', () => {
+    const dashboard = makeDashboard('d6', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
+    const props = (current: Dashboard) => (
+      <BiBoard current={current} items={[current]} uid="u1" width={1200}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />
+    )
+    const { rerender } = render(props(dashboard))
+    const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
+
+    act(() => onAdd('bar', 'count', 'taxo.1'))
+
+    // L'écho Firestore : le document rapatrie enfin la tuile ET son placement.
+    const saved = vi.mocked(saveDashboard).mock.calls.at(-1)![1]
+    rerender(props(saved))
+
+    for (const [gridProps] of gridCalls()) {
+      const ids = new Set(gridProps.tiles.map((t) => t.id))
+      expect(gridProps.layout.map((l) => l.tileId).filter((id) => !ids.has(id))).toEqual([])
+      expect([...ids].filter((id) => !gridProps.layout.some((l) => l.tileId === id))).toEqual([])
+    }
+
+    const last = gridCalls().at(-1)![0]
+    // L'écho ne duplique pas la tuile posée localement…
+    expect(last.tiles).toHaveLength(2)
+    // …et la taille de départ du type « barres » est intacte (jamais reposée en 1×1).
+    const added = last.tiles.find((t) => t.id !== 't1')!
+    expect(last.layout.find((l) => l.tileId === added.id)).toMatchObject({ w: 6, h: 6 })
+  })
+
   it('sans espace de travail (uid null), refuse et le dit — jamais un clic silencieux', () => {
     const dashboard = makeDashboard('d5', [])
     render(

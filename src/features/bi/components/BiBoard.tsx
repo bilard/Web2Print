@@ -11,10 +11,12 @@ import { useCallback, useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
+import { usePendingTiles } from '../hooks/usePendingTiles'
 import { saveDashboard } from '../store/dashboardsStore'
 import { newTile, placeTile } from '../engine/newTile'
 import { effectivePimSource } from '../registry/pim.source'
 import { AddTileMenu } from './AddTileMenu'
+import { BiBoardHeader } from './BiBoardHeader'
 import { BiToolbar } from './BiToolbar'
 import { DashboardGrid } from './DashboardGrid'
 import { useTranslation } from '@/lib/i18n'
@@ -63,6 +65,10 @@ export function BiBoard({
   const sheet = sheets[activeSheetIndex] ?? null
   const source = useMemo(() => effectivePimSource(sheet), [sheet])
 
+  // ⚠⚠ Poser une tuile doit être ATOMIQUE du point de vue du rendu : la tuile et son
+  // placement dans le même rendu. Voir `usePendingTiles` pour ce que coûtait le décalage.
+  const { tiles, add: addPending } = usePendingTiles(current.tiles)
+
   // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
   // glissement, voir le commentaire de `useLayoutDraft.addPlacement` pour le pourquoi.
   const addTile = useCallback((
@@ -81,13 +87,18 @@ export function BiBoard({
       ? t('bi.add.defaultTitle', { measure: measureLabel, dimension: dim.label ?? t(dim.labelKey) })
       : t('bi.add.defaultTitleKpi', { measure: measureLabel })
     const layout = placeTile(draft.layout, tile.id, kind)
+    // ⚠⚠ Les deux dans le MÊME gestionnaire : React les regroupe en un seul rendu, et la
+    // grille reçoit la tuile et son placement ensemble. C'est tout l'objet du correctif.
+    addPending(tile)
     draft.addPlacement(layout)
-    saveDashboard(uid, { ...current, tiles: [...current.tiles, tile], layout })
+    // ⚠ `tiles` (composé) et non `current.tiles` : deux ajouts rapprochés, avant tout écho
+    // de la base, perdraient sinon le premier.
+    saveDashboard(uid, { ...current, tiles: [...tiles, tile], layout })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('bi.save.failed')))
     // ⚠ `draft.layout`/`draft.addPlacement` plutôt que `draft` : l'objet retourné par
     // `useLayoutDraft` est un littéral RECRÉÉ à chaque rendu (contrairement à `addPlacement`,
     // mémoïsé lui) — le dépendre en entier annulerait toute mémoïsation de ce callback.
-  }, [uid, current, source, draft.layout, draft.addPlacement, t])
+  }, [uid, current, tiles, source, draft.layout, draft.addPlacement, addPending, t])
 
   const persistFilters = useCallback((filters: FilterClause[]) => {
     if (!uid) return
@@ -100,20 +111,16 @@ export function BiBoard({
 
   return (
     <>
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-white">{t('bi.screen.title')}</h1>
-            <p className="text-sm text-white/50">{t('bi.screen.intro')}</p>
-          </div>
-          {headerAction}
-        </div>
-        <BiToolbar
-          items={items} currentId={current.id} onSelect={onSelect}
-          editing={editing} onToggleEdit={onToggleEdit} canEdit={canEdit}
-          undo={draft.undo} redo={draft.redo} canUndo={draft.canUndo} canRedo={draft.canRedo}
-        />
-      </header>
+      <BiBoardHeader
+        headerAction={headerAction}
+        toolbar={(
+          <BiToolbar
+            items={items} currentId={current.id} onSelect={onSelect}
+            editing={editing} onToggleEdit={onToggleEdit} canEdit={canEdit}
+            undo={draft.undo} redo={draft.redo} canUndo={draft.canUndo} canRedo={draft.canRedo}
+          />
+        )}
+      />
 
       {/* ⚠ Le geste, jamais le seul état local `editing` : un droit révoqué en cours de
           session (cf. `BiScreen`) doit faire disparaître le menu à l'identique du bouton et
@@ -121,7 +128,7 @@ export function BiBoard({
       {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}
 
       <DashboardGrid
-        tiles={current.tiles}
+        tiles={tiles}
         layout={draft.layout}
         editing={editing}
         width={width}

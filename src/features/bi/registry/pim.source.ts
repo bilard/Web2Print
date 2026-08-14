@@ -22,7 +22,7 @@ export const TAXO_LEVELS = 4
  * enregistrées (cf. `taxoDimensions`), et les colonnes de feuille portent leur propre clé
  * telle quelle (`pimSourceFromSheet`). Les préfixer casserait toutes les tuiles en base.
  */
-export const RESERVED_ROW_KEYS: readonly string[] = [
+const RESERVED_ROW_KEYS: readonly string[] = [
   '_id', '_sku', '_createdAt', '_updatedAt', '_filled', '_total',
   ...Array.from({ length: TAXO_LEVELS }, (_, i) => `taxo.${i + 1}`),
 ]
