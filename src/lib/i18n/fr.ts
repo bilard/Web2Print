@@ -329,6 +329,10 @@ export const fr = {
   'bi.measure.completeness': 'Complétude',
   'bi.measure.filled': 'Champs renseignés',
   'bi.measure.freshness': 'Ancienneté médiane (jours)',
+  'bi.tile.empty': 'Aucune donnée pour ces filtres',
+  'bi.tile.clearFilters': 'Retirer les filtres',
+  'bi.tile.retry': 'Réessayer',
+  'bi.tile.ageTitle': 'Âge de la donnée affichée',
 
   'gradient.projectGradients': 'Dégradés du projet',
   'gradient.save': 'Sauvegarder ce dégradé dans le projet',

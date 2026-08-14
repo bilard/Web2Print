@@ -318,6 +318,10 @@ export const es: Record<TranslationKey, string> = {
   'bi.measure.completeness': 'Completitud',
   'bi.measure.filled': 'Campos rellenados',
   'bi.measure.freshness': 'Antigüedad mediana (días)',
+  'bi.tile.empty': 'Sin datos para estos filtros',
+  'bi.tile.clearFilters': 'Quitar los filtros',
+  'bi.tile.retry': 'Reintentar',
+  'bi.tile.ageTitle': 'Antigüedad del dato mostrado',
 
   'gradient.projectGradients': 'Degradados del proyecto',
   'gradient.save': 'Guardar este degradado en el proyecto',

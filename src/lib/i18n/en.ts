@@ -319,6 +319,10 @@ export const en: Record<TranslationKey, string> = {
   'bi.measure.completeness': 'Completeness',
   'bi.measure.filled': 'Fields filled in',
   'bi.measure.freshness': 'Median age (days)',
+  'bi.tile.empty': 'No data for these filters',
+  'bi.tile.clearFilters': 'Clear filters',
+  'bi.tile.retry': 'Retry',
+  'bi.tile.ageTitle': 'Age of the data shown',
 
   'gradient.projectGradients': 'Project gradients',
   'gradient.save': 'Save this gradient to the project',
