@@ -20,7 +20,11 @@ interface Props {
   live: boolean
   state: 'loading' | 'empty' | 'error' | 'ready'
   skeleton: 'chart' | 'table' | 'kpi'
+  /** Cause de l'état : erreur technique, ou raison d'un cadre vide (« ouvrez une base… »). */
   error?: string
+  /** ⚠ Le bouton « retirer les filtres » ne retire que les filtres GLOBAUX : sans aucun, il
+   *  ne ferait rien. Un booléen (primitif) plutôt que la liste : `TileBody` est mémoïsé. */
+  hasFilters: boolean
   /** Mode édition de la grille : seul ce mode autorise le déplacement (`isDraggable`). */
   editing: boolean
   onRetry: () => void
@@ -55,7 +59,8 @@ function useTickingNow(enabled: boolean): number {
 }
 
 export function TileFrame({
-  title, updatedAt, live, state, skeleton, error, editing, onRetry, onClearFilters, children,
+  title, updatedAt, live, state, skeleton, error, hasFilters, editing,
+  onRetry, onClearFilters, children,
 }: Props) {
   const { t } = useTranslation()
   const now = useTickingNow(updatedAt != null)
@@ -77,7 +82,8 @@ export function TileFrame({
       <div className="flex-1 min-h-0 overflow-auto p-3">
         {state === 'loading' ? <TileSkeleton kind={skeleton} />
           : state === 'error' ? <TileError message={error ?? ''} onRetry={onRetry} />
-          : state === 'empty' ? <TileEmpty onClearFilters={onClearFilters} />
+          : state === 'empty'
+            ? <TileEmpty message={error} hasFilters={hasFilters} onClearFilters={onClearFilters} />
           : children}
       </div>
     </div>

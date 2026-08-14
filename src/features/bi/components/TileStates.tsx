@@ -21,17 +21,30 @@ export function TileSkeleton({ kind }: { kind: 'chart' | 'table' | 'kpi' }) {
   )
 }
 
-export function TileEmpty({ onClearFilters }: { onClearFilters: () => void }) {
+/**
+ * ⚠⚠ `message` : le hook sait POURQUOI le cadre est vide (« ouvrez une base dans le module
+ * Données ») ; ce message était jeté et l'utilisateur sans feuille lisait « aucune donnée
+ * pour ces filtres » — une explication fausse.
+ * ⚠ `hasFilters` : « Retirer les filtres » ne retire que les filtres GLOBAUX. Proposé alors
+ * qu'il n'y en a aucun, le bouton ne fait rien et laisse croire à une panne.
+ */
+export function TileEmpty({ message, hasFilters, onClearFilters }: {
+  message?: string
+  hasFilters: boolean
+  onClearFilters: () => void
+}) {
   const { t } = useTranslation()
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
-      <p className="text-[11px] text-white/40">{t('bi.tile.empty')}</p>
-      <button
-        onClick={onClearFilters}
-        className="inline-flex items-center gap-1.5 text-[11px] text-indigo-300 hover:text-indigo-200 transition-colors"
-      >
-        <FilterX className="w-3 h-3" />{t('bi.tile.clearFilters')}
-      </button>
+    <div className="h-full flex flex-col items-center justify-center gap-2 text-center px-3">
+      <p className="text-[11px] text-white/40 break-words">{message || t('bi.tile.empty')}</p>
+      {hasFilters && (
+        <button
+          onClick={onClearFilters}
+          className="inline-flex items-center gap-1.5 text-[11px] text-indigo-300 hover:text-indigo-200 transition-colors"
+        >
+          <FilterX className="w-3 h-3" />{t('bi.tile.clearFilters')}
+        </button>
+      )}
     </div>
   )
 }

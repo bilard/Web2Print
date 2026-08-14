@@ -34,7 +34,8 @@ const TileBody = memo(function TileBody({ tile, editing, globalFilters, onClearF
   return (
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} error={error} editing={editing}
-      skeleton={skeleton} onRetry={retry} onClearFilters={onClearFilters}
+      skeleton={skeleton} hasFilters={globalFilters.length > 0}
+      onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
         tile.kind === 'kpi' ? <KpiTile result={result} />

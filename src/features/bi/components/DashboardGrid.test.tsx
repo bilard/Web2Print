@@ -32,7 +32,10 @@ describe('DashboardGrid', () => {
       />,
     )
     expect(screen.getByText('Total')).toBeTruthy()
-    expect(screen.getByRole('button')).toBeTruthy() // bouton « retirer le filtre » de TileEmpty
+    // La cause remonte du hook : sans base ouverte, ce ne sont PAS les filtres qui vident la
+    // tuile — et aucun bouton « retirer les filtres » n'est proposé, puisqu'il n'y en a pas.
+    expect(screen.getByText(/module Données/)).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('ne déclenche pas onDrag au montage — sans geste, rien à mémoriser', () => {

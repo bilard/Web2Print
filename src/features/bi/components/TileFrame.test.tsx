@@ -8,7 +8,7 @@ import { TileFrame } from './TileFrame'
 const frame = (updatedAt: number | null, live = true) => (
   <TileFrame
     title="Nombre de produits" updatedAt={updatedAt} live={live} state="ready"
-    skeleton="kpi" editing={false} onRetry={vi.fn()} onClearFilters={vi.fn()}
+    skeleton="kpi" editing={false} hasFilters={false} onRetry={vi.fn()} onClearFilters={vi.fn()}
   >
     <span>42</span>
   </TileFrame>
