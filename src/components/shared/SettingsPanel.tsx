@@ -175,6 +175,7 @@ function AiTab() {
         descriptionKey="aiCard.openai.desc"
         logo={<OpenAILogo />}
         apiKeyUrl="https://platform.openai.com/api-keys"
+        billingUrl="https://platform.openai.com/settings/organization/billing/overview"
       />
       <AiProviderCard
         provider="deepseek"
