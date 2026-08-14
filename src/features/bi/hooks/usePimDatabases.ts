@@ -108,7 +108,6 @@ export function usePimDbLoader({ dbId, sheetName, list, listLoading, wanted }: L
   const { loadFromFirebase } = useExcelFirebase()
   const patch = usePimDbStore((s) => s.patch)
   const currentDocId = useExcelStore((s) => s.currentDocId)
-  const sheetCount = useExcelStore((s) => s.sheets.length)
 
   useEffect(() => {
     if (!wanted || !dbId) { patch(IDLE); return }
@@ -131,7 +130,7 @@ export function usePimDbLoader({ dbId, sheetName, list, listLoading, wanted }: L
     // au milieu de sa propre lecture, son nettoyage l'annulait, et `.then` — qui pose
     // `currentDocId` — n'était JAMAIS exécuté. La base s'affichait sans que rien n'enregistre
     // à quelle base elle appartient, et l'écran restait sur cet avertissement. Vu en recette.
-    if (currentDocId === null && sheetCount > 0) {
+    if (currentDocId === null && useExcelStore.getState().sheets.length > 0) {
       patch({ ...IDLE, state: 'error', message: { kind: 'key', key: 'bi.db.unsavedSheets' } })
       return
     }
@@ -167,5 +166,5 @@ export function usePimDbLoader({ dbId, sheetName, list, listLoading, wanted }: L
         })
       })
     return () => { cancelled = true }
-  }, [wanted, dbId, sheetName, list, listLoading, currentDocId, sheetCount, patch])
+  }, [wanted, dbId, sheetName, list, listLoading, currentDocId, patch])
 }
