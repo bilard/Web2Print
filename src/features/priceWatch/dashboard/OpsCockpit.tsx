@@ -7,7 +7,7 @@ import { Layers, Timer, RefreshCw, Fuel, Radio, CalendarClock, Activity } from '
 import type { StoredReport } from '../reportStore'
 import { Gauge } from './Gauge'
 import { AnimatedNumber } from './AnimatedNumber'
-import { buildOpsCockpit, scopeCockpit, competitorCountsLabel } from './opsMetrics'
+import { buildOpsCockpit, scopeCockpit, competitorCountsLabel, isCycleComplete } from './opsMetrics'
 import { useCompetitorMeta } from '../useCatalogReport'
 import { useScrapeSpend } from './useScrapeSpend'
 import { useWorkflowSchedule } from './useWorkflowSchedule'
@@ -82,8 +82,9 @@ export function OpsCockpit({ report, watchId }: { report: StoredReport; watchId:
   const remainingPct = Math.round((1 - ck.avgProgress) * 100)
   const cronOn = !!sched?.enabled
   // Cycle COMPLET = le planning l'a acté (cycleWaiting, mode calendaire) OU tous les
-  // concurrents actifs ont bouclé leur balayage (sitesComplete === sitesActive).
-  const cycleComplete = !!sched?.cycleWaiting || (ck.sitesActive > 0 && ck.sitesComplete >= ck.sitesActive)
+  // concurrents actifs ont bouclé leur balayage. ⚠ La formule vit dans `opsMetrics` : elle
+  // sert AUSSI à l'écran « Suivi », et deux copies auraient fini par diverger.
+  const cycleComplete = isCycleComplete(ck, sched?.cycleWaiting)
   const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   // Échéance calendaire (souvent à plusieurs jours) : jour + heure, pas seulement HH:MM.
   const dayTime = (ms: number) => new Date(ms).toLocaleString('fr-FR', {

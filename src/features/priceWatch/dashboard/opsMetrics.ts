@@ -210,6 +210,22 @@ export function scopeCockpit(ck: OpsCockpit, scope: 'active' | 'all'): OpsCockpi
   }
 }
 
+/**
+ * Le cycle courant est-il BOUCLÉ ? PUR.
+ *
+ * Deux preuves, dans cet ordre : le planning a posé l'attente calendaire (`cycleWaiting`,
+ * écrit par `afterRunPatch` quand tous les sites ont rendu `cursor.done`), ou tous les
+ * concurrents actifs ont fini leur balayage.
+ *
+ * ⚠ Une seule définition pour les DEUX écrans qui la posent (le cockpit du tableau de bord
+ * et l'écran « Suivi ») : deux formules recopiées auraient divergé au premier ajustement,
+ * et les deux écrans se seraient contredits sur la question la plus simple qui soit —
+ * « ce cycle est-il fini ? ».
+ */
+export function isCycleComplete(ck: OpsCockpit, cycleWaiting?: boolean): boolean {
+  return !!cycleWaiting || (ck.sitesActive > 0 && ck.sitesComplete >= ck.sitesActive)
+}
+
 /** Au-delà, la dernière passe d'un site est trop ancienne pour dire quoi que ce soit de
  *  la cadence courante. Vingt-quatre heures : un cycle complet dure une à deux heures, et
  *  un site sain repasse plusieurs fois par jour. */

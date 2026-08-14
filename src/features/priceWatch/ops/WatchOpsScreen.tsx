@@ -4,7 +4,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { WatchSelector } from '../dashboard/WatchSelector'
 import { useWatchList, useCatalogReport, useCompetitorMeta } from '../useCatalogReport'
-import { buildOpsCockpit } from '../dashboard/opsMetrics'
+import { buildOpsCockpit, isCycleComplete } from '../dashboard/opsMetrics'
+import { OpsRunHistory } from '../dashboard/OpsRunHistory'
+import { useWorkflowSchedule } from '../dashboard/useWorkflowSchedule'
 import { useWatchOps } from './useWatchOps'
 import { OpsHeader } from './OpsHeader'
 import { OpsActions } from './OpsActions'
@@ -17,13 +19,13 @@ import { OpsLlmCosts } from './OpsLlmCosts'
 import { useRunHistory } from './useRunHistory'
 import { useModuleIntent } from '@/features/navigation/useModuleIntent'
 import { useModuleViewStore } from '@/stores/moduleView.store'
-import { useTranslation } from '@/lib/i18n'
+import { intlLocale, useTranslation } from '@/lib/i18n'
 
 /** Sous-section de menu → ancre `data-pw-section` visée par le défilement. */
 const SECTION_ANCHOR: Record<string, string> = { live: 'ops-header', incidents: 'ops-incidents', history: 'ops-history' }
 
 export function WatchOpsScreen() {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const watches = useWatchList()
   const [watchId, setWatchId] = useState<string | null>(null)
 
@@ -48,10 +50,20 @@ export function WatchOpsScreen() {
     () => new Map((report?.byCompetitor ?? []).map((c) => [c.siteId, c.matched])),
     [report],
   )
+  // Cycles bouclés par site, tels que le cockpit les compte — SURTOUT PAS relus depuis la
+  // méta : `harvestSweeps` n'est incrémenté qu'à la réouverture du balayage suivant, et un
+  // site qui vient de boucler resterait à ×0 pendant toute l'attente de la relance. Le
+  // cockpit ajoute déjà ce cycle en cours (cf. `opsCompetitorOf`).
+  const cyclesBySite = useMemo(
+    () => new Map((cockpit?.competitors ?? []).map((c) => [c.siteId, { done: c.sweeps, cycleMs: c.cycleMs }])),
+    [cockpit],
+  )
   const { view, incidents } = useWatchOps(watchId, workflowId ?? undefined, cockpit)
   // ⚠ Lu ICI et pas dans les deux composants : l'en-tête montre la durée typique et la
-  // tendance, l'historique montre les lignes — même liste, un seul abonnement Firestore.
-  const { runs, trend, typical } = useRunHistory(workflowId)
+  // tendance, l'historique montre les lignes, le bandeau « Cycles & runs » montre le bilan
+  // des issues — même liste, un seul abonnement Firestore.
+  const { runs, trend, typical, summary } = useRunHistory(workflowId)
+  const sched = useWorkflowSchedule(workflowId)
 
   // ⚠ Défilement INSTANTANÉ, jamais `behavior: 'smooth'` : sur un écran qui se repeint en
   // continu (tick de l'horloge, abonnements Firestore), `smooth` reste bloqué à 0 — cf.
@@ -93,6 +105,21 @@ export function WatchOpsScreen() {
         </header>
 
         <OpsHeader run={view.run} workflowId={workflowId} typical={typical} trend={trend} />
+
+        {/* ⚠⚠ Ce que l'écran taisait : ce qui s'est PASSÉ. Tout, ici, décrivait l'instant —
+            run vivant, régime de collecte, chantiers en cours — et rien ne disait combien de
+            cycles ont été bouclés ni si les passages précédents ont abouti. Un balayage qui
+            échoue une fois sur deux ressemblait exactement à un balayage sain, deux fois plus
+            lent. Le bandeau est celui du cockpit voisin, à l'identique : deux écrans qui
+            comptent les cycles chacun de leur côté finissent par se contredire. */}
+        <OpsRunHistory
+          cyclesDone={cockpit?.cyclesDone ?? 0}
+          sitesComplete={cockpit?.sitesComplete ?? 0}
+          sitesActive={cockpit?.sitesActive ?? 0}
+          cycleComplete={cockpit ? isCycleComplete(cockpit, sched?.cycleWaiting) : false}
+          history={workflowId ? summary : null}
+          locale={intlLocale(locale)}
+        />
       </div>
       {/* ⚠ Les actions et les coûts partagent la rangée : la moitié droite restait vide sur
           toute la largeur de l'écran, pendant que le bloc des coûts occupait une rangée
@@ -109,7 +136,7 @@ export function WatchOpsScreen() {
       {/* Le tableau de bord AVANT les chantiers : on vient d'abord voir si ça tourne, on
           regarde le détail ensuite. Il se masque tout seul quand aucun site n'a rien
           collecté — un cadran à zéro sur un écran vide se lit comme une panne. */}
-      <LiveGauges meta={meta} matchedBySite={matchedBySite} />
+      <LiveGauges meta={meta} matchedBySite={matchedBySite} cyclesBySite={cyclesBySite} />
 
       {view.chantiers.length === 0 ? (
         <p className="text-sm text-white/45 py-8 text-center">{t('ops.screen.noChantier')}</p>

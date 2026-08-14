@@ -9,11 +9,12 @@
 // dans `firestore.indexes.json` pour la purge serveur (`prune()` dans
 // `functions/src/workflow/runHistory.ts`), qui interroge exactement la même forme. Rien à
 // ajouter côté index.
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { durationTrend, typicalDuration, type RunRow } from './runHistoryStats'
+import { summarizeRuns, type RunHistorySummary } from '../dashboard/runHistorySummary'
 import type { NodeStatus } from '../../workflows/types'
 
 /** Nombre de runs conservés à l'écriture (cf. `MAX_RUNS` des deux jumeaux) — même page ici. */
@@ -39,6 +40,15 @@ export interface RunHistoryView {
   trend: number | null
   /** Durée médiane des derniers runs — l'estimation que l'en-tête affiche. */
   typical: number | null
+  /**
+   * Bilan des issues (abouti / partiel / erreur, médiane, série d'échecs) — la MÊME
+   * synthèse que le cockpit du tableau de bord, dérivée des runs DÉJÀ abonnés ici.
+   *
+   * ⚠ Surtout pas un second `onSnapshot` sur la même collection : `useWatchRunHistory`
+   * interroge exactement cette requête pour le cockpit voisin, et l'écran « Suivi » lit
+   * déjà la liste. Une fonction pure sur les documents en main coûte zéro lecture.
+   */
+  summary: RunHistorySummary
 }
 
 /** ⚠ Un seul appel par écran : l'en-tête ET l'historique lisent la même liste. Deux appels
@@ -73,5 +83,14 @@ export function useRunHistory(workflowId: string | null): RunHistoryView {
     )
   }, [uid, workflowId])
 
-  return { runs, trend: durationTrend(runs), typical: typicalDuration(runs) }
+  // ⚠ `endedAt` est optionnel sur l'entrée (le type le dit) mais jamais absent en pratique :
+  // la requête trie dessus, donc Firestore écarte les runs qui ne le portent pas — un run EN
+  // COURS n'est pas dans cette liste. Le bilan ne compte donc que des runs TERMINÉS, et le
+  // repli à 0 est écarté par `summarizeRuns` lui-même.
+  const summary = useMemo(
+    () => summarizeRuns(runs.map((r) => ({ ...r, endedAt: r.endedAt ?? 0 })), RUN_HISTORY_PAGE),
+    [runs],
+  )
+
+  return { runs, trend: durationTrend(runs), typical: typicalDuration(runs), summary }
 }

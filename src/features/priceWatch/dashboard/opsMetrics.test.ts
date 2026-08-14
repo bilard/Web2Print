@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildOpsCockpit, type HarvestMeta , scopeCockpit } from './opsMetrics'
+import { buildOpsCockpit, type HarvestMeta , scopeCockpit, isCycleComplete } from './opsMetrics'
 import type { StoredReport } from '../reportStore'
 import type { CompetitorStat } from '../catalog/report'
 
@@ -227,5 +227,26 @@ describe('⚠ le cockpit ne doit pas se contredire lui-même', () => {
       ['dormant', { domain: 'dormant.fr', productCount: 100, cumulHarvestMs: 600_000, harvestSweeps: 1, harvestProgress: 1, lastPassAt: now - 6 * 24 * 3600_000 }],
     ]) as unknown as Map<string, Parameters<typeof buildOpsCockpit>[1] extends Map<string, infer M> | undefined ? M : never>
     expect(buildOpsCockpit(report, meta, now).slowestCycle?.domain).toBe('vif.fr')
+  })
+})
+
+describe('isCycleComplete — une seule définition pour les deux écrans', () => {
+  const ck = (sitesActive: number, sitesComplete: number) =>
+    ({ sitesActive, sitesComplete }) as unknown as Parameters<typeof isCycleComplete>[0]
+
+  it('est complet quand tous les concurrents actifs ont bouclé', () => {
+    expect(isCycleComplete(ck(3, 3))).toBe(true)
+    expect(isCycleComplete(ck(3, 2))).toBe(false)
+  })
+
+  it('suit le planning dès qu’il a acté l’attente calendaire', () => {
+    // Le mode cycle a posé `cycleWaiting` : le cycle EST bouclé, même si le rapport figé
+    // n'a pas encore vu le dernier site finir.
+    expect(isCycleComplete(ck(3, 1), true)).toBe(true)
+  })
+
+  it('n’annonce pas « complet » sur un suivi qui n’a aucun site actif', () => {
+    // ⚠ 0 >= 0 est vrai : sans le garde-fou, un suivi vide s'afficherait « ✓ cycle complet ».
+    expect(isCycleComplete(ck(0, 0))).toBe(false)
   })
 })

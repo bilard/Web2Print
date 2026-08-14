@@ -82,7 +82,10 @@ export function OpsRunHistory({ cyclesDone, sitesComplete, sitesActive, cycleCom
         {/* RUNS — les passages du moteur, du plus récent au plus ancien. */}
         {history && history.runs.length > 0 && (
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-[11px] text-white/40 shrink-0">{t('ops.runs.last')}</span>
+            {/* ⚠ Le DÉNOMINATEUR dans le libellé. « ✓3 ⚠1 » sans lui ne dit pas sur quoi on
+                compte — et la liste est bornée (vingt runs conservés par workflow, purge
+                comprise), donc ce n'est jamais « depuis toujours ». */}
+            <span className="text-[11px] text-white/40 shrink-0">{t('ops.runs.lastN', { n: history.runs.length })}</span>
             <div className="flex items-center gap-1 flex-wrap">
               {history.runs.map((r) => {
                 const tone = r.status === 'success'
@@ -117,6 +120,13 @@ export function OpsRunHistory({ cyclesDone, sitesComplete, sitesActive, cycleCom
             {history.medianMs !== null && (
               <span className="text-[11px] text-white/35 whitespace-nowrap">
                 {t('ops.runs.median', { d: duration(history.medianMs) })}
+              </span>
+            )}
+            {/* QUAND remonte le dernier passage terminé. Sans lui, « ✓12 » se lit comme
+                « ça tourne bien » alors que le dernier run peut dater d'avant-hier. */}
+            {history.lastEndedAt != null && (
+              <span className="text-[11px] text-white/35 whitespace-nowrap">
+                {t('ops.runs.lastEnded', { time: stamp(history.lastEndedAt, locale) })}
               </span>
             )}
             {/* ⚠ Deux échecs d'affilée ne sont plus un accident : ça se dit en toutes

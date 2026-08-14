@@ -6,6 +6,7 @@
 // (fiches/min sur les dernières 90 s), l'avancement du balayage, et un témoin de vie.
 import { Gauge } from 'lucide-react'
 import { useLiveRates } from './useLiveRates'
+import { duration } from '../dashboard/format'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import type { HarvestMeta } from '../dashboard/opsMetrics'
 import type { LiveRate } from './liveRates'
@@ -53,17 +54,34 @@ function Dial({ value, tone }: { value: number; tone: string }) {
  *  concurrents du flux. Un tableau de bord qui montre tout ne montre rien. */
 const STALE_SITE_MS = 24 * 60 * 60 * 1000
 
-export function LiveGauges({ meta, matchedBySite }: {
+export function LiveGauges({ meta, matchedBySite, cyclesBySite }: {
   meta: Map<string, HarvestMeta>
   /** Appariés par siteId, issus du dernier « Comparer » (`report.byCompetitor`).
    *  ⚠ C'est un INSTANTANÉ, pas un flux : il ne bouge qu'en fin de run, quand la
    *  comparaison tourne. L'afficher à côté du régime évite d'attendre en vain qu'il
    *  monte pendant la collecte. */
   matchedBySite: Map<string, number>
+  /**
+   * Cycles de balayage bouclés par site, et durée moyenne de l'un d'eux.
+   *
+   * ⚠ Vient du COCKPIT (`opsMetrics`), jamais de `meta.harvestSweeps` : ce compteur brut
+   * n'est incrémenté qu'à la réouverture du balayage suivant, donc un site qui vient de
+   * finir — et attend la relance calendaire — s'afficherait à ×0 pendant des jours.
+   */
+  cyclesBySite: Map<string, { done: number; cycleMs: number | null }>
 }) {
   const { t, locale } = useTranslation()
   const rates = useLiveRates(meta)
   const n = (v: number) => v.toLocaleString(intlLocale(locale))
+  // « ×3 » seul ne se comprend pas ; l'infobulle dit ce qui est compté, en combien de temps,
+  // et si ce site attend la relance du cycle suivant.
+  const cycleTitle = (siteId: string, waiting: boolean) => {
+    const c = cyclesBySite.get(siteId)
+    const parts = [t('ops.gauges.cyclesTitle', { n: c?.done ?? 0 })]
+    if (c?.cycleMs) parts.push(t('ops.gauges.cycleDuration', { d: duration(c.cycleMs) }))
+    if (waiting) parts.push(t('ops.gauges.cycleWaiting'))
+    return parts.join(' · ')
+  }
 
   // Les sites COCHÉS d'abord, en ordre alphabétique ; les autres ensuite, même ordre.
   // Le classement par régime avait l'air malin et ne l'était pas : les cadrans changeaient
@@ -101,6 +119,10 @@ export function LiveGauges({ meta, matchedBySite }: {
           const tone = PULSE[r.pulse]
           const progress = Math.round((m.harvestProgress ?? 0) * 100)
           const matched = matchedBySite.get(siteId)
+          const cycles = cyclesBySite.get(siteId)?.done ?? 0
+          // Balayage bouclé, en attente que les retardataires finissent : le marqueur du mode
+          // cycle est postérieur à la dernière passe réelle (même règle que `siteStatus`).
+          const cycleWaiting = (m.cycleWaitingAt ?? 0) > (m.lastPassAt ?? 0)
           // Le fond porte l'état : vert en collecte, ambre au ralenti, neutre à l'arrêt.
           // Les sites au repos restent lisibles sans attirer l'œil.
           const active = m.enabled !== false
@@ -147,6 +169,12 @@ export function LiveGauges({ meta, matchedBySite }: {
                 <span className="text-white/55 truncate">{m.domain ?? siteId}</span>
                 <span className="ml-auto tabular-nums text-amber-300/60 shrink-0">{n(m.productCount ?? 0)}</span>
                 <span className="tabular-nums text-white/30 shrink-0 w-10 text-right">{progress} %</span>
+                {/* CYCLES bouclés par ce site — le compte que l'écran ne donnait nulle part.
+                    Un ✓ quand le balayage courant est fini et attend la relance. */}
+                <span className={`tabular-nums shrink-0 w-9 text-right ${cycles > 0 ? 'text-indigo-300/80' : 'text-white/25'}`}
+                  title={cycleTitle(siteId, cycleWaiting)}>
+                  ×{cycles}{cycleWaiting ? ' ✓' : ''}
+                </span>
                 <span className={`tabular-nums shrink-0 w-12 text-right ${matched ? 'text-emerald-300/70' : 'text-white/25'}`}
                   title={t('ops.gauges.matched')}>
                   {matched == null ? '—' : n(matched)}
@@ -202,6 +230,12 @@ export function LiveGauges({ meta, matchedBySite }: {
                   <div className="h-full bg-indigo-400/70 transition-[width] duration-700" style={{ width: `${progress}%` }} />
                 </div>
                 <span className="text-[10px] tabular-nums text-white/45 shrink-0">{progress} %</span>
+                {/* Cycles bouclés par CE site : « 63 % » ne dit pas si c'est le premier
+                    balayage ou le vingt-troisième. */}
+                <span className={`text-[10px] tabular-nums shrink-0 ${cycles > 0 ? 'text-indigo-300/80' : 'text-white/25'}`}
+                  title={cycleTitle(siteId, cycleWaiting)}>
+                  ×{cycles}{cycleWaiting ? ' ✓' : ''}
+                </span>
                 <span className="text-[10px] tabular-nums text-amber-300/80 shrink-0"
                   title={t('ops.gauges.indexedTitle')}>
                   {n(m.productCount ?? 0)}
