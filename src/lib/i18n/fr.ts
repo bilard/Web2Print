@@ -312,6 +312,15 @@ export const fr = {
   'bg.presets': 'Présélections',
   'bg.removeImage': 'Supprimer',
   'bg.chooseImage': 'Choisir une image',
+
+  // — Dashboard BI (moteur d'agrégation) ————————————————————————————
+  'bi.source.pim': 'Produits (PIM)',
+  'bi.dim.brand': 'Marque',
+  'bi.dim.createdAt': 'Date de création',
+  'bi.measure.count': 'Nombre',
+  'bi.measure.price': 'Somme des prix',
+  'bi.measure.medianPrice': 'Prix médian',
+
   'gradient.projectGradients': 'Dégradés du projet',
   'gradient.save': 'Sauvegarder ce dégradé dans le projet',
   'gradient.none': 'Aucun dégradé sauvegardé',

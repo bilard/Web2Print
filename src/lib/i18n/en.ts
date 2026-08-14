@@ -302,6 +302,15 @@ export const en: Record<TranslationKey, string> = {
   'bg.presets': 'Presets',
   'bg.removeImage': 'Remove',
   'bg.chooseImage': 'Choose an image',
+
+  // — BI dashboard (aggregation engine) ————————————————————————————
+  'bi.source.pim': 'Products (PIM)',
+  'bi.dim.brand': 'Brand',
+  'bi.dim.createdAt': 'Created on',
+  'bi.measure.count': 'Count',
+  'bi.measure.price': 'Total price',
+  'bi.measure.medianPrice': 'Median price',
+
   'gradient.projectGradients': 'Project gradients',
   'gradient.save': 'Save this gradient to the project',
   'gradient.none': 'No saved gradient',

@@ -301,6 +301,15 @@ export const es: Record<TranslationKey, string> = {
   'bg.presets': 'Ajustes preestablecidos',
   'bg.removeImage': 'Eliminar',
   'bg.chooseImage': 'Elegir una imagen',
+
+  // — Panel BI (motor de agregación) ————————————————————————————
+  'bi.source.pim': 'Productos (PIM)',
+  'bi.dim.brand': 'Marca',
+  'bi.dim.createdAt': 'Fecha de creación',
+  'bi.measure.count': 'Recuento',
+  'bi.measure.price': 'Precio total',
+  'bi.measure.medianPrice': 'Precio mediano',
+
   'gradient.projectGradients': 'Degradados del proyecto',
   'gradient.save': 'Guardar este degradado en el proyecto',
   'gradient.none': 'Ningún degradado guardado',
