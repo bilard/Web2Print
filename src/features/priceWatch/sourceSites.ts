@@ -263,7 +263,7 @@ const SATURATED_SHARE = 0.25
 
 /** Balayages complets sans gain avant de considérer un site saturé. Deux, pas un : un
  *  balayage peut finir à sec par hasard (fenêtre de run, panne passagère du site). */
-export const SATURATED_AFTER_SWEEPS = 2
+const SATURATED_AFTER_SWEEPS = 2
 
 export function splitPageBudget(
   sites: { id: string; pageBudget?: number; saturatedSweeps?: number }[], totalBudget: number,

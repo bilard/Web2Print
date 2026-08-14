@@ -73,7 +73,7 @@ const FP_SEP = '|'
  * Tolère l'ancien format à une seule empreinte : une mémoire écrite avant ce changement
  * reste valable, elle ne connaît simplement pas encore le texte d'arrivée.
  */
-export function remembers(entry: string | undefined, fingerprint: string): boolean {
+function remembers(entry: string | undefined, fingerprint: string): boolean {
   if (!entry) return false
   return entry.split(FP_SEP).includes(fingerprint)
 }

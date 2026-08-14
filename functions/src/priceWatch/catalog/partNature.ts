@@ -61,7 +61,7 @@ export function partNature(...texts: (string | null | undefined)[]): PartNature 
 const TAXO_ORIGIN = /\b(?:pieces?[\s-]*origine|origine[\s-]*constructeur|oem)\b/i
 const TAXO_AFTERMARKET = /\b(?:adaptables?|aftermarket)\b/i
 
-export function natureFromTaxonomy(path: string[] | null | undefined): PartNature {
+function natureFromTaxonomy(path: string[] | null | undefined): PartNature {
   const hay = (path ?? []).join(' ')
   if (!hay) return 'unknown'
   if (TAXO_AFTERMARKET.test(hay)) return 'aftermarket'
@@ -90,15 +90,6 @@ export function productNature(p: {
   if (byPath !== 'unknown') return byPath
   if (p.originRefs?.length) return 'aftermarket'
   return partNature(p.name, p.description)
-}
-
-/** Nature d'un produit SOURCE : son rangement d'abord, son libellé ensuite. */
-export function sourceNature(
-  path: string[] | null | undefined,
-  ...texts: (string | null | undefined)[]
-): PartNature {
-  const byPath = natureFromTaxonomy(path)
-  return byPath !== 'unknown' ? byPath : partNature(...texts)
 }
 
 /**

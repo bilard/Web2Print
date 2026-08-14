@@ -1,5 +1,7 @@
 // functions/src/priceWatch/catalog/originYield.ts
 // ⚠ COPIE de src/features/priceWatch/catalog/originYield.ts (bundles séparés).
+// ⚠ `natureFits` n'est PAS repris ici : seul l'explorateur de concurrents l'appelle,
+// et c'est un écran client sans jumeau serveur. Les deux `pairingRun` s'en passent.
 // Arbitrage entre produits qui revendiquent LA MÊME fiche concurrent. PUR.
 //
 // Le cas, relevé en production (123courroies) : la fiche « Courroie spécifique MTD
@@ -79,25 +81,6 @@ function norm(raw: string | null | undefined): string {
 export function claimRank(c: Claim): number {
   if (!c.origin) return 2
   return sameUpToHabit(norm(c.ownRef), norm(c.keyValue)) ? 1 : 0
-}
-
-/**
- * Départage DEUX prétendants de même rang : celui dont la NATURE correspond à celle de la
- * fiche l'emporte.
- *
- * C'est le cœur du métier de ce catalogue. Une pièce d'origine et son équivalent adaptable
- * portent la même référence constructeur ; à rang égal, rien ne les distinguait et l'ordre
- * du fichier décidait — donc un adaptable pouvait être mis en face d'une pièce
- * constructeur, et l'écart de prix affiché ne mesurait plus un positionnement mais la
- * différence entre deux articles.
- *
- * ⚠ N'intervient QUE si la fiche affirme sa nature ET que le prétendant affirme la sienne.
- * Le silence ne départage rien : c'est le cas le plus fréquent, et il retombe sur l'ordre
- * du catalogue — donc sur un résultat stable d'un run à l'autre.
- */
-export function natureFits(claim: Claim, listingNature: PartNature): boolean {
-  if (listingNature === 'unknown' || !claim.nature || claim.nature === 'unknown') return false
-  return claim.nature === listingNature
 }
 
 /** Le meilleur rang atteint sur chaque fiche. */
