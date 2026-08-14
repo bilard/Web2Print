@@ -67,3 +67,34 @@ describe('rowsFromSheet', () => {
     expect(rows[0]['taxo.1']).toBeNull()
   })
 })
+
+// ⚠⚠ Une colonne homonyme d'une clé du moteur produisait une complétude FAUSSE sans bruit :
+// `_filled`/`_total`/`taxo.N` sont posés APRÈS la copie des colonnes, `_id` avant. Dans les
+// deux sens, la mesure ment. On refuse la ligne plutôt que de la mesurer de travers.
+describe('clés réservées', () => {
+  it('refuse une colonne de feuille nommée `_total` — sinon la complétude serait fausse', () => {
+    const s = sheet({
+      columns: [col('marque'), col('_total')],
+      rows: [{ _id: 'a', marque: 'X', _total: '999' }],
+    })
+    expect(() => rowsFromSheet(s)).toThrow(/_total/)
+  })
+
+  it('refuse aussi `_filled`, `_id` et un niveau de taxonomie', () => {
+    for (const key of ['_filled', '_id', 'taxo.2']) {
+      expect(() => rowsFromSheet(sheet({ columns: [col(key)] }))).toThrow(/réservée/)
+    }
+  })
+
+  it('nomme la colonne fautive : un refus muet ne se corrige pas', () => {
+    expect(() => rowsFromSheet(sheet({ columns: [col('_sku')] }))).toThrow(/_sku/)
+  })
+
+  it('vaut aussi pour le catalogue master (productToRow via pimRows)', () => {
+    expect(() => pimRows([p('a', { _total: '3' })], [])).toThrow(/réservée/)
+  })
+
+  it('laisse passer une colonne au nom simplement proche', () => {
+    expect(() => rowsFromSheet(sheet({ columns: [col('total'), col('taxo.5')] }))).not.toThrow()
+  })
+})

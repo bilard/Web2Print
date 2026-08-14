@@ -9,6 +9,38 @@ import type { DataSource, Dimension, FieldKind, Measure, Row } from './types'
 export const TAXO_LEVELS = 4
 
 /**
+ * Clés que le moteur pose LUI-MÊME sur chaque ligne et qu'une colonne de données ne doit
+ * jamais occuper : identité, complétude, taxonomie.
+ *
+ * ⚠⚠ Une colonne nommée `_total` écrasait la complétude POSÉE APRÈS la copie des colonnes —
+ * la mesure « Complétude » rendait alors un pourcentage faux, sans le moindre bruit. Un
+ * chiffre faux est pire qu'une erreur : on refuse la ligne plutôt que de la mesurer de
+ * travers.
+ *
+ * ⚠ Renommer ces clés (préfixe) était l'autre voie possible ; elle est écartée à dessein :
+ * `taxo.1`…`taxo.4` sont des identifiants de dimension DÉJÀ PERSISTÉS dans les `QuerySpec`
+ * enregistrées (cf. `taxoDimensions`), et les colonnes de feuille portent leur propre clé
+ * telle quelle (`pimSourceFromSheet`). Les préfixer casserait toutes les tuiles en base.
+ */
+export const RESERVED_ROW_KEYS: readonly string[] = [
+  '_id', '_sku', '_createdAt', '_updatedAt', '_filled', '_total',
+  ...Array.from({ length: TAXO_LEVELS }, (_, i) => `taxo.${i + 1}`),
+]
+
+/**
+ * Lève si une colonne de données porte une clé réservée. Appelée par les DEUX fabriques de
+ * lignes : `useTileData` attrape et la tuile affiche la cause, colonne nommée.
+ */
+export function assertNoReservedColumn(columns: string[]): void {
+  const clash = columns.find((c) => RESERVED_ROW_KEYS.includes(c))
+  if (clash) {
+    throw new Error(
+      `Colonne « ${clash} » réservée au moteur : renommez-la, sinon la complétude serait fausse.`,
+    )
+  }
+}
+
+/**
  * Produit → ligne plate consommable par le moteur.
  *
  * ⚠ `_filled` / `_total` sont calculés ICI, une fois, plutôt que dans chaque mesure : la
@@ -16,6 +48,7 @@ export const TAXO_LEVELS = 4
  * sans le champ « poids » doit compter comme non renseigné, pas être ignoré.
  */
 export function productToRow(p: Product, columns: string[]): Row {
+  assertNoReservedColumn(columns)
   const row: Row = { _id: p._id, _sku: p.masterSku, _createdAt: p.createdAt, _updatedAt: p.updatedAt }
   let filled = 0
   for (const c of columns) {

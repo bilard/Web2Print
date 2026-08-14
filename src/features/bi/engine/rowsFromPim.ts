@@ -1,6 +1,6 @@
 import type { Product } from '@/features/pim/types'
 import type { ExcelSheet } from '@/features/excel/types'
-import { productToRow, TAXO_LEVELS } from '../registry/pim.source'
+import { assertNoReservedColumn, productToRow, TAXO_LEVELS } from '../registry/pim.source'
 import type { Row } from '../registry/types'
 
 /**
@@ -23,6 +23,9 @@ export function pimRows(products: Product[], columns: string[]): Row[] {
  */
 export function rowsFromSheet(sheet: ExcelSheet): Row[] {
   const cols = sheet.columns.map((c) => c.key)
+  // ⚠⚠ AVANT toute copie : les clés du moteur (`_filled`, `_total`, `taxo.N`) sont posées
+  // APRÈS les colonnes, une colonne homonyme les écrasait donc en silence.
+  assertNoReservedColumn(cols)
 
   // Inversion { colKey: niveau } → { niveau: colKey }, hors boucle : une feuille n'a
   // qu'une poignée de niveaux, pas la peine de la refaire à chaque ligne.
