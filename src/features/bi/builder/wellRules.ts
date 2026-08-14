@@ -117,5 +117,15 @@ export function bestWellFor(
   const order: WellId[] = field.role === 'measure'
     ? ['values', 'tooltips', 'visualFilters']
     : ['axis', 'legend', 'values', 'visualFilters']
-  return order.find((w) => acceptField(w, tile, field, source).ok) ?? null
+  const ok = (w: WellId) => acceptField(w, tile, field, source).ok
+  // ⚠⚠ Une zone qui a de la PLACE passe avant une zone pleine : l'axe d'un graphe accepte un
+  // second champ, mais en REMPLAÇANT le premier — au glisser c'est le geste attendu (on vise
+  // la zone), au double-clic ce serait un effacement que personne n'a demandé.
+  const free = (w: WellId) =>
+    tile !== null && wellChips(w, tile, source).length < wellCapacity(w, tile.kind)
+  // ⚠ Les filtres du visuel sont hors du premier passage : leur capacité est infinie, ils
+  // l'emporteraient donc toujours — alors qu'un double-clic sur un champ vise à l'AFFICHER.
+  // Ils restent le dernier recours de la seconde passe.
+  const preferred = order.filter((w) => w !== 'visualFilters')
+  return preferred.find((w) => free(w) && ok(w)) ?? order.find(ok) ?? null
 }

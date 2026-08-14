@@ -87,7 +87,7 @@ export function wellCapacity(well: WellId, kind: TileKind): number {
  * ⚠ Le tableau croisé désigne sa colonne par `options.pivotColumn`, jamais par le RANG :
  * la déduire de la position ferait basculer l'axe et la légende au premier réordonnancement.
  */
-export function dimensionSlots(tile: Tile): { axis: number[]; legend: number[] } {
+function dimensionSlots(tile: Tile): { axis: number[]; legend: number[] } {
   const dims = tile.query.dimensions
   if (tile.kind === 'pivot') {
     const col = tile.options?.pivotColumn
