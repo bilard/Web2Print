@@ -86,15 +86,18 @@ export function BiScreen() {
   return (
     <div className="h-full min-h-0 flex flex-col bg-background">
       {items.length === 0 ? (
-        // ⚠ L'écran vide n'offre pas qu'un bouton : les trois modèles sont le chemin le plus
-        // court vers un tableau utile, et un module qui ne propose rien se lit comme un module
-        // sans données.
-        <div className="flex-1 overflow-auto p-8 space-y-6">
+        // ⚠⚠ L'écran vide offre les MODÈLES en premier, et la création vierge en second, plus
+        // discrète. Vu chez l'utilisateur : six tableaux « Sans titre » vides, créés l'un après
+        // l'autre sans comprendre quoi en faire. Un bouton qui crée du VIDE ne peut pas être le
+        // geste le plus visible d'un module qui n'a encore rien à montrer.
+        <div className="flex-1 overflow-auto p-8">
           <TemplateGallery onOpen={setCurrentId} canEdit={canEdit} />
-          <div className="text-center space-y-3">
-            <p className="text-sm text-white/45">{t('bi.screen.empty')}</p>
-            {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
-          </div>
+          {canEdit && (
+            <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-col items-center gap-2.5">
+              <p className="text-[12px] text-white/30">{t('bi.screen.orBlank')}</p>
+              <NewDashboardButton onCreated={setCurrentId} />
+            </div>
+          )}
         </div>
       ) : current && page ? (
         <BiBoard

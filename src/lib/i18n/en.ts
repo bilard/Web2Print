@@ -333,6 +333,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.screen.title': 'BI Dashboard',
   'bi.screen.intro': 'Your dashboards, on your data, live.',
   'bi.screen.empty': 'No dashboard yet — create one to get started.',
+  'bi.screen.orBlank': 'Or start from a blank dashboard, and fill it in yourself.',
   'bi.screen.onSheet': 'Computed on sheet “{sheet}”',
   'bi.screen.noSheet': 'No active sheet — open a database in the Data module.',
   'bi.screen.onMasterCatalog': 'Computed on the PIM master catalogue',

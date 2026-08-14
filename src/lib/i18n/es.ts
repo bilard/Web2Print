@@ -332,6 +332,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.screen.title': 'Paneles BI',
   'bi.screen.intro': 'Sus paneles, sobre sus datos, en directo.',
   'bi.screen.empty': 'Aún no hay ningún panel — cree uno para empezar.',
+  'bi.screen.orBlank': 'O parta de un panel en blanco, que rellenará usted mismo.',
   'bi.screen.onSheet': 'Calculado sobre la hoja «{sheet}»',
   'bi.screen.noSheet': 'Ninguna hoja activa — abra una base en el módulo Datos.',
   'bi.screen.onMasterCatalog': 'Calculado sobre el catálogo maestro del PIM',

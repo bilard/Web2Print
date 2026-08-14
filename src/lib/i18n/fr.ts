@@ -346,6 +346,7 @@ export const fr = {
   'bi.screen.title': 'Dashboard BI',
   'bi.screen.intro': 'Vos tableaux de bord, sur vos données, en direct.',
   'bi.screen.empty': 'Aucun tableau de bord — créez-en un pour commencer.',
+  'bi.screen.orBlank': 'Ou partez d’un tableau vierge, que vous remplirez vous-même.',
   'bi.screen.onSheet': 'Calculé sur la feuille « {sheet} »',
   'bi.screen.noSheet': 'Aucune feuille active — ouvrez une base dans le module Données.',
   'bi.screen.onMasterCatalog': 'Calculé sur le catalogue master du PIM',

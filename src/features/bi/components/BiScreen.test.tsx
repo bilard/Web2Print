@@ -38,8 +38,10 @@ vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => 'u1
 vi.mock('@/features/access/useAccess', () => ({ useCan: () => canEdit }))
 vi.mock('./BiBoard', () => ({ BiBoard: vi.fn(() => null) }))
 vi.mock('./NewDashboardButton', () => ({ NewDashboardButton: vi.fn(() => <button>nouveau</button>) }))
+vi.mock('../templates/TemplateGallery', () => ({ TemplateGallery: vi.fn(() => <div>modèles</div>) }))
 
 const { BiBoard } = await import('./BiBoard')
+const { TemplateGallery } = await import('../templates/TemplateGallery')
 const { NewDashboardButton } = await import('./NewDashboardButton')
 const lastEditingProp = () => vi.mocked(BiBoard).mock.calls.at(-1)![0].editing
 
@@ -48,6 +50,8 @@ beforeEach(() => {
   items = ONE_DASHBOARD
   vi.mocked(BiBoard).mockClear()
   vi.mocked(NewDashboardButton).mockClear()
+  // ⚠ Sans ce nettoyage, `toHaveBeenCalled()` passerait grâce au test PRÉCÉDENT.
+  vi.mocked(TemplateGallery).mockClear()
 })
 
 describe('BiScreen — raccourci « E » et permission', () => {
@@ -83,21 +87,25 @@ describe('BiScreen — raccourci « E » et permission', () => {
 })
 
 describe('BiScreen — bouton de création', () => {
-  it('écran vide + droit d’édition : le message ET le bouton de création apparaissent', () => {
+  // ⚠⚠ Vu chez l'utilisateur : six tableaux « Sans titre » vides, créés l'un après l'autre
+  // sans comprendre quoi en faire. L'écran vide mène donc AUX MODÈLES d'abord ; la création
+  // vierge reste offerte, en second, sous un trait.
+  it('écran vide + droit d’édition : les MODÈLES d’abord, la création vierge ensuite', () => {
     items = []
     canEdit = true
     const { getByText } = render(<BiScreen />)
 
-    getByText(/aucun tableau de bord/i)
+    getByText(/vierge/i)
+    expect(TemplateGallery).toHaveBeenCalled()
     expect(NewDashboardButton).toHaveBeenCalled()
   })
 
-  it('écran vide sans le droit d’édition : le message seul, jamais le bouton', () => {
+  it('écran vide sans le droit d’édition : les modèles seuls, jamais la création vierge', () => {
     items = []
     canEdit = false
-    const { getByText } = render(<BiScreen />)
+    render(<BiScreen />)
 
-    getByText(/aucun tableau de bord/i)
+    expect(TemplateGallery).toHaveBeenCalled()
     expect(NewDashboardButton).not.toHaveBeenCalled()
   })
 
