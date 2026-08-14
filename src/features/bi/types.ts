@@ -19,7 +19,6 @@ export type SourceId = (typeof SOURCE_IDS)[number]
 const FILTER_OPS = [
   'eq', 'ne', 'in', 'gt', 'gte', 'lt', 'lte', 'contains', 'between', 'empty', 'notEmpty',
 ] as const
-export type FilterOp = (typeof FILTER_OPS)[number]
 
 const filterSchema = z.object({
   field: z.string().min(1),
@@ -29,14 +28,12 @@ const filterSchema = z.object({
 export type FilterClause = z.infer<typeof filterSchema>
 
 const measureRefSchema = z.object({ id: z.string().min(1), alias: z.string().optional() })
-export type MeasureRef = z.infer<typeof measureRefSchema>
 
 /** `bucket` regroupe une dimension de TEMPS. Absent sur les autres. */
 const dimensionRefSchema = z.object({
   id: z.string().min(1),
   bucket: z.enum(['day', 'week', 'month']).optional(),
 })
-export type DimensionRef = z.infer<typeof dimensionRefSchema>
 
 const querySchema = z.object({
   source: z.enum(SOURCE_IDS),

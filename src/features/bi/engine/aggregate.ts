@@ -3,7 +3,7 @@ import type { FilterClause, QuerySpec } from '../types'
 import type { DataSource, Dimension, MeasureFormat, Row } from '../registry/types'
 import type { TranslationKey } from '@/lib/i18n'
 
-export interface ResultColumn {
+interface ResultColumn {
   key: string
   /** ⚠ Typée : sans quoi chaque composant consommateur casterait à l'affichage, et un
    *  libellé absent du catalogue passerait sans bruit. `labelKey` sert aux libellés du
@@ -14,7 +14,7 @@ export interface ResultColumn {
   role: 'dimension' | 'measure'
   format?: MeasureFormat
 }
-export type ResultRow = Record<string, string | number | null>
+type ResultRow = Record<string, string | number | null>
 export interface AggregateResult { columns: ResultColumn[]; rows: ResultRow[] }
 
 /** Clé de regroupement d'une valeur de temps. ⚠ En UTC, comme tous les compteurs mensuels

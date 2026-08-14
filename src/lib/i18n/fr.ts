@@ -342,6 +342,8 @@ export const fr = {
   'bi.screen.title': 'Dashboard BI',
   'bi.screen.intro': 'Vos tableaux de bord, sur vos données, en direct.',
   'bi.screen.empty': 'Aucun tableau de bord — créez-en un pour commencer.',
+  'bi.new.button': 'Nouveau tableau de bord',
+  'bi.new.defaultName': 'Sans titre',
   'bi.toolbar.viewing': 'Consultation',
   'bi.toolbar.editing': 'Édition',
   'bi.toolbar.toggleHint': 'Basculer consultation / édition (E)',

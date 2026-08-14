@@ -7,7 +7,7 @@
 // composant) fournirait une fonction fraîche à `TileBody`, mémoïsé par `React.memo` côté
 // `DashboardGrid`, et annulerait la mémoïsation : chaque tuile referait son agrégation pendant
 // le geste.
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
@@ -29,9 +29,14 @@ interface BiBoardProps {
   onToggleEdit: () => void
   canEdit: boolean
   onSelect: (id: string) => void
+  /** Placé à côté du titre — le bouton « Nouveau tableau de bord » de `BiScreen`, qui
+   *  possède seul `onCreated`. Optionnel : `BiBoard` reste utilisable sans (tests). */
+  headerAction?: ReactNode
 }
 
-export function BiBoard({ current, items, uid, width, editing, onToggleEdit, canEdit, onSelect }: BiBoardProps) {
+export function BiBoard({
+  current, items, uid, width, editing, onToggleEdit, canEdit, onSelect, headerAction,
+}: BiBoardProps) {
   const { t } = useTranslation()
 
   // ⚠ `t` (issu de `useTranslation`) est une fonction RECRÉÉE à chaque rendu (voir
@@ -94,9 +99,12 @@ export function BiBoard({ current, items, uid, width, editing, onToggleEdit, can
   return (
     <>
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-white">{t('bi.screen.title')}</h1>
-          <p className="text-sm text-white/50">{t('bi.screen.intro')}</p>
+        <div className="flex items-start gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-white">{t('bi.screen.title')}</h1>
+            <p className="text-sm text-white/50">{t('bi.screen.intro')}</p>
+          </div>
+          {headerAction}
         </div>
         <BiToolbar
           items={items} currentId={current.id} onSelect={onSelect}

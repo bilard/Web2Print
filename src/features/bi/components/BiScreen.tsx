@@ -12,6 +12,7 @@ import { useDashboards } from '../hooks/useDashboards'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { BiBoard } from './BiBoard'
+import { NewDashboardButton } from './NewDashboardButton'
 import { useTranslation } from '@/lib/i18n'
 
 export function BiScreen() {
@@ -64,13 +65,19 @@ export function BiScreen() {
     if (!canEdit) setEditing(false)
   }, [canEdit])
 
-  if (items.length === 0) {
-    return <p className="text-sm text-white/45 py-8 text-center">{t('bi.screen.empty')}</p>
-  }
-
+  // ⚠ Le `ref` de mesure vit sur un conteneur monté dans TOUS les cas (écran vide inclus) :
+  // un `ref` porté seulement par la branche « tableaux de bord présents » resterait `null`
+  // tant que la liste (abonnement ASYNCHRONE `useDashboards`) n'a pas rendu son premier
+  // élément — l'effet `ResizeObserver` (déps `[]`, ne re-tente jamais) aurait déjà bail
+  // silencieusement, et `width` resterait figé au repli `1200` toute la session.
   return (
     <div className="space-y-4" ref={boxRef}>
-      {current && (
+      {items.length === 0 ? (
+        <div className="py-8 text-center space-y-3">
+          <p className="text-sm text-white/45">{t('bi.screen.empty')}</p>
+          {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
+        </div>
+      ) : current ? (
         <BiBoard
           key={current.id}
           current={current}
@@ -81,8 +88,9 @@ export function BiScreen() {
           onToggleEdit={() => setEditing((v) => !v)}
           canEdit={canEdit}
           onSelect={setCurrentId}
+          headerAction={canEdit ? <NewDashboardButton onCreated={setCurrentId} /> : undefined}
         />
-      )}
+      ) : null}
     </div>
   )
 }

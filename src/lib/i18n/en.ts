@@ -329,6 +329,8 @@ export const en: Record<TranslationKey, string> = {
   'bi.screen.title': 'BI Dashboard',
   'bi.screen.intro': 'Your dashboards, on your data, live.',
   'bi.screen.empty': 'No dashboard yet — create one to get started.',
+  'bi.new.button': 'New dashboard',
+  'bi.new.defaultName': 'Untitled',
   'bi.toolbar.viewing': 'Viewing',
   'bi.toolbar.editing': 'Editing',
   'bi.toolbar.toggleHint': 'Toggle viewing / editing (E)',

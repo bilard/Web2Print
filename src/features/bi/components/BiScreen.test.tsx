@@ -11,6 +11,15 @@ import { BiScreen } from './BiScreen'
 import type { Dashboard } from '../types'
 
 let canEdit = false
+// ⚠ Mutable (et non un tableau fixe) : couvrir l'écran vide (aucun tableau de bord) exige
+// de faire varier `items` d'un test à l'autre, sans quoi le bouton de création n'y serait
+// jamais exercé.
+let items: Dashboard[] = []
+
+const ONE_DASHBOARD: Dashboard[] = [{
+  id: 'd1', name: 'Ventes', accountId: 'acme', workspaceUid: 'u1',
+  tiles: [], layout: [], filters: [], version: 1, createdAt: 1, updatedAt: 1, createdBy: 'u1',
+}]
 
 // jsdom ne fournit pas `ResizeObserver` : `BiScreen` en a besoin pour mesurer la largeur de
 // la grille (sans rapport avec ce qui est testé ici, mais nécessaire pour que le montage
@@ -22,20 +31,22 @@ class ResizeObserverStub {
 }
 vi.stubGlobal('ResizeObserver', ResizeObserverStub)
 
-vi.mock('../hooks/useDashboards', () => ({
-  useDashboards: (): Dashboard[] => [{
-    id: 'd1', name: 'Ventes', accountId: 'acme', workspaceUid: 'u1',
-    tiles: [], layout: [], filters: [], version: 1, createdAt: 1, updatedAt: 1, createdBy: 'u1',
-  }],
-}))
+vi.mock('../hooks/useDashboards', () => ({ useDashboards: (): Dashboard[] => items }))
 vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => 'u1' }))
 vi.mock('@/features/access/useAccess', () => ({ useCan: () => canEdit }))
 vi.mock('./BiBoard', () => ({ BiBoard: vi.fn(() => null) }))
+vi.mock('./NewDashboardButton', () => ({ NewDashboardButton: vi.fn(() => <button>nouveau</button>) }))
 
 const { BiBoard } = await import('./BiBoard')
+const { NewDashboardButton } = await import('./NewDashboardButton')
 const lastEditingProp = () => vi.mocked(BiBoard).mock.calls.at(-1)![0].editing
 
-beforeEach(() => { canEdit = false; vi.mocked(BiBoard).mockClear() })
+beforeEach(() => {
+  canEdit = false
+  items = ONE_DASHBOARD
+  vi.mocked(BiBoard).mockClear()
+  vi.mocked(NewDashboardButton).mockClear()
+})
 
 describe('BiScreen — raccourci « E » et permission', () => {
   it('reste inerte pour un rôle consultation seule (`canEdit` faux)', () => {
@@ -66,5 +77,39 @@ describe('BiScreen — raccourci « E » et permission', () => {
     canEdit = false
     rerender(<BiScreen />)
     expect(lastEditingProp()).toBe(false)
+  })
+})
+
+describe('BiScreen — bouton de création', () => {
+  it('écran vide + droit d’édition : le message ET le bouton de création apparaissent', () => {
+    items = []
+    canEdit = true
+    const { getByText } = render(<BiScreen />)
+
+    getByText(/aucun tableau de bord/i)
+    expect(NewDashboardButton).toHaveBeenCalled()
+  })
+
+  it('écran vide sans le droit d’édition : le message seul, jamais le bouton', () => {
+    items = []
+    canEdit = false
+    const { getByText } = render(<BiScreen />)
+
+    getByText(/aucun tableau de bord/i)
+    expect(NewDashboardButton).not.toHaveBeenCalled()
+  })
+
+  it('des tableaux de bord existent, avec le droit d’édition : le bouton se branche dans l’en-tête de `BiBoard`', () => {
+    canEdit = true
+    render(<BiScreen />)
+
+    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction).toBeTruthy()
+  })
+
+  it('des tableaux de bord existent, sans le droit d’édition : pas de bouton dans l’en-tête', () => {
+    canEdit = false
+    render(<BiScreen />)
+
+    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction).toBeFalsy()
   })
 })

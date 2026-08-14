@@ -2,7 +2,7 @@
 //
 // ⚠ Sous `users/{workspaceUid}/…` : les tableaux de bord sont des DONNÉES DE TRAVAIL, donc
 // partagées par les membres d'une société, jamais rangées sous l'identité de leur auteur.
-import { doc, setDoc, deleteDoc } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { stripUndefined } from '@/lib/stripUndefined'
 import { MAX_DASHBOARD_BYTES, parseDashboard, type Dashboard } from '../types'
@@ -25,8 +25,4 @@ export async function saveDashboard(uid: string, d: Dashboard): Promise<void> {
   // ⚠ `Dashboard` porte des champs optionnels (description, filtres, tri…) : un `undefined`
   // explicite ferait lever `setDoc` (Firestore le refuse), cf. `stripUndefined`.
   await setDoc(doc(db, dashboardDoc(uid, valid.id)), stripUndefined(valid))
-}
-
-export async function deleteDashboard(uid: string, id: string): Promise<void> {
-  await deleteDoc(doc(db, dashboardDoc(uid, id)))
 }

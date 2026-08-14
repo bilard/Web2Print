@@ -328,6 +328,8 @@ export const es: Record<TranslationKey, string> = {
   'bi.screen.title': 'Paneles BI',
   'bi.screen.intro': 'Sus paneles, sobre sus datos, en directo.',
   'bi.screen.empty': 'Aún no hay ningún panel — cree uno para empezar.',
+  'bi.new.button': 'Nuevo panel',
+  'bi.new.defaultName': 'Sin título',
   'bi.toolbar.viewing': 'Consulta',
   'bi.toolbar.editing': 'Edición',
   'bi.toolbar.toggleHint': 'Alternar consulta / edición (E)',
