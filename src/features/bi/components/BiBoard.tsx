@@ -68,9 +68,9 @@ export function BiBoard({
   // ⚠⚠ Poser une tuile doit être ATOMIQUE du point de vue du rendu : la tuile et son
   // placement dans le même rendu. Voir `usePendingTiles` pour ce que coûtait le décalage.
   const { tiles, add: addPending } = usePendingTiles(current.tiles)
-  // ⚠⚠ Source DÉRIVÉE de la feuille active pour le PIM, registre pour la veille — le menu doit
+  // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille — le menu doit
   // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
-  // chargements réclamés par les tuiles POSÉES (jamais par la source juste sélectionnée).
+  // lectures réclamées par les tuiles POSÉES, jamais par la source seulement sélectionnée.
   const { sourceId, setSourceId, source, context } = useBoardSource(tiles, sheet)
 
   // ⚠ `addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
@@ -105,7 +105,9 @@ export function BiBoard({
     // la valeur ne bouge plus — c'est elle qui fait foi pour l'avertissement.
     saveDashboard(uid, {
       ...current, tiles: [...tiles, tile], layout,
-      sourceSheetName: current.sourceSheetName ?? (hasSheet ? sheet.name : undefined),
+      // ⚠ Seule une tuile PIM se construit SUR une feuille : en stampiller une pour une tuile
+      // de veille ferait avertir « construit sur X » à tort, pour des chiffres étrangers à elle.
+      sourceSheetName: current.sourceSheetName ?? (hasSheet && sourceId === 'pim.products' ? sheet.name : undefined),
     })
       .catch((e: unknown) => toast.error(e instanceof Error ? e.message : t('bi.save.failed')))
     // ⚠ `draft.layout`/`draft.addPlacement` plutôt que `draft` : cet objet est un littéral
@@ -130,13 +132,11 @@ export function BiBoard({
         activeSheetName={hasSheet ? sheet.name : undefined}
         usesMasterCatalogue={!hasSheet && hasProducts}
         builtOnSheetName={current.sourceSheetName}
-        toolbar={(
-          <BiToolbar
-            items={items} currentId={current.id} onSelect={onSelect}
-            editing={editing} onToggleEdit={onToggleEdit} canEdit={canEdit}
-            undo={draft.undo} redo={draft.redo} canUndo={draft.canUndo} canRedo={draft.canRedo}
-          />
-        )}
+        toolbar={<BiToolbar
+          items={items} currentId={current.id} onSelect={onSelect} editing={editing}
+          onToggleEdit={onToggleEdit} canEdit={canEdit} undo={draft.undo} redo={draft.redo}
+          canUndo={draft.canUndo} canRedo={draft.canRedo}
+        />}
       />
 
       {/* ⚠ Le geste, jamais le seul état local `editing` : un droit révoqué en cours de session
