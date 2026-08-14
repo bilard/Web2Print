@@ -8,7 +8,7 @@
 // tokens comptés sans coût ne sont pas gratuits — ils sont NON CHIFFRÉS, et un total qui
 // les contient est un plancher, jamais un total.
 import { getModel, type AiProvider } from '@/lib/aiModels'
-import { computeCost } from '@/features/stats/aiUsageTracking'
+import { resolveModelCost } from '@/features/stats/modelCost'
 import type { AiCostStats } from '@/features/stats/useUsageStats'
 
 interface ModelCostRow {
@@ -55,25 +55,17 @@ export function buildOpsCostRows(
     if (!usage || (usage.costUsd <= 0 && usage.tokensIn <= 0)) continue
     const models = Object.entries(usage.byModel)
       .map(([id, leaf]) => {
-        const info = getModel(provider, id)
-        const used = leaf.tokensIn + leaf.tokensOut > 0
         // ⚠ Le coût est FIGÉ en base au moment de l'appel : ajouter un tarif au catalogue
-        // ne répare pas le passé. Les tokens, eux, sont là — et le tarif désormais aussi,
-        // donc le montant se recalcule. Sans ça, un mois entier resterait marqué
-        // « tarif inconnu » alors que le prix est connu depuis.
-        const rescued = leaf.costUsd === 0 && used && info
-          ? computeCost({ input: leaf.tokensIn, output: leaf.tokensOut }, info.pricing)
-          : 0
+        // ne répare pas le passé, et un coût déjà non nul peut malgré tout ne couvrir
+        // qu'une partie des tokens (tarif arrivé en cours de mois). Le rattrapage vit dans
+        // `resolveModelCost`, partagé avec le panneau live — deux barèmes pour un même
+        // document, c'est deux écrans qui annoncent deux factures.
         return {
           id,
-          label: info?.label ?? id,
+          label: getModel(provider, id)?.label ?? id,
           tokensIn: leaf.tokensIn,
           tokensOut: leaf.tokensOut,
-          costUsd: leaf.costUsd || rescued,
-          // Un tarif à zéro EXISTE au catalogue (modèles gratuits) : ce n'est pas un
-          // tarif manquant. Seule l'absence du modèle l'est.
-          unpriced: leaf.costUsd === 0 && used && !info,
-          estimated: rescued > 0,
+          ...resolveModelCost(provider, id, leaf),
         }
       })
       // Le plus cher d'abord ; à coût égal — donc souvent à zéro — le plus gros volume :

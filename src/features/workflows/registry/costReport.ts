@@ -11,6 +11,7 @@ import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
 import { fetchAiCost, fetchBrightData, type AiCostStats } from '@/features/stats/useUsageStats'
 import { fetchProviderBalances } from '@/features/stats/providerBalances'
+import { resolveModelCost, resolveProviderCost } from '@/features/stats/modelCost'
 import type { BrightDataAccountStats } from '@/features/stats/useBrightDataAccount'
 
 const USD_TO_EUR = 0.92
@@ -57,8 +58,12 @@ export function buildCostRows(
   for (const p of PROVIDERS) {
     const u = stats.byProvider[p]
     const budget = budgets[p]
-    const pct = budget !== null && budget > 0 ? u.costUsd / budget : null
-    const kind = getBadgeKind(u.costUsd, budget)
+    // ⚠⚠ Le coût de la base peut SOUS-COMPTER : un modèle absent du catalogue s'y écrit à
+    // zéro, et un tarif ajouté en cours de mois ne rattrape pas les appels déjà passés.
+    // Ce rapport part par mail — il ne peut pas annoncer une facture cent fois trop basse.
+    const providerCost = resolveProviderCost(p, u)
+    const pct = budget !== null && budget > 0 ? providerCost / budget : null
+    const kind = getBadgeKind(providerCost, budget)
     const selectedModelId = selectedModel[p] ?? getSelectedModel(p)
     const selectedInfo = AI_MODELS[p].find((m) => m.id === selectedModelId)
 
@@ -72,7 +77,8 @@ export function buildCostRows(
         subtitle: 'Gemini (Google) · texte',
         tokensIn:  textLeaf?.tokensIn  ?? (hasByModel ? 0 : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0)),
         tokensOut: textLeaf?.tokensOut ?? (hasByModel ? 0 : u.tokensOut - (imageLeaf?.tokensOut ?? 0)),
-        costUsd:   textLeaf?.costUsd   ?? (hasByModel ? 0 : u.costUsd   - (imageLeaf?.costUsd   ?? 0)),
+        costUsd:   textLeaf ? resolveModelCost(p, selectedModelId, textLeaf).costUsd
+          : (hasByModel ? 0 : u.costUsd - (imageLeaf?.costUsd ?? 0)),
         budget, pct, kind, pricing: selectedInfo?.pricing,
       })
       const imageInfo = AI_MODELS.gemini.find((m) => m.id === GEMINI_IMAGE_MODEL_ID)
@@ -82,7 +88,7 @@ export function buildCostRows(
         subtitle: 'Gemini (Google) · image (Image IA)',
         tokensIn:  imageLeaf?.tokensIn  ?? 0,
         tokensOut: imageLeaf?.tokensOut ?? 0,
-        costUsd:   imageLeaf?.costUsd   ?? 0,
+        costUsd:   imageLeaf ? resolveModelCost(p, GEMINI_IMAGE_MODEL_ID, imageLeaf).costUsd : 0,
         budget, pct, kind, pricing: imageInfo?.pricing, isSubRow: true,
       })
       continue
@@ -92,7 +98,7 @@ export function buildCostRows(
       provider: p,
       title: PROVIDER_META[p].label,
       subtitle: selectedInfo?.label ?? selectedModelId,
-      tokensIn: u.tokensIn, tokensOut: u.tokensOut, costUsd: u.costUsd,
+      tokensIn: u.tokensIn, tokensOut: u.tokensOut, costUsd: providerCost,
       budget, pct, kind, pricing: selectedInfo?.pricing,
     })
   }

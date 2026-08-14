@@ -3,6 +3,8 @@
 // homogènes {volume, coût, budget, restant}. Les coûts sont STOCKÉS en USD ; l'€ est une
 // conversion d'affichage (pas de coût € persisté).
 import type { UsageStatsLike } from './types'
+import { resolveProviderCost } from '@/features/stats/modelCost'
+import type { AiProvider } from '@/lib/aiModels'
 
 export const USD_TO_EUR = 0.92
 export const eur = (usd: number): string =>
@@ -36,21 +38,32 @@ export interface Budgets {
   brightDataBudgetUsd?: number | null
 }
 
+/** Coût LLM d'un fournisseur, tarifs manquants rattrapés. La clé vient de la BASE : une
+ *  valeur inconnue du catalogue traverse sans être chiffrée, jamais requalifiée. */
+function llmCost(provider: string, u: UsageStatsLike['aiCost']['byProvider'][string]): number {
+  return resolveProviderCost(provider as AiProvider, { costUsd: u.costUsd, byModel: u.byModel ?? {} })
+}
+
 export function buildCostRows(stats: UsageStatsLike, budgets: Budgets): CostRow[] {
   const rows: CostRow[] = []
 
   // LLM par provider
   for (const [provider, u] of Object.entries(stats.aiCost.byProvider)) {
     const budget = budgets.monthlyBudgetUsd?.[provider] ?? null
-    if (u.costUsd <= 0 && !budget) continue
+    // ⚠ Le coût enregistré peut sous-compter : un modèle absent du catalogue s'écrit à zéro,
+    // et un tarif ajouté en cours de mois ne rattrape pas les appels déjà passés. Le
+    // rattrapage est le MÊME partout (panneau live, Suivi, rapport de coûts, PWA) — c'est la
+    // seule façon d'avoir un chiffre unique.
+    const cost = llmCost(provider, u)
+    if (cost <= 0 && !budget) continue
     rows.push({
       key: `llm:${provider}`,
       label: LLM_LABEL[provider] ?? provider,
       group: 'LLM',
       volume: fmtTokens(u.tokensIn + u.tokensOut),
-      costUsd: u.costUsd,
+      costUsd: cost,
       budgetUsd: budget && budget > 0 ? budget : null,
-      remainingUsd: budget && budget > 0 ? Math.max(0, budget - u.costUsd) : null,
+      remainingUsd: budget && budget > 0 ? Math.max(0, budget - cost) : null,
     })
   }
 
@@ -108,7 +121,7 @@ export interface CostTotals {
 export function costTotals(stats: UsageStatsLike): CostTotals {
   const byGroup: Record<CostGroup, number> = { LLM: 0, Scraping: 0, Image: 0 }
   let tokensLlm = 0
-  for (const u of Object.values(stats.aiCost.byProvider)) { byGroup.LLM += u.costUsd; tokensLlm += u.tokensIn + u.tokensOut }
+  for (const [provider, u] of Object.entries(stats.aiCost.byProvider)) { byGroup.LLM += llmCost(provider, u); tokensLlm += u.tokensIn + u.tokensOut }
   for (const u of Object.values(stats.scrape.byPlatform)) byGroup.Scraping += u.costUsd
   byGroup.Scraping += stats.brightData.costUsd
   byGroup.Image += stats.removebg.costUsd

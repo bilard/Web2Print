@@ -10,7 +10,8 @@ import { formatEur } from '@/lib/money'
 import { getBadgeKind, formatTokens, formatBillingDate, type BadgeKind } from '@/features/stats/usageFormat'
 import { useIsOwner } from '@/features/auth/useAuth'
 import { useAiSettingsStore, getSelectedModel } from '@/stores/aiSettings.store'
-import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
+import { resolveModelCost, resolveProviderCost } from '@/features/stats/modelCost'
+import { AI_MODELS, getModel, type AiProvider } from '@/lib/aiModels'
 // ⚠ Partagés avec l'écran « Suivi », qui liste les mêmes fournisseurs.
 import { PROVIDER_META, PROVIDERS } from '@/features/stats/providerMeta'
 import { recordAudit } from '@/lib/auditLog'
@@ -132,6 +133,23 @@ function ProgressBar({ pct, kind }: { pct: number; kind: BadgeKind }) {
   )
 }
 
+/** Le modèle qui a réellement consommé le plus chez ce fournisseur, ou `null` si le détail
+ *  par modèle manque (écritures antérieures à `byModel`).
+ *
+ *  ⚠ Le sous-titre de chaque ligne montrait le modèle SÉLECTIONNÉ dans les Réglages — or la
+ *  dépense vient de ce qui a TOURNÉ, pas de ce qui est coché. DeepSeek s'annonçait
+ *  « DeepSeek Chat (V4) » au-dessus de 1,18 M de tokens consommés par `deepseek-v4-flash`,
+ *  un modèle que l'écran ne nommait nulle part. */
+function dominantModel(byModel: Record<string, { tokensIn: number; tokensOut: number }>): string | null {
+  let best: string | null = null
+  let bestTokens = 0
+  for (const [id, leaf] of Object.entries(byModel)) {
+    const tokens = leaf.tokensIn + leaf.tokensOut
+    if (tokens > bestTokens) { best = id; bestTokens = tokens }
+  }
+  return best
+}
+
 export function LiveLlmUsagePanel() {
   const { t } = useTranslation()
   const { data: stats, isLoading, isFetching, refetch, dataUpdatedAt } = useUsageStats()
@@ -177,7 +195,13 @@ export function LiveLlmUsagePanel() {
     /** True pour les sous-lignes d'un même provider — le budget/alerte appartient
      *  à la ligne principale pour ne pas dupliquer le contrôle. */
     isSubRow?: boolean
+    /** Le coût affiché a été RELEVÉ par recalcul : la base le sous-comptait (tarif ajouté
+     *  au catalogue après les appels). Le montant est bon, il ne vient pas d'un relevé. */
+    estimated?: boolean
+    /** Des tokens consommés qu'AUCUN tarif ne permet de chiffrer : le montant manque. */
+    unpriced?: boolean
   }
+
 
   const rows = useMemo<Row[]>(() => {
     if (!stats) return []
@@ -185,12 +209,26 @@ export function LiveLlmUsagePanel() {
     for (const p of PROVIDERS) {
       const u = stats.aiCost.byProvider[p]
       const budget = budgets[p]
+      // ⚠⚠ Le coût AFFICHÉ n'est pas celui que la base porte tel quel : `recordAiUsage`
+      // tarife au moment de l'appel, et un modèle absent du catalogue s'y écrit à zéro —
+      // ou, pire, à une fraction du vrai montant quand le tarif arrive en cours de mois.
+      // Mesuré ici même : 1,18 M de tokens DeepSeek facturés « 0,0034 € ». Le rattrapage
+      // est celui de l'écran « Suivi », au mot près (`resolveModelCost`).
+      const costUsd = resolveProviderCost(p, u)
       // Le pct/kind reste basé sur le coût provider total (pas par modèle) —
       // l'alerte budgétaire suit le provider, pas un modèle isolé.
-      const pct = budget !== null && budget > 0 ? u.costUsd / budget : null
-      const kind = getBadgeKind(u.costUsd, budget)
+      const pct = budget !== null && budget > 0 ? costUsd / budget : null
+      const kind = getBadgeKind(costUsd, budget)
       const selectedModelId = selectedModel[p] ?? getSelectedModel(p)
       const selectedInfo = AI_MODELS[p].find((m) => m.id === selectedModelId)
+      // Ce qui a réellement tourné prime sur ce qui est coché dans les Réglages.
+      const usedModelId = dominantModel(u.byModel)
+      const usedInfo = usedModelId ? getModel(p, usedModelId) : null
+      // Sur TOUS les modèles du fournisseur, pas seulement le dominant : un seul modèle non
+      // tarifé suffit à rendre le montant incomplet, et l'écran doit le dire.
+      const resolved = Object.entries(u.byModel).map(([id, leaf]) => resolveModelCost(p, id, leaf))
+      const anyUnpriced = resolved.some((r) => r.unpriced)
+      const anyEstimated = resolved.some((r) => r.estimated)
 
       // Cas spécial Gemini : on émet 1 ligne pour le texte (modèle sélectionné)
       // + 1 ligne pour le modèle image. Les autres providers gardent 1 ligne.
@@ -202,7 +240,11 @@ export function LiveLlmUsagePanel() {
         const hasByModel = Object.keys(u.byModel).length > 0
         const textTokensIn  = textLeaf?.tokensIn  ?? (hasByModel ? 0 : u.tokensIn  - (imageLeaf?.tokensIn  ?? 0))
         const textTokensOut = textLeaf?.tokensOut ?? (hasByModel ? 0 : u.tokensOut - (imageLeaf?.tokensOut ?? 0))
-        const textCostUsd   = textLeaf?.costUsd   ?? (hasByModel ? 0 : u.costUsd   - (imageLeaf?.costUsd   ?? 0))
+        // Rattrapé comme partout ailleurs : le tarif du catalogue prime quand la base a
+        // enregistré moins que ce que les tokens valent.
+        const textResolved = textLeaf ? resolveModelCost(p, selectedModelId, textLeaf) : null
+        const imageResolved = imageLeaf ? resolveModelCost(p, GEMINI_IMAGE_MODEL_ID, imageLeaf) : null
+        const textCostUsd   = textResolved?.costUsd ?? (hasByModel ? 0 : u.costUsd - (imageLeaf?.costUsd ?? 0))
         result.push({
           key: `${p}-text`,
           provider: p,
@@ -215,6 +257,8 @@ export function LiveLlmUsagePanel() {
           pct,
           kind,
           pricing: selectedInfo?.pricing,
+          ...(textResolved?.estimated ? { estimated: true } : {}),
+          ...(textResolved?.unpriced ? { unpriced: true } : {}),
         })
         const imageInfo = AI_MODELS.gemini.find((m) => m.id === GEMINI_IMAGE_MODEL_ID)
         result.push({
@@ -224,12 +268,14 @@ export function LiveLlmUsagePanel() {
           subtitle: 'Gemini (Google) · image (Image IA)',
           tokensIn:  imageLeaf?.tokensIn  ?? 0,
           tokensOut: imageLeaf?.tokensOut ?? 0,
-          costUsd:   imageLeaf?.costUsd   ?? 0,
+          costUsd:   imageResolved?.costUsd ?? 0,
           budget,
           pct,
           kind,
           pricing: imageInfo?.pricing,
           isSubRow: true,
+          ...(imageResolved?.estimated ? { estimated: true } : {}),
+          ...(imageResolved?.unpriced ? { unpriced: true } : {}),
         })
         continue
       }
@@ -238,14 +284,17 @@ export function LiveLlmUsagePanel() {
         key: p,
         provider: p,
         title: PROVIDER_META[p].label,
-        subtitle: selectedInfo?.label ?? selectedModelId,
+        // Le modèle qui a CONSOMMÉ, sinon celui qui est coché (rien n'a encore tourné).
+        subtitle: usedModelId ? (usedInfo?.label ?? usedModelId) : (selectedInfo?.label ?? selectedModelId),
         tokensIn: u.tokensIn,
         tokensOut: u.tokensOut,
-        costUsd: u.costUsd,
+        costUsd,
         budget,
         pct,
         kind,
-        pricing: selectedInfo?.pricing,
+        pricing: usedInfo?.pricing ?? selectedInfo?.pricing,
+        ...(anyEstimated ? { estimated: true } : {}),
+        ...(anyUnpriced ? { unpriced: true } : {}),
       })
     }
     return result
@@ -303,6 +352,9 @@ export function LiveLlmUsagePanel() {
     () => rows.reduce((s, r) => s + r.costUsd, 0) + brightDataRow.consumedUsd + removeBgRow.consumedUsd + scrapeUsd,
     [rows, brightDataRow.consumedUsd, removeBgRow.consumedUsd, scrapeUsd],
   )
+  // Au moins un modèle dont on ne sait pas chiffrer les tokens : le total n'est plus un
+  // total, c'est un plancher — et il doit le dire, comme sur l'écran « Suivi ».
+  const totalIsFloor = useMemo(() => rows.some((r) => r.unpriced), [rows])
   const grandTokensIn = useMemo(() => rows.reduce((s, r) => s + r.tokensIn, 0), [rows])
   const grandTokensOut = useMemo(() => rows.reduce((s, r) => s + r.tokensOut, 0), [rows])
   // Alertes : on compte une fois par provider (pas par sous-ligne) pour ne pas
@@ -348,7 +400,14 @@ export function LiveLlmUsagePanel() {
       <div className="grid grid-cols-3 gap-2 text-[10px] shrink-0">
         <div className="bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">
           <p className="text-white/30 uppercase tracking-wider">{t('live.totalMonth')}</p>
-          <p className="text-base font-mono text-white mt-0.5">{formatEur(grandTotalUsd)}</p>
+          <p className="text-base font-mono text-white mt-0.5">
+            {totalIsFloor && (
+              <span className="text-[10px] text-amber-300/80 mr-1" title={t('ops.costs.noPricing.hint')}>
+                {t('ops.costs.atLeast')}
+              </span>
+            )}
+            {formatEur(grandTotalUsd)}
+          </p>
           <p className="text-[9px] text-white/30 mt-0.5">≈ ${grandTotalUsd.toFixed(4)} USD</p>
         </div>
         <div className="bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">
@@ -436,7 +495,20 @@ export function LiveLlmUsagePanel() {
                 <p className={`text-[11px] font-mono ${hasUsage ? 'text-white/80' : 'text-white/20'}`}>
                   {formatEur(row.costUsd)}
                 </p>
-                <p className="text-[9px] font-mono text-white/30">${row.costUsd.toFixed(4)}</p>
+                {/* ⚠⚠ D'où vient le montant. Un coût enregistré peut être MUET sur ce qu'il
+                    ne couvre pas : mesuré ici, 1,18 M de tokens facturés « 0,0034 € » parce
+                    que le tarif n'est arrivé au catalogue qu'en cours de mois. */}
+                {row.unpriced ? (
+                  <p className="text-[9px] font-mono text-amber-300/80" title={t('ops.costs.noPricing.hint')}>
+                    {t('ops.costs.noPricing')}
+                  </p>
+                ) : row.estimated ? (
+                  <p className="text-[9px] font-mono text-white/40" title={t('ops.costs.estimated.hint')}>
+                    ≈ ${row.costUsd.toFixed(4)} · {t('ops.costs.recomputed')}
+                  </p>
+                ) : (
+                  <p className="text-[9px] font-mono text-white/30">${row.costUsd.toFixed(4)}</p>
+                )}
               </div>
               {/* Budget disponible : solde RÉEL (API DeepSeek/OpenRouter) sinon restant
                   = budget mensuel − dépensé ; « — » si ni API ni budget saisi. */}

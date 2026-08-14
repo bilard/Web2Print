@@ -2,6 +2,7 @@
 // providers IA (même à 0, comme le desktop) + connecteurs scraping/image. PUR.
 import { AI_MODELS, type AiProvider } from '@/lib/aiModels'
 import { getSelectedModel } from '@/stores/aiSettings.store'
+import { resolveProviderCost } from '@/features/stats/modelCost'
 import type { UsageStatsLike } from '@/features/finance/types'
 
 type BadgeKind = 'ok' | 'warning' | 'over' | 'unset'
@@ -62,23 +63,27 @@ export function buildRadarCostRows(input: RadarCostInputs): { rows: RadarCostRow
   let tokensIn = 0, tokensOut = 0, totalUsd = 0, over = 0, warn = 0
 
   for (const p of PROVIDERS) {
-    const u = stats.aiCost.byProvider[p] ?? { tokensIn: 0, tokensOut: 0, costUsd: 0 }
+    const u = stats.aiCost.byProvider[p] ?? { tokensIn: 0, tokensOut: 0, costUsd: 0, byModel: {} }
     const budget = monthlyBudgetUsd[p] ?? null
     const model = AI_MODELS[p].find((m) => m.id === getSelectedModel(p)) ?? AI_MODELS[p][0]
-    const badge = badgeOf(u.costUsd, budget)
-    const pct = budget && budget > 0 ? u.costUsd / budget : null
+    // ⚠ Le coût enregistré peut sous-compter (modèle hors catalogue, tarif ajouté en cours
+    // de mois) : même rattrapage que les écrans du bureau, sinon la PWA annonce une dépense
+    // que l'application dément.
+    const cost = resolveProviderCost(p, { costUsd: u.costUsd, byModel: u.byModel ?? {} })
+    const badge = badgeOf(cost, budget)
+    const pct = budget && budget > 0 ? cost / budget : null
     // Solde API live prioritaire (DeepSeek/OpenRouter), sinon budget restant.
     const apiBal = API_BALANCE_PROVIDERS.has(p) ? balances[p] ?? null : null
     const avail = apiBal != null
       ? { usd: apiBal, kind: 'solde API' as const }
-      : budget && budget > 0 ? { usd: Math.max(0, budget - u.costUsd), kind: 'restant' as const } : { usd: null, kind: null }
-    tokensIn += u.tokensIn; tokensOut += u.tokensOut; totalUsd += u.costUsd
+      : budget && budget > 0 ? { usd: Math.max(0, budget - cost), kind: 'restant' as const } : { usd: null, kind: null }
+    tokensIn += u.tokensIn; tokensOut += u.tokensOut; totalUsd += cost
     if (badge === 'over') over++; else if (badge === 'warning') warn++
     rows.push({
       key: `llm:${p}`, label: PROVIDER_META[p].label, model: model?.label ?? p, dot: PROVIDER_META[p].dot, billingUrl: PROVIDER_META[p].billing,
       volume: `${fmtTok(u.tokensIn)} / ${fmtTok(u.tokensOut)}`,
       pricingLabel: model ? `$${model.pricing.input}/${model.pricing.output} par M tokens` : undefined,
-      costUsd: u.costUsd, budgetUsd: budget && budget > 0 ? budget : null, avail, badge, pct,
+      costUsd: cost, budgetUsd: budget && budget > 0 ? budget : null, avail, badge, pct,
     })
     // Ligne image Gemini (budget partagé avec le texte Gemini).
     if (p === 'gemini') {
