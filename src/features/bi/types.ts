@@ -42,8 +42,16 @@ export const DASHBOARD_VERSION = 1
 /** Marge sous la limite dure de Firestore (1 048 576 octets). */
 export const MAX_DASHBOARD_BYTES = 900_000
 
+/**
+ * ⚠⚠ On AJOUTE ici, on ne retire jamais : `parseDashboard` refuse une source inconnue, et un
+ * identifiant supprimé rendrait d'un coup illisibles tous les tableaux enregistrés qui le
+ * portent. `watch.listings` reste donc, même remplacé par les trois sources de la veille
+ * (`watch.summary` — la synthèse, `watch.catalog` — le catalogue source, `watch.site` — les
+ * fiches d'un concurrent), dont les coûts de chargement diffèrent radicalement (spec, D2).
+ */
 const SOURCE_IDS = [
-  'pim.products', 'dam.assets', 'ai.usage', 'wf.runs', 'traffic.events', 'watch.listings',
+  'pim.products', 'dam.assets', 'ai.usage', 'wf.runs', 'traffic.events',
+  'watch.listings', 'watch.summary', 'watch.catalog', 'watch.site',
 ] as const
 export type SourceId = (typeof SOURCE_IDS)[number]
 
