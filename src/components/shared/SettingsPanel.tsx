@@ -154,6 +154,9 @@ function AiTab() {
         descriptionKey="aiCard.gemini.desc"
         logo={<GeminiLogo />}
         apiKeyUrl="https://aistudio.google.com/app/apikey"
+        // La clé vit dans AI Studio, la facturation dans le projet Cloud qui la porte :
+        // c'est là, et nulle part dans AI Studio, que se lisent le solde et la conso.
+        billingUrl="https://console.cloud.google.com/billing"
         noteForGemini
       />
       <AiProviderCard

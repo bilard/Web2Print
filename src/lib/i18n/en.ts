@@ -435,7 +435,7 @@ export const en: Record<TranslationKey, string> = {
   'setup.resume': 'Resume the guided setup (keys, models, connectors)',
   'pipelineRuns.collapse': 'Collapse',
   // — Clés API : libellés & descriptions ——————————————————————————————
-  'apikeys.gemini.label': 'AI Image (Gemini)',
+  'apikeys.gemini.label': 'Gemini - AI Image',
   'apikeys.gemini.desc': 'Google Gemini API key for AI image generation and quick tasks',
   'apikeys.anthropic.label': 'Claude (Anthropic)',
   'apikeys.anthropic.desc': 'Anthropic API key — Claude Opus 4.7 for reasoning (briefs, basket, deck)',
@@ -505,7 +505,7 @@ export const en: Record<TranslationKey, string> = {
   'apitest.formatValid.higgsfield': 'Valid format (used by the Higgsfield node, server-side)',
   'apitest.networkError': 'Network error',
   // — Cartes provider IA : libellés & descriptions ————————————————————
-  'aiCard.gemini.label': 'AI Image (Gemini)',
+  'aiCard.gemini.label': 'Gemini - AI Image',
   'aiCard.gemini.desc': 'AI image generation and reasoning through Google Gemini',
   'aiCard.claude.label': 'Claude (Anthropic)',
   'aiCard.claude.desc': 'Reasoning for briefs, basket, deck and design',

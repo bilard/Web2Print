@@ -458,7 +458,7 @@ export const fr = {
   'pipelineRuns.collapse': 'Réduire',
 
   // — Clés API : libellés & descriptions ——————————————————————————————
-  'apikeys.gemini.label': 'Image IA (Gemini)',
+  'apikeys.gemini.label': 'Gemini - Image IA',
   'apikeys.gemini.desc': "Clé API Google Gemini pour la génération d'images IA et tâches rapides",
   'apikeys.anthropic.label': 'Claude (Anthropic)',
   'apikeys.anthropic.desc': 'Clé API Anthropic — Claude Opus 4.7 pour le raisonnement (briefs, panier, deck)',
@@ -531,7 +531,7 @@ export const fr = {
   'apitest.networkError': 'Erreur réseau',
 
   // — Cartes provider IA : libellés & descriptions ————————————————————
-  'aiCard.gemini.label': 'Image IA (Gemini)',
+  'aiCard.gemini.label': 'Gemini - Image IA',
   'aiCard.gemini.desc': "Génération d'images IA et raisonnement via Google Gemini",
   'aiCard.claude.label': 'Claude (Anthropic)',
   'aiCard.claude.desc': 'Raisonnement briefs, panier, deck, design',
