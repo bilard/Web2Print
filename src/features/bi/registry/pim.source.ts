@@ -3,7 +3,8 @@
 import type { Product } from '@/features/pim/types'
 import type { ExcelColumn, ExcelSheet, FieldTypeId } from '@/features/excel/types'
 import { BiKeyedError } from '../types'
-import type { DataSource, Dimension, FieldKind, Measure, Row } from './types'
+import { deriveMeasures, type DerivableColumn } from './deriveMeasures'
+import type { DataSource, Dimension, FieldKind, Measure, MeasureFormat, Row } from './types'
 
 /** Profondeur de taxonomie exposée en dimensions (cf. taxonomie à 4 niveaux). Exportée :
  *  `rowsFromSheet` (feuille active) doit compter les mêmes niveaux que `productToRow`. */
@@ -147,6 +148,21 @@ function dimensionKindOf(col: ExcelColumn): FieldKind {
   return 'text'
 }
 
+/** Unité de la colonne, conservée par les agrégations qui rendent une valeur de la colonne
+ *  (somme, moyenne, médiane, extrema) : une somme de prix s'affiche en euros. */
+function columnFormatOf(col: ExcelColumn): MeasureFormat | undefined {
+  if (col.fieldType === 'currency') return 'eur'
+  if (col.fieldType === 'percent') return 'pct'
+  return undefined
+}
+
+/** Colonnes d'une feuille → colonnes DÉRIVABLES (clé, nom réel, type, unité). */
+function derivableColumnsOf(sheet: ExcelSheet | null): DerivableColumn[] {
+  return (sheet?.columns ?? []).map((c) => ({
+    key: c.key, label: c.label, kind: dimensionKindOf(c), format: columnFormatOf(c),
+  }))
+}
+
 /**
  * Source PIM branchée sur la feuille ACTIVE du module Données : ses dimensions sont les
  * colonnes RÉELLES de la feuille (libellé et type qui viennent de la donnée), plus la
@@ -164,7 +180,11 @@ export function pimSourceFromSheet(sheet: ExcelSheet | null): DataSource {
   return {
     ...pimSource,
     dimensions: [...columnDimensions, ...taxoDimensions],
-    measures: baseMeasures,
+    // ⚠⚠ Les mesures DÉCLARÉES d'abord, les dérivées ensuite : `AddTileMenu` et `newTile`
+    // se replient sur `measures[0]` quand un identifiant n'existe plus (feuille changée en
+    // cours de route). Ce repli doit rester « Nombre de produits », valable sur toute
+    // feuille — jamais une somme sur une colonne qui vient de disparaître.
+    measures: [...baseMeasures, ...deriveMeasures(derivableColumnsOf(sheet))],
   }
 }
 

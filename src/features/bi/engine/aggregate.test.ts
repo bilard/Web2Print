@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { aggregate } from './aggregate'
 import type { DataSource, Row } from '../registry/types'
-import type { QuerySpec } from '../types'
+import { BiKeyedError, type QuerySpec } from '../types'
 
 const source: DataSource = {
   id: 'pim.products',
@@ -22,6 +22,18 @@ const source: DataSource = {
         return v.length ? v[Math.floor(v.length / 2)] : 0
       } },
   ],
+}
+
+/** Même source, mais dont les colonnes portent leur nom RÉEL : c'est sur elle que se
+ *  dérivent les mesures. `price` est la seule colonne numérique. */
+const derivable: DataSource = {
+  ...source,
+  dimensions: [
+    { id: 'brand', labelKey: 'bi.dim.column', label: 'Marque', kind: 'text', get: (r) => r.brand },
+    { id: 'price', labelKey: 'bi.dim.column', label: 'Prix', kind: 'number', get: (r) => r.price },
+  ],
+  // ⚠ Aucune mesure dérivée déclarée : le moteur doit savoir en fabriquer une à la volée.
+  measures: source.measures.filter((m) => m.id === 'count'),
 }
 
 const rows: Row[] = [
@@ -82,6 +94,49 @@ describe('aggregate', () => {
   it('lève sur une mesure inconnue plutôt que de rendre zéro', () => {
     // ⚠⚠ Un zéro silencieux est le pire résultat possible : il se lit comme une donnée.
     expect(() => aggregate(rows, q({ measures: [{ id: 'sum:inexistant' }] }), source)).toThrow(/inconnue/i)
+  })
+
+  it('exécute une mesure DÉRIVÉE d’une colonne, sans qu’elle soit déclarée', () => {
+    const r = aggregate(rows, q({
+      dimensions: [{ id: 'brand' }], measures: [{ field: 'price', agg: 'avg' }],
+    }), derivable)
+    expect(r.rows.find((x) => x.brand === 'Makita')?.['avg:price']).toBe(200)
+    // La clé de colonne est `agg:field` — c'est elle que `sort.by` désigne.
+    expect(r.columns.map((c) => c.key)).toEqual(['brand', 'avg:price'])
+  })
+
+  it('la colonne d’une mesure dérivée porte l’agrégation en CLÉ et le nom réel en libellé', () => {
+    const r = aggregate(rows, q({ measures: [{ field: 'price', agg: 'median' }] }), derivable)
+    const col = r.columns[0]
+    expect(col.labelKey).toBe('bi.agg.median')
+    expect(col.label).toBe('Prix')
+    // ⚠ Non agrégeable : le tableau croisé refuse d'en faire un total.
+    expect(col.aggregable).toBe(false)
+  })
+
+  it('mélange mesures déclarées et dérivées dans la même tuile', () => {
+    const r = aggregate(rows, q({ measures: [{ id: 'count' }, { field: 'price', agg: 'sum' }] }), derivable)
+    expect(r.rows).toEqual([{ count: 4, 'sum:price': 460 }])
+  })
+
+  it('respecte l’alias d’une mesure dérivée', () => {
+    const r = aggregate(rows, q({ measures: [{ field: 'price', agg: 'sum', alias: 'ca' }] }), derivable)
+    expect(r.rows).toEqual([{ ca: 460 }])
+  })
+
+  it('rend « aucune valeur » plutôt que zéro quand rien n’est mesurable', () => {
+    const r = aggregate([{ brand: 'Makita', price: '' }], q({ measures: [{ field: 'price', agg: 'avg' }] }), derivable)
+    expect(r.rows[0]['avg:price']).toBeNull()
+  })
+
+  it('lève sur une colonne absente de la source — la feuille a changé', () => {
+    expect(() => aggregate(rows, q({ measures: [{ field: 'absente', agg: 'sum' }] }), derivable))
+      .toThrow(BiKeyedError)
+  })
+
+  it('lève sur une agrégation numérique demandée à une colonne de texte', () => {
+    expect(() => aggregate(rows, q({ measures: [{ field: 'brand', agg: 'sum' }] }), derivable))
+      .toThrow(BiKeyedError)
   })
 
   it('calcule une mesure NON AGRÉGEABLE sur les lignes du groupe, jamais par recomposition', () => {

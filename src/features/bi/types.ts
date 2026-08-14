@@ -58,7 +58,48 @@ const filterSchema = z.object({
 })
 export type FilterClause = z.infer<typeof filterSchema>
 
-const measureRefSchema = z.object({ id: z.string().min(1), alias: z.string().optional() })
+/** Agrégations qu'une mesure DÉRIVÉE d'une colonne peut appliquer. */
+export const AGGREGATIONS = [
+  'count', 'countDistinct', 'sum', 'avg', 'median', 'min', 'max', 'filledPct',
+] as const
+export type Aggregation = (typeof AGGREGATIONS)[number]
+
+/**
+ * Une tuile désigne sa mesure de DEUX façons, et les deux doivent coexister :
+ * - `{ id }` — mesure DÉCLARÉE par la source, adossée à une fonction pure qui fait déjà
+ *   autorité ailleurs (complétude, médiane d'écart, coût rattrapé) ;
+ * - `{ field, agg }` — mesure DÉRIVÉE d'une colonne de la donnée, calculée par le moteur.
+ *
+ * ⚠⚠ L'union est ORDONNÉE : la forme déclarée d'abord. Tous les tableaux de bord déjà
+ * enregistrés portent `{ id }` — les écarter les rendrait illisibles d'un coup.
+ */
+const declaredMeasureRefSchema = z.object({ id: z.string().min(1), alias: z.string().optional() })
+const derivedMeasureRefSchema = z.object({
+  field: z.string().min(1),
+  agg: z.enum(AGGREGATIONS),
+  alias: z.string().optional(),
+})
+const measureRefSchema = z.union([declaredMeasureRefSchema, derivedMeasureRefSchema])
+export type MeasureRef = z.infer<typeof measureRefSchema>
+export type DeclaredMeasureRef = z.infer<typeof declaredMeasureRefSchema>
+export type DerivedMeasureRef = z.infer<typeof derivedMeasureRefSchema>
+
+export function isDerivedMeasure(ref: MeasureRef): ref is DerivedMeasureRef {
+  return 'field' in ref && 'agg' in ref
+}
+
+/**
+ * Clé de la colonne de résultat portée par une mesure — c'est elle que `sort.by` désigne
+ * dans les specs enregistrées.
+ *
+ * ⚠ Pour une mesure déclarée, elle reste `alias ?? id` : la changer casserait le tri de tous
+ * les tableaux en base. La forme `agg:field` est NOUVELLE, elle n'entre donc en collision
+ * avec rien (aucun id déclaré ne porte de deux-points).
+ */
+export function measureKey(ref: MeasureRef): string {
+  if (ref.alias) return ref.alias
+  return isDerivedMeasure(ref) ? `${ref.agg}:${ref.field}` : ref.id
+}
 
 /** `bucket` regroupe une dimension de TEMPS. Absent sur les autres. */
 const dimensionRefSchema = z.object({

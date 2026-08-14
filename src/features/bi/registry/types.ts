@@ -27,13 +27,22 @@ export type MeasureFormat = 'int' | 'float' | 'eur' | 'pct' | 'ms'
 export interface Measure {
   id: string
   labelKey: TranslationKey
+  /** Nom qui vient de la DONNÉE (la colonne agrégée), pas du catalogue i18n. Présent sur les
+   *  mesures DÉRIVÉES : `labelKey` y porte alors l'agrégation (« Somme »), `label` la colonne
+   *  (« Prix »). Le consommateur compose les deux (`bi.measure.derived`). */
+  label?: string
   format: MeasureFormat
   /**
    * `false` pour une médiane, un pourcentage, un taux : additionner ou moyenner ces
    * valeurs entre groupes n'a pas de sens. Le constructeur refuse le geste (spec, risque 1).
    */
   aggregable: boolean
-  compute: (rows: Row[]) => number
+  /**
+   * ⚠⚠ `null` = la valeur N'EXISTE PAS pour ce groupe (aucun nombre lisible pour une moyenne,
+   * un minimum, une médiane). Jamais 0 : un zéro se lit comme une donnée. `formatMeasure`
+   * rend « — ».
+   */
+  compute: (rows: Row[]) => number | null
 }
 
 export interface DataSource {

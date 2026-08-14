@@ -1,6 +1,8 @@
 // Filtrer → grouper → mesurer → trier. PUR : aucun accès réseau, aucun rendu, aucun React.
-import type { FilterClause, QuerySpec } from '../types'
-import type { DataSource, Dimension, MeasureFormat, Row } from '../registry/types'
+import { BiKeyedError, isDerivedMeasure, measureKey, type FilterClause, type MeasureRef, type QuerySpec } from '../types'
+import { allowedAggregations } from '../registry/aggregations'
+import { measureOf } from '../registry/deriveMeasures'
+import type { DataSource, Dimension, Measure, MeasureFormat, Row } from '../registry/types'
 import type { TranslationKey } from '@/lib/i18n'
 
 interface ResultColumn {
@@ -69,14 +71,34 @@ function groupValue(row: Row, dim: Dimension, bucket?: 'day' | 'week' | 'month')
   return String(raw)
 }
 
+/**
+ * Une `MeasureRef` → la mesure à exécuter. Les DEUX formes passent par ici :
+ * - `{ id }` : une mesure DÉCLARÉE par la source (fonction pure qui fait déjà autorité) ;
+ * - `{ field, agg }` : une mesure DÉRIVÉE d'une colonne, calculée par le noyau du registre.
+ *
+ * ⚠ La source dérive DÉJÀ ses colonnes (`pimSourceFromSheet`) : on l'y cherche d'abord, ce
+ * qui conserve le libellé, l'unité et le drapeau d'agrégeabilité qu'elle a posés. Le repli
+ * ne sert qu'aux sources qui exposent une colonne en dimension sans en dériver les mesures.
+ */
+function resolveMeasure(ref: MeasureRef, source: DataSource, dimById: Map<string, Dimension>): Measure {
+  const id = isDerivedMeasure(ref) ? `${ref.agg}:${ref.field}` : ref.id
+  const declared = source.measures.find((x) => x.id === id)
+  if (declared) return declared
+  // ⚠⚠ Jamais de repli à zéro : un zéro se lit comme une donnée, une erreur se corrige.
+  if (!isDerivedMeasure(ref)) throw new Error(`Mesure inconnue pour cette source : ${ref.id}`)
+  const dim = dimById.get(ref.field)
+  // ⚠⚠ Le cas RÉEL : une tuile bâtie sur une feuille, rouverte avec une autre feuille active
+  // qui n'a pas cette colonne (cf. `sourceSheetName`). Le dire, plutôt que rendre « — ».
+  if (!dim) throw new BiKeyedError('bi.error.unknownColumn', { column: ref.field })
+  if (!allowedAggregations(dim.kind).includes(ref.agg)) {
+    throw new BiKeyedError('bi.error.aggNotAllowed', { column: dim.label ?? ref.field })
+  }
+  return measureOf({ key: ref.field, label: dim.label ?? ref.field, kind: dim.kind }, ref.agg)
+}
+
 export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): AggregateResult {
   const dimById = new Map(source.dimensions.map((d) => [d.id, d]))
-  const measures = query.measures.map((ref) => {
-    const m = source.measures.find((x) => x.id === ref.id)
-    // ⚠⚠ Jamais de repli à zéro : un zéro se lit comme une donnée, une erreur se corrige.
-    if (!m) throw new Error(`Mesure inconnue pour cette source : ${ref.id}`)
-    return { ref, m }
-  })
+  const measures = query.measures.map((ref) => ({ ref, m: resolveMeasure(ref, source, dimById) }))
 
   const columns: ResultColumn[] = [
     ...query.dimensions.map((d) => {
@@ -87,7 +109,7 @@ export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): Ag
       return { key: d.id, labelKey: dim.labelKey, label: dim.label, role: 'dimension' as const }
     }),
     ...measures.map(({ ref, m }) => ({
-      key: ref.alias ?? ref.id, labelKey: m.labelKey, role: 'measure' as const,
+      key: measureKey(ref), labelKey: m.labelKey, label: m.label, role: 'measure' as const,
       format: m.format, aggregable: m.aggregable,
     })),
   ]
@@ -100,7 +122,7 @@ export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): Ag
   if (query.dimensions.length === 0) {
     if (kept.length === 0) return { columns, rows: [] }
     const line: ResultRow = {}
-    for (const { ref, m } of measures) line[ref.alias ?? ref.id] = m.compute(kept)
+    for (const { ref, m } of measures) line[measureKey(ref)] = m.compute(kept)
     return { columns, rows: [line] }
   }
 
@@ -122,7 +144,7 @@ export function aggregate(rows: Row[], query: QuerySpec, source: DataSource): Ag
     query.dimensions.forEach((d, i) => { line[d.id] = keys[i] })
     // ⚠ Chaque mesure est calculée sur les LIGNES du groupe. Une médiane ne se recompose
     // pas depuis les médianes de sous-groupes — d'où le passage des lignes, pas des totaux.
-    for (const { ref, m } of measures) line[ref.alias ?? ref.id] = m.compute(gr)
+    for (const { ref, m } of measures) line[measureKey(ref)] = m.compute(gr)
     return line
   })
 
