@@ -5,7 +5,8 @@
 // en silence. Les comparaisons ne sont donc offertes que sur une colonne numérique ou de date.
 import { useTranslation, type TranslationKey } from '@/lib/i18n'
 import { BiChipOption, BiChipPopover } from './BiChipPopover'
-import type { FieldKind } from '../registry/types'
+import { BiFilterValuePicker } from './BiFilterValuePicker'
+import type { Dimension, FieldKind, Row } from '../registry/types'
 import type { FilterClause } from '../types'
 
 type Op = FilterClause['op']
@@ -22,10 +23,14 @@ function opsFor(kind: FieldKind | undefined): Op[] {
 
 const opLabelKey = (op: Op): TranslationKey => `bi.filter.op.${op}` as TranslationKey
 
-export function BiFilterMenu({ filter, kind, disabled, onChange }: {
+export function BiFilterMenu({ filter, kind, dim, rows, disabled, onChange }: {
   filter: FilterClause
   /** Type de la colonne filtrée. Absent = colonne inconnue de la feuille active. */
   kind: FieldKind | undefined
+  /** Colonne filtrée, quand la source la connaît : sert à proposer ses valeurs RÉELLES. */
+  dim?: Dimension
+  /** Lignes de la source, telles que la tuile les lit. */
+  rows?: Row[]
   disabled: boolean
   onChange: (patch: Partial<FilterClause>) => void
 }) {
@@ -48,7 +53,15 @@ export function BiFilterMenu({ filter, kind, disabled, onChange }: {
         ))}
       </BiChipPopover>
 
-      {needsValue && (
+      {/* ⚠⚠ On CHOISIT une valeur qui existe plutôt que de la taper : « makita » saisi là
+          où la donnée porte « MAKITA » ne retenait aucune ligne, en silence. La saisie libre
+          ne subsiste que pour « contient » et pour une colonne dont on n'a pas les lignes. */}
+      {needsValue && dim && rows && filter.op !== 'contains' ? (
+        <BiFilterValuePicker
+          dim={dim} rows={rows} value={filter.value} disabled={disabled}
+          onPick={(v) => onChange({ value: v })}
+        />
+      ) : needsValue && (
         <input
           type={kind === 'number' ? 'number' : 'text'}
           value={filter.value === undefined || filter.value === null ? '' : String(filter.value)}

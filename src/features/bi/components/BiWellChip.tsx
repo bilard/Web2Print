@@ -12,15 +12,20 @@ import { biLabel } from './biLabel'
 import { BiChipOption, BiChipPopover } from './BiChipPopover'
 import { BiFilterMenu } from './BiFilterMenu'
 import { removeFromWell, setChipAggregation, updateFilter } from '../builder/wellEdits'
+import type { DataSource, Row } from '../registry/types'
 import type { WellChip, WellId } from '../builder/wells'
 import type { FilterClause, Tile } from '../types'
 
-export function BiWellChip({ dndId, chip, well, tile, canEdit, onApply }: {
+export function BiWellChip({ dndId, chip, well, tile, source, rows, canEdit, onApply }: {
   /** Identifiant dnd-kit, unique dans le contexte de glissement. */
   dndId: string
   chip: WellChip
   well: WellId
   tile: Tile | null
+  /** Source active : donne la colonne filtrée, donc ses valeurs réelles. */
+  source: DataSource
+  /** Lignes de la source, pour proposer des valeurs qui existent. */
+  rows: Row[]
   canEdit: boolean
   onApply: (next: Tile) => void
 }) {
@@ -79,7 +84,10 @@ export function BiWellChip({ dndId, chip, well, tile, canEdit, onApply }: {
       )}
 
       {chip.filter && (
-        <BiFilterMenu filter={chip.filter} kind={chip.kind} disabled={!canEdit} onChange={onFilter} />
+        <BiFilterMenu
+          filter={chip.filter} kind={chip.kind} disabled={!canEdit} onChange={onFilter}
+          dim={source.dimensions.find((d) => d.id === chip.filter!.field)} rows={rows}
+        />
       )}
 
       {/* ⚠⚠ La croix est DÉSACTIVÉE sur la dernière mesure, motif affiché : le contrat exige

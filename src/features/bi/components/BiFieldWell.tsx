@@ -8,6 +8,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useTranslation } from '@/lib/i18n'
 import { BiEyebrow } from './BiPanel'
 import { BiWellChip } from './BiWellChip'
+import { useSourceRows } from '../hooks/useSourceRows'
 import { readDrag } from '../builder/dndPayload'
 import { acceptField, type WellVerdict } from '../builder/wellRules'
 import { wellChips, WELL_LABEL_KEY, type WellId } from '../builder/wells'
@@ -32,6 +33,8 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
   onApply: (next: Tile) => void
 }) {
   const { t } = useTranslation()
+  // Les lignes de la source alimentent les valeurs proposées par un filtre.
+  const rows = useSourceRows(source.id)
   const { active, over } = useDndContext()
   const { isOver, setNodeRef } = useDroppable({
     id: `well:${well}:${slot}`, data: { kind: 'well', well },
@@ -80,7 +83,7 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
           {chips.map((chip, i) => (
             <BiWellChip
               key={chip.id} dndId={ids[i]} chip={chip} well={well}
-              tile={tile} canEdit={canEdit} onApply={onApply}
+              tile={tile} source={source} rows={rows} canEdit={canEdit} onApply={onApply}
             />
           ))}
         </SortableContext>
