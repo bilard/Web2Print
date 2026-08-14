@@ -6,7 +6,7 @@
 // `BiBoard` est mocké : ce fichier teste le raccourci clavier et la synchronisation avec les
 // permissions, pas le rendu de la grille (couvert par `BiBoard.test.tsx`/`DashboardGrid.test.tsx`).
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
+import { render, fireEvent, screen } from '@testing-library/react'
 import { BiScreen } from './BiScreen'
 import type { Dashboard } from '../types'
 
@@ -104,13 +104,18 @@ describe('BiScreen — bouton de création', () => {
     canEdit = true
     render(<BiScreen />)
 
-    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction).toBeTruthy()
+    render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
+    expect(screen.getByText('nouveau')).toBeTruthy()
   })
 
-  it('des tableaux de bord existent, sans le droit d’édition : pas de bouton dans l’en-tête', () => {
+  it('des tableaux de bord existent, sans le droit d’édition : aucune CRÉATION dans l’en-tête', () => {
     canEdit = false
     render(<BiScreen />)
 
-    expect(vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction).toBeFalsy()
+    // ⚠ L'en-tête n'est pas vide pour autant : « Modèles » y reste, car il n'écrit rien de
+    // lui-même (la galerie cadenasse la création carte par carte). Ce qui doit disparaître,
+    // c'est la création VIERGE, qui écrit dès le clic.
+    render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
+    expect(screen.queryByText('nouveau')).toBeNull()
   })
 })

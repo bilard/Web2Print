@@ -701,7 +701,10 @@ export default function DashboardPage() {
           </Suspense>
         </div>
       ) : activeSection === 'bi' && canSee('bi') ? (
-        <div className="flex-1 overflow-auto px-8 pb-8 bg-background">
+        // ⚠ Ni marge ni défilement ICI : l'écran BI est une ossature PLEINE HAUTEUR (bandeau,
+        // canevas, onglets de pages en pied) qui répartit elle-même la place et fait défiler
+        // son canevas. Un défilement de page emporterait les onglets hors de vue.
+        <div className="flex-1 min-h-0 overflow-hidden bg-background">
           <Suspense fallback={
             <div className="flex-1 flex items-center justify-center h-full bg-background">
               <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />

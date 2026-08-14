@@ -4,14 +4,11 @@
 // ⚠⚠ L'âge BAT ici, dans le cadre, et surtout PAS dans `TileBody` (`DashboardGrid`) : c'est
 // lui qui porte `useTileData`, et un état qui s'y rafraîchit relancerait l'agrégation de la
 // tuile toutes les dix secondes. Le cadre ne sait rien de la donnée, il ne fait que compter.
-import { useEffect, useState } from 'react'
 import { TileSkeleton, TileEmpty, TileError, TileNotice } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
+import { ageLabel } from '../engine/age'
+import { useTickingNow } from '../hooks/useTickingNow'
 import type { BiMessage } from '../types'
-
-/** Pas du battement de l'âge. Dix secondes : l'affichage passe à la seconde sous une minute,
- *  et rien de plus fin n'est lisible au-delà. */
-const AGE_TICK_MS = 10_000
 
 interface Props {
   title: string
@@ -37,40 +34,19 @@ interface Props {
   hasFilters: boolean
   /** Mode édition de la grille : seul ce mode autorise le déplacement (`isDraggable`). */
   editing: boolean
+  /** Tuile SÉLECTIONNÉE : c'est elle que les volets de droite décrivent et modifient. */
+  selected: boolean
+  /** Clic sur le cadre. ⚠ `pointerdown` et non `click` : le geste de déplacement avale le
+   *  `click`, et une tuile qu'on vient de bouger doit rester celle que les volets décrivent. */
+  onSelect: () => void
   onRetry: () => void
   onClearFilters: () => void
   children: React.ReactNode
 }
 
-function ageLabel(updatedAt: number | null, now: number): string {
-  if (updatedAt == null) return '—'
-  const s = Math.max(0, Math.round((now - updatedAt) / 1000))
-  if (s < 60) return `${s} s`
-  const m = Math.round(s / 60)
-  return m < 60 ? `${m} min` : `${Math.round(m / 60)} h`
-}
-
-/**
- * Horloge du cadre. ⚠⚠ Sans elle, l'âge n'était calculé qu'au RENDU : une tuile stable
- * affichait « 0 s » indéfiniment. Un âge qui ne vieillit jamais est plus trompeur que pas
- * d'âge du tout — il certifie une fraîcheur qu'il n'a pas vérifiée.
- */
-function useTickingNow(enabled: boolean): number {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    // Rien à faire vieillir tant qu'aucune donnée n'est arrivée : pas de minuterie inutile
-    // sur les vingt tuiles d'un tableau en chargement.
-    if (!enabled) return
-    setNow(Date.now())
-    const id = setInterval(() => setNow(Date.now()), AGE_TICK_MS)
-    return () => clearInterval(id)
-  }, [enabled])
-  return now
-}
-
 export function TileFrame({
-  title, updatedAt, live, state, skeleton, message, hasFilters, editing,
-  onRetry, onClearFilters, children,
+  title, updatedAt, live, state, skeleton, message, hasFilters, editing, selected,
+  onSelect, onRetry, onClearFilters, children,
 }: Props) {
   const { t } = useTranslation()
   const text = message === undefined ? undefined
@@ -81,7 +57,12 @@ export function TileFrame({
   // peine d'un curseur « déplaçable » qui ment sur ce que le clic va faire.
   const handleClass = editing ? 'cursor-move bi-tile-handle' : ''
   return (
-    <div className="h-full flex flex-col bg-surface rounded-lg border border-white/[0.06] overflow-hidden">
+    <div
+      onPointerDown={onSelect}
+      className={`h-full flex flex-col bg-surface rounded-lg border overflow-hidden transition-colors ${
+        selected ? 'border-indigo-500 ring-1 ring-indigo-500/70' : 'border-white/[0.06]'
+      }`}
+    >
       <div className={`flex items-center gap-2 px-3 py-2 border-b border-white/[0.05] shrink-0 ${handleClass}`}>
         <h3 className="text-[12px] font-semibold text-white truncate flex-1">{title}</h3>
         {live && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />}

@@ -26,16 +26,20 @@ const ROW_HEIGHT = 40
 // `React.memo` : converti en rendus SAUTÉS les références stables que le parent doit fournir
 // (`tile`, `globalFilters`, `onClearFilters`) — sans lui, chaque `onLayoutChange` pendant un
 // geste re-rendrait les vingt tuiles (et leurs graphes chart.js) même quand aucune n'a bougé.
-const TileBody = memo(function TileBody({ tile, editing, globalFilters, onClearFilters }: {
-  tile: Tile; editing: boolean; globalFilters: FilterClause[]; onClearFilters: () => void
+const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect }: {
+  tile: Tile; editing: boolean; selected: boolean
+  globalFilters: FilterClause[]; onClearFilters: () => void
+  /** ⚠ Reçoit l'IDENTIFIANT plutôt qu'une fermeture par tuile : le parent transmet UNE
+   *  fonction stable, et la mémoïsation de `React.memo` tient pendant un geste. */
+  onSelect: (tileId: string) => void
 }) {
   const { result, state, message, updatedAt, live, retry } = useTileData(tile.query, globalFilters)
   const skeleton = tile.kind === 'kpi' ? 'kpi' : tile.kind === 'table' || tile.kind === 'pivot' ? 'table' : 'chart'
   return (
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
-      skeleton={skeleton} hasFilters={globalFilters.length > 0}
-      onRetry={retry} onClearFilters={onClearFilters}
+      skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected}
+      onSelect={() => onSelect(tile.id)} onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
         tile.kind === 'kpi' ? <KpiTile result={result} />
@@ -59,15 +63,23 @@ function layoutsEqual(a: Layout[], b: Layout[]): boolean {
   return b.every((l) => keysA.has(layoutKey(l)))
 }
 
-export function DashboardGrid({ tiles, layout, editing, width, globalFilters, onDrag, onCommit, onClearFilters }: {
+export function DashboardGrid({
+  tiles, layout, editing, width, globalFilters, selectedTileId,
+  onDrag, onCommit, onClearFilters, onSelectTile,
+}: {
   tiles: Tile[]
   layout: TilePlacement[]
   editing: boolean
   width: number
   globalFilters: FilterClause[]
+  /** Tuile décrite par les volets de droite. `null` = aucune. */
+  selectedTileId: string | null
   onDrag: (l: TilePlacement[]) => void
   onCommit: () => void
   onClearFilters: () => void
+  /** ⚠ Doit être RÉFÉRENTIELLEMENT STABLE : `TileBody` est mémoïsé, et une fonction fraîche
+   *  à chaque rendu annulerait la mémoïsation que ce fichier existe pour préserver. */
+  onSelectTile: (tileId: string) => void
 }) {
   const rgl: Layout[] = layout.map((l) => ({ i: l.tileId, x: l.x, y: l.y, w: l.w, h: l.h }))
   const toPlacements = (l: Layout[]): TilePlacement[] =>
@@ -96,7 +108,10 @@ export function DashboardGrid({ tiles, layout, editing, width, globalFilters, on
     >
       {tiles.map((t) => (
         <div key={t.id}>
-          <TileBody tile={t} editing={editing} globalFilters={globalFilters} onClearFilters={onClearFilters} />
+          <TileBody
+            tile={t} editing={editing} selected={t.id === selectedTileId}
+            globalFilters={globalFilters} onClearFilters={onClearFilters} onSelect={onSelectTile}
+          />
         </div>
       ))}
     </GridLayout>

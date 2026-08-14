@@ -28,6 +28,7 @@ describe('DashboardGrid', () => {
     render(
       <DashboardGrid
         tiles={[tile]} layout={layout} editing={false} width={1200} globalFilters={[]}
+        selectedTileId={null} onSelectTile={vi.fn()}
         onDrag={vi.fn()} onCommit={vi.fn()} onClearFilters={vi.fn()}
       />,
     )
@@ -46,6 +47,7 @@ describe('DashboardGrid', () => {
     render(
       <DashboardGrid
         tiles={[tile]} layout={layout} editing={false} width={1200} globalFilters={[]}
+        selectedTileId={null} onSelectTile={vi.fn()}
         onDrag={onDrag} onCommit={vi.fn()} onClearFilters={vi.fn()}
       />,
     )
@@ -59,6 +61,7 @@ describe('DashboardGrid', () => {
     const { container, rerender } = render(
       <DashboardGrid
         tiles={[tile]} layout={layout} editing={false} width={1200} globalFilters={[]}
+        selectedTileId={null} onSelectTile={vi.fn()}
         onDrag={vi.fn()} onCommit={vi.fn()} onClearFilters={vi.fn()}
       />,
     )
@@ -67,6 +70,7 @@ describe('DashboardGrid', () => {
     rerender(
       <DashboardGrid
         tiles={[tile]} layout={layout} editing width={1200} globalFilters={[]}
+        selectedTileId={null} onSelectTile={vi.fn()}
         onDrag={vi.fn()} onCommit={vi.fn()} onClearFilters={vi.fn()}
       />,
     )

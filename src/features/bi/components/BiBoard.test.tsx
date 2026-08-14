@@ -9,7 +9,7 @@
 // `DashboardGrid` est mocké : ce fichier teste l'ASSEMBLAGE (les props transmises), pas le
 // rendu de la grille elle-même, déjà couvert par `DashboardGrid.test.tsx`.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { act } from 'react'
 import { BiBoard } from './BiBoard'
 import { useExcelStore } from '@/stores/excel.store'
@@ -21,6 +21,9 @@ import { parseDashboard, type Dashboard, type TilePlacement } from '../types'
 const col = (key: string): ExcelColumn => ({
   key, label: key, fieldType: 'text', detectedType: 'text', isPrimary: false, width: 160,
 })
+
+class ResizeObserverStub { observe() {} unobserve() {} disconnect() {} }
+vi.stubGlobal('ResizeObserver', ResizeObserverStub)
 
 vi.mock('./DashboardGrid', () => ({ DashboardGrid: vi.fn(() => null) }))
 vi.mock('./AddTileMenu', () => ({ AddTileMenu: vi.fn(() => null) }))
@@ -49,8 +52,8 @@ describe('BiBoard', () => {
   it('conserve tiles/globalFilters/onClearFilters référentiellement stables pendant un geste', () => {
     const dashboard = makeDashboard('d1', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     render(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     const before = gridCalls().at(-1)![0]
 
@@ -69,14 +72,14 @@ describe('BiBoard', () => {
   it('un changement non lié (bascule du mode édition) laisse aussi ces références intactes', () => {
     const dashboard = makeDashboard('d2', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     const { rerender } = render(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     const before = gridCalls().at(-1)![0]
 
     rerender(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     const after = gridCalls().at(-1)![0]
 
@@ -91,8 +94,8 @@ describe('BiBoard', () => {
 
     function Wrapper({ current }: { current: Dashboard }) {
       return (
-        <BiBoard key={current.id} current={current} items={[current]} uid="u1" width={1200}
-          editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />
+        <BiBoard key={current.id} current={current} page={current.pages[0]} items={[current]} uid="u1"
+          editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />
       )
     }
 
@@ -118,20 +121,20 @@ describe('BiBoard — menu d’ajout de tuile', () => {
   it('n’apparaît qu’EN ÉDITION et AVEC le droit d’écrire — jamais un seul des deux', () => {
     const dashboard = makeDashboard('d3', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     const { rerender } = render(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     expect(AddTileMenu).not.toHaveBeenCalled() // édition seule ne suffit pas sans le droit
 
     rerender(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit={false} onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit={false} onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     expect(AddTileMenu).not.toHaveBeenCalled() // le droit seul ne suffit pas hors édition
 
     rerender(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     expect(AddTileMenu).toHaveBeenCalled()
   })
@@ -139,8 +142,8 @@ describe('BiBoard — menu d’ajout de tuile', () => {
   it('onAdd pose la tuile SOUS l’existante, la sauve, et la grille l’affiche immédiatement', () => {
     const dashboard = makeDashboard('d4', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
     render(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
@@ -169,8 +172,8 @@ describe('BiBoard — menu d’ajout de tuile', () => {
   it('pose la tuile et son placement dans le MÊME rendu, écho de la base compris', () => {
     const dashboard = makeDashboard('d6', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
     const props = (current: Dashboard) => (
-      <BiBoard current={current} items={[current]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />
+      <BiBoard current={current} page={current.pages[0]} items={[current]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />
     )
     const { rerender } = render(props(dashboard))
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
@@ -206,8 +209,8 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     })
     const dashboard = makeDashboard('d7', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
     const first = render(
-      <BiBoard current={dashboard} items={[dashboard]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', { id: 'count' }))
     first.unmount() // sinon ce premier tableau, abonné à la feuille active, se rendrait encore
@@ -221,8 +224,8 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     })
     const built = { ...dashboard, sourceSheetName: 'Catalogue 2026' }
     render(
-      <BiBoard current={built} items={[built]} uid="u1" width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={built} page={built.pages[0]} items={[built]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', { id: 'count' }))
     expect(vi.mocked(saveDashboard).mock.calls.at(-1)![1].sourceSheetName).toBe('Catalogue 2026')
@@ -231,12 +234,69 @@ describe('BiBoard — menu d’ajout de tuile', () => {
   it('sans espace de travail (uid null), refuse et le dit — jamais un clic silencieux', () => {
     const dashboard = makeDashboard('d5', [])
     render(
-      <BiBoard current={dashboard} items={[dashboard]} uid={null} width={1200}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} />,
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid={null}
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
     )
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
     act(() => onAdd('kpi', { id: 'count' }))
     expect(saveDashboard).not.toHaveBeenCalled()
+  })
+})
+
+// ⚠⚠ Sélection : c'est elle qui relie le canevas aux volets de droite. Sans elle, le volet
+// « Visualisations » décrirait un visuel imaginaire — et changer un type agirait dans le vide.
+describe('BiBoard — sélection d’une tuile et pages', () => {
+  beforeEach(() => {
+    vi.mocked(DashboardGrid).mockClear()
+    vi.mocked(saveDashboard).mockClear()
+    useExcelStore.setState({ sheets: [], activeSheetIndex: 0 })
+  })
+
+  it('le volet Visualisations reflète le TYPE de la tuile sélectionnée', () => {
+    const dashboard = makeDashboard('d7', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
+    render(
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
+    )
+    // Rien de sélectionné : la galerie n'annonce aucun type actif.
+    expect(screen.queryByRole('button', { pressed: true, name: 'Indicateur' })).toBeNull()
+
+    // La grille remonte le clic : la tuile 't1' (un indicateur) devient la tuile décrite.
+    act(() => gridCalls().at(-1)![0].onSelectTile('t1'))
+
+    expect(gridCalls().at(-1)![0].selectedTileId).toBe('t1')
+    expect(screen.getByRole('button', { pressed: true, name: 'Indicateur' })).toBeTruthy()
+  })
+
+  it('changer le type de la tuile sélectionnée ÉCRIT sur la bonne page', () => {
+    const dashboard = makeDashboard('d8', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
+    render(
+      <BiBoard current={dashboard} page={dashboard.pages[0]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
+    )
+    act(() => gridCalls().at(-1)![0].onSelectTile('t1'))
+    act(() => { screen.getByRole('button', { name: 'Barres' }).click() })
+
+    const saved = parseDashboard(vi.mocked(saveDashboard).mock.calls.at(-1)![1])
+    expect(saved.pages[0].tiles[0].kind).toBe('bar')
+    // ⚠ La requête est INTACTE : c'est la même mesure rendue autrement, jamais une autre.
+    expect(saved.pages[0].tiles[0].query).toEqual(dashboard.pages[0].tiles[0].query)
+  })
+
+  it('les onglets nomment TOUTES les pages, et marquent celle qu’on regarde', () => {
+    const one = makeDashboard('d9', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
+    const dashboard = parseDashboard({
+      ...one,
+      pages: [one.pages[0], { id: 'p2', name: 'Couverture', tiles: [], layout: [] }],
+    })
+    render(
+      <BiBoard current={dashboard} page={dashboard.pages[1]} items={[dashboard]} uid="u1"
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} />,
+    )
+    expect(screen.getByRole('tab', { selected: true }).textContent).toBe('Couverture')
+    expect(screen.getAllByRole('tab')).toHaveLength(2)
+    // La grille reçoit les tuiles de la page AFFICHÉE, pas celles de la première.
+    expect(gridCalls().at(-1)![0].tiles).toEqual([])
   })
 })

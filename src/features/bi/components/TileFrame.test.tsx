@@ -8,7 +8,7 @@ import { TileFrame } from './TileFrame'
 const frame = (updatedAt: number | null, live = true) => (
   <TileFrame
     title="Nombre de produits" updatedAt={updatedAt} live={live} state="ready"
-    skeleton="kpi" editing={false} hasFilters={false} onRetry={vi.fn()} onClearFilters={vi.fn()}
+    skeleton="kpi" editing={false} hasFilters={false} selected={false} onSelect={vi.fn()} onRetry={vi.fn()} onClearFilters={vi.fn()}
   >
     <span>42</span>
   </TileFrame>
@@ -54,7 +54,7 @@ describe('réserve affichée avec les chiffres', () => {
     <TileFrame
       title="Produits du catalogue" updatedAt={1} live={false} state="ready" skeleton="kpi"
       message={{ kind: 'key', key: 'bi.watch.catalogPartial', params: { loaded: 87_412, expected: 115_814 } }}
-      editing={false} hasFilters={false} onRetry={vi.fn()} onClearFilters={vi.fn()}
+      editing={false} hasFilters={false} selected={false} onSelect={vi.fn()} onRetry={vi.fn()} onClearFilters={vi.fn()}
     >
       <span>87 412</span>
     </TileFrame>

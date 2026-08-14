@@ -2,17 +2,19 @@
 // la mise en page dans `useLayoutDraft`, la persistance dans le store.
 //
 // ⚠⚠ `useLayoutDraft` ne resynchronise JAMAIS son `initial` (état de montage figé). L'abonnement
-// `useDashboards` étant asynchrone, et le sélecteur permettant de changer de tableau de bord en
-// cours de session, il faut un remontage FORCÉ à chaque changement de tableau de bord — sinon la
-// mise en page reste celle du précédent. `BiBoard` porte seule le hook et est montée ici avec
-// `key={current.id}` : changer d'id démonte/remonte le composant, `useState(initial)` repart donc
-// bien de la mise en page du tableau de bord fraîchement sélectionné.
-import { useEffect, useMemo, useRef, useState } from 'react'
+// `useDashboards` étant asynchrone, et l'écran permettant de changer de tableau de bord ET de
+// page en cours de session, il faut un remontage FORCÉ à chaque changement de l'un ou de
+// l'autre — sinon la mise en page reste celle du précédent. `BiBoard` porte seule le hook et
+// est montée ici avec `key={`${id}:${pageId}`}` : changer l'un des deux démonte/remonte le
+// composant, et `useState(initial)` repart bien de la mise en page fraîchement désignée.
+import { useEffect, useMemo, useState } from 'react'
 import { useDashboards } from '../hooks/useDashboards'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { BiBoard } from './BiBoard'
 import { NewDashboardButton } from './NewDashboardButton'
+import { TemplateGallery } from '../templates/TemplateGallery'
+import { TemplatesButton } from '../templates/TemplatesButton'
 import { useTranslation } from '@/lib/i18n'
 
 export function BiScreen() {
@@ -21,28 +23,24 @@ export function BiScreen() {
   const canEdit = useCan('bi.edit')
   const items = useDashboards()
   const [currentId, setCurrentId] = useState<string | null>(null)
+  const [pageId, setPageId] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
-  const [width, setWidth] = useState(1200)
-  const boxRef = useRef<HTMLDivElement>(null)
 
   const current = useMemo(
     () => items.find((d) => d.id === currentId) ?? items[0] ?? null,
     [items, currentId],
   )
-
-  // La grille exige une largeur en pixels : on la mesure et on la suit.
-  useEffect(() => {
-    const el = boxRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
+  // ⚠ Repli sur la PREMIÈRE page : `pageId` peut désigner une page d'un autre tableau (on
+  // vient d'en changer) ou une page supprimée ailleurs. Un `null` figerait l'écran.
+  const page = useMemo(
+    () => current?.pages.find((p) => p.id === pageId) ?? current?.pages[0] ?? null,
+    [current, pageId],
+  )
 
   // « E » bascule le mode, sauf pendant une saisie — et jamais sans le droit d'édition : le
-  // bouton de `BiToolbar` est déjà cadenassé par `canEdit`, le raccourci clavier doit l'être
-  // À L'IDENTIQUE, sous peine de faire apparaître les poignées de déplacement (et tenter des
-  // écritures vouées au refus Firestore) pour un rôle consultation seule.
+  // segment de `BiModeSwitch` est déjà cadenassé par `canEdit`, le raccourci clavier doit
+  // l'être À L'IDENTIQUE, sous peine de faire apparaître les poignées de déplacement (et
+  // tenter des écritures vouées au refus Firestore) pour un rôle consultation seule.
   // ⚠ `canEdit` est dans les dépendances À DESSEIN : `useAccessInit` hydrate les permissions de
   // façon ASYNCHRONE, `canEdit` vaut donc `false` au tout premier rendu puis peut devenir `true`
   // ensuite. Un tableau `[]` figerait la fermeture sur ce premier `false` et désactiverait le
@@ -65,30 +63,40 @@ export function BiScreen() {
     if (!canEdit) setEditing(false)
   }, [canEdit])
 
-  // ⚠ Le `ref` de mesure vit sur un conteneur monté dans TOUS les cas (écran vide inclus) :
-  // un `ref` porté seulement par la branche « tableaux de bord présents » resterait `null`
-  // tant que la liste (abonnement ASYNCHRONE `useDashboards`) n'a pas rendu son premier
-  // élément — l'effet `ResizeObserver` (déps `[]`, ne re-tente jamais) aurait déjà bail
-  // silencieusement, et `width` resterait figé au repli `1200` toute la session.
+  // ⚠ `h-full` + `min-h-0` : l'écran occupe la hauteur offerte par la page et répartit
+  // lui-même bandeau / centre / pied. Sans `min-h-0`, le centre refuserait de rétrécir et
+  // c'est la PAGE qui s'allongerait, emportant les onglets de pages hors de vue.
   return (
-    <div className="space-y-4" ref={boxRef}>
+    <div className="h-full min-h-0 flex flex-col bg-background">
       {items.length === 0 ? (
-        <div className="py-8 text-center space-y-3">
-          <p className="text-sm text-white/45">{t('bi.screen.empty')}</p>
-          {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
+        // ⚠ L'écran vide n'offre pas qu'un bouton : les trois modèles sont le chemin le plus
+        // court vers un tableau utile, et un module qui ne propose rien se lit comme un module
+        // sans données.
+        <div className="flex-1 overflow-auto p-8 space-y-6">
+          <TemplateGallery onOpen={setCurrentId} canEdit={canEdit} />
+          <div className="text-center space-y-3">
+            <p className="text-sm text-white/45">{t('bi.screen.empty')}</p>
+            {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
+          </div>
         </div>
-      ) : current ? (
+      ) : current && page ? (
         <BiBoard
-          key={current.id}
+          key={`${current.id}:${page.id}`}
           current={current}
+          page={page}
           items={items}
           uid={uid}
-          width={width}
           editing={editing}
           onToggleEdit={() => setEditing((v) => !v)}
           canEdit={canEdit}
           onSelect={setCurrentId}
-          headerAction={canEdit ? <NewDashboardButton onCreated={setCurrentId} /> : undefined}
+          onSelectPage={setPageId}
+          headerAction={(
+            <div className="flex items-center gap-2">
+              <TemplatesButton onOpen={setCurrentId} canEdit={canEdit} />
+              {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
+            </div>
+          )}
         />
       ) : null}
     </div>
