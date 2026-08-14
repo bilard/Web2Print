@@ -17,7 +17,7 @@ export interface FilterOption {
 /** Au-delà, une liste déroulante n'est plus lisible et la recherche prend le relais. Le
  *  plafond protège aussi le rendu : une colonne de références distinctes peut compter des
  *  dizaines de milliers de valeurs. */
-export const MAX_OPTIONS = 500
+const MAX_OPTIONS = 500
 
 /**
  * Valeurs distinctes d'une dimension, les plus fréquentes d'abord. PUR.
