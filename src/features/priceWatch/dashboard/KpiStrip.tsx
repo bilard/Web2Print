@@ -5,7 +5,7 @@ import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
 import { eur, pct, when } from './format'
 import { Sparkline } from './Sparkline'
-import { AnimatedNumber } from './AnimatedNumber'
+import { AnimatedNumber } from '@/components/shared/AnimatedNumber'
 import { useTranslation } from '@/lib/i18n'
 
 function Delta({ cur, prev, invert }: { cur: number; prev: number | undefined; invert?: boolean }) {

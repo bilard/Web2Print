@@ -2,7 +2,7 @@
 // L'arc sert au COUP D'ŒIL ; le NOMBRE au centre porte la vérité (skill dataviz).
 // `value` 0..1 remplit l'arc ; `children` = contenu central (grand chiffre + label).
 import type { ReactNode } from 'react'
-import { useAnimatedValue } from './AnimatedNumber'
+import { useAnimatedValue } from '@/components/shared/AnimatedNumber'
 
 const START = 135 // départ bas-gauche (repère SVG, y vers le bas)
 const SWEEP = 270
