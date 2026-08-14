@@ -324,6 +324,8 @@ export const en: Record<TranslationKey, string> = {
   'bi.tile.clearFilters': 'Clear filters',
   'bi.tile.retry': 'Retry',
   'bi.tile.ageTitle': 'Age of the data shown',
+  'bi.pivot.total': 'Total',
+  'bi.pivot.needsTwoDimensions': 'A pivot table needs two dimensions',
 
   'gradient.projectGradients': 'Project gradients',
   'gradient.save': 'Save this gradient to the project',

@@ -337,6 +337,8 @@ export const fr = {
   'bi.tile.clearFilters': 'Retirer les filtres',
   'bi.tile.retry': 'Réessayer',
   'bi.tile.ageTitle': 'Âge de la donnée affichée',
+  'bi.pivot.total': 'Total',
+  'bi.pivot.needsTwoDimensions': 'Un tableau croisé demande deux dimensions',
 
   'gradient.projectGradients': 'Dégradés du projet',
   'gradient.save': 'Sauvegarder ce dégradé dans le projet',

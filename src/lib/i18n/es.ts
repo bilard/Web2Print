@@ -323,6 +323,8 @@ export const es: Record<TranslationKey, string> = {
   'bi.tile.clearFilters': 'Quitar los filtros',
   'bi.tile.retry': 'Reintentar',
   'bi.tile.ageTitle': 'Antigüedad del dato mostrado',
+  'bi.pivot.total': 'Total',
+  'bi.pivot.needsTwoDimensions': 'Una tabla dinámica necesita dos dimensiones',
 
   'gradient.projectGradients': 'Degradados del proyecto',
   'gradient.save': 'Guardar este degradado en el proyecto',
