@@ -65,9 +65,12 @@ export function assertNoReservedProductColumn(columns: string[]): void {
  * ⚠ `_filled` / `_total` sont calculés ICI, une fois, plutôt que dans chaque mesure : la
  * complétude se lit sur les colonnes DEMANDÉES, pas sur les clés présentes — un produit
  * sans le champ « poids » doit compter comme non renseigné, pas être ignoré.
+ *
+ * ⚠ Ne contrôle PAS les clés réservées : la liste de colonnes est la même pour tout le lot,
+ * le contrôle appartient donc à `pimRows`, qui la calcule — le faire ici le rejouerait à
+ * l'identique une fois par produit (433 000 fois sur un gros catalogue).
  */
 export function productToRow(p: Product, columns: string[]): Row {
-  assertNoReservedProductColumn(columns)
   const row: Row = { _id: p._id, _sku: p.masterSku, _createdAt: p.createdAt, _updatedAt: p.updatedAt }
   let filled = 0
   for (const c of columns) {

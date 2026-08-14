@@ -1,6 +1,8 @@
 import type { Product } from '@/features/pim/types'
 import type { ExcelSheet } from '@/features/excel/types'
-import { assertNoReservedSheetColumn, productToRow, TAXO_LEVELS } from '../registry/pim.source'
+import {
+  assertNoReservedProductColumn, assertNoReservedSheetColumn, productToRow, TAXO_LEVELS,
+} from '../registry/pim.source'
 import type { Row } from '../registry/types'
 
 /**
@@ -11,6 +13,9 @@ export function pimRows(products: Product[], columns: string[]): Row[] {
   const cols = columns.length
     ? columns
     : [...new Set(products.flatMap((p) => Object.keys(p.fields)))].sort()
+  // ⚠ Une seule fois, ICI, à côté du calcul des colonnes : la liste vaut pour tout le lot.
+  // Contrôlée dans `productToRow`, elle était rejouée à l'identique à chaque produit.
+  assertNoReservedProductColumn(cols)
   return products.map((p) => productToRow(p, cols))
 }
 
