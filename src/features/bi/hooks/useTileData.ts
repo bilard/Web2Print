@@ -41,9 +41,11 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       // distinguer d'une absence de donnée : sans l'un ni l'autre, c'est un état `empty`.
       const hasSheet = sheet !== null && sheet.columns.length > 0
       if (!hasSheet && products.length === 0) {
+        // ⚠ `live: false` : rien ne coule dans cette tuile. Un point qui bat sur un cadre
+        // vide affirmerait un flux qui n'existe pas.
         return { result: null, state: 'empty',
           error: 'Aucune donnée chargée : ouvrez une base dans le module Données ou importez un catalogue.',
-          updatedAt: null, live: true, retry }
+          updatedAt: null, live: false, retry }
       }
       // ⚠⚠ `effectivePimSource` est le point de décision UNIQUE (partagé avec `AddTileMenu`) :
       // sans lui, le menu et le moteur pourraient diverger sur les dimensions disponibles.
@@ -51,10 +53,15 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       const rows = hasSheet ? rowsFromSheet(sheet) : pimRows(products, [])
       const merged: QuerySpec = { ...query, filters: [...query.filters, ...globalFilters] }
       const result = aggregate(rows, merged, source)
+      // ⚠⚠ `live` était `true` EN DUR : une tuile en erreur, ou vide faute de base ouverte,
+      // portait le même point clignotant qu'une tuile réellement alimentée. Seule une
+      // source `client` branchée sur des lignes présentes est en direct — c'est l'abonnement
+      // Firestore de `usePimStore`/`useExcelStore` qui la fait battre, rien d'autre.
+      const ready = result.rows.length > 0
       return {
         result,
-        state: result.rows.length ? 'ready' : 'empty',
-        updatedAt: Date.now(), live: true, retry,
+        state: ready ? 'ready' : 'empty',
+        updatedAt: Date.now(), live: ready, retry,
       }
     } catch (e) {
       return { result: null, state: 'error', error: e instanceof Error ? e.message : String(e),
