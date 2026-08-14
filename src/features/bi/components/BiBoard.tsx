@@ -2,9 +2,9 @@
 // onglets. `BiScreen` la monte avec `key={id}:{pageId}` : voir son en-tête pour le pourquoi.
 //
 // ⚠ Références stables vers `DashboardGrid` : `tiles`/`current.filters` viennent tels quels du
-// parent (pas de littéral recréé), et `onClearFilters`/`onSelectTile` sont mémoïsés — sans ça,
-// chaque frame de glissement fournirait une fonction fraîche à `TileBody` (mémoïsé par
-// `React.memo`) et annulerait la mémoïsation : chaque tuile referait son agrégation.
+// parent, et `onClearFilters`/`onSelectTile` sont mémoïsés — sans ça, chaque frame de
+// glissement fournirait une fonction fraîche à `TileBody` (mémoïsé) et chaque tuile referait
+// son agrégation.
 import { useCallback, useState, type ReactNode } from 'react'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
@@ -16,7 +16,7 @@ import { useAddTile } from '../hooks/useAddTile'
 import { useBoardSource, useWatchSourceState, isWatchSource } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
 import { AddTileMenu } from './AddTileMenu'
-import { SourcePicker } from './SourcePicker'
+import { SourcePicker, SourceStatusList } from './SourcePicker'
 import { BiTopBar } from './BiTopBar'
 import { BiCrossbar } from './BiCrossbar'
 import { BiWorkspace } from './BiWorkspace'
@@ -67,23 +67,20 @@ export function BiBoard({
   const hasSheet = sheet !== null && sheet.columns.length > 0
   const hasProducts = usePimStore((s) => s.products.length > 0)
 
-  // ⚠⚠ Poser une tuile doit être ATOMIQUE du point de vue du rendu : la tuile et son
-  // placement dans le même rendu. Voir `usePendingTiles` pour ce que coûtait le décalage.
+  // ⚠⚠ Poser une tuile est ATOMIQUE au rendu : la tuile et son placement ensemble.
   const { tiles, add: addPending } = usePendingTiles(page.tiles)
   // ⚠⚠ Source dérivée de la feuille active pour le PIM, registre pour la veille : le menu doit
   // proposer EXACTEMENT les champs que `useTileData` lira. Le hook déclenche au passage les
-  // lectures réclamées par les tuiles POSÉES, jamais par la source seulement sélectionnée.
+  // lectures réclamées par les tuiles POSÉES, jamais par la source seulement choisie.
   const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
   const watch = useWatchSourceState(sourceId)
   const onWatch = isWatchSource(sourceId)
   // ⚠ `null` et non 0 : « 0 lignes » se lirait comme une source vide, jamais comme non lue.
   const rowCount = onWatch ? (watch.rows.length || null) : hasSheet ? sheet.rows.length : null
-  const updatedAt = onWatch ? watch.updatedAt : null
   const now = useTickingNow(true)
 
-  // ⚠ `draft.addPlacement` (et non `draft.setDraft`) : poser une tuile n'est pas un geste de
-  // glissement — et `draft` est un littéral RECRÉÉ à chaque rendu, le passer en entier
-  // annulerait la mémoïsation du rappel.
+  // ⚠ `draft.addPlacement`/`draft.layout` et non `draft` : ce littéral est RECRÉÉ à chaque
+  // rendu, le passer en entier annulerait la mémoïsation du rappel.
   const addTile = useAddTile({
     uid, current, pageId: page.id, tiles, layout: draft.layout, source, sourceId, onWatch,
     sheet, hasSheet, addPending, addPlacement: draft.addPlacement, onCreated: setSelectedTileId,
@@ -91,16 +88,18 @@ export function BiBoard({
 
   const selected = tiles.find((x) => x.id === selectedTileId) ?? null
   const onChangeKind = useCallback(
-    (kind: TileKind) => { if (selectedTileId) act.setTileKind(tiles, selectedTileId, kind) },
-    [act, tiles, selectedTileId])
+    (kind: TileKind) => {
+      if (selectedTileId) act.setTileKind(tiles, selectedTileId, kind, draft.layout)
+    }, [act, tiles, selectedTileId, draft.layout])
   const onAddPage = useCallback(() => onPageCreated(act.addPage(pages)), [act, pages, onPageCreated])
 
   return (
     <>
       <BiTopBar
         current={current} items={items} canEdit={canEdit} onSelectBoard={onSelect}
-        onRename={act.rename} updatedAt={updatedAt} now={now}
-        sourcePicker={<SourcePicker context={context} demanded={demanded} sourceId={sourceId} onSourceChange={setSourceId} />}
+        onRename={act.rename} updatedAt={onWatch ? watch.updatedAt : null} now={now}
+        sourcePicker={<SourcePicker context={context} demanded={demanded} sourceId={sourceId}
+          onSourceChange={setSourceId} withStatus={false} />}
         editing={editing} onToggleEdit={onToggleEdit}
         undo={draft.undo} redo={draft.redo} canUndo={draft.canUndo} canRedo={draft.canRedo}
         actions={headerAction}
@@ -115,7 +114,10 @@ export function BiBoard({
             builtOnSheetName={onWatch ? undefined : current.sourceSheetName}
             /* ⚠ Le geste ET le droit : un droit révoqué en cours de session doit faire
                disparaître le menu à l'identique du bouton et du raccourci clavier. */
-            trailing={editing && canEdit ? <AddTileMenu source={source} onAdd={addTile} /> : undefined}
+            /* L'état des sources de veille : des PHRASES, qui ont ici la place qu'elles
+               n'ont pas dans le bandeau — et qui parlent du jeu de données, comme la barre. */
+            trailing={<><SourceStatusList context={context} demanded={demanded} sourceId={sourceId} />
+              {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}</>}
           />
         )}
         canvas={(width) => (
@@ -138,12 +140,8 @@ export function BiBoard({
       <BiPageTabs
         pages={pages} activeId={page.id} onSelect={onSelectPage}
         onAdd={onAddPage} canAdd={editing && canEdit}
-        status={(
-          <BiStatusBar
-            sourceLabel={t(getSource(sourceId).labelKey)} rowCount={rowCount}
-            updatedAt={updatedAt} now={now}
-          />
-        )}
+        status={<BiStatusBar sourceLabel={t(getSource(sourceId).labelKey)} rowCount={rowCount}
+          updatedAt={onWatch ? watch.updatedAt : null} now={now} />}
       />
     </>
   )

@@ -109,7 +109,10 @@ export function DashboardGrid({
       {tiles.map((t) => (
         <div key={t.id}>
           <TileBody
-            tile={t} editing={editing} selected={t.id === selectedTileId}
+            /* ⚠ La sélection ne se VOIT qu'en édition : en consultation elle ne commande
+               plus rien (ni volets, ni poignées), et un liseré qui ne mène nulle part
+               laisserait croire à une tuile mise en avant pour une raison. */
+            tile={t} editing={editing} selected={editing && t.id === selectedTileId}
             globalFilters={globalFilters} onClearFilters={onClearFilters} onSelect={onSelectTile}
           />
         </div>

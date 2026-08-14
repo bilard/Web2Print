@@ -269,6 +269,27 @@ describe('BiBoard — sélection d’une tuile et pages', () => {
     expect(screen.getByRole('button', { pressed: true, name: 'Indicateur' })).toBeTruthy()
   })
 
+  // ⚠⚠ Vu EN RECETTE : déplacer une tuile puis changer son type la remettait où elle était.
+  // `current` vient de l'abonnement Firestore et retarde d'un aller-retour ; entre le
+  // relâchement du geste et l'écho, seule la mise en page du brouillon dit la vérité.
+  it('changer le type après un DÉPLACEMENT ne remet pas la tuile à sa place d’avant', () => {
+    const dashboard = makeDashboard('d10', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
+    render(
+      <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages}
+        items={[dashboard]} uid="u1" editing onToggleEdit={vi.fn()} canEdit
+        onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+    )
+    // Le geste : déplacé, relâché — mais l'écho de la base n'est pas encore revenu.
+    const moved = [{ tileId: 't1', x: 6, y: 3, w: 3, h: 2 }]
+    act(() => gridCalls().at(-1)![0].onDrag(moved))
+    act(() => gridCalls().at(-1)![0].onSelectTile('t1'))
+    act(() => { screen.getByRole('button', { name: 'Barres' }).click() })
+
+    const saved = parseDashboard(vi.mocked(saveDashboard).mock.calls.at(-1)![1])
+    expect(saved.pages[0].layout).toEqual(moved)
+    expect(saved.pages[0].tiles[0].kind).toBe('bar')
+  })
+
   it('changer le type de la tuile sélectionnée ÉCRIT sur la bonne page', () => {
     const dashboard = makeDashboard('d8', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     render(

@@ -40,6 +40,8 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
   /** Retire les filtres globaux — le geste proposé par une tuile vide. */
   const clearFilters = useCallback(() => persistFilters([]), [persistFilters])
 
+  // ⚠ `{ ...current }` sans toucher aux pages : renommer ne réécrit AUCUNE mise en page,
+  // donc rien à retarder — contrairement à `setTileKind`, qui en réécrit une.
   const rename = useCallback((name: string) => write({ ...current, name }), [write, current])
 
   /**
@@ -60,10 +62,17 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
    * Change le TYPE du visuel sélectionné. ⚠ La requête reste intacte : c'est la même mesure
    * et la même dimension rendues autrement. Seul le tableau croisé exige deux dimensions, et
    * `PivotTile` le dit déjà de lui-même plutôt que de rendre un chiffre faux.
+   *
+   * ⚠⚠ La MISE EN PAGE est réécrite avec, depuis le brouillon — jamais laissée à celle de
+   * `current`. Vu en recette : déplacer une tuile puis changer son type REMETTAIT la tuile
+   * où elle était. `current` vient de l'abonnement Firestore et retarde d'un aller-retour ;
+   * `draft.layout` est la seule vérité entre le relâchement du geste et l'écho.
    */
-  const setTileKind = useCallback((tiles: Tile[], tileId: string, kind: TileKind) => {
+  const setTileKind = useCallback((
+    tiles: Tile[], tileId: string, kind: TileKind, layout: TilePlacement[],
+  ) => {
     const next: Tile[] = tiles.map((x) => (x.id === tileId ? { ...x, kind } : x))
-    write(replacePage(current, pageId, { tiles: next }))
+    write(replacePage(current, pageId, { tiles: next, layout }))
   }, [write, current, pageId])
 
   return { write, persistLayout, persistFilters, clearFilters, rename, addPage, setTileKind }

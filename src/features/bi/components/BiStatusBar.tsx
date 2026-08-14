@@ -6,6 +6,9 @@
 import { useTranslation, intlLocale } from '@/lib/i18n'
 import { ageLabel } from '../engine/age'
 
+// ⚠ `pr-[104px]` : les deux boutons flottants d'aide occupent le coin bas-droit de TOUTES
+// les pages de l'application. Sans cette réserve, la fraîcheur passe DESSOUS et devient
+// illisible — exactement le chiffre qu'on affiche pour qu'il soit vérifiable.
 export function BiStatusBar({ sourceLabel, rowCount, updatedAt, now }: {
   /** Libellé DÉJÀ traduit de la source qui alimente les tuiles. */
   sourceLabel: string
@@ -17,7 +20,7 @@ export function BiStatusBar({ sourceLabel, rowCount, updatedAt, now }: {
 }) {
   const { t, locale } = useTranslation()
   return (
-    <div className="ml-auto flex items-center gap-3 text-[11px] text-white/30 shrink-0 pl-3">
+    <div className="ml-auto flex items-center gap-3 text-[11px] text-white/30 shrink-0 pl-3 pr-[104px]">
       <span className="truncate max-w-[280px]">{t('bi.status.source', { source: sourceLabel })}</span>
       {rowCount != null && (
         <span className="tabular-nums shrink-0">

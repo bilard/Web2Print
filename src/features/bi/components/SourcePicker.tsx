@@ -19,7 +19,7 @@ import type { SourceId } from '../types'
 const OFFERED: SourceId[] = [pimSource.id, ...WATCH_SOURCES.map((s) => s.id)]
 const WATCH_IDS: SourceId[] = WATCH_SOURCES.map((s) => s.id)
 
-export function SourcePicker({ context, demanded, sourceId, onSourceChange }: {
+export function SourcePicker({ context, demanded, sourceId, onSourceChange, withStatus = true }: {
   /** Ce que `useWatchLoader` sait du suivi actif : ses concurrents, la liste des suivis. */
   context: WatchContext
   /** Sources RÉELLEMENT citées par les tuiles posées — ce que l'écran est en train de lire. */
@@ -27,6 +27,10 @@ export function SourcePicker({ context, demanded, sourceId, onSourceChange }: {
   /** Source des NOUVELLES tuiles. Les tuiles déjà posées gardent la leur (elle est persistée). */
   sourceId: SourceId
   onSourceChange: (id: SourceId) => void
+  /** ⚠ `false` quand l'état est rendu AILLEURS (`SourceStatusList`). Le bandeau supérieur est
+   *  une LIGNE : la phrase du lot 3 y prend toute la largeur et renvoie les boutons au rang
+   *  suivant — vu en recette. L'état va alors dans la barre transversale, qui a la place. */
+  withStatus?: boolean
 }) {
   const { t } = useTranslation()
   const { setWatchId, setSiteId } = useWatchSelection()
@@ -63,12 +67,30 @@ export function SourcePicker({ context, demanded, sourceId, onSourceChange }: {
           />
         ) : <span className="text-[11px] text-white/35 mb-1">{t('bi.source.noSite')}</span>)}
       </div>
-      {shown.length > 0 && (context.watchId
-        ? shown.map((id) => <SourceStatus key={id} sourceId={id} sites={context.sites} />)
-        // ⚠ Aucun suivi : le dire, avec le geste à faire. Sans cela, l'écran n'offre qu'un
-        // sélecteur de suivi vide, ce qui se lit comme une panne.
-        : <Warning text={t('bi.watch.noWatch')} />)}
+      {withStatus && <SourceStatusList context={context} demanded={demanded} sourceId={sourceId} />}
     </div>
+  )
+}
+
+/**
+ * Ce que les sources de veille CONCERNÉES sont en train de faire — l'avancement d'un
+ * chargement lourd, ou ce qui empêche de mesurer.
+ *
+ * ⚠ Rendu à part du sélecteur : ce sont des PHRASES, et le bandeau supérieur est une ligne.
+ */
+export function SourceStatusList({ context, demanded, sourceId }: {
+  context: WatchContext
+  demanded: SourceId[]
+  sourceId: SourceId
+}) {
+  const { t } = useTranslation()
+  const shown = WATCH_IDS.filter((id) => demanded.includes(id) || id === sourceId)
+  if (shown.length === 0) return null
+  // ⚠ Aucun suivi : le dire, avec le geste à faire. Sans cela, l'écran n'offre qu'un
+  // sélecteur de suivi vide, ce qui se lit comme une panne.
+  if (!context.watchId) return <Warning text={t('bi.watch.noWatch')} />
+  return (
+    <>{shown.map((id) => <SourceStatus key={id} sourceId={id} sites={context.sites} />)}</>
   )
 }
 
