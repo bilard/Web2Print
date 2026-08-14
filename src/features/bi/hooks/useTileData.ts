@@ -7,12 +7,21 @@ import { aggregate, type AggregateResult } from '../engine/aggregate'
 import { pimRows, rowsFromSheet } from '../engine/rowsFromPim'
 import { getSource } from '../registry/sources'
 import { effectivePimSource } from '../registry/pim.source'
-import type { FilterClause, QuerySpec } from '../types'
+import { BiKeyedError, type BiMessage, type FilterClause, type QuerySpec } from '../types'
 
 export interface TileData {
   result: AggregateResult | null
   state: 'loading' | 'empty' | 'error' | 'ready'
-  error?: string
+  /**
+   * Ce que la tuile a à dire, sous forme de CLÉ quand le catalogue la porte.
+   *
+   * ⚠⚠ Traduit par le composant, jamais ici : le `t` de `useTranslation` est une fermeture
+   * RECRÉÉE à chaque rendu, l'ajouter aux dépendances du `useMemo` ci-dessous ferait
+   * recalculer l'agrégation de chaque tuile à chaque rendu — la mémoïsation que ce hook
+   * existe pour tenir. Le `t()` de module, lui, figerait la langue et manquerait les
+   * surcharges de compte (hydratées après le premier rendu).
+   */
+  message?: BiMessage
   updatedAt: number | null
   live: boolean
   retry: () => void
@@ -32,7 +41,8 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       // Lot 1 : seule la source client est branchée. Les sources `server` et `snapshot`
       // arrivent au lot 3 — le dire vaut mieux que rendre une tuile vide.
       if (registered.engine !== 'client') {
-        return { result: null, state: 'error', error: `Source non encore disponible : ${registered.id}`,
+        return { result: null, state: 'error',
+          message: { kind: 'raw', text: `Source non encore disponible : ${registered.id}` },
           updatedAt: null, live: false, retry }
       }
       // La source PIM lit la feuille ACTIVE du module Données — ce que l'utilisateur voit
@@ -43,8 +53,10 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       if (!hasSheet && products.length === 0) {
         // ⚠ `live: false` : rien ne coule dans cette tuile. Un point qui bat sur un cadre
         // vide affirmerait un flux qui n'existe pas.
+        // ⚠ L'état vide LE PLUS COURANT : tout utilisateur sans feuille ouverte le lit.
+        // Il passe donc par le catalogue, sous peine d'être en français pour tout le monde.
         return { result: null, state: 'empty',
-          error: 'Aucune donnée chargée : ouvrez une base dans le module Données ou importez un catalogue.',
+          message: { kind: 'key', key: 'bi.tile.noDataLoaded' },
           updatedAt: null, live: false, retry }
       }
       // ⚠⚠ `effectivePimSource` est le point de décision UNIQUE (partagé avec `AddTileMenu`) :
@@ -64,8 +76,12 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
         updatedAt: Date.now(), live: ready, retry,
       }
     } catch (e) {
-      return { result: null, state: 'error', error: e instanceof Error ? e.message : String(e),
-        updatedAt: null, live: false, retry }
+      // Une erreur qui porte sa CLÉ est traduite au rendu ; les autres restent techniques
+      // (leur internationalisation est hors périmètre) et s'affichent telles quelles.
+      const message: BiMessage = e instanceof BiKeyedError
+        ? { kind: 'key', key: e.messageKey, params: e.params }
+        : { kind: 'raw', text: e instanceof Error ? e.message : String(e) }
+      return { result: null, state: 'error', message, updatedAt: null, live: false, retry }
     }
     // `attempt` est une dépendance VOLONTAIRE : c'est ce qui rejoue le calcul sur « réessayer ».
   }, [sheet, products, query, globalFilters, attempt, retry])

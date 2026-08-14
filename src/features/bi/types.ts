@@ -4,6 +4,37 @@
 // version antérieure et celles produites par un modèle de langage. Une spec non validée qui
 // atteindrait le moteur produirait un chiffre faux sans le dire, ce qui est pire qu'une erreur.
 import { z } from 'zod'
+import type { TranslationKey, TransParams } from '@/lib/i18n'
+
+/**
+ * Ce qu'une tuile a à DIRE (cadre vide, erreur), sous une forme qui traverse les modules
+ * PURS du moteur sans les faire dépendre de l'interface.
+ *
+ * ⚠⚠ `kind: 'key'` porte une clé de catalogue et ses paramètres — la traduction est faite
+ * par le COMPOSANT, au rendu. Deux raisons de ne pas traduire plus tôt :
+ * - le moteur (`registry/`, `engine/`) est pur : y appeler `useTranslation` est impossible,
+ *   et le `t()` de module figerait la langue et manquerait les surcharges de compte,
+ *   hydratées après le premier rendu ;
+ * - `useTileData` mémoïse son agrégation, et le `t` de `useTranslation` est une fermeture
+ *   RECRÉÉE à chaque rendu : l'ajouter en dépendance ferait recalculer chaque tuile à
+ *   chaque rendu — exactement la mémoïsation que le module protège partout ailleurs.
+ *
+ * `kind: 'raw'` reste pour les messages techniques déjà formés (exception inattendue), dont
+ * l'internationalisation est hors périmètre : mieux vaut la cause exacte qu'une clé absente.
+ */
+export type BiMessage =
+  | { kind: 'key'; key: TranslationKey; params?: TransParams }
+  | { kind: 'raw'; text: string }
+
+/** Erreur d'un module pur qui porte sa CLÉ plutôt que sa phrase. */
+export class BiKeyedError extends Error {
+  constructor(readonly messageKey: TranslationKey, readonly params?: TransParams) {
+    // ⚠ Le `message` d'`Error` reste la clé : jamais affiché tel quel (l'appelant lit
+    // `messageKey`), mais il rend une trace de pile lisible en développement.
+    super(messageKey)
+    this.name = 'BiKeyedError'
+  }
+}
 
 /** Incrémenter à chaque changement INCOMPATIBLE du contrat (et écrire la migration). */
 export const DASHBOARD_VERSION = 1

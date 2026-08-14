@@ -29,11 +29,11 @@ const ROW_HEIGHT = 40
 const TileBody = memo(function TileBody({ tile, editing, globalFilters, onClearFilters }: {
   tile: Tile; editing: boolean; globalFilters: FilterClause[]; onClearFilters: () => void
 }) {
-  const { result, state, error, updatedAt, live, retry } = useTileData(tile.query, globalFilters)
+  const { result, state, message, updatedAt, live, retry } = useTileData(tile.query, globalFilters)
   const skeleton = tile.kind === 'kpi' ? 'kpi' : tile.kind === 'table' || tile.kind === 'pivot' ? 'table' : 'chart'
   return (
     <TileFrame
-      title={tile.title} updatedAt={updatedAt} live={live} state={state} error={error} editing={editing}
+      title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
       skeleton={skeleton} hasFilters={globalFilters.length > 0}
       onRetry={retry} onClearFilters={onClearFilters}
     >

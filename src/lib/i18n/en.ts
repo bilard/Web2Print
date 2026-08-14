@@ -321,6 +321,8 @@ export const en: Record<TranslationKey, string> = {
   'bi.measure.filled': 'Fields filled in',
   'bi.measure.freshness': 'Median age (days)',
   'bi.tile.empty': 'No data for these filters',
+  'bi.tile.noDataLoaded': 'No data loaded — open a database in the Data module or import a catalogue.',
+  'bi.error.reservedColumn': 'Column “{column}” is reserved by the engine: rename it, otherwise completeness would be wrong.',
   'bi.tile.clearFilters': 'Clear filters',
   'bi.tile.retry': 'Retry',
   'bi.tile.ageTitle': 'Age of the data shown',

@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import { TileSkeleton, TileEmpty, TileError } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
+import type { BiMessage } from '../types'
 
 /** Pas du battement de l'âge. Dix secondes : l'affichage passe à la seconde sous une minute,
  *  et rien de plus fin n'est lisible au-delà. */
@@ -20,8 +21,10 @@ interface Props {
   live: boolean
   state: 'loading' | 'empty' | 'error' | 'ready'
   skeleton: 'chart' | 'table' | 'kpi'
-  /** Cause de l'état : erreur technique, ou raison d'un cadre vide (« ouvrez une base… »). */
-  error?: string
+  /** Cause de l'état : erreur technique, ou raison d'un cadre vide (« ouvrez une base… »).
+   *  ⚠ Traduite ICI, au rendu : le moteur est pur et `useTileData` mémoïse — ni l'un ni
+   *  l'autre ne peut appeler `t` sans figer la langue ou casser la mémoïsation. */
+  message?: BiMessage
   /** ⚠ Le bouton « retirer les filtres » ne retire que les filtres GLOBAUX : sans aucun, il
    *  ne ferait rien. Un booléen (primitif) plutôt que la liste : `TileBody` est mémoïsé. */
   hasFilters: boolean
@@ -59,10 +62,12 @@ function useTickingNow(enabled: boolean): number {
 }
 
 export function TileFrame({
-  title, updatedAt, live, state, skeleton, error, hasFilters, editing,
+  title, updatedAt, live, state, skeleton, message, hasFilters, editing,
   onRetry, onClearFilters, children,
 }: Props) {
   const { t } = useTranslation()
+  const text = message === undefined ? undefined
+    : message.kind === 'key' ? t(message.key, message.params) : message.text
   const now = useTickingNow(updatedAt != null)
   // ⚠ En consultation (`editing` faux), aucun déplacement n'est possible (`isDraggable`
   // reste faux côté grille) : l'affordance visuelle ne doit pas non plus l'annoncer, sous
@@ -81,9 +86,9 @@ export function TileFrame({
           s'allonge. Le débordement scrolle DANS la tuile. */}
       <div className="flex-1 min-h-0 overflow-auto p-3">
         {state === 'loading' ? <TileSkeleton kind={skeleton} />
-          : state === 'error' ? <TileError message={error ?? ''} onRetry={onRetry} />
+          : state === 'error' ? <TileError message={text ?? ''} onRetry={onRetry} />
           : state === 'empty'
-            ? <TileEmpty message={error} hasFilters={hasFilters} onClearFilters={onClearFilters} />
+            ? <TileEmpty message={text} hasFilters={hasFilters} onClearFilters={onClearFilters} />
           : children}
       </div>
     </div>

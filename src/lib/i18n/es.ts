@@ -320,6 +320,8 @@ export const es: Record<TranslationKey, string> = {
   'bi.measure.filled': 'Campos rellenados',
   'bi.measure.freshness': 'Antigüedad mediana (días)',
   'bi.tile.empty': 'Sin datos para estos filtros',
+  'bi.tile.noDataLoaded': 'Ningún dato cargado: abra una base en el módulo Datos o importe un catálogo.',
+  'bi.error.reservedColumn': 'La columna «{column}» está reservada por el motor: renómbrela, si no la completitud sería falsa.',
   'bi.tile.clearFilters': 'Quitar los filtros',
   'bi.tile.retry': 'Reintentar',
   'bi.tile.ageTitle': 'Antigüedad del dato mostrado',

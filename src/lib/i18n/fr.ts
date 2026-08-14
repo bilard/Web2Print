@@ -334,6 +334,8 @@ export const fr = {
   'bi.measure.filled': 'Champs renseignés',
   'bi.measure.freshness': 'Ancienneté médiane (jours)',
   'bi.tile.empty': 'Aucune donnée pour ces filtres',
+  'bi.tile.noDataLoaded': 'Aucune donnée chargée : ouvrez une base dans le module Données ou importez un catalogue.',
+  'bi.error.reservedColumn': 'Colonne « {column} » réservée au moteur : renommez-la, sinon la complétude serait fausse.',
   'bi.tile.clearFilters': 'Retirer les filtres',
   'bi.tile.retry': 'Réessayer',
   'bi.tile.ageTitle': 'Âge de la donnée affichée',

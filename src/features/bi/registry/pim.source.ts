@@ -2,6 +2,7 @@
 // projet), ses dimensions fixes sont la taxonomie et les dates.
 import type { Product } from '@/features/pim/types'
 import type { ExcelColumn, ExcelSheet, FieldTypeId } from '@/features/excel/types'
+import { BiKeyedError } from '../types'
 import type { DataSource, Dimension, FieldKind, Measure, Row } from './types'
 
 /** Profondeur de taxonomie exposée en dimensions (cf. taxonomie à 4 niveaux). Exportée :
@@ -42,11 +43,9 @@ const PRODUCT_RESERVED_KEYS: readonly string[] = [
 
 function assertNoneReserved(columns: string[], reserved: readonly string[]): void {
   const clash = columns.find((c) => reserved.includes(c))
-  if (clash) {
-    throw new Error(
-      `Colonne « ${clash} » réservée au moteur : renommez-la, sinon la complétude serait fausse.`,
-    )
-  }
+  // ⚠ Une CLÉ, pas une phrase : ce module est pur, il ne connaît pas la langue de lecture.
+  // Le composant traduit au rendu (cf. `BiMessage`).
+  if (clash) throw new BiKeyedError('bi.error.reservedColumn', { column: clash })
 }
 
 /** Colonnes d'une FEUILLE. `useTileData` attrape et la tuile affiche la cause, colonne nommée. */

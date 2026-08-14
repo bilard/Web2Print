@@ -33,17 +33,32 @@ beforeEach(() => {
 })
 
 describe('useTileData', () => {
-  it('état `empty` avec message quand ni feuille ni catalogue ne sont chargés', () => {
+  // ⚠⚠ On asserte la CLÉ, jamais le texte français : sinon le libellé en dur aurait
+  // simplement déménagé dans le test, la barrière resterait verte et l'écran resterait
+  // français pour un lecteur anglais ou espagnol.
+  it('état `empty` : remonte la CLÉ du catalogue quand ni feuille ni catalogue ne sont chargés', () => {
     const { result } = renderHook(() => useTileData(baseQuery, []))
     expect(result.current.state).toBe('empty')
-    expect(result.current.error).toMatch(/aucune donnée/i)
+    expect(result.current.message).toEqual({ kind: 'key', key: 'bi.tile.noDataLoaded' })
   })
 
-  it('état `error` sur une source non enregistrée', () => {
+  it('une colonne réservée remonte sa CLÉ et la colonne fautive en paramètre', () => {
+    useExcelStore.setState({
+      sheets: [{ ...sheet([{ _id: 'a', _total: '3' }]), columns: [col('_total')] }],
+      activeSheetIndex: 0,
+    })
+    const { result } = renderHook(() => useTileData(baseQuery, []))
+    expect(result.current.state).toBe('error')
+    expect(result.current.message).toEqual({
+      kind: 'key', key: 'bi.error.reservedColumn', params: { column: '_total' },
+    })
+  })
+
+  it('état `error` sur une source non enregistrée — message technique, laissé tel quel', () => {
     const query: QuerySpec = { ...baseQuery, source: 'dam.assets' }
     const { result } = renderHook(() => useTileData(query, []))
     expect(result.current.state).toBe('error')
-    expect(result.current.error).toBeTruthy()
+    expect(result.current.message?.kind).toBe('raw')
   })
 
   it('état `ready`, lignes prises sur la feuille ACTIVE du module Données', () => {

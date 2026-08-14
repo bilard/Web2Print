@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { pimRows, rowsFromSheet } from './rowsFromPim'
+import { BiKeyedError } from '../types'
 import type { Product } from '@/features/pim/types'
 import type { ExcelColumn, ExcelSheet } from '@/features/excel/types'
 
@@ -68,6 +69,18 @@ describe('rowsFromSheet', () => {
   })
 })
 
+/** Colonne fautive rapportée par l'erreur — `undefined` si l'appel n'a pas levé. */
+function reservedColumnOf(run: () => unknown): string | undefined {
+  try {
+    run()
+    return undefined
+  } catch (e) {
+    if (!(e instanceof BiKeyedError)) throw e
+    expect(e.messageKey).toBe('bi.error.reservedColumn')
+    return typeof e.params?.column === 'string' ? e.params.column : undefined
+  }
+}
+
 // ⚠⚠ Une colonne homonyme d'une clé du moteur produisait une complétude FAUSSE sans bruit :
 // `_filled`/`_total`/`taxo.N` sont posés APRÈS la copie des colonnes, `_id` avant. Dans les
 // deux sens, la mesure ment. On refuse la ligne plutôt que de la mesurer de travers.
@@ -77,21 +90,23 @@ describe('clés réservées', () => {
       columns: [col('marque'), col('_total')],
       rows: [{ _id: 'a', marque: 'X', _total: '999' }],
     })
-    expect(() => rowsFromSheet(s)).toThrow(/_total/)
+    // ⚠ La CLÉ et son paramètre, jamais la phrase : ce module est pur, il ne traduit pas.
+    expect(() => rowsFromSheet(s)).toThrow(BiKeyedError)
+    expect(reservedColumnOf(() => rowsFromSheet(s))).toBe('_total')
   })
 
   it('refuse aussi `_filled`, `_id` et un niveau de taxonomie', () => {
     for (const key of ['_filled', '_id', 'taxo.2']) {
-      expect(() => rowsFromSheet(sheet({ columns: [col(key)] }))).toThrow(/réservée/)
+      expect(reservedColumnOf(() => rowsFromSheet(sheet({ columns: [col(key)] })))).toBe(key)
     }
   })
 
   it('nomme la colonne fautive : un refus muet ne se corrige pas', () => {
-    expect(() => rowsFromSheet(sheet({ columns: [col('taxo.1')] }))).toThrow(/taxo\.1/)
+    expect(reservedColumnOf(() => rowsFromSheet(sheet({ columns: [col('taxo.1')] })))).toBe('taxo.1')
   })
 
   it('vaut aussi pour le catalogue master (productToRow via pimRows)', () => {
-    expect(() => pimRows([p('a', { _total: '3' })], [])).toThrow(/réservée/)
+    expect(reservedColumnOf(() => pimRows([p('a', { _total: '3' })], []))).toBe('_total')
   })
 
   // ⚠⚠ Les deux chemins ne réservent PAS les mêmes clés : `rowsFromSheet` ne pose ni `_sku`
@@ -112,7 +127,7 @@ describe('clés réservées', () => {
   })
 
   it('mais `_sku` ÉCHOUE côté catalogue master — `productToRow` le pose et le PIM l’expose', () => {
-    expect(() => pimRows([p('a', { _sku: 'REF-1' })], [])).toThrow(/_sku/)
+    expect(reservedColumnOf(() => pimRows([p('a', { _sku: 'REF-1' })], []))).toBe('_sku')
   })
 
   it('laisse passer une colonne au nom simplement proche', () => {
