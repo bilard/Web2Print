@@ -56,3 +56,36 @@ describe('ChartTile — le clic rapporte ce qui a été cliqué', () => {
     expect(onPick).toHaveBeenCalledWith('domain', 'alpha.fr')
   })
 })
+
+describe('un camembert SANS axe', () => {
+  // ⚠⚠ Un camembert répartit un total entre les valeurs d'une dimension. Sans axe — le cas
+  // d'un indicateur basculé vers le camembert, `wellCapacity('axis','kpi')` valant 0 — il
+  // n'a qu'une part et dessine un DISQUE PLEIN d'une seule couleur. Vu à l'écran : le visuel
+  // semblait en panne alors qu'il montrait fidèlement « 100 % du total ».
+  const noAxis: AggregateResult = {
+    columns: [{ key: 'count', labelKey: 'bi.measure.count', role: 'measure', format: 'int' }],
+    rows: [{ count: 42 }],
+  }
+
+  it('dit ce qui lui manque au lieu de dessiner un disque plein', () => {
+    const { container } = render(<ChartTile result={noAxis} kind="pie" />)
+    expect(container.textContent).toMatch(/Axe/)
+  })
+
+  it('vaut aussi pour l’anneau', () => {
+    const { container } = render(<ChartTile result={noAxis} kind="doughnut" />)
+    expect(container.textContent).toMatch(/Axe/)
+  })
+
+  // ⚠ Les barres, elles, restent LÉGITIMES sans axe : une barre unique montre le total, ce
+  // qui se lit. Seuls camembert et anneau sont vides de sens.
+  it('laisse les barres tracer leur total', () => {
+    const { container } = render(<ChartTile result={noAxis} kind="bar" />)
+    expect(container.textContent).not.toMatch(/Axe/)
+  })
+
+  it('trace bien le camembert dès qu’un axe est là', () => {
+    const { container } = render(<ChartTile result={result} kind="pie" />)
+    expect(container.textContent).not.toMatch(/Axe/)
+  })
+})

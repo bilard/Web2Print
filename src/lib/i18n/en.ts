@@ -334,6 +334,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.gauge.outOf': 'out of {max}',
   'bi.funnel.needsMeasure': 'A funnel needs at least one measure',
   'bi.scatter.needsTwoMeasures': 'A scatter plot needs two measures — one per axis',
+  'bi.pie.needsDimension': 'A pie chart splits a total across the values of a field. Drop one into “Axis”, on the right.',
   'bi.scatter3d.needsThreeMeasures': 'A 3D scatter plot compares three measures, one per axis (X, Y, Z). Drop {missing} more into “Values”, on the right.',
   'bi.scatter3d.needsAxis': 'Drop a field into “Axis” — it is what gives one point per value (one per competitor, say).',
   'bi.scatter3d.dropped': '{count} row(s) dropped — missing coordinate',

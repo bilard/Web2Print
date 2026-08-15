@@ -139,6 +139,17 @@ export function ChartTile({ result, kind, stacked, tooltipKeys, onPick, onDrill 
       }
     : undefined
 
+  // ⚠⚠ Un camembert RÉPARTIT un total entre les valeurs d'une dimension : sans axe, il n'a
+  // qu'une part et dessine un DISQUE PLEIN d'une seule couleur. Vu à l'écran en basculant un
+  // indicateur (qui n'a jamais d'axe, cf. `wellCapacity`) vers le camembert : le visuel
+  // semblait en panne alors qu'il montrait fidèlement « 100 % du total ». On le dit.
+  if ((kind === 'pie' || kind === 'doughnut') && !model.dimensionKey) {
+    return (
+      <p className="grid h-full place-items-center px-4 text-center text-[11px] text-white/35">
+        {t('bi.pie.needsDimension')}
+      </p>
+    )
+  }
   if (kind === 'pie') return <Pie data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
   if (kind === 'doughnut') return <Doughnut data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
   if (kind === 'line' || kind === 'area') return <Line data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
