@@ -93,6 +93,14 @@ export function BiBoard({
   // Zone capturée par l'export image/PDF : le canevas et son bandeau de filtres.
   const captureRef = useRef<HTMLDivElement>(null)
   const [promptOpen, setPromptOpen] = useState(false)
+  /**
+   * Base regardée en CONSULTATION, sans rien enregistrer.
+   *
+   * ⚠⚠ Volontairement en état d'écran, comme le filtre du clic : regarder le même tableau
+   * sur une autre base est une EXPLORATION. L'écrire changerait le tableau pour toute la
+   * société, d'un simple clic en lecture — et sans que rien ne l'annonce.
+   */
+  const [previewDb, setPreviewDb] = useState<{ id?: string; name?: string } | null>(null)
   const { createFromPlan } = useBoardCommands(uid)
   // ⚠ Le canevas est monté dans tous les cas, mais la référence peut n'être pas encore
   // posée au tout premier rendu : on refuse alors la capture au lieu de laisser passer un
@@ -352,9 +360,18 @@ export function BiBoard({
         sourceRail={(
           <BiSourceRail
             watches={context.watches} sourceId={sourceId} watchId={context.watchId}
-            dbId={current.sourceDbId} sheetName={current.sourceSheetName} demanded={demanded}
+            dbId={previewDb ? previewDb.id : current.sourceDbId}
+            sheetName={current.sourceSheetName} demanded={demanded} readOnly={!inEdit}
             onChoose={(c) => {
+              // Le suivi est déjà un état d'écran : il ne s'écrit nulle part.
               if (c.watchId) setWatchId(c.watchId)
+              if (!inEdit) {
+                // ⚠ Consultation : APERÇU. Le document reste tel qu'il est, et le bandeau
+                // le dit — sans quoi on croirait le tableau modifié pour tout le monde.
+                if (c.dbId !== undefined) setPreviewDb({ id: c.dbId ?? undefined, name: c.dbName })
+                return
+              }
+              setPreviewDb(null)
               if (c.dbId !== undefined && canEdit) act.setSourceDb(c.dbId ?? undefined, c.dbName)
               changeSource(c.source)
             }}
@@ -386,6 +403,15 @@ export function BiBoard({
               dbName={current.sourceDbName} />
               {/* ⚠ Le filtre du clic AVANT le reste : c'est lui qui restreint ce que montrent
                   les tuiles à cet instant, et il doit se lire sans survol. */}
+              {/* ⚠ L'aperçu se VOIT et se retire, comme le filtre du clic : un tableau qui
+                  montre une autre base sans le dire ferait voyager des chiffres pour ceux
+                  d'un autre jeu de données. */}
+              {previewDb && (
+                <CrossFilterChip
+                  label={t('bi.dataset.preview', { name: previewDb.name ?? t('bi.db.activeSheet') })}
+                  onClear={() => setPreviewDb(null)}
+                />
+              )}
               {crossFilter && (
                 <CrossFilterChip
                   label={describeFilter(

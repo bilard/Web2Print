@@ -31,7 +31,10 @@ export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef, sou
   return (
     <div className="flex-1 min-h-0 flex">
       {editing && <BiViewRail />}
-      {editing && sourceRail}
+      {/* ⚠ Le volet reste visible en CONSULTATION : on y change de suivi ou de base sans
+          rien modifier au document (aperçu). Seul le changement de NATURE du jeu de données
+          — qui rebâtit les tuiles — demande le mode Édition. */}
+      {sourceRail}
 
       <div ref={captureRef} className="flex-1 min-w-0 flex flex-col bg-background">
         {crossbar}

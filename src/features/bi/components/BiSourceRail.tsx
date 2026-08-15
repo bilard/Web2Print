@@ -14,7 +14,9 @@ import { usePimDbList, usePimDbLoader } from '../hooks/usePimDatabases'
 import type { WatchSummary } from '@/features/priceWatch/useCatalogReport'
 import type { SourceId } from '../types'
 
-export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, demanded, onChoose }: {
+export function BiSourceRail({
+  watches, sourceId, watchId, dbId, sheetName, demanded, readOnly = false, onChoose,
+}: {
   watches: WatchSummary[]
   sourceId: SourceId
   watchId: string | null
@@ -25,6 +27,13 @@ export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, dema
    *  croire que le tableau a changé de jeu de données — c'est ce qui faisait chercher
    *  pourquoi un sélecteur de concurrent subsistait après avoir cliqué une base produits. */
   demanded: SourceId[]
+  /**
+   * Mode CONSULTATION : on peut regarder le même tableau sur un autre suivi ou une autre
+   * base — c'est une exploration, elle ne touche pas au document. Changer la NATURE du jeu
+   * de données, en revanche, rebâtit les tuiles : ce geste-là reste à l'Édition, et les
+   * entrées concernées le DISENT au survol plutôt que de ne rien faire au clic.
+   */
+  readOnly?: boolean
   onChoose: (choice: DatasetChoice) => void
 }) {
   const { t } = useTranslation()
@@ -37,6 +46,14 @@ export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, dema
   const active = datasetValue(sourceId, watchId, dbId)
   // Ce que le tableau LIT, entrée par entrée : la veille sur le suivi actif, et la base
   // produits retenue.
+  /** L'entrée est-elle atteignable sans modifier le document ? */
+  const reachable = (id: string): boolean => {
+    if (!readOnly) return true
+    const c = parseDataset(id, items)
+    // Même nature de source que ce que les tuiles lisent déjà : rien à rebâtir.
+    return c !== null && demanded.includes(c.source)
+  }
+
   const isRead = (id: string): boolean => {
     const c = parseDataset(id, items)
     if (!c || !demanded.includes(c.source)) return false
@@ -68,15 +85,19 @@ export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, dema
           </p>
           {g.items.map((o) => (
             <button
-              key={o.id} type="button"
-              title={isRead(o.id) ? `${o.label} — ${t('bi.dataset.feeds')}` : o.label}
+              key={o.id} type="button" disabled={!reachable(o.id)}
+              title={!reachable(o.id)
+                ? t('bi.dataset.needsEdit')
+                : isRead(o.id) ? `${o.label} — ${t('bi.dataset.feeds')}` : o.label}
               // ⚠ Une entrée qui ne se relit pas est IGNORÉE, jamais remplacée par un repli
               // deviné : le tableau lirait un jeu de données que personne n'a désigné.
               onClick={() => { const c = parseDataset(o.id, items); if (c) onChoose(c) }}
               className={`w-full text-left px-3 py-1.5 text-[11.5px] truncate transition-colors ${
                 o.id === active
                   ? 'bg-indigo-500/15 text-indigo-200 border-l-2 border-indigo-400'
-                  : 'text-white/65 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent'
+                  : reachable(o.id)
+                    ? 'text-white/65 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent'
+                    : 'text-white/25 cursor-not-allowed border-l-2 border-transparent'
               }`}
             >
               {/* ⚠ Le point vert dit « ALIMENTE ce tableau », le surlignage dit « choisi

@@ -23,9 +23,10 @@ const rail = (
   onChoose = vi.fn(),
   sourceId: 'watch.summary' | 'pim.products' = 'watch.summary',
   demanded: ('watch.summary' | 'pim.products')[] = ['watch.summary'],
+  readOnly = false,
 ) => {
   render(<BiSourceRail watches={watches} sourceId={sourceId} watchId="w1" dbId={undefined}
-    demanded={demanded} onChoose={onChoose} />)
+    demanded={demanded} readOnly={readOnly} onChoose={onChoose} />)
   return onChoose
 }
 
@@ -78,5 +79,34 @@ describe('volet « Jeu de données »', () => {
     expect(chosen.title).not.toMatch(/alimente/)
     expect(fed.className).not.toContain('indigo')      // pas le choix courant…
     expect(fed.title).toMatch(/alimente ce tableau/)   // …mais c'est lui qu'on lit
+  })
+})
+
+// ⚠⚠ Ce que ces tests protègent : un clic en LECTURE qui modifierait le tableau de toute la
+// société. Regarder le même tableau sur une autre base est une exploration ; en rebâtir les
+// tuiles est une modification. Le volet doit laisser passer la première et retenir la seconde.
+describe('volet en consultation', () => {
+  it('laisse changer de base quand les tuiles lisent DÉJÀ le PIM', () => {
+    const onChoose = rail(vi.fn(), 'pim.products', ['pim.products'], true)
+    fireEvent.click(screen.getByText(/Catalogue_GSB_2026/))
+    expect(onChoose).toHaveBeenCalledWith({
+      source: 'pim.products', dbId: 'db1', dbName: 'Catalogue_GSB_2026',
+    })
+  })
+
+  it('⚠ RETIENT un changement de nature, et dit pourquoi', () => {
+    // Les tuiles lisent la veille : passer au PIM demanderait de les rebâtir.
+    const onChoose = rail(vi.fn(), 'watch.summary', ['watch.summary'], true)
+    const entry = screen.getByText(/Catalogue_GSB_2026/) as HTMLButtonElement
+    expect(entry.disabled).toBe(true)
+    expect(entry.title).toMatch(/Passez en Édition/)
+    fireEvent.click(entry)
+    expect(onChoose).not.toHaveBeenCalled()
+  })
+
+  it('laisse changer d’angle de veille en ÉDITION', () => {
+    const onChoose = rail(vi.fn(), 'watch.summary', ['watch.summary'], false)
+    fireEvent.click(screen.getByText('Notre catalogue suivi'))
+    expect(onChoose).toHaveBeenCalledWith({ source: 'watch.catalog', watchId: 'w1' })
   })
 })

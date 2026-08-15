@@ -469,6 +469,8 @@ export const fr = {
   'bi.db.optionOne': '{name} — 1 ligne',
   'bi.db.hint': 'La base du module Données qui alimente les tuiles « Produits (PIM) » de ce tableau.',
   'bi.dataset.label': 'Jeu de données',
+  'bi.dataset.needsEdit': 'Passez en Édition pour changer la nature du jeu de données : les tuiles doivent être rebâties.',
+  'bi.dataset.preview': 'Aperçu : {name} — non enregistré',
   'bi.dataset.feeds': 'alimente ce tableau',
   'bi.dataset.hint': 'Sur quoi porte ce tableau : une veille tarifaire, ou une base du module Données.',
   'bi.dataset.watchGroup': 'Veille tarifaire',
