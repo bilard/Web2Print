@@ -18,6 +18,9 @@ interface DetailColumn {
   labelKey: Dimension['labelKey']
   /** Nom venu de la DONNÉE (colonne de feuille) : préféré au libellé de catalogue. */
   label?: string
+  /** Unité de la colonne. ⚠ Transportée jusqu'à l'affichage : sans elle, une barre de
+   *  pourcentage et une barre de durée se peignent de la même couleur. */
+  format?: Dimension['format']
 }
 
 export interface UnderlyingRows {
@@ -37,7 +40,7 @@ export function underlyingRows(
     ? rows.filter((r) => filters.every((f) => matches(r, f, dimById.get(f.field))))
     : rows
   const columns: DetailColumn[] = source.dimensions.map((d) => ({
-    key: d.id, labelKey: d.labelKey, label: d.label,
+    key: d.id, labelKey: d.labelKey, label: d.label, format: d.format,
   }))
   // ⚠ Les valeurs sont lues par le `get` de la dimension, jamais dans la ligne brute : une
   // source peut exposer un champ calculé (taux en pourcentage, libellé recomposé), et le

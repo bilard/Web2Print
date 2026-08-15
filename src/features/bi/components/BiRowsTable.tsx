@@ -7,6 +7,7 @@ import { useMemo } from 'react'
 import { useTranslation } from '@/lib/i18n'
 import { biLabel } from './biLabel'
 import { barScale, barGeometry } from '../engine/tableView'
+import { barColor } from './fieldColors'
 import type { UnderlyingRows } from '../engine/underlyingRows'
 
 export function BiRowsTable({ detail }: { detail: UnderlyingRows }) {
@@ -52,7 +53,7 @@ export function BiRowsTable({ detail }: { detail: UnderlyingRows }) {
                       className="absolute inset-y-[3px] rounded-sm pointer-events-none"
                       style={{
                         left: `${bar.left}%`, width: `${bar.width}%`,
-                        background: `#6366f1${bar.negative ? '26' : '3d'}`,
+                        background: `${barColor(c.format, bar.negative)}${bar.negative ? '33' : '3d'}`,
                       }} />
                   )}
                   {/* ⚠ Une valeur absente reste un TIRET : « 0 » se lirait comme une mesure. */}

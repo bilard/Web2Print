@@ -14,11 +14,14 @@
 import { useMemo } from 'react'
 import { formatMeasure } from '../../engine/formatValue'
 import { usefulColumns, barScale, barGeometry } from '../../engine/tableView'
+import { barColor } from '../fieldColors'
 import { biLabel } from '../biLabel'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import type { AggregateResult } from '../../engine/aggregate'
 
-export function TableTile({ result, accent }: { result: AggregateResult; accent?: string }) {
+// ⚠ Pas d'`accent` ici : la teinte des barres vient de l'UNITÉ de chaque colonne, pas de
+// l'identité de la tuile — une même grandeur se reconnaît d'une tuile à l'autre.
+export function TableTile({ result }: { result: AggregateResult }) {
   const { t, locale } = useTranslation()
 
   // Colonnes réellement porteuses, et l'échelle de chacune : calculées une fois par
@@ -67,10 +70,10 @@ export function TableTile({ result, accent }: { result: AggregateResult; accent?
                       className="absolute inset-y-[3px] rounded-sm pointer-events-none"
                       style={{
                         left: `${bar.left}%`, width: `${bar.width}%`,
-                        // ⚠ UNE seule teinte, celle de la tuile : une couleur par colonne
-                        // donnait un vert, un orange et un rouge côte à côte, qu'on lit
-                        // comme un jugement (bon / moyen / mauvais) que la donnée ne porte pas.
-                        background: `${accent ?? '#6366f1'}${bar.negative ? '26' : '3d'}`,
+                        // ⚠⚠ La teinte dit l'UNITÉ mesurée et le SIGNE — jamais si c'est bien
+                        // ou mal : un décompte de ruptures est bon pour l'acheteur et mauvais
+                        // pour le vendeur, et le module ne sait pas de quel côté on est.
+                        background: `${barColor(c.format, bar.negative)}${bar.negative ? '33' : '3d'}`,
                       }} />
                   )}
                   <span className="relative">
