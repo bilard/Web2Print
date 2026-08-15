@@ -63,6 +63,17 @@ describe('aggregate', () => {
     expect(r.rows).toEqual([{ count: 4, 'sum:price': 460 }])
   })
 
+  it('sans dimension, filtre AVANT de mesurer', () => {
+    // ⚠⚠ C'est la forme des tuiles KPI, et le chemin par lequel un total non filtré peut
+    // s'afficher à côté de graphes filtrés — un écran qui a l'air juste et qui ment.
+    const r = aggregate(rows, q({
+      measures: [{ id: 'count' }, { id: 'sum:price' }],
+      filters: [{ field: 'brand', op: 'eq', value: 'Makita' }],
+    }), source)
+    expect(r.rows[0].count).toBe(2)
+    expect(r.rows[0]['sum:price']).toBe(400)
+  })
+
   it('groupe par dimension et trie par mesure décroissante', () => {
     const r = aggregate(rows, q({
       dimensions: [{ id: 'brand' }], measures: [{ id: 'sum:price' }],

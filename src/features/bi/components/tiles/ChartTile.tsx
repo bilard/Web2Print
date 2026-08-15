@@ -112,8 +112,11 @@ export function ChartTile({ result, kind, stacked, tooltipKeys, onPick, onDrill 
           // il arrive VIDE : le filtrage croisé était alors muet, sans rien qui le dise.
           // On retrouve donc l'élément sous le pointeur par l'API du graphe, comme le fait
           // déjà le double-clic.
+          // ⚠ `intersect: false` dans ce repli SEULEMENT : un doigt ne vise pas une barre
+          // de 17 px, il faut lui donner l'élément le plus PROCHE. Le chemin normal (souris,
+          // `els` renseigné par le survol) n'est pas concerné.
           const el = els[0] ?? (e.native
-            ? chart.getElementsAtEventForMode(e.native, 'nearest', { intersect: true }, false)[0]
+            ? chart.getElementsAtEventForMode(e.native, 'nearest', { intersect: false }, false)[0]
             : undefined)
           if (!el) return
           const value = model.dimensionValueAt(el.index)
