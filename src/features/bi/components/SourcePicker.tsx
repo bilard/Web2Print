@@ -9,12 +9,10 @@
 // ⚠ La source « Produits (PIM) » se double d'un choix de BASE (`PimDbPicker`) : dix bases
 // existent, et la seule entrée « Produits (PIM) » désignait implicitement la feuille ouverte
 // dans un autre module.
-import { Database } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker } from './BiPicker'
 import { PimDbStatus } from './PimDbPicker'
 import { SourceStatus, Warning } from './SourceStatus'
-import { getSource } from '../registry/sources'
 import { WATCH_SOURCES } from '../registry/watch.source'
 import { pimSource } from '../registry/pim.source'
 import { useWatchSelection, useAnyWatchIdle, isWatchSource, type WatchContext } from '../hooks/useWatchData'
@@ -68,24 +66,6 @@ export function SourcePicker({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-end gap-2">
-        <Database className="w-3.5 h-3.5 text-white/30 mb-1.5 shrink-0" />
-        {(
-          /* ⚠ Ce qui alimente l'écran, en toutes lettres — en consultation comme en
-             édition. Le CHOIX, lui, vit dans le volet de gauche : une liste montre d'un coup
-             d'œil qu'une veille et une base produits s'excluent, ce qu'un menu déroulant
-             cachait jusqu'au clic. */
-          <span className="flex flex-col gap-1 min-w-0">
-            <span className="text-[10px] uppercase tracking-wider text-white/35">
-              {t('bi.source.shown')}
-            </span>
-            <span className="text-xs text-white/70 truncate max-w-[240px]"
-              title={shown.map((id) => t(getSource(id).labelKey)).join(' · ')}>
-              {shown.length === 0
-                ? t(getSource(sourceId).labelKey)
-                : shown.map((id) => t(getSource(id).labelKey)).join(' · ')}
-            </span>
-          </span>
-        )}
         {/* ⚠⚠ Un seul concurrent en mémoire à la fois : le sélecteur en DÉSIGNE un, il n'en
             précharge aucun autre (plusieurs Mo par site, cf. `useSiteExplorer`). */}
         {needsSite && (siteOptions.length > 0 ? (

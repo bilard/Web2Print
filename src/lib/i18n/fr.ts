@@ -409,8 +409,8 @@ export const fr = {
   // ── Veille tarifaire comme source (lot 2, décision D2) ──────────────────────────────
   // Trois sources distinctes parce que leur COÛT de chargement diffère radicalement :
   // un document instantané, un catalogue lu par tranches, les fiches d'un seul concurrent.
-  'bi.source.watchSummary': 'Veille — synthèse par concurrent',
-  'bi.source.watchCatalog': 'Veille — catalogue source',
+  'bi.source.watchSummary': 'Veille — comparatif par concurrent',
+  'bi.source.watchCatalog': 'Veille — notre catalogue suivi',
   'bi.source.watchSite': 'Veille — fiches d’un concurrent',
   'bi.dim.competitor': 'Concurrent',
   'bi.dim.watchFamily': 'Famille (catalogue source)',
@@ -497,7 +497,6 @@ export const fr = {
   'bi.source.oneSiteAtATime': 'Un seul concurrent en mémoire à la fois : plusieurs Mo par site.',
   'bi.source.loadingCatalog': 'Lecture du catalogue source — tranche {done}/{total}, {expected} produits annoncés',
   'bi.source.loadingSite': 'Lecture des fiches de {site}…',
-  'bi.source.shown': 'Données affichées',
   'bi.source.retargeted': '{count} tuile(s) basculée(s) sur la nouvelle source',
   'bi.source.retargetNone': 'Aucune tuile ne peut lire cette source',
   'bi.source.blockedOne': '{title} — champ absent : {field}',

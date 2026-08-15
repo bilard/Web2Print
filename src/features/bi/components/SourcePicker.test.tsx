@@ -46,11 +46,12 @@ describe('SourcePicker', () => {
     expect(screen.queryByText('Concurrent')).toBeNull()
   })
 
-  it('⚠⚠ ne porte plus AUCUN choix de source : il vit dans le volet de gauche', () => {
-    // Trois sélecteurs — source, suivi, base — encombraient ce bandeau sans lien apparent.
+  it('⚠⚠ ne porte plus NI choix ni rappel de source : le volet de gauche fait les deux', () => {
+    // Trois sélecteurs encombraient ce bandeau sans lien apparent ; le rappel qui les a
+    // remplacés disait, tronqué, ce que le volet montre en entier et à jour.
     selectWatch('f1')
     show('watch.summary', ['watch.summary'])
-    expect(screen.getByText('Données affichées')).toBeTruthy()
+    expect(screen.queryByText('Données affichées')).toBeNull()
     expect(screen.queryByText('Source des nouvelles tuiles')).toBeNull()
     expect(screen.queryByText('Base produits (PIM)')).toBeNull()
     expect(screen.queryByText('Suivi')).toBeNull()
@@ -113,14 +114,6 @@ describe('SourcePicker — en consultation', () => {
     selectWatch('f1')
     show('watch.summary', ['watch.summary'], context(), false)
     expect(screen.queryByText('Source des nouvelles tuiles')).toBeNull()
-  })
-
-  it('DIT en toutes lettres ce qui alimente l’écran', () => {
-    // Un tableau dont on ignore la source ne se vérifie pas.
-    selectWatch('f1')
-    show('watch.site', ['watch.summary'], context(), false)
-    expect(screen.getByText('Données affichées')).toBeTruthy()
-    expect(screen.getByText(/synthèse par concurrent/)).toBeTruthy()
   })
 
   it('⚠ ne propose pas un concurrent qu’aucune tuile ne lit', () => {
