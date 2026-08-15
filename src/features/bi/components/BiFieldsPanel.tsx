@@ -10,6 +10,7 @@ import { useTranslation } from '@/lib/i18n'
 import { BiPanel, BiEyebrow } from './BiPanel'
 import { BiDraggableField } from './BiDraggableField'
 import { biLabel } from './biLabel'
+import { groupMeasures } from '../registry/groupMeasures'
 import { bestWellFor } from '../builder/wellRules'
 import { dropInWell } from '../builder/wellEdits'
 import type { DraggedField } from '../builder/wells'
@@ -41,9 +42,18 @@ export function BiFieldsPanel({ source, tile, canEdit, onApply }: {
   const dimensions = source.dimensions
     .map((d) => ({ field: { role: 'dimension' as const, id: d.id, label: biLabel(d, t) }, kind: d.kind }))
     .filter((d) => keep(d.field.label))
-  const measures = source.measures
-    .map((m) => ({ role: 'measure' as const, id: m.id, label: biLabel(m, t) }))
-    .filter((m) => keep(m.label))
+  // ⚠⚠ Groupées par TYPE : une source de veille dérive plus de cent mesures, et à plat celle
+  // qu'on cherche se perd entre deux voisines qui ne lui ressemblent pas.
+  const measureGroups = groupMeasures(source.measures)
+    .map((g) => ({
+      ...g,
+      fields: g.measures
+        .map((m) => ({ role: 'measure' as const, id: m.id, label: biLabel(m, t) }))
+        .filter((f) => keep(f.label)),
+    }))
+    // Un groupe vidé par la recherche disparaît : un intertitre sans rien dessous se lit
+    // comme un résultat manquant.
+    .filter((g) => g.fields.length > 0)
 
   /** Double-clic : la zone la plus probable. ⚠ Un refus se DIT — sans un mot, le double-clic
    *  se lit comme un geste sans effet, et l'utilisateur recommence. */
@@ -77,14 +87,16 @@ export function BiFieldsPanel({ source, tile, canEdit, onApply }: {
         })}
       </Group>
 
-      <Group label={t('bi.fields.measures')}>
-        {measures.map((field) => (
-          <BiDraggableField
-            key={field.id} field={field} disabled={!canEdit} onAdd={() => add(field)}
-            icon={<Sigma className="w-3 h-3 text-indigo-400" />}
-          />
-        ))}
-      </Group>
+      {measureGroups.map((g) => (
+        <Group key={g.key} label={`${t('bi.fields.measures')} · ${t(g.labelKey)}`}>
+          {g.fields.map((field) => (
+            <BiDraggableField
+              key={field.id} field={field} disabled={!canEdit} onAdd={() => add(field)}
+              icon={<Sigma className="w-3 h-3 text-indigo-400" />}
+            />
+          ))}
+        </Group>
+      ))}
 
       <p className="text-[11px] text-white/25 leading-snug">{t('bi.fields.drag')}</p>
     </BiPanel>

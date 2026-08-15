@@ -565,6 +565,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.well.drop': 'Suelte un campo aquí',
   'bi.fields.search': 'Buscar un campo…',
   'bi.fields.dimensions': 'Dimensiones',
+  'bi.fields.declared': 'Indicadores del conjunto',
   'bi.fields.measures': 'Medidas',
   'bi.fields.drag': 'Arrastre un campo a una zona, o haga doble clic para enviarlo allí.',
   'bi.fields.noWell': 'Ninguna zona de este visual puede aceptar ese campo.',

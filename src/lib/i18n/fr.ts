@@ -616,6 +616,7 @@ export const fr = {
   'bi.filter.op.notEmpty': 'renseigné',
   'bi.fields.search': 'Rechercher un champ…',
   'bi.fields.dimensions': 'Dimensions',
+  'bi.fields.declared': 'Indicateurs du jeu de données',
   'bi.fields.measures': 'Mesures',
   'bi.fields.drag': 'Glissez un champ dans une zone, ou double-cliquez-le pour l’y envoyer.',
   'bi.fields.noWell': 'Aucune zone de ce visuel ne peut prendre ce champ.',

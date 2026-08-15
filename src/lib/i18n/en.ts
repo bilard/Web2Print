@@ -566,6 +566,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.well.drop': 'Drop a field here',
   'bi.fields.search': 'Search a field…',
   'bi.fields.dimensions': 'Dimensions',
+  'bi.fields.declared': 'Dataset indicators',
   'bi.fields.measures': 'Measures',
   'bi.fields.drag': 'Drag a field into a well, or double-click it to send it there.',
   'bi.fields.noWell': 'No well on this visual can take that field.',
