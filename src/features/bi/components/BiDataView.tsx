@@ -32,7 +32,11 @@ export function BiDataView({ sourceId, filters, name }: {
   if (!detail) return null
 
   return (
-    <section className="flex-1 min-h-0 flex flex-col bg-background">
+    /* ⚠⚠ `min-w-0` : sans lui, un enfant de conteneur flex refuse de rétrécir sous sa
+       largeur naturelle. La table à quinze colonnes poussait donc la section hors de
+       l'écran au lieu de défiler DANS son cadre — les dernières colonnes restaient
+       inatteignables. */
+    <section className="flex-1 min-h-0 min-w-0 flex flex-col bg-background">
       <header className="flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.06] shrink-0">
         <div className="min-w-0">
           <h2 className="text-[13px] font-semibold text-white truncate">{name}</h2>
@@ -60,7 +64,8 @@ export function BiDataView({ sourceId, filters, name }: {
           ))}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-auto">
+      {/* Le défilement se fait ICI, dans les deux sens : la page, elle, ne bouge jamais. */}
+      <div className="flex-1 min-h-0 min-w-0 overflow-auto">
         <BiRowsTable detail={detail} />
       </div>
     </section>

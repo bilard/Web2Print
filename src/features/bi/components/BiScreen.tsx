@@ -14,6 +14,7 @@ import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
 import { BiBoard } from './BiBoard'
 import { BoardActionsMenu } from './BoardActionsMenu'
+import { BiBrokenBoards } from './BiBrokenBoards'
 import { NewDashboardButton } from './NewDashboardButton'
 import { TemplateGallery } from '../templates/TemplateGallery'
 import { useTranslation } from '@/lib/i18n'
@@ -23,7 +24,7 @@ export function BiScreen() {
   const { t } = useTranslation()
   const uid = useWorkspaceUid()
   const canEdit = useCan('bi.edit')
-  const items = useDashboards()
+  const { items, broken } = useDashboards()
   const [currentId, setCurrentId] = useState<string | null>(null)
   const [pageId, setPageId] = useState<string | null>(null)
   // ⚠⚠ Page ajoutée mais pas encore revenue de la base. Sans elle, le clic sur « + » semble
@@ -107,6 +108,9 @@ export function BiScreen() {
   // c'est la PAGE qui s'allongerait, emportant les onglets de pages hors de vue.
   return (
     <div className="h-full min-h-0 flex flex-col bg-background">
+      {/* ⚠ Les documents que le contrat refuse : sans cet encart, ils sont invisibles ET
+          indestructibles — des fantômes dans l'espace de travail. */}
+      <BiBrokenBoards broken={broken} uid={uid} canEdit={canEdit} />
       {items.length === 0 ? (
         // ⚠⚠ L'écran vide offre les MODÈLES en premier, et la création vierge en second, plus
         // discrète. Vu chez l'utilisateur : six tableaux « Sans titre » vides, créés l'un après

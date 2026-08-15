@@ -352,6 +352,8 @@ export const es: Record<TranslationKey, string> = {
   'bi.board.duplicate': 'Duplicar',
   'bi.board.duplicated': 'Copia creada.',
   'bi.board.copyName': '{name} (copia)',
+  'bi.broken.title': '{count} panel(es) ilegible(s) en el espacio de trabajo — invisibles en la lista',
+  'bi.broken.removed': 'Documento {id} eliminado',
   'bi.board.delete': 'Eliminar',
   'bi.board.deleting': 'Eliminando…',
   'bi.board.cancel': 'Cancelar',

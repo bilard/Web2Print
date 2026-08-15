@@ -33,7 +33,9 @@ class ResizeObserverStub {
 }
 vi.stubGlobal('ResizeObserver', ResizeObserverStub)
 
-vi.mock('../hooks/useDashboards', () => ({ useDashboards: (): Dashboard[] => items }))
+vi.mock('../hooks/useDashboards', () => ({
+  useDashboards: () => ({ items, broken: [] }),
+}))
 vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => 'u1' }))
 vi.mock('@/features/access/useAccess', () => ({ useCan: () => canEdit }))
 vi.mock('./BiBoard', () => ({ BiBoard: vi.fn(() => null) }))

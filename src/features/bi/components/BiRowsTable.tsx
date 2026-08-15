@@ -22,7 +22,9 @@ export function BiRowsTable({ detail }: { detail: UnderlyingRows }) {
   }
 
   return (
-    <table className="w-full text-[11px] tabular-nums">
+    /* ⚠ `min-w-full` et non `w-full` : à quinze colonnes, `w-full` les COMPRIME jusqu'à
+       l'illisible au lieu de laisser le cadre défiler. */
+    <table className="min-w-full text-[11px] tabular-nums">
       <thead className="sticky top-0 bg-surface-2 z-10">
         <tr>
           {detail.columns.map((c) => (

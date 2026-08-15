@@ -33,7 +33,7 @@ export function useCreateFromTemplate(onOpen: (id: string) => void): TemplateCre
   const user = useAuthStore((s) => s.user)
   // ⚠ `accountId` vaut '' quand aucune société n'est rattachée — `??` ne le rattraperait pas.
   const accountId = useAccessStore((s) => s.accountId) || 'default'
-  const items = useDashboards()
+  const { items: items } = useDashboards()
   const sheets = useExcelStore((s) => s.sheets)
   const activeSheetIndex = useExcelStore((s) => s.activeSheetIndex)
   const [busy, setBusy] = useState<TemplateKey | null>(null)

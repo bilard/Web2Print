@@ -366,6 +366,8 @@ export const fr = {
   'bi.board.duplicate': 'Dupliquer',
   'bi.board.duplicated': 'Copie créée.',
   'bi.board.copyName': '{name} (copie)',
+  'bi.broken.title': '{count} tableau(x) illisible(s) dans l’espace de travail — invisibles dans la liste',
+  'bi.broken.removed': 'Document {id} supprimé',
   'bi.board.delete': 'Supprimer',
   'bi.board.deleting': 'Suppression…',
   'bi.board.cancel': 'Annuler',

@@ -353,6 +353,8 @@ export const en: Record<TranslationKey, string> = {
   'bi.board.duplicate': 'Duplicate',
   'bi.board.duplicated': 'Copy created.',
   'bi.board.copyName': '{name} (copy)',
+  'bi.broken.title': '{count} unreadable dashboard(s) in the workspace — invisible in the list',
+  'bi.broken.removed': 'Document {id} deleted',
   'bi.board.delete': 'Delete',
   'bi.board.deleting': 'Deleting…',
   'bi.board.cancel': 'Cancel',

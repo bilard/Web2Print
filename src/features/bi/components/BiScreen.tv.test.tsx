@@ -18,7 +18,9 @@ const board: Dashboard = {
   pages: [page('p1'), page('p2'), page('p3')],
 }
 
-vi.mock('../hooks/useDashboards', () => ({ useDashboards: () => [board] }))
+vi.mock('../hooks/useDashboards', () => ({
+  useDashboards: () => ({ items: [board], broken: [] }),
+}))
 vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => 'u1' }))
 vi.mock('@/features/access/useAccess', () => ({ useCan: () => true }))
 vi.mock('../templates/TemplateGallery', () => ({ TemplateGallery: () => null }))

@@ -19,7 +19,9 @@ vi.mock('../store/dashboardsStore', () => ({
   dashboardExists: vi.fn().mockResolvedValue(false),
 }))
 vi.mock('@/features/access/useWorkspaceUid', () => ({ useWorkspaceUid: () => mockUid }))
-vi.mock('../hooks/useDashboards', () => ({ useDashboards: () => mockDashboards }))
+vi.mock('../hooks/useDashboards', () => ({
+  useDashboards: () => ({ items: mockDashboards, broken: [] }),
+}))
 vi.mock('@/features/priceWatch/useCatalogReport', () => ({ useWatchList: () => mockWatches }))
 
 let mockUid: string | null = 'u1'
