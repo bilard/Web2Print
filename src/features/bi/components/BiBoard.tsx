@@ -6,6 +6,7 @@
 // glissement fournirait une fonction fraîche à `TileBody` (mémoïsé) et chaque tuile referait
 // son agrégation.
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
+import { TvMinimal } from 'lucide-react'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { upsertFilter, describeFilter } from '../filters/filterOptions'
@@ -20,8 +21,11 @@ import { usePendingTiles } from '../hooks/usePendingTiles'
 import { useBoardActions } from '../hooks/useBoardActions'
 import { useTickingNow } from '../hooks/useTickingNow'
 import { useAddTile } from '../hooks/useAddTile'
+import { useTvMode } from '../hooks/useTvMode'
+import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
 import { useBoardSource, useWatchSourceState, isWatchSource } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
+import { ageLabel } from '../engine/age'
 import { useTileEdits } from '../builder/useTileEdits'
 import { useBuilderHistory } from '../builder/useBuilderHistory'
 import { retypeTile } from '../builder/wellEdits'
@@ -73,6 +77,26 @@ export function BiBoard({
     (l: TilePlacement[]) => act.persistLayout(l, shownTiles.current), [act.persistLayout])
   const draft = useLayoutDraft(page.layout, persistLayout)
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null)
+  // Zone capturée par l'export image/PDF : le canevas et son bandeau de filtres.
+  const captureRef = useRef<HTMLDivElement>(null)
+  // ⚠ La page suivante EN BOUCLE : arrivé au bout, on revient à la première. Un mode TV qui
+  // s'arrête sur la dernière page laisse un écran mural figé pour la nuit.
+  const nextPage = useCallback(() => {
+    const i = pages.findIndex((p) => p.id === page.id)
+    onSelectPage(pages[(i + 1) % pages.length].id)
+  }, [pages, page.id, onSelectPage])
+  const tv = useTvMode(nextPage, pages.length)
+  // ⚠ Le canevas est monté dans tous les cas, mais la référence peut n'être pas encore
+  // posée au tout premier rendu : on refuse alors la capture au lieu de laisser passer un
+  // `null` qui ferait échouer html2canvas avec un message incompréhensible.
+  const captureBoard = (fn: (el: HTMLElement, name: string) => Promise<void>) => async () => {
+    const el = captureRef.current
+    if (!el) throw new Error(t('bi.export.imageFailed'))
+    await fn(el, current.name)
+  }
+  // ⚠ En mode TV, aucun geste d'édition : les pages tournent toutes seules, et un panneau
+  // ouvert pendant une bascule ferait perdre le réglage en cours.
+  const inEdit = editing && !tv.on
   /**
    * Filtre posé par un CLIC dans une tuile (« filtrage croisé »).
    *
@@ -192,6 +216,22 @@ export function BiBoard({
 
   return (
     <>
+      {tv.on ? (
+        <header className="flex items-center gap-3 shrink-0 px-4 py-2 bg-surface border-b border-white/[0.06]">
+          <h1 className="text-[14px] font-semibold text-white">{current.name}</h1>
+          {pages.length > 1 && <span className="text-[12px] text-white/45">{page.name}</span>}
+          <span className="flex-1" />
+          <span className="text-[11px] text-white/40 tabular-nums">
+            {onWatch && watch.updatedAt != null
+              ? t('bi.status.age', { age: ageLabel(watch.updatedAt, now) })
+              : t('bi.status.noAge')}
+          </span>
+          <button type="button" onClick={tv.exit}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-well px-2.5 py-1 text-[12px] text-white/70 hover:text-white">
+            <TvMinimal className="w-3.5 h-3.5" />{t('bi.top.tvExit')}
+          </button>
+        </header>
+      ) : (
       <BiTopBar
         current={current} items={items} canEdit={canEdit} onSelectBoard={onSelect}
         onRename={act.rename} updatedAt={onWatch ? watch.updatedAt : null} now={now}
@@ -202,12 +242,17 @@ export function BiBoard({
           dbId={current.sourceDbId} sheetName={current.sourceSheetName}
           onDbChange={canEdit ? act.setSourceDb : undefined} />}
         editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
+        onExportPng={captureBoard(exportBoardToPng)}
+        onExportPdf={captureBoard(exportBoardToPdf)}
+        onTv={tv.enter}
         undo={hist.undo} redo={hist.redo} canUndo={hist.canUndo} canRedo={hist.canRedo}
         actions={headerAction}
       />
+      )}
 
       <BiWorkspace
-        editing={editing}
+        captureRef={captureRef}
+        editing={inEdit}
         crossbar={(
           <BiCrossbar
             activeSheetName={hasSheet && !onWatch ? sheet.name : undefined}
@@ -241,12 +286,12 @@ export function BiBoard({
                   onUp={(i) => drillBack(selectedTileId, i)}
                 />
               )}
-              {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}</>}
+              {inEdit && canEdit && <AddTileMenu source={source} onAdd={addTile} />}</>}
           />
         )}
         canvas={(width) => (
           <DashboardGrid
-            tiles={tiles} layout={draft.layout} editing={editing} width={width}
+            tiles={tiles} layout={draft.layout} editing={inEdit} width={width}
             /* ⚠ Les filtres du tableau ET celui du clic : les tuiles calculent avec les deux,
                sinon le graphe cliqué serait le seul à changer et la page se contredirait. */
             globalFilters={effectiveFilters} selectedTileId={selectedTileId}

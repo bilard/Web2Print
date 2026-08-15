@@ -11,8 +11,11 @@ import type { ReactNode } from 'react'
 import { BiViewRail } from './BiViewRail'
 import { useMeasuredWidth } from '../hooks/useMeasuredWidth'
 
-export function BiWorkspace({ editing, crossbar, canvas, panels }: {
+export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef }: {
   editing: boolean
+  /** Zone à capturer pour l'export image/PDF : le canevas AVEC son bandeau de filtres — un
+   *  visuel exporté sans ses filtres se lit comme un total. */
+  captureRef?: React.Ref<HTMLDivElement>
   /** Bandeau des filtres actifs, au-dessus du canevas. Absent = pas de barre. */
   crossbar?: ReactNode
   /** Rendu de la grille, à la largeur MESURÉE du canevas. */
@@ -26,7 +29,7 @@ export function BiWorkspace({ editing, crossbar, canvas, panels }: {
     <div className="flex-1 min-h-0 flex">
       {editing && <BiViewRail />}
 
-      <div className="flex-1 min-w-0 flex flex-col bg-background">
+      <div ref={captureRef} className="flex-1 min-w-0 flex flex-col bg-background">
         {crossbar}
         <div className="flex-1 min-h-0 overflow-auto p-3">
           {/* ⚠ Le conteneur mesuré est SANS marge intérieure, et monté dans tous les cas :
