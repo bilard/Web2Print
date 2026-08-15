@@ -14,12 +14,17 @@ import { usePimDbList, usePimDbLoader } from '../hooks/usePimDatabases'
 import type { WatchSummary } from '@/features/priceWatch/useCatalogReport'
 import type { SourceId } from '../types'
 
-export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, onChoose }: {
+export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, demanded, onChoose }: {
   watches: WatchSummary[]
   sourceId: SourceId
   watchId: string | null
   dbId: string | undefined
   sheetName?: string
+  /** Sources RÉELLEMENT lues par les tuiles posées. ⚠⚠ Distinctes de la sélection : poser
+   *  une tuile PIM sur un tableau de veille est légitime, mais le volet ne doit pas laisser
+   *  croire que le tableau a changé de jeu de données — c'est ce qui faisait chercher
+   *  pourquoi un sélecteur de concurrent subsistait après avoir cliqué une base produits. */
+  demanded: SourceId[]
   onChoose: (choice: DatasetChoice) => void
 }) {
   const { t } = useTranslation()
@@ -30,6 +35,14 @@ export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, onCh
 
   const options = datasetOptions(watches, items, t as (k: string, p?: Record<string, unknown>) => string)
   const active = datasetValue(sourceId, watchId, dbId)
+  // Ce que le tableau LIT, entrée par entrée : la veille sur le suivi actif, et la base
+  // produits retenue.
+  const isRead = (id: string): boolean => {
+    const c = parseDataset(id, items)
+    if (!c || !demanded.includes(c.source)) return false
+    if (c.source === 'pim.products') return (c.dbId ?? null) === (dbId ?? null)
+    return c.watchId === watchId
+  }
 
   // Les entrées arrivent déjà groupées dans l'ordre : on ne fait que poser les intertitres.
   const groups: { name: string; items: typeof options }[] = []
@@ -55,7 +68,8 @@ export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, onCh
           </p>
           {g.items.map((o) => (
             <button
-              key={o.id} type="button" title={o.label}
+              key={o.id} type="button"
+              title={isRead(o.id) ? `${o.label} — ${t('bi.dataset.feeds')}` : o.label}
               // ⚠ Une entrée qui ne se relit pas est IGNORÉE, jamais remplacée par un repli
               // deviné : le tableau lirait un jeu de données que personne n'a désigné.
               onClick={() => { const c = parseDataset(o.id, items); if (c) onChoose(c) }}
@@ -65,6 +79,12 @@ export function BiSourceRail({ watches, sourceId, watchId, dbId, sheetName, onCh
                   : 'text-white/65 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent'
               }`}
             >
+              {/* ⚠ Le point vert dit « ALIMENTE ce tableau », le surlignage dit « choisi
+                  pour la prochaine tuile ». Les deux ne coïncident pas toujours, et les
+                  confondre laissait croire que le tableau avait changé de jeu de données. */}
+              {isRead(o.id) && (
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 align-middle" />
+              )}
               {o.label}
             </button>
           ))}

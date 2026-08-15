@@ -451,6 +451,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.db.optionOne': '{name} — 1 row',
   'bi.db.hint': 'The Data-module database feeding this dashboard’s “Products (PIM)” tiles.',
   'bi.dataset.label': 'Dataset',
+  'bi.dataset.feeds': 'feeds this dashboard',
   'bi.dataset.hint': 'What this dashboard is about: a price watch, or a database from the Data module.',
   'bi.dataset.watchGroup': 'Price watch',
   'bi.dataset.watchGroupNamed': 'Watch — {name}',

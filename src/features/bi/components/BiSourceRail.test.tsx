@@ -19,9 +19,13 @@ vi.mock('../hooks/usePimDatabases', () => ({
 
 const watches = [{ watchId: 'w1', label: 'F1 Veille Tarifaire', updatedAt: 1 }]
 
-const rail = (onChoose = vi.fn(), sourceId: 'watch.summary' | 'pim.products' = 'watch.summary') => {
+const rail = (
+  onChoose = vi.fn(),
+  sourceId: 'watch.summary' | 'pim.products' = 'watch.summary',
+  demanded: ('watch.summary' | 'pim.products')[] = ['watch.summary'],
+) => {
   render(<BiSourceRail watches={watches} sourceId={sourceId} watchId="w1" dbId={undefined}
-    onChoose={onChoose} />)
+    demanded={demanded} onChoose={onChoose} />)
   return onChoose
 }
 
@@ -61,5 +65,18 @@ describe('volet « Jeu de données »', () => {
     rail(vi.fn(), 'watch.summary')
     expect(screen.getByText('Comparatif par concurrent').className).toContain('indigo')
     expect(screen.getByText('Notre catalogue suivi').className).not.toContain('indigo')
+  })
+
+  it('⚠⚠ distingue ce qui ALIMENTE le tableau de ce qui est simplement CHOISI', () => {
+    // Choisir une base produits sur un tableau de veille est légitime — on va y poser une
+    // tuile. Mais surligner cette base sans autre signe laissait croire que le tableau avait
+    // changé de jeu de données : on cherchait alors pourquoi un filtre concurrent subsistait.
+    rail(vi.fn(), 'pim.products', ['watch.summary'])
+    const chosen = screen.getByText(/Suivre la feuille ouverte/)
+    const fed = screen.getByText('Comparatif par concurrent')
+    expect(chosen.className).toContain('indigo')       // choisi pour la prochaine tuile
+    expect(chosen.title).not.toMatch(/alimente/)
+    expect(fed.className).not.toContain('indigo')      // pas le choix courant…
+    expect(fed.title).toMatch(/alimente ce tableau/)   // …mais c'est lui qu'on lit
   })
 })

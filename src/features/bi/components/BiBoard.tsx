@@ -352,7 +352,7 @@ export function BiBoard({
         sourceRail={(
           <BiSourceRail
             watches={context.watches} sourceId={sourceId} watchId={context.watchId}
-            dbId={current.sourceDbId} sheetName={current.sourceSheetName}
+            dbId={current.sourceDbId} sheetName={current.sourceSheetName} demanded={demanded}
             onChoose={(c) => {
               if (c.watchId) setWatchId(c.watchId)
               if (c.dbId !== undefined && canEdit) act.setSourceDb(c.dbId ?? undefined, c.dbName)

@@ -450,6 +450,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.db.optionOne': '{name} — 1 fila',
   'bi.db.hint': 'La base del módulo Datos que alimenta las tarjetas «Productos (PIM)» de este panel.',
   'bi.dataset.label': 'Conjunto de datos',
+  'bi.dataset.feeds': 'alimenta este panel',
   'bi.dataset.hint': 'Sobre qué trata este panel: una vigilancia de precios o una base del módulo Datos.',
   'bi.dataset.watchGroup': 'Vigilancia de precios',
   'bi.dataset.watchGroupNamed': 'Vigilancia — {name}',
