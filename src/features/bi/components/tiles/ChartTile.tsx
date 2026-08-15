@@ -12,7 +12,7 @@ import {
   Chart, CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement,
   Tooltip, Legend, Filler,
 } from 'chart.js'
-import type { ChartType, TooltipItem } from 'chart.js'
+import type { ChartEvent, ChartType, TooltipItem } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import { formatMeasure } from '../../engine/formatValue'
@@ -102,8 +102,15 @@ export function ChartTile({ result, kind, stacked, tooltipKeys, onPick, onDrill 
     // ⚠ `onPick` absent ⇒ pas de curseur « main » : une tuile qui a l'air cliquable sans
     // l'être est plus déroutante qu'une tuile inerte.
     onClick: onPick
-      ? (_e: unknown, els: { index: number }[]) => {
-          const el = els[0]
+      ? (e: ChartEvent, els: { index: number }[], chart: Chart) => {
+          // ⚠⚠ `els` vient des éléments ACTIFS, que chart.js ne renseigne qu'au `mousemove`.
+          // Au doigt (tablette, mode TV) ou sur un clic qui n'a pas été précédé d'un survol,
+          // il arrive VIDE : le filtrage croisé était alors muet, sans rien qui le dise.
+          // On retrouve donc l'élément sous le pointeur par l'API du graphe, comme le fait
+          // déjà le double-clic.
+          const el = els[0] ?? (e.native
+            ? chart.getElementsAtEventForMode(e.native, 'nearest', { intersect: true }, false)[0]
+            : undefined)
           if (!el) return
           const value = model.dimensionValueAt(el.index)
           if (value !== undefined) onPick(model.dimensionKey ?? '', value)
