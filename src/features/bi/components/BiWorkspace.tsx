@@ -8,11 +8,16 @@
 // regarde, et les zones de dépôt n'ont pas d'objet sans geste d'édition. L'écran rend alors
 // tout l'espace aux chiffres.
 import type { ReactNode } from 'react'
-import { BiViewRail } from './BiViewRail'
 import { useMeasuredWidth } from '../hooks/useMeasuredWidth'
 
-export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef, sourceRail }: {
+export function BiWorkspace({
+  editing, crossbar, canvas, panels, captureRef, sourceRail, viewRail, dataView,
+}: {
   editing: boolean
+  /** Rail des vues : rapport ou données. */
+  viewRail?: ReactNode
+  /** Vue « Données » — rendue À LA PLACE du canevas quand elle est active. */
+  dataView?: ReactNode
   /** Volet « Source » : le jeu de données sur lequel porte le tableau. Édition seulement —
    *  ce choix écrit dans le document. */
   sourceRail?: ReactNode
@@ -30,12 +35,13 @@ export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef, sou
 
   return (
     <div className="flex-1 min-h-0 flex">
-      {editing && <BiViewRail />}
+      {viewRail}
       {/* ⚠ Le volet reste visible en CONSULTATION : on y change de suivi ou de base sans
           rien modifier au document (aperçu). Seul le changement de NATURE du jeu de données
           — qui rebâtit les tuiles — demande le mode Édition. */}
       {sourceRail}
 
+      {dataView ?? (
       <div ref={captureRef} className="flex-1 min-w-0 flex flex-col bg-background">
         {crossbar}
         {/* ⚠ `data-bi-scroll` : l'export image DÉPLIE ce conteneur le temps de la capture.
@@ -48,8 +54,9 @@ export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef, sou
           <div ref={ref}>{canvas(width)}</div>
         </div>
       </div>
+      )}
 
-      {editing && panels}
+      {editing && !dataView && panels}
     </div>
   )
 }

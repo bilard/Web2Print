@@ -15,6 +15,8 @@ import { drillDown, applyDrill, type DrillStep } from '../filters/drill'
 import { CrossFilterChip } from './CrossFilterChip'
 import { BiQuickFilter } from './BiQuickFilter'
 import { BiSourceRail } from './BiSourceRail'
+import { BiViewRail, type BiView } from './BiViewRail'
+import { BiDataView } from './BiDataView'
 import { quickFilterTarget } from '../filters/quickFilter'
 import { DrillCrumbs } from './DrillCrumbs'
 import { useBoardExport } from '../export/useBoardExport'
@@ -93,6 +95,8 @@ export function BiBoard({
   // Zone capturée par l'export image/PDF : le canevas et son bandeau de filtres.
   const captureRef = useRef<HTMLDivElement>(null)
   const [promptOpen, setPromptOpen] = useState(false)
+  // Rapport (les visuels) ou Données (les lignes qui les composent).
+  const [view, setView] = useState<BiView>('report')
   /**
    * Base regardée en CONSULTATION, sans rien enregistrer.
    *
@@ -355,6 +359,13 @@ export function BiBoard({
 
       <BiWorkspace
         captureRef={captureRef}
+        viewRail={<BiViewRail view={view} onChange={setView} />}
+        /* ⚠ La vue « Données » lit la source qui ALIMENTE le tableau, avec ses filtres :
+           c'est ce qui permet de confronter un chiffre à ses lignes. */
+        dataView={view === 'data' && demanded.length > 0 ? (
+          <BiDataView sourceId={demanded[0]} filters={effectiveFilters}
+            name={t(getSource(demanded[0]).labelKey)} />
+        ) : undefined}
         /* ⚠ Le choix du jeu de données est une LISTE à gauche, pas un menu du bandeau : on y
            voit d'un coup d'œil qu'une veille et une base produits s'excluent. */
         sourceRail={(
