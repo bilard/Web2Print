@@ -256,7 +256,7 @@ export class Scatter3DScene {
     // quel axe on regarde — mais s'effacent devant les marqueurs.
     this.frame = buildFrame(R, {
       axes: theme.axisColors, tint: theme.frame,
-      edgeOpacity: 0.34, gridOpacity: [0.14, 0.08],
+      edgeOpacity: 0.26, gridOpacity: [0.1, 0.055],
     })
     this.scene.add(this.frame)
     this.points = this.buildPoints([], theme)
@@ -295,14 +295,16 @@ export class Scatter3DScene {
    */
   private buildLights(): THREE.Object3D {
     const group = new THREE.Group()
-    group.add(new THREE.AmbientLight(0xffffff, 0.85))
-    const key = new THREE.DirectionalLight(0xffffff, 2.2)
+    // ⚠ Ambiante FORTE : sous un éclairage contrasté, la face opposée à la clé tombait au
+    // noir et le marqueur perdait sa couleur — donc sa valeur — de trois quarts de face.
+    group.add(new THREE.AmbientLight(0xffffff, 1.55))
+    const key = new THREE.DirectionalLight(0xffffff, 1.25)
     key.position.set(3.2, 5.5, 2.6)
     group.add(key)
-    const fill = new THREE.DirectionalLight(0x9db4ff, 0.7)
+    const fill = new THREE.DirectionalLight(0x9db4ff, 0.5)
     fill.position.set(-4, 1.5, -2)
     group.add(fill)
-    const rim = new THREE.DirectionalLight(0xffffff, 0.9)
+    const rim = new THREE.DirectionalLight(0xffffff, 0.6)
     rim.position.set(-1.5, 2, -5)
     group.add(rim)
     return group
@@ -321,7 +323,7 @@ export class Scatter3DScene {
    * donne soit un semis illisible, soit une bouillie.
    */
   private buildPoints(points: readonly Scatter3DPoint[], theme: Scatter3DTheme): THREE.InstancedMesh {
-    const radius = points.length <= 40 ? 0.082 : points.length <= 400 ? 0.055 : 0.034
+    const radius = points.length <= 40 ? 0.09 : points.length <= 400 ? 0.06 : 0.036
     const mesh = new THREE.InstancedMesh(
       new THREE.OctahedronGeometry(radius, 0),
       // `flatShading` : chaque face garde sa propre valeur d'éclairage, ce sont les ARÊTES

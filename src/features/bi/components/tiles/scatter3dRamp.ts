@@ -10,16 +10,28 @@
 // haut de rampe jaune de `viridis` s'efface — la version claire s'arrête au vert et descend
 // vers le violet foncé, du clair vers le sombre comme le veut une rampe sur fond blanc.
 
-/** `viridis`, du violet au jaune vif : pour les fonds sombres.
- *  ⚠ Son premier cran est REMONTÉ (#46337e au lieu du #440154 d'origine) : le violet le plus
- *  profond de la rampe se confondait avec le fond de la tuile. */
+/**
+ * Ordre de teintes de `viridis`, mais ÉCLAIRCI par le bas : pour les fonds sombres.
+ *
+ * ⚠⚠ Le `viridis` d'origine descend jusqu'au violet profond (#440154), et vu à l'écran ce
+ * cran ne se DISTINGUAIT PAS du fond de la tuile : 1,3:1 de contraste, là où une marque
+ * graphique en demande 3:1. Or une distribution en longue traîne — la règle sur ces données —
+ * loge la majorité des points dans le bas de la rampe : le nuage disparaissait presque
+ * entièrement. Le premier cran est donc relevé jusqu'à un violet lumineux, et l'ORDRE des
+ * teintes (violet → bleu → vert → jaune) fait seul le travail séquentiel.
+ */
 export const RAMP_DARK = [
-  '#46337e', '#414487', '#2a788e', '#22a884', '#7ad151', '#fde725',
+  '#8f7ae8', '#6a8fe0', '#3aa8b8', '#22a884', '#7ad151', '#fde725',
 ] as const
 
-/** `viridis` retourné et écourté, du vert au violet : pour les fonds clairs. */
+/**
+ * `viridis` retourné et écourté, du vert au violet : pour les fonds clairs.
+ *
+ * ⚠ Symétrique du réglage sombre : le premier cran est ASSOMBRI (#159a63 et non le #35b779
+ * d'origine), qui ne tenait que 2,6:1 contre un fond quasi blanc.
+ */
 export const RAMP_LIGHT = [
-  '#35b779', '#22a884', '#2a788e', '#414487', '#440a63', '#2d0640',
+  '#159a63', '#22a884', '#2a788e', '#414487', '#440a63', '#2d0640',
 ] as const
 
 /** Composantes 0-255 d'un `#rrggbb`. */
