@@ -11,8 +11,11 @@ import type { ReactNode } from 'react'
 import { BiViewRail } from './BiViewRail'
 import { useMeasuredWidth } from '../hooks/useMeasuredWidth'
 
-export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef }: {
+export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef, sourceRail }: {
   editing: boolean
+  /** Volet « Source » : le jeu de données sur lequel porte le tableau. Édition seulement —
+   *  ce choix écrit dans le document. */
+  sourceRail?: ReactNode
   /** Zone à capturer pour l'export image/PDF : le canevas AVEC son bandeau de filtres — un
    *  visuel exporté sans ses filtres se lit comme un total. */
   captureRef?: React.Ref<HTMLDivElement>
@@ -28,6 +31,7 @@ export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef }: {
   return (
     <div className="flex-1 min-h-0 flex">
       {editing && <BiViewRail />}
+      {editing && sourceRail}
 
       <div ref={captureRef} className="flex-1 min-w-0 flex flex-col bg-background">
         {crossbar}

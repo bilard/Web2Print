@@ -14,6 +14,7 @@ import { upsertFilter, describeFilter } from '../filters/filterOptions'
 import { drillDown, applyDrill, type DrillStep } from '../filters/drill'
 import { CrossFilterChip } from './CrossFilterChip'
 import { BiQuickFilter } from './BiQuickFilter'
+import { BiSourceRail } from './BiSourceRail'
 import { quickFilterTarget } from '../filters/quickFilter'
 import { DrillCrumbs } from './DrillCrumbs'
 import { useBoardExport } from '../export/useBoardExport'
@@ -29,7 +30,9 @@ import { useBoardCommands } from '../hooks/useBoardCommands'
 import type { TvMode } from '../hooks/useTvMode'
 import { PromptBoardDialog } from './PromptBoardDialog'
 import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
-import { useBoardSource, useWatchSourceState, useShownUpdatedAt, isWatchSource } from '../hooks/useWatchData'
+import {
+  useBoardSource, useWatchSourceState, useShownUpdatedAt, useWatchSelection, isWatchSource,
+} from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
 import { effectivePimSource } from '../registry/pim.source'
 import { ageLabel } from '../engine/age'
@@ -184,6 +187,7 @@ export function BiBoard({
   const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
   const watch = useWatchSourceState(sourceId)
   const shownUpdatedAt = useShownUpdatedAt(demanded)
+  const { setWatchId } = useWatchSelection()
   // Sur quoi porte le filtre d'un coup d'œil (le concurrent, sur la veille).
   const quick = useMemo(() => quickFilterTarget(demanded), [demanded])
   const onWatch = isWatchSource(sourceId)
@@ -314,9 +318,7 @@ export function BiBoard({
         /* ⚠ `onDbChange` seulement pour qui peut écrire : le choix de base est PERSISTÉ dans
            le document, un rôle consultation seule ne doit pas tenter l'écriture. */
         sourcePicker={<SourcePicker context={context} demanded={demanded} sourceId={sourceId}
-          onSourceChange={changeSource} withStatus={false} editing={inEdit}
-          dbId={current.sourceDbId} sheetName={current.sourceSheetName}
-          onDbChange={canEdit ? act.setSourceDb : undefined} />}
+          withStatus={false} editing={inEdit} />}
         editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
         onExportPng={captureBoard(exportBoardToPng)}
         onExportPdf={captureBoard(exportBoardToPdf)}
@@ -345,6 +347,19 @@ export function BiBoard({
 
       <BiWorkspace
         captureRef={captureRef}
+        /* ⚠ Le choix du jeu de données est une LISTE à gauche, pas un menu du bandeau : on y
+           voit d'un coup d'œil qu'une veille et une base produits s'excluent. */
+        sourceRail={(
+          <BiSourceRail
+            watches={context.watches} sourceId={sourceId} watchId={context.watchId}
+            dbId={current.sourceDbId} sheetName={current.sourceSheetName}
+            onChoose={(c) => {
+              if (c.watchId) setWatchId(c.watchId)
+              if (c.dbId !== undefined && canEdit) act.setSourceDb(c.dbId ?? undefined, c.dbName)
+              changeSource(c.source)
+            }}
+          />
+        )}
         editing={inEdit}
         crossbar={(
           <BiCrossbar

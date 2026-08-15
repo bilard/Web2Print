@@ -12,7 +12,7 @@
 import { Database } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker } from './BiPicker'
-import { PimDbPicker, PimDbStatus } from './PimDbPicker'
+import { PimDbStatus } from './PimDbPicker'
 import { SourceStatus, Warning } from './SourceStatus'
 import { getSource } from '../registry/sources'
 import { WATCH_SOURCES } from '../registry/watch.source'
@@ -20,8 +20,6 @@ import { pimSource } from '../registry/pim.source'
 import { useWatchSelection, useAnyWatchIdle, isWatchSource, type WatchContext } from '../hooks/useWatchData'
 import type { SourceId } from '../types'
 
-/** Sources proposées, de la moins coûteuse à la plus lourde — c'est l'ordre de lecture. */
-const OFFERED: SourceId[] = [pimSource.id, ...WATCH_SOURCES.map((s) => s.id)]
 const WATCH_IDS: SourceId[] = WATCH_SOURCES.map((s) => s.id)
 
 /** La source PIM est-elle en jeu — choisie, ou déjà réclamée par une tuile posée ? */
@@ -43,15 +41,8 @@ interface SourcePickerProps {
   context: WatchContext
   /** Sources RÉELLEMENT citées par les tuiles posées — ce que l'écran est en train de lire. */
   demanded: SourceId[]
-  /** Source des NOUVELLES tuiles. Les tuiles déjà posées gardent la leur (elle est persistée). */
+  /** Source des NOUVELLES tuiles, pour nommer ce qui alimente l'écran quand rien n'est posé. */
   sourceId: SourceId
-  onSourceChange: (id: SourceId) => void
-  /** Base du module « Données » retenue par le tableau de bord (`sourceDbId`). */
-  dbId?: string
-  /** Feuille de construction (`sourceSheetName`) : celle sur laquelle retomber au chargement. */
-  sheetName?: string
-  /** Persiste le choix de base. Absent = tableau non modifiable, le sélecteur disparaît. */
-  onDbChange?: (dbId?: string, dbName?: string) => void
   /** ⚠ `false` quand l'état est rendu AILLEURS (`SourceStatusList`). Le bandeau supérieur est
    *  une LIGNE : la phrase du lot 3 y prend toute la largeur et renvoie les boutons au rang
    *  suivant — vu en recette. L'état va alors dans la barre transversale, qui a la place. */
@@ -61,11 +52,10 @@ interface SourcePickerProps {
 }
 
 export function SourcePicker({
-  context, demanded, sourceId, onSourceChange, dbId, sheetName, onDbChange, withStatus = true,
-  editing = false,
+  context, demanded, sourceId, withStatus = true, editing = false,
 }: SourcePickerProps) {
   const { t } = useTranslation()
-  const { setWatchId, setSiteId } = useWatchSelection()
+  const { setSiteId } = useWatchSelection()
   // ⚠⚠ En CONSULTATION, la source des nouvelles tuiles n'a rien à faire dans le bandeau :
   // elle ne change rien à ce qui est affiché. Posée là, elle se lit comme le jeu de données
   // du tableau — on la change, l'écran ne bouge pas, et tout paraît cassé. On n'expose alors
@@ -73,23 +63,17 @@ export function SourcePicker({
   const shown = WATCH_IDS.filter((id) => demanded.includes(id) || (editing && id === sourceId))
   const needsSite = shown.includes('watch.site')
 
-  const sourceOptions = OFFERED.map((id) => ({ id, label: t(getSource(id).labelKey) }))
-  const watchOptions = context.watches.map((w) => ({ id: w.watchId, label: w.label || w.watchId }))
   const siteOptions = context.sites.map((s) => ({ id: s.siteId, label: s.domain }))
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-end gap-2">
         <Database className="w-3.5 h-3.5 text-white/30 mb-1.5 shrink-0" />
-        {editing ? (
-          <BiPicker
-            label={t('bi.source.picker')} value={sourceId} options={sourceOptions}
-            // ⚠ L'identifiant vient de `OFFERED`, donc du registre : jamais une chaîne libre.
-            onChange={(id) => { const s = OFFERED.find((x) => x === id); if (s) onSourceChange(s) }}
-          />
-        ) : (
-          /* Ce qui alimente l'écran, en toutes lettres : un tableau dont on ignore la source
-             ne se vérifie pas. */
+        {(
+          /* ⚠ Ce qui alimente l'écran, en toutes lettres — en consultation comme en
+             édition. Le CHOIX, lui, vit dans le volet de gauche : une liste montre d'un coup
+             d'œil qu'une veille et une base produits s'excluent, ce qu'un menu déroulant
+             cachait jusqu'au clic. */
           <span className="flex flex-col gap-1 min-w-0">
             <span className="text-[10px] uppercase tracking-wider text-white/35">
               {t('bi.source.shown')}
@@ -102,28 +86,6 @@ export function SourcePicker({
             </span>
           </span>
         )}
-        {/* ⚠⚠ Monté seulement quand le PIM est en jeu : c'est lui qui porte le CHARGEMENT de
-            la base, et un tableau de veille n'a aucune raison d'en lire une. */}
-        {onDbChange && pimInvolved(sourceId, demanded, editing) && (
-          <PimDbPicker dbId={dbId} sheetName={sheetName} onChange={onDbChange} />
-        )}
-        {/* ⚠⚠ Un seul suivi : on l'AFFICHE, on ne le fait pas choisir. Un menu déroulant qui
-            n'offre qu'une entrée se lit comme un réglage dont on cherche en vain l'effet —
-            et les suivis ne se créent pas ici, mais dans le module Veille tarifaire. */}
-        {shown.length > 0 && (watchOptions.length > 1 ? (
-          <BiPicker
-            label={t('bi.source.watch')} hint={t('bi.source.watchHint')}
-            value={context.watchId ?? ''} options={watchOptions}
-            onChange={setWatchId}
-          />
-        ) : watchOptions.length === 1 && (
-          <span className="flex flex-col gap-1 min-w-0" title={t('bi.source.watchHint')}>
-            <span className="text-[10px] uppercase tracking-wider text-white/35">
-              {t('bi.source.watch')}
-            </span>
-            <span className="text-xs text-white/70 truncate max-w-[200px]">{watchOptions[0].label}</span>
-          </span>
-        ))}
         {/* ⚠⚠ Un seul concurrent en mémoire à la fois : le sélecteur en DÉSIGNE un, il n'en
             précharge aucun autre (plusieurs Mo par site, cf. `useSiteExplorer`). */}
         {needsSite && (siteOptions.length > 0 ? (

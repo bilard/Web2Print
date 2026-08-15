@@ -33,8 +33,7 @@ beforeEach(() => resetWatchDataForTest())
 // ⚠ `editing` par défaut : ces tests décrivent le CONSTRUCTEUR. En consultation, le choix de
 // la source des nouvelles tuiles n'est pas offert — c'est l'objet du dernier bloc.
 const show = (sourceId: SourceId, demanded: SourceId[] = [], ctx = context(), editing = true) =>
-  render(<SourcePicker context={ctx} demanded={demanded} sourceId={sourceId}
-    onSourceChange={() => {}} editing={editing} />)
+  render(<SourcePicker context={ctx} demanded={demanded} sourceId={sourceId} editing={editing} />)
 
 describe('SourcePicker', () => {
   it('⚠⚠ n’utilise AUCUN menu natif (spec lot 2, D5)', () => {
@@ -42,27 +41,22 @@ describe('SourcePicker', () => {
     expect(container.querySelector('select')).toBeNull()
   })
 
-  it('ne montre ni suivi ni concurrent quand rien ne touche à la veille', () => {
+  it('ne montre pas de concurrent quand rien ne touche à la veille', () => {
     show('pim.products')
-    expect(screen.queryByText('Suivi')).toBeNull()
     expect(screen.queryByText('Concurrent')).toBeNull()
   })
 
-  it('⚠⚠ parle de ce qui ALIMENTE les tuiles, pas de ce que la liste affiche', () => {
-    // Le cas réel : un tableau de veille rouvert. La liste repart sur « Produits (PIM) »
-    // pendant que les tuiles lisent le catalogue source — sans ce test, le bandeau se
-    // taisait et l'écran restait sur des squelettes sans un mot.
+  it('⚠⚠ ne porte plus AUCUN choix de source : il vit dans le volet de gauche', () => {
+    // Trois sélecteurs — source, suivi, base — encombraient ce bandeau sans lien apparent.
     selectWatch('f1')
-    show('pim.products', ['watch.catalog'])
-    expect(screen.getByText('Suivi')).toBeTruthy()
-    expect(screen.getByText(/n’alimente encore aucune tuile/)).toBeTruthy()
+    show('watch.summary', ['watch.summary'])
+    expect(screen.getByText('Données affichées')).toBeTruthy()
+    expect(screen.queryByText('Source des nouvelles tuiles')).toBeNull()
+    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
+    expect(screen.queryByText('Suivi')).toBeNull()
   })
 
-  it('nomme le suivi actif dès qu’une source de veille est choisie', () => {
-    selectWatch('f1')
-    show('watch.summary')
-    expect(screen.getByText('F1 Veille')).toBeTruthy()
-  })
+
 
   it('n’offre le choix d’un concurrent que pour les fiches d’un concurrent', () => {
     selectWatch('f1')
@@ -88,29 +82,7 @@ describe('SourcePicker', () => {
     expect(result.current.siteId).toBe('b')
   })
 
-  it('⚠ un SEUL suivi : il s’affiche, il ne se choisit pas', () => {
-    // Un menu déroulant à une entrée se lit comme un réglage dont on cherche en vain
-    // l'effet — et les suivis ne se créent pas ici.
-    selectWatch('f1')
-    show('watch.summary', ['watch.summary'])
-    expect(screen.getByText('Suivi')).toBeTruthy()
-    expect(screen.getByText('F1 Veille')).toBeTruthy()
-    // Rien à dérouler : pas de bouton portant le nom du suivi.
-    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
-    expect(buttons.some((x) => x?.includes('F1 Veille'))).toBe(false)
-  })
 
-  it('plusieurs suivis : le choix revient', () => {
-    selectWatch('f1')
-    show('watch.summary', ['watch.summary'], context({
-      watches: [
-        { watchId: 'f1', label: 'F1 Veille', updatedAt: 1 },
-        { watchId: 'f2', label: 'F2 Veille', updatedAt: 2 },
-      ],
-    }))
-    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
-    expect(buttons.some((x) => x?.includes('F1 Veille'))).toBe(true)
-  })
 
   it('dit qu’aucun suivi n’existe plutôt que d’afficher un sélecteur vide', () => {
     show('watch.summary', [], context({ watches: [], sites: [], watchId: null }))
@@ -160,66 +132,3 @@ describe('SourcePicker — en consultation', () => {
   })
 })
 
-// ⚠⚠ Vu chez l'utilisateur : dix bases dans le module Données, et une seule entrée
-// « Produits (PIM) » qui désignait implicitement la feuille ouverte AILLEURS.
-describe('SourcePicker — choix de la base du PIM', () => {
-  // ⚠ `editing` : c'est en construisant qu'on choisit une base pour une source seulement
-  // SÉLECTIONNÉE. En consultation, seules les tuiles décident (cf. dernier test).
-  const showDb = (sourceId: SourceId, demanded: SourceId[] = [], onDbChange = () => {}, editing = true) =>
-    render(
-      <SourcePicker
-        context={context()} demanded={demanded} sourceId={sourceId} onSourceChange={() => {}}
-        onDbChange={onDbChange} withStatus={false} editing={editing}
-      />,
-    )
-
-  it('liste les bases du module Données, sans menu natif', async () => {
-    const { container } = showDb('pim.products')
-    expect(container.querySelector('select')).toBeNull()
-    fireEvent.click(screen.getByText('Base produits (PIM)').parentElement!.querySelector('button')!)
-    expect(await screen.findByText(/Catalogue_GSB_2026/)).toBeTruthy()
-    expect(screen.getByText(/Makita/)).toBeTruthy()
-  })
-
-  it('offre toujours de rendre la main à la feuille ouverte', async () => {
-    showDb('pim.products')
-    fireEvent.click(screen.getByText('Base produits (PIM)').parentElement!.querySelector('button')!)
-    // Deux occurrences : le libellé du bouton fermé, et l'entrée de la liste ouverte.
-    // ⚠ L'entrée par défaut DIT que c'est un comportement (« suivre la feuille ouverte »),
-    // et non une base parmi les autres — c'est ce qui la rendait incompréhensible.
-    expect(await screen.findAllByText(/Suivre la feuille ouverte/)).toHaveLength(2)
-  })
-
-  it('⚠ le choix REMONTE, identifiant ET nom : le nom sert à nommer une base disparue', async () => {
-    const onDbChange = vi.fn()
-    showDb('pim.products', [], onDbChange)
-    fireEvent.click(screen.getByText('Base produits (PIM)').parentElement!.querySelector('button')!)
-    fireEvent.click(await screen.findByText(/Makita/))
-    expect(onDbChange).toHaveBeenCalledWith('db2', 'Makita')
-  })
-
-  it('⚠ absent d’un tableau de veille : aucune base n’a de raison d’y être lue', () => {
-    showDb('watch.summary')
-    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
-  })
-
-  it('présent dès qu’une TUILE réclame le PIM, même si la liste montre la veille', () => {
-    showDb('watch.summary', ['pim.products'])
-    expect(screen.getByText('Base produits (PIM)')).toBeTruthy()
-  })
-
-  it('⚠⚠ invisible pour un rôle consultation seule : le choix est PERSISTÉ dans le document', () => {
-    render(
-      <SourcePicker context={context()} demanded={[]} sourceId="pim.products"
-        onSourceChange={() => {}} withStatus={false} />,
-    )
-    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
-  })
-
-  it('⚠⚠ en CONSULTATION, absent tant qu’aucune TUILE ne lit le PIM', () => {
-    // Vu à l'écran : un tableau de veille proposait une liste de bases produits — « google —
-    // 1 ligne », « Makita — 1 ligne » — dont le choix ne changeait rien de visible.
-    showDb('pim.products', ['watch.summary'], () => {}, false)
-    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
-  })
-})
