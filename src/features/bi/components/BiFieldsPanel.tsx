@@ -14,7 +14,7 @@ import { groupMeasures } from '../registry/groupMeasures'
 import { KIND_COLOR, AGG_COLOR, tinted } from './fieldColors'
 import { bestWellFor } from '../builder/wellRules'
 import { dropInWell } from '../builder/wellEdits'
-import type { DraggedField } from '../builder/wells'
+import { WELL_LABEL_KEY, type DraggedField } from '../builder/wells'
 import type { DataSource, FieldKind } from '../registry/types'
 import type { Tile } from '../types'
 
@@ -62,6 +62,14 @@ export function BiFieldsPanel({ source, tile, canEdit, onApply }: {
     if (!tile) { toast.info(t('bi.well.refuse.noSelection')); return }
     const well = bestWellFor(tile, field, source)
     if (!well) { toast.info(t('bi.fields.noWell')); return }
+    // ⚠⚠ Un REPLI se dit. Vu à l'écran : l'axe déjà pourvu et la légende sans objet, un
+    // double-clic partait dans « Filtres du visuel » — le champ semblait avoir disparu, et
+    // la tuile continuait de réclamer ce qu'on croyait venir de lui donner. On ne signale
+    // que le repli : atteindre la zone attendue se voit dans le volet d'à côté.
+    const natural = field.role === 'measure' ? 'values' : 'axis'
+    if (well !== natural) {
+      toast.info(t('bi.fields.droppedIn', { field: field.label, well: t(WELL_LABEL_KEY[well]) }))
+    }
     onApply(dropInWell(tile, well, field, source))
   }
 

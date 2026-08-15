@@ -43,13 +43,18 @@ export function Scatter3DTile({ result }: { result: AggregateResult }) {
     return formatMeasure(value, column.format, intlLocale(locale))
   }, [model, locale])
 
-  if (!model) {
-    // ⚠ Le message COMPTE ce qui manque et NOMME la zone où déposer : « demande trois
-    // mesures » laissait devant une tuile vide sans savoir quel geste la remplirait.
-    const missing = 3 - result.columns.filter((c) => c.role === 'measure').length
+  // ⚠ Le message COMPTE ce qui manque et NOMME la zone où déposer : « demande trois mesures »
+  // laissait devant une tuile vide sans savoir quel geste la remplirait.
+  const missing = 3 - result.columns.filter((c) => c.role === 'measure').length
+  // ⚠⚠ Sans dimension d'axe, le moteur ne rend qu'une LIGNE de totaux : le nuage se
+  // réduirait à un point unique au centre du volume. On le dit plutôt que de le montrer.
+  const noAxis = !result.columns.some((c) => c.role === 'dimension')
+  if (!model || noAxis) {
     return (
       <p className="grid h-full place-items-center px-4 text-center text-[11px] text-white/35">
-        {t('bi.scatter3d.needsThreeMeasures', { missing })}
+        {missing > 0
+          ? t('bi.scatter3d.needsThreeMeasures', { missing })
+          : t('bi.scatter3d.needsAxis')}
       </p>
     )
   }
