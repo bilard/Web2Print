@@ -61,7 +61,7 @@ export function PromptBoardDialog({ open, onOpenChange, source, sourceId, onPlan
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       {/* ⚠ Le fond ferme la fenêtre : sans lui, un utilisateur qui clique à côté croit
           l'écran bloqué. La touche Échap fait de même, plus bas. */}
       <button type="button" aria-label={t('bi.detail.close')} onClick={() => onOpenChange(false)}

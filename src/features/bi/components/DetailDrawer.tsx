@@ -19,7 +19,7 @@ export function DetailDrawer({ title, detail, filters, onClose, onExport }: {
 }) {
   const { t } = useTranslation()
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true">
       <button type="button" aria-label={t('bi.detail.close')} onClick={onClose}
         className="absolute inset-0 bg-black/50" />
       <aside className="relative w-full max-w-3xl h-full bg-surface border-l border-white/10 flex flex-col shadow-2xl">

@@ -52,7 +52,7 @@ export function BiExportMenu({ onXlsx, onPng, onPdf }: {
         {t('bi.top.export')}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-56 py-1 rounded-lg border border-white/10 bg-surface-2 shadow-xl z-50">
+        <div className="absolute right-0 top-full mt-1 w-56 py-1 rounded-lg border border-white/10 bg-surface-2 shadow-xl z-[60]">
           <button type="button" className={item} onClick={() => { setOpen(false); onXlsx() }}>
             <FileSpreadsheet className="w-3.5 h-3.5 text-white/40" />{t('bi.export.xlsx')}
           </button>

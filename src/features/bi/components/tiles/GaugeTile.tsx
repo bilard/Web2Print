@@ -24,7 +24,7 @@ function arc(cx: number, cy: number, r: number, from: number, to: number): strin
   return `M ${x1} ${y1} A ${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${x2} ${y2}`
 }
 
-export function GaugeTile({ result }: { result: AggregateResult }) {
+export function GaugeTile({ result, accent }: { result: AggregateResult; accent?: string }) {
   const { t, locale } = useTranslation()
   const col = result.columns.find((c) => c.role === 'measure')
   const raw = col ? result.rows[0]?.[col.key] : null
@@ -52,7 +52,7 @@ export function GaugeTile({ result }: { result: AggregateResult }) {
           stroke="currentColor" className="text-white/[0.08]" strokeWidth="9" strokeLinecap="round" />
         {ratio !== null && (
           <path d={arc(50, 50, R, start, end)} fill="none"
-            stroke="#6366f1" strokeWidth="9" strokeLinecap="round" />
+            stroke={accent ?? '#6366f1'} strokeWidth="9" strokeLinecap="round" />
         )}
       </svg>
       <p className="-mt-6 text-2xl font-semibold text-white tabular-nums">

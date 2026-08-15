@@ -24,6 +24,7 @@ import { PivotTile } from './tiles/PivotTile'
 import { useTileData } from '../hooks/useTileData'
 import { TileDetail } from './TileDetail'
 import { applyDrill, type DrillStep } from '../filters/drill'
+import { accentOf } from './tiles/palette'
 import { evaluateAlert } from '../engine/alert'
 import { formatMeasure } from '../engine/formatValue'
 import { intlLocale, useTranslation } from '@/lib/i18n'
@@ -74,6 +75,9 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   // ⚠ Seul l'ÉTAT d'ouverture vit ici : le calcul du détail est porté par `TileDetail`, qui
   // n'est monté qu'ouvert (cf. son en-tête).
   const [detailOpen, setDetailOpen] = useState(false)
+  // ⚠ Teinte STABLE, tirée de l'identifiant : déplacer une tuile ne doit pas changer sa
+  // couleur — c'est ce qui permet de la retrouver d'un coup d'œil dans une page dense.
+  const accent = accentOf(tile.id)
   const { t, locale } = useTranslation()
   // ⚠ Le seuil se lit sur le résultat AFFICHÉ (filtres et forage compris) : évalué sur les
   // chiffres d'avant filtrage, il sonnerait pour des lignes que la tuile ne montre plus.
@@ -96,12 +100,13 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
       skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected} alert={alert}
+      accent={accent}
       onSelect={() => onSelect(tile.id)} onInspect={() => setDetailOpen(true)}
       onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
-        tile.kind === 'kpi' ? <KpiTile result={result} />
-          : tile.kind === 'gauge' ? <GaugeTile result={result} />
+        tile.kind === 'kpi' ? <KpiTile result={result} accent={accent} />
+          : tile.kind === 'gauge' ? <GaugeTile result={result} accent={accent} />
           : tile.kind === 'funnel' ? <FunnelTile result={result} />
           : tile.kind === 'scatter' ? <ScatterTile result={result} />
           : tile.kind === 'heatmap'

@@ -41,7 +41,7 @@ export function BiChipPopover({ label, title, disabled, children }: {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-1 w-max min-w-[130px] max-w-[200px] rounded-lg border border-white/10 bg-surface shadow-xl py-1">
+        <div className="absolute right-0 z-[60] mt-1 w-max min-w-[130px] max-w-[200px] rounded-lg border border-white/10 bg-surface shadow-xl py-1">
           {children(() => setOpen(false))}
         </div>
       )}

@@ -35,7 +35,7 @@ export function TemplatesButton({ onOpen, canEdit = true }: {
         <LayoutTemplate className="w-3.5 h-3.5" />{t('bi.tpl.browse')}
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-[min(46rem,calc(100vw-3rem))] bg-surface border border-white/10 rounded-xl shadow-xl p-3">
+        <div className="absolute right-0 z-[60] mt-1 w-[min(46rem,calc(100vw-3rem))] bg-surface border border-white/10 rounded-xl shadow-xl p-3">
           {/* ⚠ Le popover se referme sur l'ouverture : garder la galerie ouverte au-dessus du
               tableau qu'on vient d'afficher masquerait le résultat du clic. */}
           <TemplateGallery compact canEdit={canEdit} onOpen={(id) => { setOpen(false); onOpen(id) }} />

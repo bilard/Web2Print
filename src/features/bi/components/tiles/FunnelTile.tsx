@@ -3,6 +3,7 @@
 // ⚠ L'entonnoir suppose un ORDRE (les fiches collectées, puis appariées, puis moins chères).
 // On respecte donc l'ordre de la requête — jamais un tri par valeur décroissante, qui
 // fabriquerait une progression qui n'existe pas dans les données.
+import { paletteAt } from './palette'
 import { formatMeasure } from '../../engine/formatValue'
 import { biLabel } from '../biLabel'
 import { intlLocale, useTranslation } from '@/lib/i18n'
@@ -40,7 +41,9 @@ export function FunnelTile({ result }: { result: AggregateResult }) {
           <div key={`${s.label}:${i}`} className="flex items-center gap-2">
             <span className="w-28 shrink-0 truncate text-[11px] text-white/55" title={s.label}>{s.label}</span>
             <span className="flex-1 h-5 rounded bg-white/[0.05] overflow-hidden">
-              <span className="block h-full rounded bg-indigo-500/80" style={{ width: `${width}%` }} />
+              {/* Une teinte par étape : la perte se lit alors d'un coup d'œil, sans compter
+                  les barres. */}
+              <span className="block h-full rounded" style={{ width: `${width}%`, background: paletteAt(i) }} />
             </span>
             <span className="w-20 shrink-0 text-right text-[11px] tabular-nums text-white/80">
               {formatMeasure(s.value, s.format, intlLocale(locale))}

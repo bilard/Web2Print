@@ -37,6 +37,8 @@ interface Props {
   editing: boolean
   /** Tuile SÉLECTIONNÉE : c'est elle que les volets de droite décrivent et modifient. */
   selected: boolean
+  /** Teinte d'identité de la tuile (stable, cf. `accentOf`). */
+  accent?: string
   /** Seuil franchi : la tuile s'entoure d'ambre et le DIT. ⚠ Un simple changement de couleur
    *  ne suffit pas — il faut pouvoir lire pourquoi, sans survol ni clic. */
   alert?: { label: string } | null
@@ -53,7 +55,7 @@ interface Props {
 
 export function TileFrame({
   title, updatedAt, live, state, skeleton, message, hasFilters, editing, selected,
-  onSelect, onInspect, onRetry, onClearFilters, alert, children,
+  onSelect, onInspect, onRetry, onClearFilters, alert, accent, children,
 }: Props) {
   const { t } = useTranslation()
   const text = message === undefined ? undefined
@@ -71,6 +73,9 @@ export function TileFrame({
           : alert ? 'border-amber-500/60 ring-1 ring-amber-500/30' : 'border-white/[0.06]'
       }`}
     >
+      {/* Filet d'identité : deux pixels de couleur en tête de tuile. C'est ce qui distingue
+          une page de vingt cadres gris d'un tableau de bord qu'on lit. */}
+      <span className="block h-[2px] shrink-0" style={{ background: accent ?? 'transparent' }} />
       <div className={`flex items-center gap-2 px-3 py-2 border-b border-white/[0.05] shrink-0 ${handleClass}`}>
         <h3 className="text-[12px] font-semibold text-white truncate flex-1">{title}</h3>
         {alert && (

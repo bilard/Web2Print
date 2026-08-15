@@ -70,7 +70,7 @@ export function BoardActionsMenu({ board, uid, canEdit, onDuplicated, onDeleted 
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-56 bg-surface border border-white/10 rounded-lg shadow-xl py-1">
+        <div className="absolute right-0 z-[60] mt-1 w-56 bg-surface border border-white/10 rounded-lg shadow-xl py-1">
           <MenuItem icon={<Copy className="w-3.5 h-3.5" />} onClick={() => void onDuplicate()}>
             {t('bi.board.duplicate')}
           </MenuItem>

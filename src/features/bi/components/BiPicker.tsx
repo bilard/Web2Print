@@ -71,7 +71,7 @@ export function BiPicker({ label, value, options, onChange }: {
         </button>
 
         {open && (
-          <div className="absolute z-20 mt-1 min-w-full w-max max-w-[280px] bg-surface border border-white/10 rounded-lg shadow-xl flex flex-col max-h-72">
+          <div className="absolute z-[60] mt-1 min-w-full w-max max-w-[280px] bg-surface border border-white/10 rounded-lg shadow-xl flex flex-col max-h-72">
             {options.length > SEARCH_THRESHOLD && (
               <div className="sticky top-0 p-1.5 border-b border-white/5 bg-surface">
                 <div className="flex items-center gap-1.5 bg-white/5 rounded-md px-2 py-1.5">
