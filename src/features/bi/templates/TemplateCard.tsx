@@ -4,6 +4,7 @@
 import type { ComponentType } from 'react'
 import { AlertTriangle, ArrowRight, Loader2, Plus } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
+import { accentOf } from '../components/tiles/palette'
 import { getSource } from '../registry/sources'
 import type { DashboardTemplate } from './types'
 import type { TemplateAvailability } from './useTemplateAvailability'
@@ -30,11 +31,15 @@ export function TemplateCard({
   // création lui est fermé, et il l'est AVANT le clic plutôt que par un refus de Firestore.
   const blocked = !existingId && (!availability.ready || !canEdit)
   const action = () => (existingId ? onOpen(existingId) : onCreate())
+  // ⚠ Teinte STABLE, tirée de la clé du modèle : les trois cartes se distinguent d'un coup
+  // d'œil, et « la carte verte » reste la même d'une session à l'autre.
+  const accent = accentOf(tpl.key)
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-surface p-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-surface p-4 overflow-hidden relative">
+      <span className="absolute inset-x-0 top-0 h-[2px]" style={{ background: accent }} />
       <div className="flex items-start gap-3">
-        <span className="rounded-lg bg-indigo-500/15 p-2 text-indigo-400">
+        <span className="rounded-lg p-2" style={{ background: `${accent}22`, color: accent }}>
           <Icon className="w-4 h-4" />
         </span>
         <div className="min-w-0">
