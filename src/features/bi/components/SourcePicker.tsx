@@ -17,7 +17,7 @@ import { SourceStatus, Warning } from './SourceStatus'
 import { getSource } from '../registry/sources'
 import { WATCH_SOURCES } from '../registry/watch.source'
 import { pimSource } from '../registry/pim.source'
-import { useWatchSelection, type WatchContext } from '../hooks/useWatchData'
+import { useWatchSelection, useAnyWatchIdle, isWatchSource, type WatchContext } from '../hooks/useWatchData'
 import type { SourceId } from '../types'
 
 /** Sources proposées, de la moins coûteuse à la plus lourde — c'est l'ordre de lecture. */
@@ -115,6 +115,9 @@ export function SourceStatusList({ context, demanded, sourceId, dbName }: {
   const { t } = useTranslation()
   const shown = WATCH_IDS.filter((id) => demanded.includes(id) || id === sourceId)
   const pim = pimInvolved(sourceId, demanded) ? <PimDbStatus storedName={dbName} /> : null
+  // ⚠ « Rien n'est chargé » ne dépend pas de LA source : dit une fois pour l'ensemble, il
+  // occupait sinon une ligne de bandeau par source concernée.
+  const idle = useAnyWatchIdle(shown.filter(isWatchSource))
   if (shown.length === 0) return pim
   // ⚠ Aucun suivi : le dire, avec le geste à faire. Sans cela, l'écran n'offre qu'un
   // sélecteur de suivi vide, ce qui se lit comme une panne.
@@ -123,6 +126,7 @@ export function SourceStatusList({ context, demanded, sourceId, dbName }: {
     <>
       {pim}
       {shown.map((id) => <SourceStatus key={id} sourceId={id} sites={context.sites} />)}
+      {idle && <span className="text-[11px] text-white/30">{t('bi.source.idle')}</span>}
       {/* ⚠ Dite UNE fois, et seulement quand PLUSIEURS sources alimentent le tableau : c'est
           là qu'« isolément » veut dire quelque chose. Répétée par source, elle occupait deux
           lignes du bandeau pour la même information. */}

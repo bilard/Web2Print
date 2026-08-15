@@ -67,11 +67,21 @@ const useWatchStore = create<WatchStore>((set) => ({
   data: { 'watch.summary': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
   // ⚠ Changer de suivi REMET les données à zéro : les garder afficherait les chiffres du
   // suivi précédent sous le nom du nouveau, ce qu'aucun libellé ne rattrape.
-  setWatchId: (watchId) => set({
-    watchId, siteId: null,
-    data: { 'watch.summary': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
-  }),
-  setSiteId: (siteId) => set((s) => ({ siteId, data: { ...s.data, 'watch.site': IDLE } })),
+  //
+  // ⚠⚠ …mais SEULEMENT sur un vrai changement. Re-choisir le suivi déjà actif vidait tout,
+  // et RIEN ne le rechargeait : les effets de `useWatchLoader` ne repartent que si leurs
+  // dépendances bougent, or ni `watchId` ni le rapport n'avaient changé. Résultat vu à
+  // l'écran : toutes les tuiles figées en squelette, et un bandeau qui annonçait « rien
+  // n'est chargé » pour des sources que les tuiles réclamaient pourtant.
+  setWatchId: (watchId) => set((s) => (
+    s.watchId === watchId ? {} : {
+      watchId, siteId: null,
+      data: { 'watch.summary': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
+    }
+  )),
+  setSiteId: (siteId) => set((s) => (
+    s.siteId === siteId ? {} : { siteId, data: { ...s.data, 'watch.site': IDLE } }
+  )),
   patch: (id, next) => set((s) => ({ data: { ...s.data, [id]: next } })),
 }))
 
@@ -87,6 +97,16 @@ export function resetWatchDataForTest(): void {
 /** Pose l'état d'une source. Réservé aux tests : en vrai, seul `useWatchLoader` écrit ici. */
 export function setWatchStateForTest(id: WatchSourceId, next: WatchSourceState): void {
   useWatchStore.getState().patch(id, next)
+}
+
+/**
+ * L'une au moins de ces sources n'a-t-elle RIEN de chargé ?
+ *
+ * ⚠ Un seul abonnement pour toute la liste : lire l'état source par source demanderait un
+ * hook dans une boucle, ce que React interdit.
+ */
+export function useAnyWatchIdle(ids: readonly WatchSourceId[]): boolean {
+  return useWatchStore((s) => ids.some((id) => s.data[id].state === 'idle'))
 }
 
 /** Suivi actif + concurrent choisi, et les gestes pour en changer (le sélecteur de source). */
@@ -168,6 +188,12 @@ export function useWatchLoader(demanded: SourceId[]): WatchContext {
   const sites = useMemo(() => sitesOf(report), [report])
 
   const wantsSummary = demanded.includes('watch.summary')
+  // ⚠⚠ FILET : l'état de la synthèse est une DÉPENDANCE de son effet. S'il retombe à `idle`
+  // par un chemin qu'on n'a pas prévu, l'effet republie au lieu de laisser les tuiles en
+  // squelette perpétuel. Sans risque de boucle : l'effet n'écrit que `ready`/`empty`, donc
+  // la dépendance se stabilise au premier passage. ⚠ Réservé à la synthèse — un catalogue
+  // de 115 814 produits ne se relit pas « au cas où ».
+  const summaryState = useWatchStore((s) => s.data['watch.summary'].state)
   const wantsCatalog = demanded.includes('watch.catalog')
   const wantsSite = demanded.includes('watch.site')
 
@@ -194,7 +220,7 @@ export function useWatchLoader(demanded: SourceId[]): WatchContext {
       message: rows.length ? undefined : { kind: 'key', key: 'bi.watch.noReport' },
       updatedAt: report.runAt ?? Date.now(),
     })
-  }, [wantsSummary, watchId, report, patch])
+  }, [wantsSummary, watchId, report, patch, summaryState])
 
   // ── watch.catalog : relecture par TRANCHES, avancement publié ─────────────────────────
   useEffect(() => {

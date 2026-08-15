@@ -6,6 +6,7 @@ import type { CompetitorListing } from '@/features/priceWatch/catalog/competitor
 import type { LoadedSourceCatalog } from '@/features/priceWatch/reportStore'
 import {
   useWatchLoader, useWatchSourceState, useWatchSelection, resetWatchDataForTest, isWatchSource,
+  setWatchStateForTest,
 } from './useWatchData'
 
 // Firestore est remplacé à la FRONTIÈRE (les deux fonctions de lecture et les deux hooks
@@ -228,5 +229,76 @@ describe('watch.site', () => {
     expect(result.current.data.message).toEqual({
       kind: 'key', key: 'bi.watch.siteFailed', params: { error: 'permission-denied' },
     })
+  })
+})
+
+// ⚠⚠ Ce que ces tests protègent : un tableau de bord FIGÉ EN SQUELETTE. Remettre les données
+// à zéro est juste quand on CHANGE de suivi ; sur le même suivi, plus rien ne les recharge —
+// les effets de chargement ne repartent que si leurs dépendances changent, et elles n'ont pas
+// bougé. Relevé à l'écran : toutes les tuiles en chargement perpétuel, et le bandeau qui
+// annonçait « rien n'est chargé » pour des sources que les tuiles réclamaient pourtant.
+describe('sélection du suivi — remise à zéro', () => {
+  it('re-choisir le MÊME suivi ne vide RIEN', () => {
+    setWatchStateForTest('watch.summary', {
+      rows: [{ domain: 'a.fr' }], state: 'ready',
+      progress: { done: 0, total: 0, loaded: 0, expected: 0 }, updatedAt: 1,
+    })
+    const { result } = renderHook(() => useWatchSelection())
+    act(() => result.current.setWatchId('w1'))
+    const { result: state } = renderHook(() => useWatchSourceState('watch.summary'))
+    // Premier choix : les données d'un AUTRE suivi n'ont rien à faire là.
+    expect(state.current.state).toBe('idle')
+
+    setWatchStateForTest('watch.summary', {
+      rows: [{ domain: 'a.fr' }], state: 'ready',
+      progress: { done: 0, total: 0, loaded: 0, expected: 0 }, updatedAt: 1,
+    })
+    act(() => result.current.setWatchId('w1'))
+    const { result: again } = renderHook(() => useWatchSourceState('watch.summary'))
+    expect(again.current.state).toBe('ready')
+  })
+
+  it('re-choisir le MÊME concurrent ne vide pas ses fiches', () => {
+    const { result } = renderHook(() => useWatchSelection())
+    act(() => result.current.setWatchId('w1'))
+    act(() => result.current.setSiteId('s1'))
+    setWatchStateForTest('watch.site', {
+      rows: [{ ref: 'x' }], state: 'ready',
+      progress: { done: 0, total: 0, loaded: 0, expected: 0 }, updatedAt: 1,
+    })
+    act(() => result.current.setSiteId('s1'))
+    const { result: state } = renderHook(() => useWatchSourceState('watch.site'))
+    expect(state.current.state).toBe('ready')
+  })
+
+  it('⚠⚠ une synthèse retombée à zéro se REPUBLIE, au lieu de figer les tuiles', async () => {
+    report = storedReport()
+    const { result } = renderHook(() => useWatchLoader(['watch.summary']))
+    await waitFor(() => expect(result.current.watchId).toBeTruthy())
+    const ready = renderHook(() => useWatchSourceState('watch.summary'))
+    await waitFor(() => expect(ready.result.current.state).toBe('ready'))
+
+    // Quelque chose remet l'état à zéro sans toucher aux dépendances de l'effet.
+    act(() => setWatchStateForTest('watch.summary', {
+      rows: [], state: 'idle', progress: { done: 0, total: 0, loaded: 0, expected: 0 }, updatedAt: null,
+    }))
+    await waitFor(() => {
+      const again = renderHook(() => useWatchSourceState('watch.summary'))
+      expect(again.result.current.state).toBe('ready')
+    })
+  })
+
+  it('changer VRAIMENT de suivi vide bien tout', () => {
+    // Garder les chiffres du suivi précédent sous le nom du nouveau : aucun libellé ne
+    // rattrape ça.
+    const { result } = renderHook(() => useWatchSelection())
+    act(() => result.current.setWatchId('w1'))
+    setWatchStateForTest('watch.summary', {
+      rows: [{ domain: 'a.fr' }], state: 'ready',
+      progress: { done: 0, total: 0, loaded: 0, expected: 0 }, updatedAt: 1,
+    })
+    act(() => result.current.setWatchId('w2'))
+    const { result: state } = renderHook(() => useWatchSourceState('watch.summary'))
+    expect(state.current.state).toBe('idle')
   })
 })

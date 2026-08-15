@@ -44,11 +44,10 @@ export function SourceStatus({ sourceId, sites }: { sourceId: SourceId; sites: W
     return <Warning text={`${name} — ${text}`} />
   }
 
-  // ⚠⚠ La limite du lot 3 (« chaque source se lit isolément ») ne dépend PAS de la source :
-  // rendue ici, elle se répétait mot pour mot autant de fois qu'il y avait de sources de
-  // veille en jeu. Elle est dite UNE fois, par `SourceStatusList`.
-  if (data.state !== 'idle') return null
-  return <span className="text-[11px] text-white/30">{t('bi.source.idle')}</span>
+  // ⚠⚠ Ni la limite du lot 3, ni « rien n'est chargé » ne dépendent de LA source : rendues
+  // ici, elles se répétaient mot pour mot autant de fois qu'il y avait de sources en jeu —
+  // deux lignes de bandeau pour une seule information. `SourceStatusList` les dit une fois.
+  return null
 }
 
 /** Ce qui empêche de mesurer, dit là où l'utilisateur choisit sa source — jamais en note. */
