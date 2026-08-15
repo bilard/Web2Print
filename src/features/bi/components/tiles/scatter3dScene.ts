@@ -15,6 +15,11 @@
 // on voit une forme mais aucune valeur) et les GRILLES de fond (elles donnent l'assise).
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import { rampAt } from './scatter3dRamp'
 import type { Scatter3DPoint } from './scatter3dData'
 
 export interface Scatter3DTheme {
@@ -25,10 +30,15 @@ export interface Scatter3DTheme {
   /** Encre des graduations — plus pâle que les noms d'axes : on lit le nom, on consulte
    *  la borne. */
   inkDim: string
-  /** Rampe de profondeur, du fond de l'axe Z vers son sommet. Une seule teinte, deux crans
-   *  choisis POUR le fond du thème — jamais l'inverse automatique de l'autre thème. */
-  rampLow: string
-  rampHigh: string
+  /** Rampe de profondeur, du fond de l'axe Z vers son sommet (cf. `scatter3dRamp`). */
+  ramp: readonly string[]
+  /**
+   * Force du halo lumineux autour des points. `0` = aucun.
+   *
+   * ⚠ Nul sur fond clair : un halo n'éclaire que ce qui est plus sombre que lui, et sur du
+   * blanc il ne fait que délaver les points au lieu de les faire ressortir.
+   */
+  bloom: number
 }
 
 /** Un axe tel qu'il s'AFFICHE : son nom et ses deux bornes, déjà traduits et formatés. */
@@ -146,7 +156,17 @@ export class Scatter3DScene {
   private scene = new THREE.Scene()
   private camera: THREE.PerspectiveCamera
   private controls: OrbitControls
-  private points: THREE.Points
+  /**
+   * Les points sont des SPHÈRES instanciées, pas des pastilles plates.
+   *
+   * ⚠⚠ C'est ce qui donne le volume : une sphère éclairée porte un reflet et un côté
+   * ombré, et l'œil en tire immédiatement sa position dans l'espace — un disque plat de
+   * couleur unie ne dit rien d'autre que sa place à l'écran. `InstancedMesh` rend les
+   * milliers de sphères en UN appel de dessin.
+   */
+  private points: THREE.InstancedMesh
+  private composer: EffectComposer | null = null
+  private bloomPass: UnrealBloomPass | null = null
   /** Tiges vers le sol + leur pied. `null` = nuage trop dense pour en porter. */
   private stems: THREE.LineSegments | null = null
   private feet: THREE.Points | null = null
@@ -166,6 +186,12 @@ export class Scatter3DScene {
     })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    // ⚠ Pas d'ombres portées : essayées, elles ne se voyaient sur AUCUN des deux thèmes —
+    // noyées dans le fond en sombre, trop diffuses en clair — pour le coût d'une carte
+    // d'ombre à chaque image. Les tiges et leur pied posent déjà chaque point au sol, et
+    // bien plus lisiblement.
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = 1.15
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100)
     this.camera.position.copy(HOME)
@@ -187,12 +213,55 @@ export class Scatter3DScene {
     // serait donc désarmé tout seul au premier redimensionnement.
     this.controls.addEventListener('start', () => { this.touched = true })
 
+    this.scene.add(this.buildLights())
     this.scene.add(this.buildFrame(theme))
     this.points = this.buildPoints([], theme)
     this.scene.add(this.points)
     // ⚠ Le seuil est en unités de MONDE : les points vivent dans [-1, 1], un seuil par
     // défaut (1) attraperait le nuage entier au premier survol.
     this.raycaster.params.Points.threshold = 0.07
+    if (theme.bloom > 0) this.buildComposer(theme.bloom)
+  }
+
+  /**
+   * Chaîne de rendu avec halo lumineux.
+   *
+   * ⚠⚠ `preserveDrawingBuffer` tient toujours : c'est le RENDERER qui le porte, et le
+   * dernier passage écrit dans son canevas — l'export PNG/PDF du tableau continue donc de
+   * recopier l'image. Vérifié au navigateur, pas déduit.
+   * ⚠ Seuil haut : seuls les crans vifs de la rampe débordent. Un seuil bas ferait luire
+   * jusqu'aux arêtes de la boîte, et le halo cesserait de désigner les points.
+   */
+  private buildComposer(strength: number): void {
+    const composer = new EffectComposer(this.renderer)
+    composer.addPass(new RenderPass(this.scene, this.camera))
+    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), strength, 0.4, 0.72)
+    composer.addPass(bloom)
+    composer.addPass(new OutputPass())
+    this.composer = composer
+    this.bloomPass = bloom
+  }
+
+  /**
+   * L'éclairage : une clé en surplomb qui porte les ombres, un remplissage froid pour que le
+   * côté sombre des sphères ne soit pas noir, un contre-jour qui détache leur silhouette.
+   *
+   * ⚠ Trois sources, pas une : sous une lumière unique, toutes les sphères prennent le même
+   * reflet au même endroit et le nuage redevient un semis de pastilles identiques.
+   */
+  private buildLights(): THREE.Object3D {
+    const group = new THREE.Group()
+    group.add(new THREE.AmbientLight(0xffffff, 0.85))
+    const key = new THREE.DirectionalLight(0xffffff, 2.2)
+    key.position.set(3.2, 5.5, 2.6)
+    group.add(key)
+    const fill = new THREE.DirectionalLight(0x9db4ff, 0.7)
+    fill.position.set(-4, 1.5, -2)
+    group.add(fill)
+    const rim = new THREE.DirectionalLight(0xffffff, 0.9)
+    rim.position.set(-1.5, 2, -5)
+    group.add(rim)
+    return group
   }
 
   /** Boîte, sol et parois du fond. Les grilles donnent l'assise : sans elles, les points
@@ -222,30 +291,34 @@ export class Scatter3DScene {
     return group
   }
 
-  private buildPoints(points: readonly Scatter3DPoint[], theme: Scatter3DTheme): THREE.Points {
-    const positions = new Float32Array(points.length * 3)
-    const colors = new Float32Array(points.length * 3)
-    const low = new THREE.Color(theme.rampLow)
-    const high = new THREE.Color(theme.rampHigh)
+  /**
+   * Les sphères, en UNE instance de maillage.
+   *
+   * ⚠ Le rayon décroît avec le nombre de points : à vingt sphères on veut des billes qu'on
+   * distingue, à deux mille des grains qui laissent voir la densité. Un rayon fixe donne
+   * soit un semis illisible, soit une bouillie.
+   */
+  private buildPoints(points: readonly Scatter3DPoint[], theme: Scatter3DTheme): THREE.InstancedMesh {
+    const radius = points.length <= 40 ? 0.055 : points.length <= 400 ? 0.038 : 0.026
+    const detail = points.length <= 200 ? 20 : 10
+    const mesh = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(radius, detail, Math.round(detail * 0.7)),
+      // `emissiveIntensity` donne au halo de quoi s'accrocher sans délaver la couleur ;
+      // `roughness` basse pose le reflet qui fait lire le volume.
+      new THREE.MeshStandardMaterial({ roughness: 0.32, metalness: 0.08, emissive: 0x000000 }),
+      Math.max(points.length, 1),
+    )
+    mesh.count = points.length
+    const matrix = new THREE.Matrix4()
     const color = new THREE.Color()
     points.forEach((p, i) => {
-      positions[i * 3] = p.nx * R
-      positions[i * 3 + 1] = p.ny * R
-      positions[i * 3 + 2] = p.nz * R
-      color.copy(low).lerp(high, p.depth)
-      colors[i * 3] = color.r
-      colors[i * 3 + 1] = color.g
-      colors[i * 3 + 2] = color.b
+      matrix.setPosition(p.nx * R, p.ny * R, p.nz * R)
+      mesh.setMatrixAt(i, matrix)
+      mesh.setColorAt(i, color.set(rampAt(theme.ramp, p.depth)))
     })
-    const geometry = new THREE.BufferGeometry()
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-    return new THREE.Points(geometry, new THREE.PointsMaterial({
-      // ⚠ `sizeAttenuation` fait grossir les points proches : c'est ce qui rend la
-      // profondeur perceptible sur un écran plat, bien plus que la position seule.
-      size: 0.22, sizeAttenuation: true, vertexColors: true,
-      map: this.disc, transparent: true, alphaTest: 0.5,
-    }))
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    return mesh
   }
 
   /**
@@ -264,18 +337,34 @@ export class Scatter3DScene {
       segments.set([x, p.ny * R, z, x, -R, z], i * 6)
       feet.set([x, -R + 0.002, z], i * 3)
     })
+    // ⚠ La tige porte la couleur DE SON POINT et s'éteint vers le sol : uniformément
+    // colorée, elle concurrence le point ; uniformément grise, on ne sait plus quelle tige
+    // appartient à quel point dans un nuage serré.
+    const stemColors = new Float32Array(points.length * 6)
+    const footColors = new Float32Array(points.length * 3)
+    const top = new THREE.Color()
+    const ground = new THREE.Color(this.theme.frame)
+    points.forEach((p, i) => {
+      top.set(rampAt(this.theme.ramp, p.depth))
+      stemColors.set([top.r, top.g, top.b], i * 6)
+      const foot = top.clone().lerp(ground, 0.55)
+      stemColors.set([foot.r, foot.g, foot.b], i * 6 + 3)
+      footColors.set([foot.r, foot.g, foot.b], i * 3)
+    })
     const stemGeometry = new THREE.BufferGeometry()
     stemGeometry.setAttribute('position', new THREE.BufferAttribute(segments, 3))
+    stemGeometry.setAttribute('color', new THREE.BufferAttribute(stemColors, 3))
     this.stems = new THREE.LineSegments(stemGeometry, new THREE.LineBasicMaterial({
-      color: new THREE.Color(this.theme.rampHigh), transparent: true, opacity: 0.35,
+      vertexColors: true, transparent: true, opacity: 0.7,
     }))
     this.scene.add(this.stems)
 
     const footGeometry = new THREE.BufferGeometry()
     footGeometry.setAttribute('position', new THREE.BufferAttribute(feet, 3))
+    footGeometry.setAttribute('color', new THREE.BufferAttribute(footColors, 3))
     this.feet = new THREE.Points(footGeometry, new THREE.PointsMaterial({
-      color: new THREE.Color(this.theme.rampHigh), size: 0.08, sizeAttenuation: true,
-      map: this.disc, transparent: true, opacity: 0.45, alphaTest: 0.5,
+      vertexColors: true, size: 0.075, sizeAttenuation: true,
+      map: this.disc, transparent: true, opacity: 0.8, alphaTest: 0.5,
     }))
     this.scene.add(this.feet)
   }
@@ -307,6 +396,7 @@ export class Scatter3DScene {
     this.scene.remove(this.points)
     this.points.geometry.dispose()
     ;(this.points.material as THREE.Material).dispose()
+    this.points.dispose()
     this.clearStems()
     this.points = this.buildPoints(points, this.theme)
     this.scene.add(this.points)
@@ -350,8 +440,11 @@ export class Scatter3DScene {
     if (width === 0 || height === 0) return null
     this.raycaster.setFromCamera(
       new THREE.Vector2((x / width) * 2 - 1, -(y / height) * 2 + 1), this.camera)
+    // ⚠⚠ `instanceId`, jamais `index` : les points sont des sphères INSTANCIÉES, et `index`
+    // y désigne le triangle touché dans la géométrie partagée — le même pour toutes. Il
+    // aurait donc rendu un rang qui n'a rien à voir avec le point survolé.
     const hits = this.raycaster.intersectObject(this.points)
-    return hits.length && hits[0].index !== undefined ? hits[0].index : null
+    return hits.length && hits[0].instanceId !== undefined ? hits[0].instanceId : null
   }
 
   /** ⚠ Une taille nulle est IGNORÉE : dimensionner le rendu à zéro le laisserait vide pour
@@ -359,6 +452,7 @@ export class Scatter3DScene {
   resize(width: number, height: number): void {
     if (this.disposed || width === 0 || height === 0) return
     this.renderer.setSize(width, height, false)
+    this.composer?.setSize(width, height)
     this.camera.aspect = width / height
     // ⚠ Une tuile ÉTROITE recadre par la largeur : à distance fixe, la boîte et ses
     // étiquettes d'axes sortaient du champ dès que le format passait sous le paysage.
@@ -389,12 +483,15 @@ export class Scatter3DScene {
   render(): void {
     if (this.disposed) return
     this.sizeLabels()
-    this.renderer.render(this.scene, this.camera)
+    if (this.composer) this.composer.render()
+    else this.renderer.render(this.scene, this.camera)
   }
 
   dispose(): void {
     this.disposed = true
     this.controls.dispose()
+    this.bloomPass?.dispose()
+    this.composer?.dispose()
     this.disc.dispose()
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Points || obj instanceof THREE.LineSegments) obj.geometry.dispose()

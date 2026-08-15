@@ -9,6 +9,7 @@ import { Suspense, lazy, useCallback, useMemo } from 'react'
 import { useThemeStore } from '@/stores/theme.store'
 import { buildScatter3D } from './scatter3dData'
 import type { Scatter3DAxisView, Scatter3DTheme } from './scatter3dScene'
+import { RAMP_DARK, RAMP_LIGHT, rampCss } from './scatter3dRamp'
 import { biLabel } from '../biLabel'
 import { formatMeasure } from '../../engine/formatValue'
 import { intlLocale, useTranslation } from '@/lib/i18n'
@@ -19,12 +20,10 @@ const Scatter3DCanvas = lazy(() => import('./Scatter3DCanvas'))
 /** Deux jeux CHOISIS, jamais l'inversion automatique l'un de l'autre : une rampe réglée sur
  *  fond sombre perd ses crans bas sur fond clair. */
 const THEMES: Record<'dark' | 'light', Scatter3DTheme> = {
-  dark: { frame: '#4a4a5e', ink: '#c4c4cc', inkDim: '#8b8b96',
-    rampLow: '#6366f1', rampHigh: '#e0e7ff' },
-  // ⚠ En clair, le bas de rampe ne descend PAS jusqu'aux crans pâles : sur un fond quasi
-  // blanc, les points du fond de l'axe Z s'effaçaient au lieu de se lire comme les autres.
-  light: { frame: '#c9c9d2', ink: '#3f3f46', inkDim: '#71717a',
-    rampLow: '#6366f1', rampHigh: '#312e81' },
+  dark: { frame: '#4a4a5e', ink: '#c4c4cc', inkDim: '#8b8b96', ramp: RAMP_DARK, bloom: 0.48 },
+  // ⚠ Pas de halo sur fond clair : il n'éclaire que ce qui est plus sombre que lui, et sur
+  // du blanc il délave les points au lieu de les faire ressortir.
+  light: { frame: '#c9c9d2', ink: '#3f3f46', inkDim: '#71717a', ramp: RAMP_LIGHT, bloom: 0 },
 }
 
 export function Scatter3DTile({ result }: { result: AggregateResult }) {
@@ -83,7 +82,7 @@ export function Scatter3DTile({ result }: { result: AggregateResult }) {
           <span className="tabular-nums">{formatAt(2, z.min)}</span>
           <span
             className="h-2 w-10 shrink-0 rounded-full"
-            style={{ background: `linear-gradient(90deg, ${theme.rampLow}, ${theme.rampHigh})` }}
+            style={{ background: rampCss(theme.ramp) }}
           />
           <span className="tabular-nums">{formatAt(2, z.max)}</span>
         </span>
