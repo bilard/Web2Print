@@ -7,7 +7,7 @@
 // suivi de veille, le concurrent choisi et l'avancement d'un chargement lourd — des états qui
 // appartiennent au tableau de bord, pas au bandeau.
 import type { ReactNode } from 'react'
-import { Share2, Download, Tv } from 'lucide-react'
+import { Share2, Download, Tv, Sparkles } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker } from './BiPicker'
 import { BiDocTitle } from './BiDocTitle'
@@ -44,12 +44,14 @@ interface BiTopBarProps {
   onExportPdf?: () => Promise<void>
   /** Passage en mode TV (plein écran, pages défilantes). */
   onTv?: () => void
+  /** Création d'un tableau décrit en langage naturel. */
+  onPrompt?: () => void
 }
 
 export function BiTopBar({
   current, items, canEdit, onSelectBoard, onRename, sourcePicker,
   updatedAt, now, editing, onToggleEdit, undo, redo, canUndo, canRedo, actions,
-  onExport, onExportPng, onExportPdf, onTv,
+  onExport, onExportPng, onExportPdf, onTv, onPrompt,
 }: BiTopBarProps) {
   const { t } = useTranslation()
   const boardOptions = items.map((d) => ({ id: d.id, label: d.name }))
@@ -97,6 +99,16 @@ export function BiTopBar({
         </button>
       )}
       <BiSoonButton label={t('bi.top.share')} icon={<Share2 className="w-3.5 h-3.5" />} />
+      {/* ⚠ Décrire vaut mieux que chercher : c'est le geste qui manquait à qui ouvrait le
+          module sans savoir par quel visuel commencer. */}
+      {onPrompt && canEdit && (
+        <button
+          type="button" onClick={onPrompt}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[12px] text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+        >
+          <Sparkles className="w-3.5 h-3.5" />{t('bi.prompt.button')}
+        </button>
+      )}
       {actions}
     </header>
   )

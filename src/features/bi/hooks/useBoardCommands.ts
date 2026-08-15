@@ -13,7 +13,7 @@ import { useTranslation } from '@/lib/i18n'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAccessStore } from '@/stores/access.store'
 import { dashboardExists, deleteDashboard, saveDashboard } from '../store/dashboardsStore'
-import { DASHBOARD_VERSION, type Dashboard } from '../types'
+import { DASHBOARD_VERSION, type Dashboard, type Tile, type TilePlacement } from '../types'
 
 /**
  * Un identifiant LIBRE, vérifié en base avant l'écriture.
@@ -59,6 +59,34 @@ export function useBoardCommands(uid: string | null) {
     }
   }, [uid, user, accountId])
 
+  /**
+   * Crée un tableau à partir d'un plan (création par prompt) : ses tuiles et leur mise en
+   * page arrivent DÉJÀ posées.
+   *
+   * ⚠ La racine reste le MIROIR de la première page (`pages[0]`), comme partout ailleurs :
+   * un document dont les deux divergent se rouvre sur des tuiles fantômes.
+   */
+  const createFromPlan = useCallback(async (
+    plan: { name: string; tiles: Tile[]; layout: TilePlacement[] },
+  ): Promise<string | null> => {
+    if (!uid || !user) { toast.error(t('bi.save.failed')); return null }
+    try {
+      const id = await freeId(uid)
+      const now = Date.now()
+      const page = { id: 'p1', name: plan.name, tiles: plan.tiles, layout: plan.layout }
+      await saveDashboard(uid, {
+        id, name: plan.name, accountId, workspaceUid: uid,
+        tiles: plan.tiles, layout: plan.layout, filters: [],
+        pages: [page],
+        version: DASHBOARD_VERSION, createdAt: now, updatedAt: now, createdBy: user.uid,
+      })
+      return id
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('bi.save.failed'))
+      return null
+    }
+  }, [uid, user, accountId])
+
   /** Supprime le document. Rend `true` si la base l'a accepté — l'écran bascule alors. */
   const remove = useCallback(async (board: Dashboard): Promise<boolean> => {
     if (!uid) { toast.error(t('bi.board.deleteFailed')); return false }
@@ -72,5 +100,5 @@ export function useBoardCommands(uid: string | null) {
     }
   }, [uid])
 
-  return { duplicate, remove }
+  return { duplicate, remove, createFromPlan }
 }

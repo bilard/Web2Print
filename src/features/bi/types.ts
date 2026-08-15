@@ -137,7 +137,7 @@ export type QuerySpec = z.infer<typeof querySchema>
 // ⚠ AJOUTER À LA FIN, jamais réordonner ni retirer : ces valeurs sont persistées dans les
 // tuiles enregistrées, et un type disparu ferait rejeter tout le document par `parseDashboard`
 // — le tableau de bord deviendrait invisible pour son auteur.
-const TILE_KINDS = [
+export const TILE_KINDS = [
   'kpi', 'bar', 'line', 'area', 'pie', 'doughnut', 'table', 'pivot',
   'gauge', 'scatter', 'funnel', 'heatmap',
 ] as const

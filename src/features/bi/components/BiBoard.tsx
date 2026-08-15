@@ -22,6 +22,8 @@ import { useBoardActions } from '../hooks/useBoardActions'
 import { useTickingNow } from '../hooks/useTickingNow'
 import { useAddTile } from '../hooks/useAddTile'
 import { useTvMode } from '../hooks/useTvMode'
+import { useBoardCommands } from '../hooks/useBoardCommands'
+import { PromptBoardDialog } from './PromptBoardDialog'
 import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
 import { useBoardSource, useWatchSourceState, isWatchSource } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
@@ -86,6 +88,8 @@ export function BiBoard({
     onSelectPage(pages[(i + 1) % pages.length].id)
   }, [pages, page.id, onSelectPage])
   const tv = useTvMode(nextPage, pages.length)
+  const [promptOpen, setPromptOpen] = useState(false)
+  const { createFromPlan } = useBoardCommands(uid)
   // ⚠ Le canevas est monté dans tous les cas, mais la référence peut n'être pas encore
   // posée au tout premier rendu : on refuse alors la capture au lieu de laisser passer un
   // `null` qui ferait échouer html2canvas avec un message incompréhensible.
@@ -244,11 +248,21 @@ export function BiBoard({
         editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
         onExportPng={captureBoard(exportBoardToPng)}
         onExportPdf={captureBoard(exportBoardToPdf)}
-        onTv={tv.enter}
+        onTv={tv.enter} onPrompt={() => setPromptOpen(true)}
         undo={hist.undo} redo={hist.redo} canUndo={hist.canUndo} canRedo={hist.canRedo}
         actions={headerAction}
       />
       )}
+
+      <PromptBoardDialog
+        open={promptOpen} onOpenChange={setPromptOpen} source={source} sourceId={sourceId}
+        onPlanned={async (board) => {
+          const id = await createFromPlan(board)
+          // ⚠ On bascule sur le tableau créé : le laisser en arrière-plan donnerait
+          // l'impression que le geste n'a rien produit.
+          if (id) onSelect(id)
+        }}
+      />
 
       <BiWorkspace
         captureRef={captureRef}

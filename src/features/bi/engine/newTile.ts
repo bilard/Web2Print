@@ -2,8 +2,10 @@
 // une tuile invalide serait écartée à la lecture, donc invisible sans un mot.
 import type { MeasureRef, SourceId, Tile, TileKind, TilePlacement } from '../types'
 
-/** Taille de départ par type, en cellules de la grille (12 colonnes). */
-const SIZES: Record<TileKind, { w: number; h: number }> = {
+/** Taille de départ par type, en cellules de la grille (12 colonnes).
+ *  ⚠ Exporté pour la mise en page d'un tableau créé par prompt : deux barèmes de tailles
+ *  feraient des tuiles d'un tableau généré plus petites que les mêmes posées à la main. */
+export const SIZES: Record<TileKind, { w: number; h: number }> = {
   kpi: { w: 3, h: 3 },
   bar: { w: 6, h: 6 }, line: { w: 6, h: 6 }, area: { w: 6, h: 6 },
   pie: { w: 4, h: 6 }, doughnut: { w: 4, h: 6 },
