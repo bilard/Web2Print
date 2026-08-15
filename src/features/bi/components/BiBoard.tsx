@@ -12,6 +12,8 @@ import { upsertFilter, describeFilter } from '../filters/filterOptions'
 import { drillDown, applyDrill, type DrillStep } from '../filters/drill'
 import { CrossFilterChip } from './CrossFilterChip'
 import { DrillCrumbs } from './DrillCrumbs'
+import { useBoardExport } from '../export/useBoardExport'
+import { useSourceRows } from '../hooks/useSourceRows'
 import { dimensionLabel } from '../filters/dimensionLabel'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
 import { usePendingTiles } from '../hooks/usePendingTiles'
@@ -138,6 +140,7 @@ export function BiBoard({
   const drillBack = useCallback((tileId: string, index: number) => {
     setDrills((cur) => ({ ...cur, [tileId]: (cur[tileId] ?? []).slice(0, index) }))
   }, [])
+
   shownTiles.current = tiles
   // ⚠⚠ La page TELLE QU'AFFICHÉE, publiée aux écritures qui ne prétendent toucher NI aux
   // tuiles NI à la mise en page (renommer, changer de base source, vider les filtres, ajouter
@@ -152,6 +155,11 @@ export function BiBoard({
   const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
   const watch = useWatchSourceState(sourceId)
   const onWatch = isWatchSource(sourceId)
+
+  // ⚠ L'export part des filtres EFFECTIFS (ceux du tableau plus celui d'un clic croisé) :
+  // on exporte les chiffres qu'on a sous les yeux, jamais d'autres.
+  const sourceRows = useSourceRows(sourceId)
+  const exportBoard = useBoardExport(current.name, tiles, source, sourceRows, effectiveFilters)
   // ⚠ `null` et non 0 : « 0 lignes » se lirait comme une source vide, jamais comme non lue.
   const rowCount = onWatch ? (watch.rows.length || null) : hasSheet ? sheet.rows.length : null
   const now = useTickingNow(true)
@@ -193,7 +201,7 @@ export function BiBoard({
           onSourceChange={setSourceId} withStatus={false}
           dbId={current.sourceDbId} sheetName={current.sourceSheetName}
           onDbChange={canEdit ? act.setSourceDb : undefined} />}
-        editing={editing} onToggleEdit={onToggleEdit}
+        editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
         undo={hist.undo} redo={hist.redo} canUndo={hist.canUndo} canRedo={hist.canRedo}
         actions={headerAction}
       />

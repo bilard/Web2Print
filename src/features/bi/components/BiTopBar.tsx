@@ -36,11 +36,13 @@ interface BiTopBarProps {
   canRedo: boolean
   /** Le bouton « + Visuel » et le bouton de création, fournis par l'écran. */
   actions?: ReactNode
+  /** Export du tableau en classeur. Absent = le bouton reste annoncé mais inactif. */
+  onExport?: () => void
 }
 
 export function BiTopBar({
   current, items, canEdit, onSelectBoard, onRename, sourcePicker,
-  updatedAt, now, editing, onToggleEdit, undo, redo, canUndo, canRedo, actions,
+  updatedAt, now, editing, onToggleEdit, undo, redo, canUndo, canRedo, actions, onExport,
 }: BiTopBarProps) {
   const { t } = useTranslation()
   const boardOptions = items.map((d) => ({ id: d.id, label: d.name }))
@@ -70,7 +72,18 @@ export function BiTopBar({
         editing={editing} onToggleEdit={onToggleEdit} canEdit={canEdit}
         undo={undo} redo={redo} canUndo={canUndo} canRedo={canRedo}
       />
-      <BiSoonButton label={t('bi.top.export')} icon={<Download className="w-3.5 h-3.5" />} />
+      {/* ⚠ Le bouton n'est actif que s'il y a quelque chose à exporter : un classeur vide
+          se lirait comme un export raté. */}
+      {onExport ? (
+        <button
+          onClick={onExport} title={t('bi.top.exportTitle')}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-well px-2.5 py-1 text-[12px] text-white/70 hover:text-white hover:border-white/15 transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />{t('bi.top.export')}
+        </button>
+      ) : (
+        <BiSoonButton label={t('bi.top.export')} icon={<Download className="w-3.5 h-3.5" />} />
+      )}
       <BiSoonButton label={t('bi.top.share')} icon={<Share2 className="w-3.5 h-3.5" />} />
       {actions}
     </header>
