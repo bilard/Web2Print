@@ -9,6 +9,7 @@ import { Sparkles, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTranslation } from '@/lib/i18n'
 import { askBoardPlan } from '../ai/askBoardPlan'
+import { getSource, isSourceId, listSources } from '../registry/sources'
 import { planToBoard } from '../ai/boardPlan'
 import type { DataSource } from '../registry/types'
 import type { SourceId } from '../types'
@@ -31,6 +32,8 @@ export function PromptBoardDialog({ open, onOpenChange, source, sourceId, onPlan
 }) {
   const { t } = useTranslation()
   const [question, setQuestion] = useState('')
+  /** Les sources entre lesquelles le modèle peut arbitrer, la courante en tête. */
+  const candidates = () => listSources().map((s) => ({ id: s.id as SourceId, source: s }))
   const [busy, setBusy] = useState(false)
 
   const submit = async () => {
@@ -38,14 +41,25 @@ export function PromptBoardDialog({ open, onOpenChange, source, sourceId, onPlan
     if (!q || busy) return
     setBusy(true)
     try {
-      const plan = await askBoardPlan(q, source, t)
-      const board = planToBoard(plan, source, sourceId,
+      const plan = await askBoardPlan(q, source, t, candidates())
+      // ⚠⚠ Le modèle peut RÉORIENTER vers une autre source quand la maille de celle qui est
+      // affichée ne répond pas à la demande — « les produits où je suis plus cher » sur une
+      // synthèse par concurrent ne pouvait produire qu'un hors-sujet plausible. On le suit,
+      // et on le DIT : changer de source sous l'utilisateur sans un mot serait pire.
+      const chosen = plan.source && plan.source !== sourceId && isSourceId(plan.source)
+        ? plan.source
+        : null
+      const target = chosen ?? sourceId
+      const board = planToBoard(plan, chosen ? getSource(chosen) : source, target,
         (i) => `t_${Date.now().toString(36)}_${i}`)
       if (board.tiles.length === 0) {
         // ⚠ Refuser plutôt que créer un tableau VIDE : un cadre sans tuile se lit comme une
         // panne, et il faudrait ensuite le supprimer à la main.
         toast.error(board.rejected[0] ?? t('bi.prompt.nothing'))
         return
+      }
+      if (chosen) {
+        toast.info(t('bi.prompt.sourceSwitched', { source: t(getSource(chosen).labelKey) }))
       }
       if (board.rejected.length > 0) toast.warning(board.rejected.join(' · '))
       await onPlanned(board)

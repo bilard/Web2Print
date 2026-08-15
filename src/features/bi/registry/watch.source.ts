@@ -25,7 +25,7 @@
 // moisson (elle vit dans la méta live `competitors/{siteId}`, jamais dans `CompetitorStat`)
 // et la date du rapport (`StoredReport.runAt`, que `summaryRows` ne reçoit pas). Les poser à
 // zéro ou à « aujourd'hui » les rendrait crédibles ; elles seraient fausses.
-import type { CompetitorStat } from '@/features/priceWatch/catalog/report'
+import type { CompetitorStat, ProductRow } from '@/features/priceWatch/catalog/report'
 import type { SourceProduct } from '@/features/priceWatch/catalog/match'
 import type { CompetitorListing } from '@/features/priceWatch/catalog/competitorListing'
 import { deriveMeasures, type DerivableColumn } from './deriveMeasures'
@@ -393,7 +393,88 @@ export const watchSiteSource: DataSource = {
   ],
 }
 
-/** Les trois sources, dans l'ordre où le sélecteur les présente (du moins cher au plus cher). */
+
+/**
+ * Le PRODUIT apparié : mon prix face au meilleur prix concurrent.
+ *
+ * ⚠⚠ La seule source de veille à la maille PRODUIT — les deux autres décrivent les
+ * concurrents (`watch.summary`) ou le catalogue brut (`watch.catalog`). Sans elle, une
+ * question aussi simple que « quels produits vends-je plus cher que le marché ? » n'avait
+ * aucune source capable d'y répondre, et le tableau composé par prompt répondait à côté :
+ * par concurrent, faute de mieux.
+ */
+const WATCH_PRODUCTS_FIELDS: WatchField[] = [
+  { key: 'name', labelKey: 'bi.dim.watchName', kind: 'text' },
+  { key: 'reference', labelKey: 'bi.dim.watchRef', kind: 'text' },
+  { key: 'ean', labelKey: 'bi.dim.watchEan', kind: 'text' },
+  { key: 'famille', labelKey: 'bi.dim.taxo1', kind: 'text' },
+  { key: 'position', labelKey: 'bi.dim.watchPosition', kind: 'text' },
+  { key: 'cheapest', labelKey: 'bi.dim.watchCheapestSite', kind: 'text' },
+  { key: 'undercut', labelKey: 'bi.dim.watchUndercut', kind: 'bool' },
+  { key: 'myPriceHt', labelKey: 'bi.dim.watchMyPrice', kind: 'number', format: 'eur' },
+  { key: 'minPriceHt', labelKey: 'bi.dim.watchMinPrice', kind: 'number', format: 'eur' },
+  { key: 'gapEur', labelKey: 'bi.dim.watchGapEur', kind: 'number', format: 'eur' },
+  { key: 'gapPct', labelKey: 'bi.dim.watchGapPct', kind: 'number', format: 'pct' },
+  { key: 'pricedCompetitors', labelKey: 'bi.dim.watchPricedCount', kind: 'number' },
+  { key: 'url', labelKey: 'bi.dim.watchUrl', kind: 'text' },
+]
+
+/**
+ * Produits appariés → lignes.
+ *
+ * ⚠⚠ `gapEur` et `gapPct` sont l'écart de MON prix au MEILLEUR prix concurrent, positif
+ * quand je suis plus cher. `bestGapPct` du rapport dit l'inverse (l'écart du concurrent vu
+ * de moi, négatif quand il est moins cher) : le retourner ici évite qu'un « top des écarts »
+ * classe à l'envers, ce qui ne se verrait pas.
+ * ⚠ Un produit sans aucun prix concurrent garde `null` partout plutôt que zéro : il n'est
+ * pas « à égalité », il est incomparable.
+ */
+export function productRows(products: ProductRow[]): Row[] {
+  return products.map((p) => {
+    const priced = p.competitors.filter((c) => c.priceHt != null)
+    const best = priced.reduce<number | null>(
+      (min, c) => (min == null || (c.priceHt as number) < min ? (c.priceHt as number) : min), null)
+    const cheapest = best == null
+      ? null
+      : priced.find((c) => c.priceHt === best)?.domain ?? null
+    const gapEur = p.myPriceHt != null && best != null
+      ? Math.round((p.myPriceHt - best) * 100) / 100
+      : null
+    return {
+      name: text(p.name),
+      reference: text(p.reference),
+      ean: text(p.ean),
+      famille: text(p.famille),
+      // Trois états nommés, comme le cockpit : c'est la lecture que l'acheteur fait.
+      position: best == null
+        ? null
+        : p.undercut ? 'Concurrent moins cher' : (p.bestGapPct ?? 0) > 0 ? 'Je suis moins cher' : 'Aligné',
+      cheapest,
+      undercut: bool(p.undercut),
+      myPriceHt: num(p.myPriceHt),
+      minPriceHt: best,
+      gapEur,
+      gapPct: p.bestGapPct == null ? null : -p.bestGapPct,
+      pricedCompetitors: priced.length,
+      url: text(p.sourceUrl),
+    }
+  })
+}
+
+const watchProductsSource: DataSource = {
+  id: 'watch.products',
+  labelKey: 'bi.source.watchProducts',
+  engine: 'client',
+  dimensions: dimensionsOf(WATCH_PRODUCTS_FIELDS),
+  measures: [
+    { ...countMeasure, labelKey: 'bi.measure.watchMatchedProducts' },
+    ...deriveMeasures(derivableOf(WATCH_PRODUCTS_FIELDS)),
+  ],
+}
+
+/** Les sources, dans l'ordre où le sélecteur les présente (du moins cher au plus cher).
+ *  ⚠ `watch.products` suit la synthèse : toutes deux se lisent dans le rapport déjà chargé,
+ *  quand le catalogue et les fiches d'un site demandent une relecture par tranches. */
 export const WATCH_SOURCES: DataSource[] = [
-  watchSummarySource, watchCatalogSource, watchSiteSource,
+  watchSummarySource, watchProductsSource, watchCatalogSource, watchSiteSource,
 ]

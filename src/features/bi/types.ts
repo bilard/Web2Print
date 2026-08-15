@@ -51,7 +51,7 @@ export const MAX_DASHBOARD_BYTES = 900_000
  */
 const SOURCE_IDS = [
   'pim.products', 'dam.assets', 'ai.usage', 'wf.runs', 'traffic.events',
-  'watch.listings', 'watch.summary', 'watch.catalog', 'watch.site',
+  'watch.listings', 'watch.summary', 'watch.catalog', 'watch.site', 'watch.products',
 ] as const
 export type SourceId = (typeof SOURCE_IDS)[number]
 

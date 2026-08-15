@@ -24,6 +24,13 @@ interface PlannedTile {
 export interface BoardPlan {
   name: string
   tiles: PlannedTile[]
+  /**
+   * Source que le modèle a jugée la mieux adaptée, quand elle diffère de celle affichée.
+   *
+   * ⚠ Une simple chaîne : elle vient du modèle et n'est PAS encore validée. L'appelant la
+   * confronte au registre (`isSourceId`) avant d'en faire quoi que ce soit.
+   */
+  source?: string
 }
 
 export interface PlannedBoard {

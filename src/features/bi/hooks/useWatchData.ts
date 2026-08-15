@@ -21,13 +21,13 @@ import { useCatalogReport, useWatchList, type WatchSummary } from '@/features/pr
 import type { StoredReport } from '@/features/priceWatch/reportStore'
 import { debugLog } from '@/lib/debugLog'
 import type { Row } from '../registry/types'
-import { catalogRows, listingRows, summaryRows } from '../registry/watch.source'
+import { catalogRows, listingRows, productRows, summaryRows } from '../registry/watch.source'
 import { effectivePimSource } from '../registry/pim.source'
 import { getSource } from '../registry/sources'
 import type { BiMessage, SourceId, Tile } from '../types'
 
-/** Les trois sources de la veille. `watch.listings` (lot 1, jamais branchée) n'en est pas. */
-const WATCH_SOURCE_IDS = ['watch.summary', 'watch.catalog', 'watch.site'] as const
+/** Les sources de la veille. `watch.listings` (lot 1, jamais branchée) n'en est pas. */
+const WATCH_SOURCE_IDS = ['watch.summary', 'watch.products', 'watch.catalog', 'watch.site'] as const
 export type WatchSourceId = (typeof WATCH_SOURCE_IDS)[number]
 
 export function isWatchSource(id: SourceId): id is WatchSourceId {
@@ -64,7 +64,7 @@ interface WatchStore {
 const useWatchStore = create<WatchStore>((set) => ({
   watchId: null,
   siteId: null,
-  data: { 'watch.summary': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
+  data: { 'watch.summary': IDLE, 'watch.products': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
   // ⚠ Changer de suivi REMET les données à zéro : les garder afficherait les chiffres du
   // suivi précédent sous le nom du nouveau, ce qu'aucun libellé ne rattrape.
   //
@@ -76,7 +76,7 @@ const useWatchStore = create<WatchStore>((set) => ({
   setWatchId: (watchId) => set((s) => (
     s.watchId === watchId ? {} : {
       watchId, siteId: null,
-      data: { 'watch.summary': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
+      data: { 'watch.summary': IDLE, 'watch.products': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
     }
   )),
   setSiteId: (siteId) => set((s) => (
@@ -90,7 +90,7 @@ const useWatchStore = create<WatchStore>((set) => ({
 export function resetWatchDataForTest(): void {
   useWatchStore.setState({
     watchId: null, siteId: null,
-    data: { 'watch.summary': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
+    data: { 'watch.summary': IDLE, 'watch.products': IDLE, 'watch.catalog': IDLE, 'watch.site': IDLE },
   })
 }
 
@@ -238,6 +238,8 @@ export function useWatchLoader(demanded: SourceId[]): WatchContext {
   // la dépendance se stabilise au premier passage. ⚠ Réservé à la synthèse — un catalogue
   // de 115 814 produits ne se relit pas « au cas où ».
   const summaryState = useWatchStore((s) => s.data['watch.summary'].state)
+  const wantsProducts = demanded.includes('watch.products')
+  const productsState = useWatchStore((s) => s.data['watch.products'].state)
   const wantsCatalog = demanded.includes('watch.catalog')
   const wantsSite = demanded.includes('watch.site')
 
@@ -265,6 +267,31 @@ export function useWatchLoader(demanded: SourceId[]): WatchContext {
       updatedAt: report.runAt ?? Date.now(),
     })
   }, [wantsSummary, watchId, report, patch, summaryState])
+
+  // ── watch.products : les produits APPARIÉS, lus dans le rapport déjà en direct ────────
+  useEffect(() => {
+    if (!wantsProducts) { patch('watch.products', IDLE); return }
+    if (!watchId) {
+      patch('watch.products', { ...IDLE, state: 'empty', message: { kind: 'key', key: 'bi.watch.noWatch' } })
+      return
+    }
+    if (!report) {
+      patch('watch.products', { ...IDLE, state: 'empty', message: { kind: 'key', key: 'bi.watch.noReport' } })
+      return
+    }
+    const rows = productRows(report.products)
+    patch('watch.products', {
+      ...IDLE, rows, state: rows.length ? 'ready' : 'empty',
+      // ⚠⚠ Le rapport PLAFONNE ce détail aux moins bien positionnés : la réserve accompagne
+      // les chiffres en permanence, sans quoi un extrait se lit comme le catalogue entier.
+      message: !rows.length
+        ? { kind: 'key', key: 'bi.watch.noReport' }
+        : report.truncated
+          ? { kind: 'key', key: 'bi.watch.productsTruncated', params: { count: rows.length } }
+          : undefined,
+      updatedAt: report.runAt ?? Date.now(),
+    })
+  }, [wantsProducts, watchId, report, patch, productsState])
 
   // ── watch.catalog : relecture par TRANCHES, avancement publié ─────────────────────────
   useEffect(() => {

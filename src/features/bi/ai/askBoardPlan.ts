@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { generateJson } from '@/features/ai/llmRouter'
 import { biLabel } from '../components/biLabel'
 import type { DataSource } from '../registry/types'
+import type { SourceId } from '../types'
 import type { BoardPlan } from './boardPlan'
 import type { TranslationKey, TransParams } from '@/lib/i18n'
 
@@ -19,6 +20,12 @@ const MAX_TILES = 12
 
 const planSchema = z.object({
   name: z.string(),
+  /**
+   * Source retenue par le modèle. ⚠⚠ OPTIONNELLE : les plans d'avant n'en portaient pas, et
+   * un champ requis ferait échouer la validation de tout appel qui l'omet. Absente ou
+   * inconnue, l'appelant garde la source active — le comportement d'avant.
+   */
+  source: z.string().optional(),
   tiles: z.array(z.object({
     kind: z.string(),
     title: z.string(),
@@ -33,6 +40,7 @@ const SCHEMA_FOR_LLM = {
   type: 'object',
   properties: {
     name: { type: 'string', description: 'Nom court du tableau de bord.' },
+    source: { type: 'string', description: 'Identifiant EXACT de la source la mieux adaptée, pris dans la liste fournie.' },
     tiles: {
       type: 'array',
       items: {
@@ -54,6 +62,33 @@ const SCHEMA_FOR_LLM = {
 
 type Translate = (key: TranslationKey, params?: TransParams) => string
 
+/**
+ * Décrit les sources CANDIDATES et ce qu'une ligne y représente.
+ *
+ * ⚠⚠ La MAILLE est ce qui manquait au modèle. Il ne recevait qu'une source, sans savoir ce
+ * qu'elle décrit : sur une synthèse par concurrent, « les produits où je suis plus cher »
+ * ne pouvait produire qu'un tableau par concurrent — plausible, hors sujet, et rien ne le
+ * disait. Vu à l'écran, c'est ce qui a motivé ce choix explicite.
+ */
+function sourceMenu(sources: { id: SourceId; source: DataSource }[], t: Translate): string {
+  return sources
+    .map(({ id, source }) => `- ${id} : ${t(source.labelKey)} — une ligne = ${GRAIN[id] ?? '?'}`)
+    .join('\n')
+}
+
+/** Ce qu'une LIGNE représente dans chaque source. */
+const GRAIN: Partial<Record<SourceId, string>> = {
+  'pim.products': 'un produit du catalogue',
+  'watch.summary': 'un concurrent suivi',
+  'watch.products': 'un produit apparié, avec mon prix et le meilleur prix concurrent',
+  'watch.catalog': 'un produit du catalogue source de la veille',
+  'watch.site': 'une fiche collectée chez un concurrent',
+  'dam.assets': 'un visuel du DAM',
+  'ai.usage': 'un appel de modèle facturé',
+  'wf.runs': 'une exécution de workflow',
+  'traffic.events': 'une visite',
+}
+
 /** Décrit la source au modèle : ses identifiants, avec leur nom lisible. */
 function catalogue(source: DataSource, t: Translate): string {
   const dims = source.dimensions.slice(0, MAX_FIELDS)
@@ -65,14 +100,25 @@ function catalogue(source: DataSource, t: Translate): string {
 
 export async function askBoardPlan(
   question: string, source: DataSource, t: Translate,
+  /** Sources entre lesquelles le modèle peut CHOISIR. La première est celle affichée. */
+  candidates: { id: SourceId; source: DataSource }[] = [],
 ): Promise<BoardPlan> {
+  const others = candidates.filter((c) => c.source !== source)
   const prompt = [
     'Tu conçois un tableau de bord décisionnel à partir de la demande d’un utilisateur.',
     '',
     `DEMANDE : ${question}`,
     '',
-    `SOURCE DE DONNÉES : ${t(source.labelKey)}`,
+    `SOURCE AFFICHÉE : ${t(source.labelKey)}`,
     catalogue(source, t),
+    ...(others.length === 0 ? [] : [
+      '',
+      'AUTRES SOURCES DISPONIBLES — choisis-en une (champ `source`) si elle répond MIEUX à la',
+      'demande que la source affichée, notamment quand la maille ne correspond pas :',
+      sourceMenu(others, t),
+      '⚠ Si tu changes de source, ne propose AUCUN champ : ceux listés plus haut appartiennent',
+      'à la source affichée. Donne seulement `source`, `name` et les titres, sans `measure`.',
+    ]),
     '',
     'RÈGLES ABSOLUES :',
     `- N’utilise QUE les identifiants ci-dessus. N’en invente aucun, ne les traduis pas.`,
