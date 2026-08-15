@@ -6,12 +6,16 @@
 import { Scatter } from 'react-chartjs-2'
 import { Chart, LinearScale, PointElement, Tooltip, Legend } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
+import { installChartVisibilityRepair } from '@/lib/chartVisibility'
 import { formatMeasure } from '../../engine/formatValue'
 import { biLabel } from '../biLabel'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import type { AggregateResult } from '../../engine/aggregate'
 
 Chart.register(LinearScale, PointElement, Tooltip, Legend)
+// ⚠⚠ Un graphe monté pendant que l'onglet est masqué garde des zones cliquables de hauteur
+// NULLE : plus aucun clic ne filtre. La réparation se pose une fois, au retour de l'onglet.
+installChartVisibilityRepair()
 
 export function ScatterTile({ result }: { result: AggregateResult }) {
   const { t, locale } = useTranslation()

@@ -17,12 +17,16 @@ import { useThemeStore } from '@/stores/theme.store'
 import { intlLocale, useTranslation } from '@/lib/i18n'
 import { formatMeasure } from '../../engine/formatValue'
 import { biLabel } from '../biLabel'
+import { installChartVisibilityRepair } from '@/lib/chartVisibility'
 import { chartModel } from './chartData'
 import type { AggregateResult } from '../../engine/aggregate'
 import type { TileKind } from '../../types'
 
 Chart.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement,
   Tooltip, Legend, Filler)
+// ⚠⚠ Un graphe monté pendant que l'onglet est masqué garde des zones cliquables de hauteur
+// NULLE : plus aucun clic ne filtre. La réparation se pose une fois, au retour de l'onglet.
+installChartVisibilityRepair()
 
 const EMPTY: ReadonlySet<string> = new Set()
 
