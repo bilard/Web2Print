@@ -370,6 +370,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.toolbar.toggleHint': 'Alternar consulta / edición (E)',
   'bi.toolbar.undo': 'Deshacer',
   'bi.toolbar.redo': 'Rehacer',
+  'bi.save.pageGone': 'Esta página ya no existe en el panel: vuelva a abrirlo para partir de su estado real.',
   'bi.save.failed': 'Registro rechazado.',
   'bi.add.measure': 'Medida',
   'bi.add.dimension': 'Repartir por',

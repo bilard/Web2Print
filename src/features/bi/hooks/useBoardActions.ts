@@ -82,7 +82,14 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
     // façon SYNCHRONE, avant tout re-rendu — l'effet de `BiBoard` n'a donc pas encore
     // republié, et une écriture enchaînée repartirait de l'état d'avant l'annulation.
     live.current = { pageId, tiles, layout }
-    write(replacePage(current, pageId, { layout, tiles }))
+    const next = replacePage(current, pageId, { layout, tiles })
+    // ⚠⚠ `replacePage` rend le document INCHANGÉ (même référence) quand la page visée n'y est
+    // plus — un tableau rouvert ailleurs, une page supprimée d'un autre poste. L'écriture
+    // partait alors quand même, réécrivait à l'identique, et le placement semblait « ne pas
+    // se sauvegarder » sans le moindre message. Ce projet a déjà payé plusieurs écritures
+    // perdues en silence : celle-ci se voit.
+    if (next === current) { toast.error(t('bi.save.pageGone')); return }
+    write(next)
   }, [write, current, pageId])
 
   const persistFilters = useCallback((filters: FilterClause[]) => {

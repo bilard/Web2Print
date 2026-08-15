@@ -371,6 +371,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.toolbar.toggleHint': 'Toggle viewing / editing (E)',
   'bi.toolbar.undo': 'Undo',
   'bi.toolbar.redo': 'Redo',
+  'bi.save.pageGone': 'This page no longer exists in the dashboard — reopen it to start from its actual state.',
   'bi.save.failed': 'Save failed.',
   'bi.add.measure': 'Measure',
   'bi.add.dimension': 'Split by',

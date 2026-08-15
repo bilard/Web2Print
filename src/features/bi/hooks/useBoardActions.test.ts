@@ -12,7 +12,8 @@ const saveDashboard = vi.fn<(uid: string, d: unknown) => Promise<void>>()
 vi.mock('../store/dashboardsStore', () => ({
   saveDashboard: (uid: string, d: unknown) => saveDashboard(uid, d),
 }))
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+const toastError = vi.fn()
+vi.mock('sonner', () => ({ toast: { error: (m: string) => toastError(m), success: vi.fn() } }))
 
 const tile = (id: string, measure: string): Tile => ({
   id, kind: 'kpi', title: id,
@@ -138,5 +139,24 @@ describe('renommage', () => {
     const { result } = renderHook(() => useBoardActions('u1', twoPages, 'p1'))
     reactAct(() => { result.current.rename('Veille F1') })
     expect(written().pages.map((p) => p.name)).toEqual(['Écarts', 'Couverture'])
+  })
+})
+
+describe('une écriture qui ne s’appliquerait à RIEN', () => {
+  // ⚠⚠ `replacePage` rend le document INCHANGÉ quand la page visée n'y est plus (rouvert
+  // ailleurs, page supprimée d'un autre poste). L'écriture partait quand même et réécrivait
+  // à l'identique : le placement semblait « ne pas se sauvegarder », sans le moindre message.
+  it('ne part pas, et le DIT, quand la page visée n’existe plus', () => {
+    toastError.mockClear()
+    const { result } = renderHook(() => useBoardActions('u1', CURRENT, 'page-disparue'))
+    reactAct(() => result.current.persistLayout(MOVED, CURRENT.pages[0].tiles))
+    expect(saveDashboard).not.toHaveBeenCalled()
+    expect(toastError).toHaveBeenCalled()
+  })
+
+  it('part normalement quand la page est bien là', () => {
+    const { result } = mount()
+    reactAct(() => result.current.persistLayout(MOVED, CURRENT.pages[0].tiles))
+    expect(writtenPage().layout).toEqual(MOVED)
   })
 })

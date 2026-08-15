@@ -384,6 +384,7 @@ export const fr = {
   'bi.toolbar.toggleHint': 'Basculer consultation / édition (E)',
   'bi.toolbar.undo': 'Annuler',
   'bi.toolbar.redo': 'Rétablir',
+  'bi.save.pageGone': 'Cette page n’existe plus dans le tableau de bord — rouvrez-le pour repartir de son état réel.',
   'bi.save.failed': 'Enregistrement refusé.',
   'bi.add.measure': 'Mesure',
   'bi.add.dimension': 'Répartir par',
