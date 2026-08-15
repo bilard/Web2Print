@@ -23,11 +23,13 @@ export interface Scatter3DTheme {
   rampHigh: string
 }
 
+/**
+ * La scène naît VIDE : son contenu (les points) et ses étiquettes d'axes arrivent ensuite
+ * par `setPoints` / `setAxisLabels`. C'est ce qui permet à un changement de filtre de
+ * remplacer le nuage sans refaire ni le contexte WebGL ni le point de vue.
+ */
 export interface Scatter3DSceneOptions {
   canvas: HTMLCanvasElement
-  points: readonly Scatter3DPoint[]
-  /** Libellés déjà traduits, dans l'ordre X, Y, Z. */
-  axisLabels: readonly [string, string, string]
   theme: Scatter3DTheme
 }
 
@@ -81,11 +83,16 @@ export class Scatter3DScene {
   private camera: THREE.PerspectiveCamera
   private controls: OrbitControls
   private points: THREE.Points
+  private labels: THREE.Sprite[] = []
+  private lastPoints: readonly Scatter3DPoint[] | null = null
+  private lastLabels: readonly string[] | null = null
+  private theme: Scatter3DTheme
   private raycaster = new THREE.Raycaster()
   private disposed = false
   private touched = false
 
-  constructor({ canvas, points, axisLabels, theme }: Scatter3DSceneOptions) {
+  constructor({ canvas, theme }: Scatter3DSceneOptions) {
+    this.theme = theme
     this.renderer = new THREE.WebGLRenderer({
       canvas, alpha: true, antialias: true, preserveDrawingBuffer: true,
     })
@@ -109,19 +116,7 @@ export class Scatter3DScene {
     this.controls.addEventListener('start', () => { this.touched = true })
 
     this.scene.add(this.buildFrame(theme))
-    // Chaque étiquette est posée au BOUT de son arête : c'est ce qui dit quel axe on tourne.
-    // ⚠ Sur l'arête AVANT pour l'axe vertical : posée sur l'arête du fond, elle sortait du
-    // cadre à la moitié des angles de vue.
-    const at: [number, number, number][] = [
-      [R + 0.4, -R, -R], [-R - 0.35, R + 0.2, R], [-R, -R, R + 0.4],
-    ]
-    axisLabels.forEach((text, i) => {
-      const sprite = labelSprite(text, theme.ink, 0.22)
-      sprite.position.set(...at[i])
-      this.scene.add(sprite)
-    })
-
-    this.points = this.buildPoints(points, theme)
+    this.points = this.buildPoints([], theme)
     this.scene.add(this.points)
     // ⚠ Le seuil est en unités de MONDE : les points vivent dans [-1, 1], un seuil par
     // défaut (1) attraperait le nuage entier au premier survol.
@@ -169,6 +164,51 @@ export class Scatter3DScene {
       size: 0.16, sizeAttenuation: true, vertexColors: true,
       map: discTexture(), transparent: true, alphaTest: 0.5,
     }))
+  }
+
+  /**
+   * Remplace le nuage SANS refaire la scène.
+   *
+   * ⚠⚠ C'est ce qui laisse à l'utilisateur son point de vue quand un filtre change les
+   * chiffres. Reconstruire la scène entière recréerait aussi un contexte WebGL — le
+   * navigateur en plafonne le nombre — et ramènerait la caméra à l'angle d'origine au
+   * milieu d'une exploration.
+   */
+  setPoints(points: readonly Scatter3DPoint[]): void {
+    // ⚠ Même nuage = rien à faire : à la création, le composant repose son contenu, et sans
+    // cette garde la géométrie serait bâtie deux fois à chaque montage.
+    if (this.disposed || points === this.lastPoints) return
+    this.lastPoints = points
+    this.scene.remove(this.points)
+    this.points.geometry.dispose()
+    ;(this.points.material as THREE.Material).dispose()
+    this.points = this.buildPoints(points, this.theme)
+    this.scene.add(this.points)
+    this.render()
+  }
+
+  /** Renomme les axes — ils changent quand on remplace une mesure, pas quand on filtre. */
+  setAxisLabels(axisLabels: readonly [string, string, string]): void {
+    if (this.disposed || axisLabels === this.lastLabels) return
+    this.lastLabels = axisLabels
+    for (const sprite of this.labels) {
+      this.scene.remove(sprite)
+      sprite.material.map?.dispose()
+      sprite.material.dispose()
+    }
+    // Chaque étiquette est posée au BOUT de son arête : c'est ce qui dit quel axe on tourne.
+    // ⚠ Sur l'arête AVANT pour l'axe vertical : posée sur l'arête du fond, elle sortait du
+    // cadre à la moitié des angles de vue.
+    const at: [number, number, number][] = [
+      [R + 0.4, -R, -R], [-R - 0.35, R + 0.2, R], [-R, -R, R + 0.4],
+    ]
+    this.labels = axisLabels.map((text, i) => {
+      const sprite = labelSprite(text, this.theme.ink, 0.22)
+      sprite.position.set(...at[i])
+      this.scene.add(sprite)
+      return sprite
+    })
+    this.render()
   }
 
   /** Rang du point sous le curseur, ou `null`. Coordonnées relatives au canvas, en pixels. */

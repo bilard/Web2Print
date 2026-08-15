@@ -24,15 +24,25 @@ export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<Scatter3DScene | null>(null)
   const [hover, setHover] = useState<Hover | null>(null)
+  // ⚠ Lues par l'effet de création SANS y figurer en dépendance : une scène refaite (bascule
+  // de thème) doit reposer le contenu COURANT, pas celui du montage.
+  const modelRef = useRef(model)
+  const labelsRef = useRef(axisLabels)
+  modelRef.current = model
+  labelsRef.current = axisLabels
 
+  // ⚠⚠ La scène ne se refait QUE si le thème change. Un filtre posé sur la page change
+  // `model` : reconstruire alors la scène entière recréerait un contexte WebGL (le
+  // navigateur en plafonne le nombre) et ramènerait la caméra à son angle d'origine au
+  // milieu d'une exploration. Le contenu se remplace en place, par les deux effets suivants.
   useEffect(() => {
     const canvas = canvasRef.current
     const host = hostRef.current
     if (!canvas || !host) return
-    const scene = new Scatter3DScene({
-      canvas, points: model.points, axisLabels, theme,
-    })
+    const scene = new Scatter3DScene({ canvas, theme })
     sceneRef.current = scene
+    scene.setAxisLabels(labelsRef.current)
+    scene.setPoints(modelRef.current.points)
     const fit = () => scene.resize(host.clientWidth, host.clientHeight)
     fit()
     const observer = new ResizeObserver(fit)
@@ -47,7 +57,10 @@ export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: 
       scene.dispose()
       sceneRef.current = null
     }
-  }, [model, axisLabels, theme])
+  }, [theme])
+
+  useEffect(() => { sceneRef.current?.setPoints(model.points) }, [model])
+  useEffect(() => { sceneRef.current?.setAxisLabels(axisLabels) }, [axisLabels])
 
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const host = hostRef.current
