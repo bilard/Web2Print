@@ -96,7 +96,17 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
   // les réécrit toutes. Sans ce recousage, renommer juste après un déplacement remettait la
   // tuile à sa place d'avant — et juste après une reconfiguration, lui rendait sa requête
   // d'avant. Un geste anodin ne doit jamais défaire le geste précédent.
-  const rename = useCallback((name: string) => write({ ...fresh(), name }), [write, fresh])
+  const rename = useCallback((name: string) => {
+    const next = fresh()
+    // ⚠⚠ Une page UNIQUE porte le nom du tableau : la page reconstituée d'un document
+    // ancien prend déjà `d.name` (cf. `parseDashboard`), mais dès qu'une écriture a figé
+    // `pages`, elle gardait son nom d'origine. Vu à l'écran : un tableau renommé
+    // « GSB 2026 » dont l'onglet annonçait toujours « Sans titre ».
+    const pages = next.pages && next.pages.length === 1
+      ? [{ ...next.pages[0], name }]
+      : next.pages
+    write({ ...next, name, ...(pages ? { pages } : {}) })
+  }, [write, fresh])
 
   /**
    * Retient la BASE du module « Données » qui alimente ce tableau de bord.

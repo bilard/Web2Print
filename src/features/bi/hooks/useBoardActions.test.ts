@@ -115,3 +115,28 @@ describe('useBoardActions — l’écriture part de ce que l’ÉCRAN montre', (
     expect(writtenPage().layout).toEqual(OLD)
   })
 })
+
+// ⚠ Vu à l'écran : un tableau renommé « GSB 2026 » dont l'onglet annonçait toujours
+// « Sans titre ». Une page unique n'a pas d'identité propre — elle EST le tableau.
+describe('renommage', () => {
+  it('renomme la page UNIQUE avec le tableau', () => {
+    const { result } = mount()
+    reactAct(() => { result.current.rename('GSB 2026') })
+    expect(written().name).toBe('GSB 2026')
+    expect(written().pages[0].name).toBe('GSB 2026')
+  })
+
+  it('⚠ NE touche pas aux noms quand il y a plusieurs pages', () => {
+    // Chacune porte alors son propre sujet : les écraser perdrait le travail de l'auteur.
+    const twoPages: Dashboard = {
+      ...CURRENT,
+      pages: [
+        { id: 'p1', name: 'Écarts', tiles: [], layout: [] },
+        { id: 'p2', name: 'Couverture', tiles: [], layout: [] },
+      ],
+    }
+    const { result } = renderHook(() => useBoardActions('u1', twoPages, 'p1'))
+    reactAct(() => { result.current.rename('Veille F1') })
+    expect(written().pages.map((p) => p.name)).toEqual(['Écarts', 'Couverture'])
+  })
+})
