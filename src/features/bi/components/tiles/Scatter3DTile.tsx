@@ -8,7 +8,7 @@
 import { Suspense, lazy, useCallback, useMemo } from 'react'
 import { useThemeStore } from '@/stores/theme.store'
 import { buildScatter3D } from './scatter3dData'
-import type { Scatter3DTheme } from './scatter3dScene'
+import type { Scatter3DAxisView, Scatter3DTheme } from './scatter3dScene'
 import { biLabel } from '../biLabel'
 import { formatMeasure } from '../../engine/formatValue'
 import { intlLocale, useTranslation } from '@/lib/i18n'
@@ -19,10 +19,12 @@ const Scatter3DCanvas = lazy(() => import('./Scatter3DCanvas'))
 /** Deux jeux CHOISIS, jamais l'inversion automatique l'un de l'autre : une rampe réglée sur
  *  fond sombre perd ses crans bas sur fond clair. */
 const THEMES: Record<'dark' | 'light', Scatter3DTheme> = {
-  dark: { frame: '#3f3f52', ink: '#a1a1aa', rampLow: '#4f46e5', rampHigh: '#c7d2fe' },
+  dark: { frame: '#4a4a5e', ink: '#c4c4cc', inkDim: '#8b8b96',
+    rampLow: '#6366f1', rampHigh: '#e0e7ff' },
   // ⚠ En clair, le bas de rampe ne descend PAS jusqu'aux crans pâles : sur un fond quasi
   // blanc, les points du fond de l'axe Z s'effaçaient au lieu de se lire comme les autres.
-  light: { frame: '#d4d4d8', ink: '#52525b', rampLow: '#6366f1', rampHigh: '#312e81' },
+  light: { frame: '#c9c9d2', ink: '#3f3f46', inkDim: '#71717a',
+    rampLow: '#6366f1', rampHigh: '#312e81' },
 }
 
 export function Scatter3DTile({ result }: { result: AggregateResult }) {
@@ -31,17 +33,23 @@ export function Scatter3DTile({ result }: { result: AggregateResult }) {
   const model = useMemo(() => buildScatter3D(result), [result])
   const theme = dark ? THEMES.dark : THEMES.light
 
-  // ⚠ Références STABLES : la scène three.js se reconstruit à chaque changement de ces
-  // dépendances. Un littéral frais à chaque rendu la détruirait et la rebâtirait en boucle.
-  const axisLabels = useMemo(() => (model
-    ? [biLabel(model.axes.x.column, t), biLabel(model.axes.y.column, t),
-      biLabel(model.axes.z.column, t)] as [string, string, string]
-    : ['', '', ''] as [string, string, string]), [model, t])
   const formatAt = useCallback((axis: 0 | 1 | 2, value: number) => {
     if (!model) return ''
     const column = [model.axes.x, model.axes.y, model.axes.z][axis].column
     return formatMeasure(value, column.format, intlLocale(locale))
   }, [model, locale])
+  // ⚠ Référence STABLE : la scène repose ses étiquettes à chaque changement de cette
+  // valeur. Un littéral frais à chaque rendu détruirait et rebâtirait neuf sprites en boucle.
+  // ⚠⚠ Les BORNES accompagnent le nom : un axe seulement nommé montre une forme et aucune
+  // valeur — impossible de dire si l'écart d'un point vaut 2 % ou 200 %.
+  const axes = useMemo(() => {
+    if (!model) return null
+    return ([model.axes.x, model.axes.y, model.axes.z] as const).map((axis, i) => ({
+      label: biLabel(axis.column, t),
+      min: formatAt(i as 0 | 1 | 2, axis.min),
+      max: formatAt(i as 0 | 1 | 2, axis.max),
+    })) as [Scatter3DAxisView, Scatter3DAxisView, Scatter3DAxisView]
+  }, [model, t, formatAt])
 
   // ⚠ Le message COMPTE ce qui manque et NOMME la zone où déposer : « demande trois mesures »
   // laissait devant une tuile vide sans savoir quel geste la remplirait.
@@ -49,7 +57,7 @@ export function Scatter3DTile({ result }: { result: AggregateResult }) {
   // ⚠⚠ Sans dimension d'axe, le moteur ne rend qu'une LIGNE de totaux : le nuage se
   // réduirait à un point unique au centre du volume. On le dit plutôt que de le montrer.
   const noAxis = !result.columns.some((c) => c.role === 'dimension')
-  if (!model || noAxis) {
+  if (!model || !axes || noAxis) {
     return (
       <p className="grid h-full place-items-center px-4 text-center text-[11px] text-white/35">
         {missing > 0
@@ -64,8 +72,7 @@ export function Scatter3DTile({ result }: { result: AggregateResult }) {
     <div className="flex h-full flex-col gap-1">
       <div className="min-h-0 flex-1">
         <Suspense fallback={<div className="h-full w-full animate-pulse rounded-md bg-well" />}>
-          <Scatter3DCanvas
-            model={model} theme={theme} axisLabels={axisLabels} formatAt={formatAt} />
+          <Scatter3DCanvas model={model} theme={theme} axes={axes} formatAt={formatAt} />
         </Suspense>
       </div>
       <div className="flex items-center justify-between gap-3 text-[10px] text-white/40">

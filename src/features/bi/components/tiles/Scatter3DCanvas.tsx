@@ -8,15 +8,16 @@
 // redimensionnement d'une tuile (que `window.resize` ne voit pas), `visibilitychange` couvre
 // le retour d'un onglet masqué.
 import { useEffect, useRef, useState } from 'react'
-import { Scatter3DScene, type Scatter3DTheme } from './scatter3dScene'
+import { Scatter3DScene, type Scatter3DAxisView, type Scatter3DTheme } from './scatter3dScene'
 import type { Scatter3DModel } from './scatter3dData'
 
 interface Hover { index: number; x: number; y: number }
 
-export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: {
+export default function Scatter3DCanvas({ model, theme, axes, formatAt }: {
   model: Scatter3DModel
   theme: Scatter3DTheme
-  axisLabels: readonly [string, string, string]
+  /** Les trois axes tels qu'ils s'affichent : nom et bornes, déjà traduits et formatés. */
+  axes: readonly [Scatter3DAxisView, Scatter3DAxisView, Scatter3DAxisView]
   /** Valeur brute formatée dans l'unité de l'axe (euros, pourcentage…). */
   formatAt: (axis: 0 | 1 | 2, value: number) => string
 }) {
@@ -27,9 +28,9 @@ export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: 
   // ⚠ Lues par l'effet de création SANS y figurer en dépendance : une scène refaite (bascule
   // de thème) doit reposer le contenu COURANT, pas celui du montage.
   const modelRef = useRef(model)
-  const labelsRef = useRef(axisLabels)
+  const axesRef = useRef(axes)
   modelRef.current = model
-  labelsRef.current = axisLabels
+  axesRef.current = axes
 
   // ⚠⚠ La scène ne se refait QUE si le thème change. Un filtre posé sur la page change
   // `model` : reconstruire alors la scène entière recréerait un contexte WebGL (le
@@ -41,7 +42,7 @@ export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: 
     if (!canvas || !host) return
     const scene = new Scatter3DScene({ canvas, theme })
     sceneRef.current = scene
-    scene.setAxisLabels(labelsRef.current)
+    scene.setAxes(axesRef.current)
     scene.setPoints(modelRef.current.points)
     const fit = () => scene.resize(host.clientWidth, host.clientHeight)
     fit()
@@ -60,7 +61,7 @@ export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: 
   }, [theme])
 
   useEffect(() => { sceneRef.current?.setPoints(model.points) }, [model])
-  useEffect(() => { sceneRef.current?.setAxisLabels(axisLabels) }, [axisLabels])
+  useEffect(() => { sceneRef.current?.setAxes(axes) }, [axes])
 
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const host = hostRef.current
@@ -92,7 +93,7 @@ export default function Scatter3DCanvas({ model, theme, axisLabels, formatAt }: 
           {point.label && <p className="font-medium text-white">{point.label}</p>}
           {([0, 1, 2] as const).map((axis) => (
             <p key={axis} className="text-white/60">
-              {axisLabels[axis]} : <span className="text-white/85">
+              {axes[axis].label} : <span className="text-white/85">
                 {formatAt(axis, axis === 0 ? point.x : axis === 1 ? point.y : point.z)}
               </span>
             </p>
