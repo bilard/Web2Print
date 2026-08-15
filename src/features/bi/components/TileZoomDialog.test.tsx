@@ -17,6 +17,16 @@ const open = (kind: TileKind = 'bar', onClose = vi.fn()) => {
 }
 
 describe('la fenêtre d’agrandissement', () => {
+  // ⚠⚠ Le bug qui l'a rendue inutilisable : rendue EN PLACE, elle héritait du `transform`
+  // que `react-grid-layout` pose sur chaque tuile, et un `position: fixed` sous un ancêtre
+  // transformé se cale sur cet ancêtre — la fenêtre s'ouvrait décalée, débordant de l'écran,
+  // voile inopérant et bouton de fermeture hors de portée.
+  it('se monte dans `document.body`, hors de la tuile qui l’ouvre', () => {
+    const { view } = open()
+    expect(view.container.querySelector('[role="dialog"]')).toBeNull()
+    expect(document.body.querySelector('[role="dialog"]')).toBeTruthy()
+  })
+
   it('rend le visuel à sa taille d’origine, sans mise à l’échelle', () => {
     const { box } = open()
     expect(box().style.width).toBe('100%')

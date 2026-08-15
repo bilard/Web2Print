@@ -8,6 +8,7 @@
 // ⚠ Le nuage 3D n'a PAS ces boutons : il porte son propre zoom (molette) et sa rotation.
 // Agrandir sa boîte ne ferait qu'éloigner la caméra du cadre.
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X, ZoomIn, ZoomOut, Minimize2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import type { TileKind } from '../types'
@@ -36,7 +37,12 @@ export function TileZoomDialog({ title, kind, onClose, children }: {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  // ⚠⚠ PORTAIL vers `document.body`, jamais un rendu en place. Cette fenêtre est ouverte
+  // depuis une tuile, et `react-grid-layout` positionne chaque tuile par un `transform` :
+  // un `position: fixed` sous un ancêtre TRANSFORMÉ se cale sur cet ancêtre et non sur la
+  // fenêtre. Vu à l'écran — les panneaux s'ouvraient décalés, débordant de l'écran, avec un
+  // voile qui ne couvrait rien et un bouton de fermeture hors de portée.
+  return createPortal(
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4"
       role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" aria-label={t('bi.zoom.close')} onClick={onClose}
@@ -80,6 +86,7 @@ export function TileZoomDialog({ title, kind, onClose, children }: {
           <div style={{ width: `${zoom}%`, height: `${zoom}%` }}>{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

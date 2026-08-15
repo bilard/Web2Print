@@ -4,6 +4,7 @@
 // ⚠⚠ Le tiroir DIT toujours deux choses que rien d'autre à l'écran ne dit : les filtres qui
 // s'appliquaient au moment du clic, et le décompte RÉEL quand l'échantillon est plafonné.
 // Sans elles, on lit un extrait comme s'il était le tout.
+import { createPortal } from 'react-dom'
 import { X, Download } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiRowsTable } from './BiRowsTable'
@@ -18,7 +19,11 @@ export function DetailDrawer({ title, detail, filters, onClose, onExport }: {
   onExport: () => void
 }) {
   const { t } = useTranslation()
-  return (
+  // ⚠⚠ PORTAIL vers `document.body`, jamais un rendu en place : ce tiroir s'ouvre depuis une
+  // tuile, et `react-grid-layout` positionne chaque tuile par un `transform`. Un
+  // `position: fixed` sous un ancêtre TRANSFORMÉ se cale sur cet ancêtre et non sur la
+  // fenêtre — le tiroir s'ouvrait décalé, hors de l'écran sur les tuiles du bas.
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true">
       <button type="button" aria-label={t('bi.detail.close')} onClick={onClose}
         className="absolute inset-0 bg-black/50" />
@@ -60,6 +65,7 @@ export function DetailDrawer({ title, detail, filters, onClose, onExport }: {
           <BiRowsTable detail={detail} />
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   )
 }
