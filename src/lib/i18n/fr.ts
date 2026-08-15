@@ -346,6 +346,7 @@ export const fr = {
   'bi.gauge.needsMeasure': 'Une jauge demande une mesure',
   'bi.gauge.outOf': 'sur {max}',
   'bi.funnel.needsMeasure': 'Un entonnoir demande au moins une mesure',
+  'bi.scatter.otherSeries': 'Autres',
   'bi.scatter.needsTwoMeasures': 'Un nuage de points demande deux mesures : une par axe',
   'bi.pie.needsDimension': 'Un camembert répartit un total entre les valeurs d’un champ. Déposez-en un dans « Axe », à droite.',
   'bi.scatter3d.needsThreeMeasures': 'Un nuage 3D confronte trois mesures, une par axe (X, Y, Z). Déposez-en {missing} de plus dans « Valeurs », à droite.',

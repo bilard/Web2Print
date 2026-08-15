@@ -76,7 +76,9 @@ export function wellCapacity(well: WellId, kind: TileKind): number {
   const grid = kind === 'table' || kind === 'pivot'
   switch (well) {
     case 'axis': return kind === 'kpi' ? 0 : grid ? INF : 1
-    case 'legend': return kind === 'pivot' ? 1 : chart || round ? 1 : 0
+    // ⚠ Le NUAGE l'accepte aussi : ses deux mesures sont ses AXES, pas des séries — une
+    // dimension de légende y colorie les points par catégorie sans rien lui prendre.
+    case 'legend': return kind === 'pivot' || kind === 'scatter' ? 1 : chart || round ? 1 : 0
     case 'values': return kind === 'kpi' || round ? 1 : INF
     // Une info-bulle suppose un point à survoler : ni un tableau ni un indicateur n'en ont.
     case 'tooltips': return chart || round ? INF : 0

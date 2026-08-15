@@ -15,6 +15,11 @@ import type { TranslationKey } from '@/lib/i18n'
 
 export type WellVerdict = { ok: true } | { ok: false; reasonKey: TranslationKey }
 
+/** Ces visuels portent une légende ET plusieurs mesures : le croisé (deux axes de tableau) et
+ *  le nuage (deux mesures = ses deux axes). Partout ailleurs, l'un exclut l'autre. */
+const allowsLegendWithMeasures = (kind: Tile['kind']): boolean =>
+  kind === 'pivot' || kind === 'scatter'
+
 const OK: WellVerdict = { ok: true }
 const no = (reasonKey: TranslationKey): WellVerdict => ({ ok: false, reasonKey })
 
@@ -59,7 +64,9 @@ export function acceptField(
       if (wellChips('axis', tile, source).length === 0) return no('bi.well.refuse.legendNeedsAxis')
       // ⚠ Symétrique du refus posé sur « Valeurs » : la légende éclate le graphe en séries
       // sur UNE mesure ; à plusieurs mesures, il n'y a pas de série à nommer.
-      if (tile.kind !== 'pivot' && wellChips('values', tile, source).length > 1) {
+      // ⚠⚠ Sauf sur un NUAGE, dont les deux mesures sont les deux AXES et non des séries :
+      // la légende n'y ajoute pas de jeu de données, elle colorie les points existants.
+      if (!allowsLegendWithMeasures(tile.kind) && wellChips('values', tile, source).length > 1) {
         return no('bi.well.refuse.legendOrMeasures')
       }
     }
@@ -93,7 +100,8 @@ export function acceptField(
     // ⚠⚠ Une légende éclate DÉJÀ le graphe en séries (`ChartTile`) : une seconde mesure
     // demanderait un jeu de données par couple (mesure × série), illisible — et Power BI
     // refuse exactement de la même façon.
-    if (chips.length > 0 && wellChips('legend', tile, source).length > 0) {
+    if (!allowsLegendWithMeasures(tile.kind)
+      && chips.length > 0 && wellChips('legend', tile, source).length > 0) {
       return no('bi.well.refuse.legendOrMeasures')
     }
     if (totalises(tile)) {
