@@ -16,7 +16,6 @@ import { BiBoard } from './BiBoard'
 import { BoardActionsMenu } from './BoardActionsMenu'
 import { NewDashboardButton } from './NewDashboardButton'
 import { TemplateGallery } from '../templates/TemplateGallery'
-import { TemplatesButton } from '../templates/TemplatesButton'
 import { useTranslation } from '@/lib/i18n'
 import type { DashboardPage } from '../types'
 
@@ -137,16 +136,18 @@ export function BiScreen() {
           onSelectPage={setPageId}
           onPageCreated={onPageCreated}
           tv={tv}
+          /* ⚠ Le bandeau ne porte plus qu'UN bouton secondaire : tout le reste (créer,
+             partir d'un modèle, projeter, dupliquer, supprimer) tient dans son menu. Neuf
+             boutons faisaient passer la barre à la ligne, et sa hauteur changeait avec la
+             largeur de la fenêtre. */
           headerAction={(
-            <div className="flex items-center gap-2">
-              <TemplatesButton onOpen={setCurrentId} canEdit={canEdit} />
-              {canEdit && <NewDashboardButton onCreated={setCurrentId} />}
-              <BoardActionsMenu
-                board={current} uid={uid} canEdit={canEdit}
-                onDuplicated={(id) => { setCurrentId(id); setPageId(null) }}
-                onDeleted={onDeleted}
-              />
-            </div>
+            <BoardActionsMenu
+              board={current} uid={uid} canEdit={canEdit}
+              onDuplicated={(id) => { setCurrentId(id); setPageId(null) }}
+              onDeleted={onDeleted}
+              onOpenBoard={(id) => { setCurrentId(id); setPageId(null) }}
+              onTv={tv.enter}
+            />
           )}
         />
       ) : null}

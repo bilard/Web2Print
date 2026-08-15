@@ -95,6 +95,14 @@ describe('SourcePicker', () => {
     show('watch.catalog')
     expect(screen.getByText(/Rien n’est chargé/)).toBeTruthy()
   })
+
+  it('⚠ ne redit PAS la limite du moteur serveur une fois par source', () => {
+    // Répétée par source, la même phrase occupait deux lignes du bandeau pour une seule
+    // information — et poussait les boutons au rang suivant.
+    selectWatch('f1')
+    show('watch.summary', ['watch.summary', 'watch.catalog'])
+    expect(screen.getAllByText(/se lit isolément/)).toHaveLength(1)
+  })
 })
 
 // ⚠⚠ Vu chez l'utilisateur : dix bases dans le module Données, et une seule entrée

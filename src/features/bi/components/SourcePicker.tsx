@@ -120,6 +120,15 @@ export function SourceStatusList({ context, demanded, sourceId, dbName }: {
   // sélecteur de suivi vide, ce qui se lit comme une panne.
   if (!context.watchId) return <>{pim}<Warning text={t('bi.watch.noWatch')} /></>
   return (
-    <>{pim}{shown.map((id) => <SourceStatus key={id} sourceId={id} sites={context.sites} />)}</>
+    <>
+      {pim}
+      {shown.map((id) => <SourceStatus key={id} sourceId={id} sites={context.sites} />)}
+      {/* ⚠ Dite UNE fois, et seulement quand PLUSIEURS sources alimentent le tableau : c'est
+          là qu'« isolément » veut dire quelque chose. Répétée par source, elle occupait deux
+          lignes du bandeau pour la même information. */}
+      {shown.length > 1 && (
+        <span className="text-[11px] text-white/30">{t('bi.source.serverNeeded')}</span>
+      )}
+    </>
   )
 }

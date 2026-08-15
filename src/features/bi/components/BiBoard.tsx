@@ -281,7 +281,7 @@ export function BiBoard({
         editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
         onExportPng={captureBoard(exportBoardToPng)}
         onExportPdf={captureBoard(exportBoardToPdf)}
-        onTv={tv.enter} onPrompt={() => setPromptOpen(true)}
+        onPrompt={() => setPromptOpen(true)}
         undo={hist.undo} redo={hist.redo} canUndo={hist.canUndo} canRedo={hist.canRedo}
         actions={headerAction}
       />

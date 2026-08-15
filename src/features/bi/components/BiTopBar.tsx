@@ -7,7 +7,7 @@
 // suivi de veille, le concurrent choisi et l'avancement d'un chargement lourd — des états qui
 // appartiennent au tableau de bord, pas au bandeau.
 import type { ReactNode } from 'react'
-import { Share2, Download, Tv, Sparkles } from 'lucide-react'
+import { Download, Sparkles } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker } from './BiPicker'
 import { BiDocTitle } from './BiDocTitle'
@@ -42,8 +42,6 @@ interface BiTopBarProps {
   /** Capture de l'écran tel quel. Fournis avec `onExport`, ils forment le menu d'export. */
   onExportPng?: () => Promise<void>
   onExportPdf?: () => Promise<void>
-  /** Passage en mode TV (plein écran, pages défilantes). */
-  onTv?: () => void
   /** Création d'un tableau décrit en langage naturel. */
   onPrompt?: () => void
 }
@@ -51,13 +49,16 @@ interface BiTopBarProps {
 export function BiTopBar({
   current, items, canEdit, onSelectBoard, onRename, sourcePicker,
   updatedAt, now, editing, onToggleEdit, undo, redo, canUndo, canRedo, actions,
-  onExport, onExportPng, onExportPdf, onTv, onPrompt,
+  onExport, onExportPng, onExportPdf, onPrompt,
 }: BiTopBarProps) {
   const { t } = useTranslation()
   const boardOptions = items.map((d) => ({ id: d.id, label: d.name }))
 
   return (
-    <header className="flex items-center gap-2.5 flex-wrap shrink-0 px-3 py-2 bg-surface border-b border-white/[0.06]">
+    /* ⚠⚠ `flex-nowrap` et hauteur FIXE : en `flex-wrap`, la barre passait à la ligne dès
+       que la fenêtre rétrécissait, sa hauteur changeait, et tout l'écran sautait sous elle.
+       Ce qui ne tient pas défile horizontalement — jamais en descendant. */
+    <header className="flex h-12 items-center gap-2.5 flex-nowrap shrink-0 px-3 bg-surface border-b border-white/[0.06] overflow-x-auto overflow-y-hidden">
       <BiDocTitle name={current.name} canEdit={canEdit} onRename={onRename} />
 
       {items.length > 1 && (
@@ -88,17 +89,6 @@ export function BiTopBar({
       ) : (
         <BiSoonButton label={t('bi.top.export')} icon={<Download className="w-3.5 h-3.5" />} />
       )}
-      {/* ⚠ Le mode TV n'est proposé qu'en consultation : une page qui tourne toute seule
-          pendant qu'on déplace une tuile ferait perdre le geste en cours. */}
-      {onTv && !editing && (
-        <button
-          type="button" onClick={onTv} title={t('bi.top.tvTitle')}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-well px-2.5 py-1 text-[12px] text-white/70 hover:text-white hover:border-white/15 transition-colors"
-        >
-          <Tv className="w-3.5 h-3.5" />{t('bi.top.tv')}
-        </button>
-      )}
-      <BiSoonButton label={t('bi.top.share')} icon={<Share2 className="w-3.5 h-3.5" />} />
       {/* ⚠ Décrire vaut mieux que chercher : c'est le geste qui manquait à qui ouvrait le
           module sans savoir par quel visuel commencer. */}
       {onPrompt && canEdit && (

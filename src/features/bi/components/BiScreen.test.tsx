@@ -113,23 +113,24 @@ describe('BiScreen — bouton de création', () => {
     expect(NewDashboardButton).not.toHaveBeenCalled()
   })
 
-  it('des tableaux de bord existent, avec le droit d’édition : le bouton se branche dans l’en-tête de `BiBoard`', () => {
+  it('des tableaux de bord existent : l’en-tête ne porte QUE le menu d’actions', () => {
+    // ⚠⚠ Neuf boutons faisaient passer le bandeau à la ligne, et sa hauteur changeait avec
+    // la largeur de la fenêtre. Créer, partir d'un modèle, projeter, dupliquer, supprimer :
+    // tout tient désormais dans ce menu.
     canEdit = true
     render(<BiScreen />)
 
     render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
-    expect(screen.getByText('nouveau')).toBeTruthy()
+    expect(screen.getByText('actions')).toBeTruthy()
+    expect(screen.queryByText('nouveau')).toBeNull()
   })
 
-  it('des tableaux de bord existent, sans le droit d’édition : aucune CRÉATION dans l’en-tête', () => {
+  it('le droit d’édition VOYAGE jusqu’au menu, qui cadenasse lui-même ses gestes', () => {
     canEdit = false
     render(<BiScreen />)
-
-    // ⚠ L'en-tête n'est pas vide pour autant : « Modèles » y reste, car il n'écrit rien de
-    // lui-même (la galerie cadenasse la création carte par carte). Ce qui doit disparaître,
-    // c'est la création VIERGE, qui écrit dès le clic.
     render(<>{vi.mocked(BiBoard).mock.calls.at(-1)![0].headerAction}</>)
-    expect(screen.queryByText('nouveau')).toBeNull()
+    // Le menu reste monté : projeter au mur ou rouvrir un modèle n'écrit rien.
+    expect(vi.mocked(BoardActionsMenu).mock.calls.at(-1)![0].canEdit).toBe(false)
   })
 })
 

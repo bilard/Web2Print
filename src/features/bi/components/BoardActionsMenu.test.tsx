@@ -36,6 +36,7 @@ const show = (over: { canEdit?: boolean; onDeleted?: () => void; onDuplicated?: 
     <BoardActionsMenu
       board={BOARD} uid="u1" canEdit={over.canEdit ?? true}
       onDuplicated={over.onDuplicated ?? (() => {})} onDeleted={over.onDeleted ?? (() => {})}
+      onOpenBoard={() => {}} onTv={() => {}}
     />,
   )
 
@@ -50,9 +51,14 @@ beforeEach(() => {
 const openMenu = () => fireEvent.click(screen.getByLabelText(/Actions sur ce tableau/))
 
 describe('BoardActionsMenu', () => {
-  it('reste invisible pour un rôle consultation seule', () => {
-    const { container } = show({ canEdit: false })
-    expect(container.querySelector('button')).toBeNull()
+  it('⚠ sans droit d’édition, le menu RESTE — mais sans aucun geste qui écrit', () => {
+    // Projeter au mur ou repartir d'un modèle existant n'est pas modifier : masquer tout le
+    // menu priverait un rôle consultation de gestes qui lui sont dus.
+    show({ canEdit: false })
+    openMenu()
+    expect(screen.queryByText('Dupliquer')).toBeNull()
+    expect(screen.queryByText('Supprimer')).toBeNull()
+    expect(screen.getByText('Mode TV')).toBeTruthy()
   })
 
   it('⚠⚠ ne supprime RIEN au clic sur « Supprimer » : la confirmation d’abord', () => {

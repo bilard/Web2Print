@@ -60,6 +60,30 @@ export function useBoardCommands(uid: string | null) {
   }, [uid, user, accountId])
 
   /**
+   * Crée un tableau VIDE mais VALIDE — un document que `parseDashboard` refuserait serait
+   * invisible dans la liste, sans que rien ne le dise.
+   *
+   * ⚠ Le même geste est offert par le bouton de l'écran vide et par le menu du bandeau :
+   * deux écritures écrites séparément finiraient par diverger sur un champ.
+   */
+  const createBlank = useCallback(async (): Promise<string | null> => {
+    if (!uid || !user) { toast.error(t('bi.save.failed')); return null }
+    try {
+      const id = await freeId(uid)
+      const now = Date.now()
+      await saveDashboard(uid, {
+        id, name: t('bi.new.defaultName'), accountId, workspaceUid: uid,
+        tiles: [], layout: [], filters: [],
+        version: DASHBOARD_VERSION, createdAt: now, updatedAt: now, createdBy: user.uid,
+      })
+      return id
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('bi.save.failed'))
+      return null
+    }
+  }, [uid, user, accountId])
+
+  /**
    * Crée un tableau à partir d'un plan (création par prompt) : ses tuiles et leur mise en
    * page arrivent DÉJÀ posées.
    *
@@ -105,5 +129,5 @@ export function useBoardCommands(uid: string | null) {
     }
   }, [uid])
 
-  return { duplicate, remove, createFromPlan }
+  return { duplicate, remove, createFromPlan, createBlank }
 }
