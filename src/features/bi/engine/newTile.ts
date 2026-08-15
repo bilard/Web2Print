@@ -8,6 +8,10 @@ const SIZES: Record<TileKind, { w: number; h: number }> = {
   bar: { w: 6, h: 6 }, line: { w: 6, h: 6 }, area: { w: 6, h: 6 },
   pie: { w: 4, h: 6 }, doughnut: { w: 4, h: 6 },
   table: { w: 6, h: 7 }, pivot: { w: 8, h: 7 },
+  // La jauge tient dans un carré ; l'entonnoir a besoin de hauteur pour ses étapes ; le
+  // nuage et la carte de chaleur, de largeur pour que leurs axes restent lisibles.
+  gauge: { w: 3, h: 4 }, funnel: { w: 5, h: 6 },
+  scatter: { w: 6, h: 6 }, heatmap: { w: 8, h: 7 },
 }
 
 /**

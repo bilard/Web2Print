@@ -14,6 +14,10 @@ import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { TileFrame } from './TileFrame'
 import { KpiTile } from './tiles/KpiTile'
+import { GaugeTile } from './tiles/GaugeTile'
+import { FunnelTile } from './tiles/FunnelTile'
+import { ScatterTile } from './tiles/ScatterTile'
+import { HeatmapTile } from './tiles/HeatmapTile'
 import { ChartTile } from './tiles/ChartTile'
 import { TableTile } from './tiles/TableTile'
 import { PivotTile } from './tiles/PivotTile'
@@ -61,7 +65,9 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     () => new Set((tile.query.tooltips ?? []).map((m) => measureKey(m))), [tile.query])
 
   const { result, state, message, updatedAt, live, retry } = useTileData(query, globalFilters)
-  const skeleton = tile.kind === 'kpi' ? 'kpi' : tile.kind === 'table' || tile.kind === 'pivot' ? 'table' : 'chart'
+  const skeleton = tile.kind === 'kpi' || tile.kind === 'gauge'
+    ? 'kpi'
+    : tile.kind === 'table' || tile.kind === 'pivot' || tile.kind === 'heatmap' ? 'table' : 'chart'
   return (
     <div className={`h-full transition-opacity duration-200 ${dimmed ? 'opacity-40' : ''}`}>
     <TileFrame
@@ -71,6 +77,11 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     >
       {result && (
         tile.kind === 'kpi' ? <KpiTile result={result} />
+          : tile.kind === 'gauge' ? <GaugeTile result={result} />
+          : tile.kind === 'funnel' ? <FunnelTile result={result} />
+          : tile.kind === 'scatter' ? <ScatterTile result={result} />
+          : tile.kind === 'heatmap'
+            ? <HeatmapTile result={result} columnDim={tile.options?.pivotColumn} />
           : tile.kind === 'table' ? <TableTile result={result} />
           : tile.kind === 'pivot'
             ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}

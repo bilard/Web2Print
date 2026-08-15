@@ -1,9 +1,10 @@
 // Galerie des types de visuel. Cliquer un type CHANGE celui de la tuile sélectionnée.
 //
-// ⚠⚠ Les huit types sont ceux du contrat (`TILE_KINDS`), jamais une liste décorative : une
+// ⚠⚠ Les types sont ceux du contrat (`TILE_KINDS`), jamais une liste décorative : une
 // vignette qui ne correspondrait à aucun `TileKind` produirait une tuile refusée par
 // `parseDashboard`, donc invisible sans un mot.
-import { BarChart3, LineChart, AreaChart, PieChart, Donut, Hash, Table2, Grid3x3 } from 'lucide-react'
+import { BarChart3, LineChart, AreaChart, PieChart, Donut, Hash, Table2, Grid3x3,
+  Gauge, ScatterChart, Filter, LayoutGrid } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import type { TranslationKey } from '@/lib/i18n'
 import type { TileKind } from '../types'
@@ -17,6 +18,10 @@ const KINDS: { kind: TileKind; labelKey: TranslationKey; Icon: typeof BarChart3 
   { kind: 'kpi', labelKey: 'bi.kind.kpi', Icon: Hash },
   { kind: 'table', labelKey: 'bi.kind.table', Icon: Table2 },
   { kind: 'pivot', labelKey: 'bi.kind.pivot', Icon: Grid3x3 },
+  { kind: 'gauge', labelKey: 'bi.kind.gauge', Icon: Gauge },
+  { kind: 'scatter', labelKey: 'bi.kind.scatter', Icon: ScatterChart },
+  { kind: 'funnel', labelKey: 'bi.kind.funnel', Icon: Filter },
+  { kind: 'heatmap', labelKey: 'bi.kind.heatmap', Icon: LayoutGrid },
 ]
 
 export function BiVizGallery({ kind, onChange, disabled }: {

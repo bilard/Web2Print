@@ -134,7 +134,13 @@ const querySchema = z.object({
 })
 export type QuerySpec = z.infer<typeof querySchema>
 
-const TILE_KINDS = ['kpi', 'bar', 'line', 'area', 'pie', 'doughnut', 'table', 'pivot'] as const
+// ⚠ AJOUTER À LA FIN, jamais réordonner ni retirer : ces valeurs sont persistées dans les
+// tuiles enregistrées, et un type disparu ferait rejeter tout le document par `parseDashboard`
+// — le tableau de bord deviendrait invisible pour son auteur.
+const TILE_KINDS = [
+  'kpi', 'bar', 'line', 'area', 'pie', 'doughnut', 'table', 'pivot',
+  'gauge', 'scatter', 'funnel', 'heatmap',
+] as const
 export type TileKind = (typeof TILE_KINDS)[number]
 
 const tileSchema = z.object({

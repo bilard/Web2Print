@@ -5,7 +5,8 @@
 // registre statique : sinon ce menu proposerait des colonnes que le moteur ne connaît pas
 // (`useTileData` les rejette avec « Dimension inconnue pour cette source »).
 import { useMemo, useState } from 'react'
-import { AlertTriangle, BarChart3, LineChart, PieChart, Hash, Table2, Grid3x3, Plus } from 'lucide-react'
+import { AlertTriangle, BarChart3, LineChart, PieChart, Hash, Table2, Grid3x3, Plus,
+  Gauge, ScatterChart, Filter, LayoutGrid } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker, type PickerOption } from './BiPicker'
 import { biLabel } from './biLabel'
@@ -15,6 +16,8 @@ import type { MeasureRef, TileKind } from '../types'
 const KINDS: { kind: TileKind; Icon: typeof BarChart3 }[] = [
   { kind: 'kpi', Icon: Hash }, { kind: 'bar', Icon: BarChart3 }, { kind: 'line', Icon: LineChart },
   { kind: 'pie', Icon: PieChart }, { kind: 'table', Icon: Table2 }, { kind: 'pivot', Icon: Grid3x3 },
+  { kind: 'gauge', Icon: Gauge }, { kind: 'scatter', Icon: ScatterChart },
+  { kind: 'funnel', Icon: Filter }, { kind: 'heatmap', Icon: LayoutGrid },
 ]
 
 /** Une mesure du registre → la `MeasureRef` que la tuile enregistre : la colonne et son
