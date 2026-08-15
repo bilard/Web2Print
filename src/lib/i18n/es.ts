@@ -463,6 +463,9 @@ export const es: Record<TranslationKey, string> = {
   'bi.source.loadingCatalog': 'Lectura del catálogo de origen — bloque {done}/{total}, {expected} productos anunciados',
   'bi.source.loadingSite': 'Lectura de las fichas de {site}…',
   'bi.source.shown': 'Datos mostrados',
+  'bi.source.retargeted': '{count} tarjeta(s) cambiada(s) a la nueva fuente',
+  'bi.source.retargetNone': 'Ninguna tarjeta puede leer esta fuente',
+  'bi.source.blockedOne': '{title} — campo ausente: {field}',
   'bi.source.idle': 'Esta fuente aún no alimenta ninguna tarjeta: añada una para cargarla.',
   'bi.source.serverNeeded': 'Cruzar TODOS los competidores a nivel de ficha requiere el motor de servidor (lote 3): cada origen anterior se lee por separado.',
 

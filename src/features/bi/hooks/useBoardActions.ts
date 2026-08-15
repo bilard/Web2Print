@@ -154,6 +154,21 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
     }
   }, [write, current, pageId])
 
+  /**
+   * Fait changer de SOURCE les tuiles qui le peuvent, et rend de quoi revenir en arrière.
+   *
+   * ⚠ Les tuiles viennent de l'appelant — ce que l'écran montre —, jamais de `current` : le
+   * document retarde d'un aller-retour, et écrire depuis lui défait le geste précédent.
+   */
+  const retarget = useCallback((next: Tile[], layout: TilePlacement[], before: Tile[]) => {
+    live.current = { pageId, tiles: next, layout }
+    write(replacePage(current, pageId, { tiles: next, layout }))
+    return () => {
+      live.current = { pageId, tiles: before, layout }
+      write(replacePage(current, pageId, { tiles: before, layout }))
+    }
+  }, [write, current, pageId])
+
   // ⚠⚠ Changer le type d'un visuel n'est PLUS ici : c'est devenu un geste du constructeur
   // (`retypeTile` + `useTileEdits`), pour trois raisons qui tiennent ensemble — la requête
   // doit être remise d'aplomb avec le type (un indicateur ne garde pas d'axe, sous peine
@@ -163,5 +178,8 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
 
   // ⚠ `write` n'est PAS rendu : c'était l'échappatoire générique par laquelle un appelant
   // pouvait réécrire le document sans passer par `fresh()` — donc réintroduire le défaut.
-  return { trackPage, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage, removeTile }
+  return {
+    trackPage, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage,
+    removeTile, retarget,
+  }
 }

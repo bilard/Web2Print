@@ -464,6 +464,9 @@ export const en: Record<TranslationKey, string> = {
   'bi.source.loadingCatalog': 'Reading the source catalogue — slice {done}/{total}, {expected} products announced',
   'bi.source.loadingSite': 'Reading {site}’s listings…',
   'bi.source.shown': 'Data shown',
+  'bi.source.retargeted': '{count} tile(s) switched to the new source',
+  'bi.source.retargetNone': 'No tile can read this source',
+  'bi.source.blockedOne': '{title} — missing field: {field}',
   'bi.source.idle': 'This source does not feed any tile yet: add one to load it.',
   'bi.source.serverNeeded': 'Cross-referencing EVERY competitor at listing level needs the server engine (batch 3): each source above is read on its own.',
 

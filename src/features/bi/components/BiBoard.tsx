@@ -22,12 +22,14 @@ import { usePendingTiles } from '../hooks/usePendingTiles'
 import { useBoardActions } from '../hooks/useBoardActions'
 import { useTickingNow } from '../hooks/useTickingNow'
 import { useAddTile } from '../hooks/useAddTile'
+import { retargetTiles } from '../engine/retarget'
 import { useBoardCommands } from '../hooks/useBoardCommands'
 import type { TvMode } from '../hooks/useTvMode'
 import { PromptBoardDialog } from './PromptBoardDialog'
 import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
 import { useBoardSource, useWatchSourceState, useShownUpdatedAt, isWatchSource } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
+import { effectivePimSource } from '../registry/pim.source'
 import { ageLabel } from '../engine/age'
 import { useTileEdits } from '../builder/useTileEdits'
 import { useBuilderHistory } from '../builder/useBuilderHistory'
@@ -42,7 +44,7 @@ import { BiPageTabs } from './BiPageTabs'
 import { BiStatusBar } from './BiStatusBar'
 import { DashboardGrid } from './DashboardGrid'
 import { useTranslation } from '@/lib/i18n'
-import type { Dashboard, DashboardPage, Tile, TileKind, TilePlacement } from '../types'
+import type { Dashboard, DashboardPage, SourceId, Tile, TileKind, TilePlacement } from '../types'
 
 interface BiBoardProps {
   current: Dashboard
@@ -250,6 +252,36 @@ export function BiBoard({
     })
   }, [act, tiles, draft.layout, hist, addPending])
 
+  /**
+   * Changer la source du tableau : les tuiles qui le peuvent SUIVENT.
+   *
+   * ⚠⚠ Une tuile ne bascule que si la source d'arrivée porte tous ses champs. Celles qui
+   * restent sont NOMMÉES avec le champ en cause — « 3 tuiles non converties » n'apprend
+   * rien, « Écart médian — champ absent : medGapPct » dit quoi faire.
+   * ⚠ Le geste est annulable : un clic dans un menu ne doit pas abîmer un tableau sans
+   * retour possible.
+   */
+  const changeSource = useCallback((next: SourceId) => {
+    setSourceId(next)
+    const target = next === 'pim.products' ? effectivePimSource(sheet) : getSource(next)
+    const r = retargetTiles(tiles, next, target)
+    if (r.moved === 0 && r.blocked.length === 0) return
+    if (r.moved > 0) {
+      const undo = act.retarget(r.tiles, draft.layout, tiles)
+      toast.success(t('bi.source.retargeted', { count: r.moved }), {
+        description: r.blocked.length
+          ? r.blocked.map((b) => t('bi.source.blockedOne', { title: b.title, field: b.field })).join(' · ')
+          : undefined,
+        action: { label: t('bi.tile.undo'), onClick: () => undo() },
+      })
+      return
+    }
+    // Rien n'a pu suivre : le dire, plutôt que de laisser croire que le clic n'a rien fait.
+    toast.warning(t('bi.source.retargetNone'), {
+      description: r.blocked.map((b) => t('bi.source.blockedOne', { title: b.title, field: b.field })).join(' · '),
+    })
+  }, [act, tiles, draft.layout, setSourceId, sheet, t])
+
   const onAddPage = useCallback(() => onPageCreated(act.addPage(pages)), [act, pages, onPageCreated])
 
   return (
@@ -278,7 +310,7 @@ export function BiBoard({
         /* ⚠ `onDbChange` seulement pour qui peut écrire : le choix de base est PERSISTÉ dans
            le document, un rôle consultation seule ne doit pas tenter l'écriture. */
         sourcePicker={<SourcePicker context={context} demanded={demanded} sourceId={sourceId}
-          onSourceChange={setSourceId} withStatus={false} editing={inEdit}
+          onSourceChange={changeSource} withStatus={false} editing={inEdit}
           dbId={current.sourceDbId} sheetName={current.sourceSheetName}
           onDbChange={canEdit ? act.setSourceDb : undefined} />}
         editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
