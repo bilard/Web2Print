@@ -75,7 +75,10 @@ export function wellCapacity(well: WellId, kind: TileKind): number {
   const round = kind === 'pie' || kind === 'doughnut'
   const grid = kind === 'table' || kind === 'pivot'
   switch (well) {
-    case 'axis': return kind === 'kpi' ? 0 : grid ? INF : 1
+    // ⚠ L'indicateur accepte UN axe : il n'en montre pas les groupes mais la TENDANCE —
+    // dernier point en grand, variation depuis le précédent, courbe de la série
+    // (cf. `kpiData`). Sans axe, il reste ce qu'il a toujours été : une valeur.
+    case 'axis': return grid ? INF : 1
     // ⚠ Le NUAGE l'accepte aussi : ses deux mesures sont ses AXES, pas des séries — une
     // dimension de légende y colorie les points par catégorie sans rien lui prendre.
     case 'legend': return kind === 'pivot' || kind === 'scatter' ? 1 : chart || round ? 1 : 0

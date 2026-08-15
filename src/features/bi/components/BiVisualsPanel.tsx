@@ -13,6 +13,7 @@ import { BiFieldWell } from './BiFieldWell'
 import { BiFiltersSection } from './BiFiltersSection'
 import { BiVizGallery, kindLabelKey } from './BiVizGallery'
 import { BiAlertField } from './BiAlertField'
+import { BiFormatSection } from './BiFormatSection'
 import { WELL_IDS } from '../builder/wells'
 import type { DataSource } from '../registry/types'
 import type { FilterClause, Tile, TileKind } from '../types'
@@ -58,6 +59,11 @@ export function BiVisualsPanel({ tile, source, globalFilters, onChangeKind, onAp
             canEdit={canEdit} onApply={onApply}
           />
         ))}
+      </div>
+
+      {/* La mise en forme suit les zones : on compose d'abord, on règle l'allure ensuite. */}
+      <div className="pt-2 border-t border-white/[0.06]">
+        <BiFormatSection tile={tile} canEdit={canEdit} onApply={onApply} />
       </div>
 
       {/* Le seuil ferme le volet : c'est un réglage de SURVEILLANCE, pas de composition. */}

@@ -4,7 +4,7 @@ import type { KpiHistoryPoint } from '../types'
 import type { Cockpit } from './analytics'
 import { trendDelta, sparkSeries } from './analytics'
 import { eur, pct, when } from './format'
-import { Sparkline } from './Sparkline'
+import { Sparkline } from '@/components/Sparkline'
 import { AnimatedNumber } from '@/components/shared/AnimatedNumber'
 import { useTranslation } from '@/lib/i18n'
 

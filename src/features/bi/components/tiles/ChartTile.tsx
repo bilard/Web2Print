@@ -30,8 +30,10 @@ installChartVisibilityRepair()
 
 const EMPTY: ReadonlySet<string> = new Set()
 
-export function ChartTile({ result, kind, stacked, tooltipKeys, onPick, onDrill }: {
+export function ChartTile({ result, kind, stacked, horizontal, tooltipKeys, onPick, onDrill }: {
   result: AggregateResult; kind: TileKind; stacked?: boolean
+  /** Barres couchées : l'axe des CATÉGORIES passe en vertical. */
+  horizontal?: boolean
   /** Clés des mesures montrées AU SURVOL seulement. */
   tooltipKeys?: ReadonlySet<string>
   /**
@@ -61,7 +63,11 @@ export function ChartTile({ result, kind, stacked, tooltipKeys, onPick, onDrill 
   const tips = result.columns.filter((c) => c.role === 'measure' && hidden.has(c.key))
 
   const data = { labels: model.labels, datasets: model.datasets }
+  // ⚠ `indexAxis: 'y'` COUCHE les barres : chart.js échange alors le rôle des deux échelles
+  // tout seul — l'axe des catégories devient `y`, celui des valeurs `x`. Rien d'autre à
+  // inverser ici, et surtout pas les titres d'axes, qu'il repositionne avec.
   const options = {
+    indexAxis: horizontal && kind === 'bar' ? ('y' as const) : ('x' as const),
     maintainAspectRatio: false,
     plugins: {
       // ⚠ Camembert/anneau nomment leurs tranches par la LÉGENDE (les labels de `data`,

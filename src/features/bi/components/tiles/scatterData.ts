@@ -15,7 +15,7 @@ export interface ScatterPoint {
   label: string
 }
 
-export interface ScatterSeries {
+interface ScatterSeries {
   /** Valeur de la dimension de légende. Vide quand le nuage n'en porte pas. */
   label: string
   color: string

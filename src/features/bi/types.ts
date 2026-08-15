@@ -150,6 +150,10 @@ const tileSchema = z.object({
   query: querySchema,
   options: z.object({
     stacked: z.boolean().optional(),
+    /** Barres COUCHÉES. ⚠ Sur un classement aux libellés longs (des noms de sites, de
+     *  familles), l'horizontale est le seul format lisible : à la verticale, chart.js
+     *  incline les libellés à 45° et les tronque. */
+    horizontal: z.boolean().optional(),
     showTotals: z.boolean().optional(),
     /** Dimension portée en COLONNES du tableau croisé ; les autres restent en lignes. */
     pivotColumn: z.string().optional(),

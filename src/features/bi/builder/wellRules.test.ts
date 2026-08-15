@@ -19,8 +19,15 @@ describe('acceptField', () => {
       .toBe('bi.well.refuse.noSelection')
   })
 
-  it('refuse une dimension à un INDICATEUR — il n’affiche qu’une valeur', () => {
-    expect(reason(acceptField('axis', testTile('kpi'), brand, testSource)))
+  // ⚠⚠ L'indicateur ACCEPTE un axe depuis qu'il sait montrer une tendance : dernier point en
+  // grand, variation depuis le précédent, courbe de la série (cf. `kpiData`). Il refusait
+  // auparavant toute dimension, faute de savoir quoi en faire d'autre qu'un chiffre faux.
+  it('accepte UN axe sur un indicateur : c’est sa tendance', () => {
+    expect(acceptField('axis', testTile('kpi'), brand, testSource).ok).toBe(true)
+  })
+
+  it('mais toujours pas de légende — un indicateur n’a qu’une série', () => {
+    expect(reason(acceptField('legend', testTile('kpi'), brand, testSource)))
       .toBe('bi.well.refuse.kpiDimension')
   })
 
@@ -96,8 +103,8 @@ describe('bestWellFor', () => {
     expect(bestWellFor(testTile('bar'), brand, testSource)).toBe('axis')
   })
 
-  it('se replie sur les valeurs pour un indicateur, qui n’a pas d’axe', () => {
-    expect(bestWellFor(testTile('kpi'), brand, testSource)).toBe('values')
+  it('envoie aussi une dimension à l’axe d’un indicateur — sa tendance', () => {
+    expect(bestWellFor(testTile('kpi'), brand, testSource)).toBe('axis')
   })
 
   it('se replie sur la légende quand l’axe est déjà pris', () => {

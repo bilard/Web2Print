@@ -37,6 +37,7 @@ export function TileVisual({ tile, result, accent, tooltipKeys, onPick, onDrill 
         showTotals={tile.options?.showTotals} />
     default:
       return <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked}
+        horizontal={tile.options?.horizontal}
         tooltipKeys={tooltipKeys} onPick={onPick} onDrill={onDrill} />
   }
 }

@@ -131,10 +131,13 @@ describe('reorderWell et setChipAggregation', () => {
 })
 
 describe('retypeTile', () => {
-  it('DÉPOUILLE un indicateur de son axe — sinon il afficherait une ligne pour un total', () => {
+  // ⚠⚠ L'indicateur GARDE l'axe d'un graphe basculé : il en fait sa tendance (dernier point
+  // en grand, variation, courbe). Il le dépouillait auparavant, faute de savoir quoi en
+  // faire d'autre qu'un chiffre pris au hasard parmi les groupes.
+  it('garde l’axe d’un graphe passé en indicateur — il en fait sa tendance', () => {
     const bar = dropInWell(testTile('bar'), 'axis', brand, testSource)
     const kpi = retypeTile(bar, 'kpi')
-    expect(kpi.query.dimensions).toEqual([])
+    expect(kpi.query.dimensions).toHaveLength(1)
     assertValid(kpi)
   })
 
@@ -145,11 +148,13 @@ describe('retypeTile', () => {
     assertValid(pie)
   })
 
-  it('dépouille un CROISÉ passé en indicateur — deux axes ET sa colonne de croisement', () => {
+  it('ramène un CROISÉ passé en indicateur à UN seul axe, et perd sa colonne de croisement', () => {
     const pivot = dropInWell(dropInWell(testTile('pivot'), 'axis', brand, testSource),
       'legend', price, testSource)
     const kpi = retypeTile(pivot, 'kpi')
-    expect(kpi.query.dimensions).toEqual([])
+    // ⚠ UN axe : c'est tout ce qu'une tendance peut porter. Le second n'aurait nulle part
+    // où s'afficher, et un croisement sans colonne ne croise plus rien.
+    expect(kpi.query.dimensions).toHaveLength(1)
     expect(kpi.options?.pivotColumn).toBeUndefined()
     assertValid(kpi)
   })
