@@ -104,12 +104,25 @@ describe('filtrage croisé — du clic au recalcul', () => {
     expect(screen.queryByText('1 320')).toBeNull()
   })
 
+  it('⚠ le sélecteur du bandeau pose le MÊME filtre que le clic sur une barre', async () => {
+    // C'est la porte d'entrée qui manquait : « comment sélectionner un concurrent ? ». Deux
+    // mécaniques distinctes donneraient deux filtres à retirer séparément.
+    render(board())
+    expect(await screen.findByText('1 320')).toBeTruthy()
+    const picker = screen.getByTitle(/Restreint tout le tableau/)
+    await act(async () => { picker.click() })
+    await act(async () => { screen.getByText(/^alpha\.fr \(/).click() })
+    expect(await screen.findByText('1 000')).toBeTruthy()
+    expect(screen.getByText(/Concurrent\s*:\s*alpha\.fr/)).toBeTruthy()
+  })
+
   it('le filtre du clic se VOIT, et se retire', async () => {
     render(board())
     await act(async () => { screen.getByText('clic-barre').click() })
     // Sans cette puce, un filtre pourrait restreindre toute la page sans se montrer.
-    const chip = await screen.findByText(/alpha\.fr/)
-    expect(chip).toBeTruthy()
+    // ⚠ On vise la PUCE : le sélecteur rapide du bandeau porte aussi la valeur, puisqu'il
+    // reflète le même filtre — deux éléments, une seule vérité.
+    expect(await screen.findByText(/Concurrent\s*:\s*alpha\.fr/)).toBeTruthy()
 
     // Re-cliquer la même valeur annule : le geste doit être réversible sans le bandeau.
     await act(async () => { screen.getByText('clic-barre').click() })

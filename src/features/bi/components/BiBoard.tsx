@@ -13,6 +13,8 @@ import { usePimStore } from '@/stores/pim.store'
 import { upsertFilter, describeFilter } from '../filters/filterOptions'
 import { drillDown, applyDrill, type DrillStep } from '../filters/drill'
 import { CrossFilterChip } from './CrossFilterChip'
+import { BiQuickFilter } from './BiQuickFilter'
+import { quickFilterTarget } from '../filters/quickFilter'
 import { DrillCrumbs } from './DrillCrumbs'
 import { useBoardExport } from '../export/useBoardExport'
 import { useSourceRows } from '../hooks/useSourceRows'
@@ -182,6 +184,8 @@ export function BiBoard({
   const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
   const watch = useWatchSourceState(sourceId)
   const shownUpdatedAt = useShownUpdatedAt(demanded)
+  // Sur quoi porte le filtre d'un coup d'œil (le concurrent, sur la veille).
+  const quick = useMemo(() => quickFilterTarget(demanded), [demanded])
   const onWatch = isWatchSource(sourceId)
 
   // ⚠ L'export part des filtres EFFECTIFS (ceux du tableau plus celui d'un clic croisé) :
@@ -351,7 +355,19 @@ export function BiBoard({
                disparaître le menu à l'identique du bouton et du raccourci clavier. */
             /* L'état des sources de veille : des PHRASES, qui ont ici la place qu'elles
                n'ont pas dans le bandeau — et qui parlent du jeu de données, comme la barre. */
-            trailing={<><SourceStatusList context={context} demanded={demanded} sourceId={sourceId}
+            trailing={<>
+              {/* ⚠ La PORTE D'ENTRÉE du filtrage croisé : le clic sur une barre faisait déjà
+                  la même chose, mais rien ne l'annonçait. Même mécanique, même puce. */}
+              {quick && (
+                <BiQuickFilter
+                  sourceId={quick.sourceId} source={getSource(quick.sourceId)} field={quick.field}
+                  value={crossFilter?.field === quick.field ? crossFilter.value : null}
+                  onChange={(v) => setCrossFilter(v === null
+                    ? null
+                    : { tileId: '', field: quick.field, value: v })}
+                />
+              )}
+              <SourceStatusList context={context} demanded={demanded} sourceId={sourceId}
               dbName={current.sourceDbName} />
               {/* ⚠ Le filtre du clic AVANT le reste : c'est lui qui restreint ce que montrent
                   les tuiles à cet instant, et il doit se lire sans survol. */}

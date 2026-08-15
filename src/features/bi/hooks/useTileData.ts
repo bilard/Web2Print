@@ -9,6 +9,7 @@ import { getSource } from '../registry/sources'
 import { effectivePimSource } from '../registry/pim.source'
 import { isWatchSource, useWatchSourceState } from './useWatchData'
 import { BiKeyedError, type BiMessage, type FilterClause, type QuerySpec } from '../types'
+import type { DataSource } from '../registry/types'
 
 export interface TileData {
   result: AggregateResult | null
@@ -27,6 +28,28 @@ export interface TileData {
   live: boolean
   retry: () => void
 }
+
+/**
+ * Partage les filtres de page entre ceux que la source SAIT appliquer et les autres.
+ *
+ * ⚠⚠ Un filtre posé sur un champ que la source ignore ne retient RIEN : appliqué tel quel,
+ * il vidait les tuiles du catalogue dès qu'on filtrait sur un concurrent — un cadre vide se
+ * lit comme une panne. On l'écarte donc… et on le DIT (`NOT_APPLICABLE`), car un filtre
+ * silencieusement ignoré ferait voisiner un total complet avec des chiffres filtrés, ce qui
+ * est pire encore.
+ */
+function splitFilters(filters: FilterClause[], source: DataSource): {
+  applied: FilterClause[]
+  ignored: boolean
+} {
+  if (filters.length === 0) return { applied: filters, ignored: false }
+  const dims = new Set(source.dimensions.map((d) => d.id))
+  const applied = filters.filter((f) => dims.has(f.field))
+  return { applied, ignored: applied.length !== filters.length }
+}
+
+/** Ce que dit une tuile qui ne connaît pas le filtre de la page. */
+const NOT_APPLICABLE: BiMessage = { kind: 'key', key: 'bi.filter.notApplicable' }
 
 export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): TileData {
   const products = usePimStore((s) => s.products)
@@ -52,7 +75,8 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
             message: watch.message, updatedAt: null, live: false, retry,
           }
         }
-        const merged: QuerySpec = { ...query, filters: [...query.filters, ...globalFilters] }
+        const { applied, ignored } = splitFilters(globalFilters, registered)
+        const merged: QuerySpec = { ...query, filters: [...query.filters, ...applied] }
         const result = aggregate(watch.rows, merged, registered)
         // ⚠ `live: false` : ces lignes sont une PHOTO relue à la demande (le catalogue source
         // et les fiches d'un site ne sont pas des abonnements). Un point qui bat affirmerait
@@ -62,7 +86,9 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
           // ⚠⚠ La réserve VOYAGE avec les chiffres : sur un relevé incomplet, la tuile affiche
           // ses totaux ET dit qu'ils sont sous-comptés (`TileFrame` la rend au-dessus du
           // contenu). Les taire ferait d'un total amputé un total comme un autre.
-          message: watch.message,
+          // ⚠ La réserve du relevé passe AVANT : un total sous-compté est plus grave qu'un
+          // filtre inapplicable.
+          message: watch.message ?? (ignored ? NOT_APPLICABLE : undefined),
           updatedAt: watch.updatedAt, live: query.source === 'watch.summary', retry,
         }
       }
@@ -91,7 +117,8 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       // sans lui, le menu et le moteur pourraient diverger sur les dimensions disponibles.
       const source = registered.id === 'pim.products' ? effectivePimSource(sheet) : registered
       const rows = hasSheet ? rowsFromSheet(sheet) : pimRows(products, [])
-      const merged: QuerySpec = { ...query, filters: [...query.filters, ...globalFilters] }
+      const { applied, ignored } = splitFilters(globalFilters, source)
+      const merged: QuerySpec = { ...query, filters: [...query.filters, ...applied] }
       const result = aggregate(rows, merged, source)
       // ⚠⚠ `live` était `true` EN DUR : une tuile en erreur, ou vide faute de base ouverte,
       // portait le même point clignotant qu'une tuile réellement alimentée. Seule une
@@ -101,6 +128,7 @@ export function useTileData(query: QuerySpec, globalFilters: FilterClause[]): Ti
       return {
         result,
         state: ready ? 'ready' : 'empty',
+        message: ignored ? NOT_APPLICABLE : undefined,
         updatedAt: Date.now(), live: ready, retry,
       }
     } catch (e) {

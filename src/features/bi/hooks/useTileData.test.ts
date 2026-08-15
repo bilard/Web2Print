@@ -134,3 +134,29 @@ describe('useTileData — sources de veille', () => {
     expect(result.current.live).toBe(false)
   })
 })
+
+// ⚠⚠ Ce que ces tests protègent : deux façons opposées de mentir. Appliquer un filtre qu'une
+// source ignore VIDE la tuile — un cadre vide se lit comme une panne. L'ignorer en silence
+// fait voisiner un total complet avec des chiffres filtrés, ce qui est pire.
+describe('filtre de page inapplicable à la source', () => {
+  it('n’applique PAS un filtre dont la source ignore le champ, et le DIT', () => {
+    useExcelStore.setState({ sheets: [sheet([{ _id: '1', marque: 'A' }, { _id: '2', marque: 'B' }])], activeSheetIndex: 0 })
+    const { result } = renderHook(() => useTileData(
+      { source: 'pim.products', measures: [{ id: 'count' }], dimensions: [], filters: [] },
+      [{ field: 'domain', op: 'eq', value: 'a.fr' }],
+    ))
+    // Les deux lignes sont comptées : le filtre ne retient rien ici, on ne l'applique pas.
+    expect(result.current.result?.rows[0].count).toBe(2)
+    expect(result.current.message).toEqual({ kind: 'key', key: 'bi.filter.notApplicable' })
+  })
+
+  it('applique normalement un filtre que la source CONNAÎT, sans rien dire', () => {
+    useExcelStore.setState({ sheets: [sheet([{ _id: '1', marque: 'A' }, { _id: '2', marque: 'B' }])], activeSheetIndex: 0 })
+    const { result } = renderHook(() => useTileData(
+      { source: 'pim.products', measures: [{ id: 'count' }], dimensions: [], filters: [] },
+      [{ field: 'marque', op: 'eq', value: 'A' }],
+    ))
+    expect(result.current.result?.rows[0].count).toBe(1)
+    expect(result.current.message).toBeUndefined()
+  })
+})
