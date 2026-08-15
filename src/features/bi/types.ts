@@ -153,6 +153,20 @@ const tileSchema = z.object({
     showTotals: z.boolean().optional(),
     /** Dimension portée en COLONNES du tableau croisé ; les autres restent en lignes. */
     pivotColumn: z.string().optional(),
+    /**
+     * Seuil d'alerte sur la mesure de la tuile.
+     *
+     * ⚠⚠ OPTIONNEL, et il doit le rester : tous les tableaux déjà enregistrés n'en portent
+     * pas, et un document que `parseDashboard` rejetterait disparaîtrait de la liste sans
+     * un mot.
+     * ⚠ `op` dit le sens du franchissement : « au-dessus de » n'alerte pas sur les mêmes
+     * chiffres que « en dessous de », et se tromper de sens fait taire l'alerte exactement
+     * quand elle devrait sonner.
+     */
+    alert: z.object({
+      op: z.enum(['gt', 'lt']),
+      value: z.number(),
+    }).optional(),
   }).optional(),
   interactions: z.object({
     emitsFilter: z.boolean().optional(),

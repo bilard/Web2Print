@@ -7,6 +7,7 @@ import { useTranslation } from '@/lib/i18n'
 import { BiPanel } from './BiPanel'
 import { BiFieldWell } from './BiFieldWell'
 import { BiVizGallery, kindLabelKey } from './BiVizGallery'
+import { BiAlertField } from './BiAlertField'
 import { WELL_IDS } from '../builder/wells'
 import type { DataSource } from '../registry/types'
 import type { Tile, TileKind } from '../types'
@@ -40,6 +41,11 @@ export function BiVisualsPanel({ tile, source, onChangeKind, onApply, canEdit }:
           canEdit={canEdit} onApply={onApply}
         />
       ))}
+
+      {/* Le seuil ferme le volet : c'est un réglage de SURVEILLANCE, pas de composition. */}
+      <div className="pt-2 mt-1 border-t border-white/[0.06]">
+        <BiAlertField tile={tile} canEdit={canEdit} onApply={onApply} />
+      </div>
     </BiPanel>
   )
 }

@@ -25,6 +25,9 @@ import { useTileData } from '../hooks/useTileData'
 import { useTileDetail } from '../hooks/useTileDetail'
 import { DetailDrawer } from './DetailDrawer'
 import { applyDrill, type DrillStep } from '../filters/drill'
+import { evaluateAlert } from '../engine/alert'
+import { formatMeasure } from '../engine/formatValue'
+import { intlLocale, useTranslation } from '@/lib/i18n'
 import { measureKey, type FilterClause, type Tile, type TilePlacement } from '../types'
 
 const COLS = 12
@@ -70,6 +73,20 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   // ⚠ Le détail lit la requête EFFECTIVE (forage compris) : le tiroir doit montrer les
   // lignes du niveau où l'on se trouve, pas celles du niveau d'origine.
   const inspect = useTileDetail(tile.title, query, globalFilters)
+  const { t, locale } = useTranslation()
+  // ⚠ Le seuil se lit sur le résultat AFFICHÉ (filtres et forage compris) : évalué sur les
+  // chiffres d'avant filtrage, il sonnerait pour des lignes que la tuile ne montre plus.
+  const alert = useMemo(() => {
+    const rule = tile.options?.alert
+    const state = evaluateAlert(result, rule)
+    if (!rule || !state.breached || state.value === null) return null
+    const measure = result?.columns.find((c) => c.role === 'measure')
+    const fmt = (n: number) => formatMeasure(n, measure?.format, intlLocale(locale))
+    return {
+      label: t(rule.op === 'gt' ? 'bi.alert.breachedGt' : 'bi.alert.breachedLt',
+        { value: fmt(state.value), threshold: fmt(rule.value) }),
+    }
+  }, [result, tile.options?.alert, t, locale])
   const skeleton = tile.kind === 'kpi' || tile.kind === 'gauge'
     ? 'kpi'
     : tile.kind === 'table' || tile.kind === 'pivot' || tile.kind === 'heatmap' ? 'table' : 'chart'
@@ -77,7 +94,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     <div className={`h-full transition-opacity duration-200 ${dimmed ? 'opacity-40' : ''}`}>
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
-      skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected}
+      skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected} alert={alert}
       onSelect={() => onSelect(tile.id)} onInspect={() => inspect.toggle(true)}
       onRetry={retry} onClearFilters={onClearFilters}
     >

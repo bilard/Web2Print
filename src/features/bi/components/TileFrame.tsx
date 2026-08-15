@@ -4,7 +4,7 @@
 // ⚠⚠ L'âge BAT ici, dans le cadre, et surtout PAS dans `TileBody` (`DashboardGrid`) : c'est
 // lui qui porte `useTileData`, et un état qui s'y rafraîchit relancerait l'agrégation de la
 // tuile toutes les dix secondes. Le cadre ne sait rien de la donnée, il ne fait que compter.
-import { Table2 } from 'lucide-react'
+import { Table2, TriangleAlert } from 'lucide-react'
 import { TileSkeleton, TileEmpty, TileError, TileNotice } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
 import { ageLabel } from '../engine/age'
@@ -37,6 +37,9 @@ interface Props {
   editing: boolean
   /** Tuile SÉLECTIONNÉE : c'est elle que les volets de droite décrivent et modifient. */
   selected: boolean
+  /** Seuil franchi : la tuile s'entoure d'ambre et le DIT. ⚠ Un simple changement de couleur
+   *  ne suffit pas — il faut pouvoir lire pourquoi, sans survol ni clic. */
+  alert?: { label: string } | null
   /** Clic sur le cadre. ⚠ `pointerdown` et non `click` : le geste de déplacement avale le
    *  `click`, et une tuile qu'on vient de bouger doit rester celle que les volets décrivent. */
   onSelect: () => void
@@ -50,7 +53,7 @@ interface Props {
 
 export function TileFrame({
   title, updatedAt, live, state, skeleton, message, hasFilters, editing, selected,
-  onSelect, onInspect, onRetry, onClearFilters, children,
+  onSelect, onInspect, onRetry, onClearFilters, alert, children,
 }: Props) {
   const { t } = useTranslation()
   const text = message === undefined ? undefined
@@ -64,11 +67,19 @@ export function TileFrame({
     <div
       onPointerDown={onSelect}
       className={`h-full flex flex-col bg-surface rounded-lg border overflow-hidden transition-colors ${
-        selected ? 'border-indigo-500 ring-1 ring-indigo-500/70' : 'border-white/[0.06]'
+        selected ? 'border-indigo-500 ring-1 ring-indigo-500/70'
+          : alert ? 'border-amber-500/60 ring-1 ring-amber-500/30' : 'border-white/[0.06]'
       }`}
     >
       <div className={`flex items-center gap-2 px-3 py-2 border-b border-white/[0.05] shrink-0 ${handleClass}`}>
         <h3 className="text-[12px] font-semibold text-white truncate flex-1">{title}</h3>
+        {alert && (
+          <span title={alert.label}
+            className="shrink-0 inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-amber-500/15 text-amber-300 text-[10px] tabular-nums max-w-[55%]">
+            <TriangleAlert className="w-3 h-3 shrink-0" />
+            <span className="truncate">{alert.label}</span>
+          </span>
+        )}
         {/* ⚠ Le détail n'est proposé QUE sur une tuile qui rend des chiffres : ailleurs, le
             bouton ouvrirait un tiroir vide et se lirait comme une panne. */}
         {onInspect && state === 'ready' && (
