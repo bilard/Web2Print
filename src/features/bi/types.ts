@@ -139,7 +139,7 @@ export type QuerySpec = z.infer<typeof querySchema>
 // — le tableau de bord deviendrait invisible pour son auteur.
 export const TILE_KINDS = [
   'kpi', 'bar', 'line', 'area', 'pie', 'doughnut', 'table', 'pivot',
-  'gauge', 'scatter', 'funnel', 'heatmap',
+  'gauge', 'scatter', 'funnel', 'heatmap', 'scatter3d',
 ] as const
 export type TileKind = (typeof TILE_KINDS)[number]
 

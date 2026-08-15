@@ -17,6 +17,7 @@ import { KpiTile } from './tiles/KpiTile'
 import { GaugeTile } from './tiles/GaugeTile'
 import { FunnelTile } from './tiles/FunnelTile'
 import { ScatterTile } from './tiles/ScatterTile'
+import { Scatter3DTile } from './tiles/Scatter3DTile'
 import { HeatmapTile } from './tiles/HeatmapTile'
 import { ChartTile } from './tiles/ChartTile'
 import { TableTile } from './tiles/TableTile'
@@ -113,6 +114,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
           : tile.kind === 'gauge' ? <GaugeTile result={result} accent={accent} />
           : tile.kind === 'funnel' ? <FunnelTile result={result} />
           : tile.kind === 'scatter' ? <ScatterTile result={result} />
+          : tile.kind === 'scatter3d' ? <Scatter3DTile result={result} />
           : tile.kind === 'heatmap'
             ? <HeatmapTile result={result} columnDim={tile.options?.pivotColumn} />
           : tile.kind === 'table' ? <TableTile result={result} />

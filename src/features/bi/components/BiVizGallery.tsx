@@ -4,7 +4,7 @@
 // vignette qui ne correspondrait à aucun `TileKind` produirait une tuile refusée par
 // `parseDashboard`, donc invisible sans un mot.
 import { BarChart3, LineChart, AreaChart, PieChart, Donut, Hash, Table2, Grid3x3,
-  Gauge, ScatterChart, Filter, LayoutGrid } from 'lucide-react'
+  Gauge, ScatterChart, Filter, LayoutGrid, Box } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import type { TranslationKey } from '@/lib/i18n'
 import type { TileKind } from '../types'
@@ -20,6 +20,7 @@ const KINDS: { kind: TileKind; labelKey: TranslationKey; Icon: typeof BarChart3 
   { kind: 'pivot', labelKey: 'bi.kind.pivot', Icon: Grid3x3 },
   { kind: 'gauge', labelKey: 'bi.kind.gauge', Icon: Gauge },
   { kind: 'scatter', labelKey: 'bi.kind.scatter', Icon: ScatterChart },
+  { kind: 'scatter3d', labelKey: 'bi.kind.scatter3d', Icon: Box },
   { kind: 'funnel', labelKey: 'bi.kind.funnel', Icon: Filter },
   { kind: 'heatmap', labelKey: 'bi.kind.heatmap', Icon: LayoutGrid },
 ]

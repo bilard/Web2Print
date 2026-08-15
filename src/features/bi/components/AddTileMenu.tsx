@@ -6,7 +6,7 @@
 // (`useTileData` les rejette avec « Dimension inconnue pour cette source »).
 import { useMemo, useState } from 'react'
 import { AlertTriangle, BarChart3, LineChart, PieChart, Hash, Table2, Grid3x3, Plus,
-  Gauge, ScatterChart, Filter, LayoutGrid } from 'lucide-react'
+  Gauge, ScatterChart, Filter, LayoutGrid, Box } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { BiPicker, type PickerOption } from './BiPicker'
 import { biLabel } from './biLabel'
@@ -17,6 +17,7 @@ const KINDS: { kind: TileKind; Icon: typeof BarChart3 }[] = [
   { kind: 'kpi', Icon: Hash }, { kind: 'bar', Icon: BarChart3 }, { kind: 'line', Icon: LineChart },
   { kind: 'pie', Icon: PieChart }, { kind: 'table', Icon: Table2 }, { kind: 'pivot', Icon: Grid3x3 },
   { kind: 'gauge', Icon: Gauge }, { kind: 'scatter', Icon: ScatterChart },
+  { kind: 'scatter3d', Icon: Box },
   { kind: 'funnel', Icon: Filter }, { kind: 'heatmap', Icon: LayoutGrid },
 ]
 

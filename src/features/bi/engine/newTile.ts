@@ -14,6 +14,9 @@ export const SIZES: Record<TileKind, { w: number; h: number }> = {
   // nuage et la carte de chaleur, de largeur pour que leurs axes restent lisibles.
   gauge: { w: 3, h: 4 }, funnel: { w: 5, h: 6 },
   scatter: { w: 6, h: 6 }, heatmap: { w: 8, h: 7 },
+  // Le nuage 3D se tourne : sous cette taille, la boîte et ses étiquettes d'axes se
+  // chevauchent au premier quart de tour.
+  scatter3d: { w: 6, h: 8 },
 }
 
 /**
