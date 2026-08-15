@@ -10,7 +10,7 @@
 // (export PNG/PDF du tableau de bord) recopierait un carré VIDE à la place du nuage.
 //
 // ⚠⚠ CE QUI REND UN NUAGE 3D LISIBLE tient en trois choses, et aucune n'est décorative :
-// les TIGES qui relient chaque point au sol (sans elles, un point flotte à une hauteur
+// les COLONNES qui relient chaque marqueur au sol (sans elles, un point flotte à une hauteur
 // indéterminable sur un écran plat), les GRADUATIONS aux extrémités des axes (sans elles,
 // on voit une forme mais aucune valeur) et les GRILLES de fond (elles donnent l'assise).
 import * as THREE from 'three'
@@ -24,7 +24,7 @@ import { buildFrame } from './scatter3dFrame'
 import type { Scatter3DPoint } from './scatter3dData'
 
 export interface Scatter3DTheme {
-  /** Grisé de repli du décor (pied des tiges). */
+  /** Grisé de repli du décor (pied des colonnes). */
   frame: string
   /**
    * Teinte des trois axes, dans l'ordre X, Y, Z : arête, quadrillage et NOM de l'axe la
@@ -72,7 +72,7 @@ const R = 1.25
  *  axes se distinguent d'emblée. Sa NORME sert de distance de référence au cadrage. */
 const HOME = new THREE.Vector3(2.7, 1.55, 3.1)
 /**
- * Au-delà, plus de tiges : ⚠ mille tiges ne sont plus des repères, c'est une forêt qui
+ * Au-delà, plus de colonnes : ⚠ mille colonnes ne sont plus des repères, c'est une forêt qui
  * cache le nuage — et le nuage dense se lit alors par sa densité, pas point par point.
  */
 const MAX_STEMS = 150
@@ -176,8 +176,8 @@ export class Scatter3DScene {
   private points: THREE.InstancedMesh
   private composer: EffectComposer | null = null
   private bloomPass: UnrealBloomPass | null = null
-  /** Tiges vers le sol + leur pied. `null` = nuage trop dense pour en porter. */
-  private stems: THREE.LineSegments | null = null
+  /** Colonnes vers le sol + leur pied. `null` = nuage trop dense pour en porter. */
+  private stems: THREE.InstancedMesh | null = null
   private feet: THREE.Points | null = null
   private labels: THREE.Sprite[] = []
   private lastPoints: readonly Scatter3DPoint[] | null = null
@@ -280,27 +280,35 @@ export class Scatter3DScene {
   }
 
   /**
-   * Les sphères, en UNE instance de maillage.
+   * Les marqueurs, en UNE instance de maillage.
    *
-   * ⚠ Le rayon décroît avec le nombre de points : à vingt sphères on veut des billes qu'on
-   * distingue, à deux mille des grains qui laissent voir la densité. Un rayon fixe donne
-   * soit un semis illisible, soit une bouillie.
+   * ⚠⚠ Des OCTAÈDRES à facettes franches, pas des sphères. Une bille lisse renvoie un
+   * reflet spéculaire qui bouge avec la caméra et lui donne un air de décor ; un solide
+   * facetté montre trois faces prenant chacune une lumière différente — on lit son
+   * orientation, donc sa place dans l'espace, et il reste net à petite taille.
+   *
+   * ⚠ Le rayon décroît avec le nombre de points : à vingt marqueurs on veut des jalons
+   * qu'on distingue, à deux mille des grains qui laissent voir la densité. Un rayon fixe
+   * donne soit un semis illisible, soit une bouillie.
    */
   private buildPoints(points: readonly Scatter3DPoint[], theme: Scatter3DTheme): THREE.InstancedMesh {
-    const radius = points.length <= 40 ? 0.055 : points.length <= 400 ? 0.038 : 0.026
-    const detail = points.length <= 200 ? 20 : 10
+    const radius = points.length <= 40 ? 0.082 : points.length <= 400 ? 0.055 : 0.034
     const mesh = new THREE.InstancedMesh(
-      new THREE.SphereGeometry(radius, detail, Math.round(detail * 0.7)),
-      // `emissiveIntensity` donne au halo de quoi s'accrocher sans délaver la couleur ;
-      // `roughness` basse pose le reflet qui fait lire le volume.
-      new THREE.MeshStandardMaterial({ roughness: 0.32, metalness: 0.08, emissive: 0x000000 }),
+      new THREE.OctahedronGeometry(radius, 0),
+      // `flatShading` : chaque face garde sa propre valeur d'éclairage, ce sont les ARÊTES
+      // qui dessinent le volume. Lissée, la géométrie redeviendrait une bille.
+      new THREE.MeshStandardMaterial({ roughness: 0.36, metalness: 0.06, flatShading: true }),
       Math.max(points.length, 1),
     )
     mesh.count = points.length
     const matrix = new THREE.Matrix4()
     const color = new THREE.Color()
+    // Légère bascule commune : de face, un octaèdre droit ne montre que deux faces et se
+    // lit comme un losange plat.
+    const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.42, 0.78, 0))
+    const one = new THREE.Vector3(1, 1, 1)
     points.forEach((p, i) => {
-      matrix.setPosition(p.nx * R, p.ny * R, p.nz * R)
+      matrix.compose(new THREE.Vector3(p.nx * R, p.ny * R, p.nz * R), tilt, one)
       mesh.setMatrixAt(i, matrix)
       mesh.setColorAt(i, color.set(rampAt(theme.ramp, p.depth)))
     })
@@ -310,42 +318,60 @@ export class Scatter3DScene {
   }
 
   /**
-   * Tiges vers le sol et pied de chaque point.
+   * Colonnes vers le sol et pied de chaque marqueur.
    *
-   * ⚠⚠ C'est LE repère de profondeur d'un nuage 3D : sans tige, deux points superposés à
+   * ⚠⚠ C'est LE repère de profondeur d'un nuage 3D : sans elle, deux marqueurs superposés à
    * l'écran sont indiscernables — l'un peut être au fond en haut, l'autre devant en bas.
+   *
+   * ⚠⚠ Des CYLINDRES, pas des `LineSegments`. Une ligne WebGL fait un pixel quoi qu'on
+   * demande — l'épaisseur de trait n'est pas honorée par la plupart des pilotes — et vu à
+   * l'écran, les filets disparaissaient purement et simplement. Un cylindre a une épaisseur
+   * RÉELLE, qui suit en plus la perspective : la colonne d'un point proche est plus large.
    */
   private buildStems(points: readonly Scatter3DPoint[]): void {
     if (points.length === 0 || points.length > MAX_STEMS) return
-    const segments = new Float32Array(points.length * 6)
+    const radius = points.length <= 40 ? 0.0075 : 0.005
+    // ⚠ La colonne porte la couleur DE SON POINT et s'éteint vers le sol : uniformément
+    // colorée, elle concurrence le marqueur ; uniformément grise, on ne sait plus quelle
+    // colonne appartient à quel point dans un nuage serré. Le dégradé vit dans la GÉOMÉTRIE
+    // (en niveaux de gris) et se multiplie par la couleur de l'instance.
+    const shaft = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true)
+    const position = shaft.attributes.position
+    const shade = new Float32Array(position.count * 3)
+    for (let i = 0; i < position.count; i++) {
+      const v = 0.3 + 0.7 * (position.getY(i) + 0.5)
+      shade.set([v, v, v], i * 3)
+    }
+    shaft.setAttribute('color', new THREE.BufferAttribute(shade, 3))
+
+    const mesh = new THREE.InstancedMesh(shaft, new THREE.MeshBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0.85,
+    }), points.length)
+    const matrix = new THREE.Matrix4()
+    const color = new THREE.Color()
     const feet = new Float32Array(points.length * 3)
+    const footColors = new Float32Array(points.length * 3)
+    const ground = new THREE.Color(this.theme.frame)
+    const noTurn = new THREE.Quaternion()
     points.forEach((p, i) => {
       const x = p.nx * R
       const z = p.nz * R
-      segments.set([x, p.ny * R, z, x, -R, z], i * 6)
+      const top = p.ny * R
+      const height = Math.max(top + R, 0.0001)
+      matrix.compose(
+        new THREE.Vector3(x, (top - R) / 2, z), noTurn,
+        new THREE.Vector3(radius, height, radius))
+      mesh.setMatrixAt(i, matrix)
+      color.set(rampAt(this.theme.ramp, p.depth))
+      mesh.setColorAt(i, color)
+      const foot = color.clone().lerp(ground, 0.5)
       feet.set([x, -R + 0.002, z], i * 3)
-    })
-    // ⚠ La tige porte la couleur DE SON POINT et s'éteint vers le sol : uniformément
-    // colorée, elle concurrence le point ; uniformément grise, on ne sait plus quelle tige
-    // appartient à quel point dans un nuage serré.
-    const stemColors = new Float32Array(points.length * 6)
-    const footColors = new Float32Array(points.length * 3)
-    const top = new THREE.Color()
-    const ground = new THREE.Color(this.theme.frame)
-    points.forEach((p, i) => {
-      top.set(rampAt(this.theme.ramp, p.depth))
-      stemColors.set([top.r, top.g, top.b], i * 6)
-      const foot = top.clone().lerp(ground, 0.55)
-      stemColors.set([foot.r, foot.g, foot.b], i * 6 + 3)
       footColors.set([foot.r, foot.g, foot.b], i * 3)
     })
-    const stemGeometry = new THREE.BufferGeometry()
-    stemGeometry.setAttribute('position', new THREE.BufferAttribute(segments, 3))
-    stemGeometry.setAttribute('color', new THREE.BufferAttribute(stemColors, 3))
-    this.stems = new THREE.LineSegments(stemGeometry, new THREE.LineBasicMaterial({
-      vertexColors: true, transparent: true, opacity: 0.7,
-    }))
-    this.scene.add(this.stems)
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    this.stems = mesh
+    this.scene.add(mesh)
 
     const footGeometry = new THREE.BufferGeometry()
     footGeometry.setAttribute('position', new THREE.BufferAttribute(feet, 3))
@@ -363,6 +389,9 @@ export class Scatter3DScene {
       this.scene.remove(object)
       object.geometry.dispose()
       ;(object.material as THREE.Material).dispose()
+      // ⚠ Les colonnes sont instanciées : leurs tampons de matrices et de couleurs ne sont
+      // pas libérés par la géométrie.
+      if (object instanceof THREE.InstancedMesh) object.dispose()
     }
     this.stems = null
     this.feet = null
