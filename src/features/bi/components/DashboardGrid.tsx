@@ -115,7 +115,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
           : tile.kind === 'scatter' ? <ScatterTile result={result} />
           : tile.kind === 'heatmap'
             ? <HeatmapTile result={result} columnDim={tile.options?.pivotColumn} />
-          : tile.kind === 'table' ? <TableTile result={result} />
+          : tile.kind === 'table' ? <TableTile result={result} accent={accent} />
           : tile.kind === 'pivot'
             ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}
                 showTotals={tile.options?.showTotals} />

@@ -8,6 +8,7 @@
 // l'onglet ; les rendre en silence ferait croire que le détail est complet — d'où `total`
 // (le vrai décompte, toujours calculé) à côté de `rows` (ce qu'on montre).
 import { matches } from './aggregate'
+import { hasAnyValue } from './tableView'
 import type { FilterClause } from '../types'
 import type { DataSource, Dimension, Row } from '../registry/types'
 
@@ -46,5 +47,10 @@ export function underlyingRows(
     for (const d of source.dimensions) out[d.id] = d.get(r) ?? null
     return out
   })
-  return { columns, rows: shown, total: kept.length, truncated: kept.length > limit }
+  // ⚠⚠ Les colonnes que RIEN ne renseigne sont retirées de l'affichage : sur un catalogue,
+  // « Référence secondaire » alignait cinq cents tirets et poussait les colonnes utiles hors
+  // de l'écran. Le jugement se fait sur les lignes MONTRÉES — c'est ce que le lecteur a sous
+  // les yeux, et le plafond ne change pas la nature d'une colonne vide.
+  const useful = shown.length === 0 ? columns : columns.filter((c) => hasAnyValue(shown, c.key))
+  return { columns: useful, rows: shown, total: kept.length, truncated: kept.length > limit }
 }

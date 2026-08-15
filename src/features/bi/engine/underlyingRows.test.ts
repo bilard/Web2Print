@@ -45,6 +45,20 @@ describe('lignes sous-jacentes', () => {
     expect(r.truncated).toBe(true)
   })
 
+  it('⚠ retire les colonnes que RIEN ne renseigne', () => {
+    // Vu à l'écran : « Référence secondaire » alignait cinq cents tirets et poussait les
+    // colonnes utiles hors du tiroir.
+    const source2: DataSource = {
+      ...source,
+      dimensions: [
+        ...source.dimensions,
+        { id: 'vide', labelKey: 'bi.dim.column', kind: 'text', get: () => null },
+      ],
+    }
+    const r = underlyingRows(rows, [], source2)
+    expect(r.columns.map((c) => c.key)).toEqual(['domain', 'progress'])
+  })
+
   it('ne se dit pas tronqué quand tout tient', () => {
     const r = underlyingRows(rows, [], source, 200)
     expect(r.truncated).toBe(false)
