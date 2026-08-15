@@ -21,8 +21,8 @@ import { usePendingTiles } from '../hooks/usePendingTiles'
 import { useBoardActions } from '../hooks/useBoardActions'
 import { useTickingNow } from '../hooks/useTickingNow'
 import { useAddTile } from '../hooks/useAddTile'
-import { useTvMode } from '../hooks/useTvMode'
 import { useBoardCommands } from '../hooks/useBoardCommands'
+import type { TvMode } from '../hooks/useTvMode'
 import { PromptBoardDialog } from './PromptBoardDialog'
 import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
 import { useBoardSource, useWatchSourceState, isWatchSource } from '../hooks/useWatchData'
@@ -59,13 +59,16 @@ interface BiBoardProps {
   onSelectPage: (id: string) => void
   /** La page ajoutée, remontée à l'écran qui l'affiche AVANT l'écho de la base. */
   onPageCreated: (page: DashboardPage) => void
+  /** Mode TV, tenu par l'ÉCRAN : `BiBoard` est remontée à chaque rotation de page, elle ne
+   *  peut donc pas porter cet état elle-même. */
+  tv: TvMode
   /** Le bouton « Nouveau tableau de bord » de `BiScreen`, qui possède seul `onCreated`. */
   headerAction?: ReactNode
 }
 
 export function BiBoard({
   current, page, pages, items, uid, editing, onToggleEdit, canEdit,
-  onSelect, onSelectPage, onPageCreated, headerAction,
+  onSelect, onSelectPage, onPageCreated, headerAction, tv,
 }: BiBoardProps) {
   const { t } = useTranslation()
   const act = useBoardActions(uid, current, page.id)
@@ -81,13 +84,6 @@ export function BiBoard({
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null)
   // Zone capturée par l'export image/PDF : le canevas et son bandeau de filtres.
   const captureRef = useRef<HTMLDivElement>(null)
-  // ⚠ La page suivante EN BOUCLE : arrivé au bout, on revient à la première. Un mode TV qui
-  // s'arrête sur la dernière page laisse un écran mural figé pour la nuit.
-  const nextPage = useCallback(() => {
-    const i = pages.findIndex((p) => p.id === page.id)
-    onSelectPage(pages[(i + 1) % pages.length].id)
-  }, [pages, page.id, onSelectPage])
-  const tv = useTvMode(nextPage, pages.length)
   const [promptOpen, setPromptOpen] = useState(false)
   const { createFromPlan } = useBoardCommands(uid)
   // ⚠ Le canevas est monté dans tous les cas, mais la référence peut n'être pas encore
@@ -257,7 +253,14 @@ export function BiBoard({
       <PromptBoardDialog
         open={promptOpen} onOpenChange={setPromptOpen} source={source} sourceId={sourceId}
         onPlanned={async (board) => {
-          const id = await createFromPlan(board)
+          // ⚠ L'attribution suit le tableau créé : sur la veille, elle n'a pas de sens
+          // (les chiffres ne viennent d'aucune feuille) ; sur le PIM, elle est ce qui
+          // permettra plus tard de dire « bâti sur la feuille X ».
+          const id = await createFromPlan(board, onWatch ? undefined : {
+            sourceDbId: current.sourceDbId,
+            sourceDbName: current.sourceDbName,
+            sourceSheetName: hasSheet ? sheet.name : current.sourceSheetName,
+          })
           // ⚠ On bascule sur le tableau créé : le laisser en arrière-plan donnerait
           // l'impression que le geste n'a rien produit.
           if (id) onSelect(id)

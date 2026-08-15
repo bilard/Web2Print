@@ -15,6 +15,9 @@ import { BiBoard } from './BiBoard'
 import { resetWatchDataForTest } from '../hooks/useWatchData'
 import type { Dashboard, Tile } from '../types'
 
+/** Mode TV éteint : ces tests portent sur la grille, pas sur l'écran mural. */
+const TV_OFF = { on: false, enter: vi.fn(), exit: vi.fn() }
+
 class ResizeObserverStub { observe() {} unobserve() {} disconnect() {} }
 vi.stubGlobal('ResizeObserver', ResizeObserverStub)
 
@@ -82,7 +85,7 @@ const dashboard: Dashboard = {
 const board = () => (
   <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]}
     uid="u1" editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()}
-    onSelectPage={vi.fn()} onPageCreated={vi.fn()} />
+    onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />
 )
 
 describe('filtrage croisé — du clic au recalcul', () => {

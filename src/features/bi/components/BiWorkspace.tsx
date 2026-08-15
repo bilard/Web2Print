@@ -31,7 +31,10 @@ export function BiWorkspace({ editing, crossbar, canvas, panels, captureRef }: {
 
       <div ref={captureRef} className="flex-1 min-w-0 flex flex-col bg-background">
         {crossbar}
-        <div className="flex-1 min-h-0 overflow-auto p-3">
+        {/* ⚠ `data-bi-scroll` : l'export image DÉPLIE ce conteneur le temps de la capture.
+            Sans lui, un tableau plus haut que l'écran sortirait coupé — un extrait lu comme
+            s'il était le tout, exactement ce que le classeur refuse déjà. */}
+        <div data-bi-scroll className="flex-1 min-h-0 overflow-auto p-3">
           {/* ⚠ Le conteneur mesuré est SANS marge intérieure, et monté dans tous les cas :
               une marge fausserait la largeur transmise à la grille (`clientWidth` la compte,
               `contentRect` non), et un `ref` sur une branche conditionnelle resterait `null`. */}

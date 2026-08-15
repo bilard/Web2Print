@@ -68,6 +68,10 @@ export function useBoardCommands(uid: string | null) {
    */
   const createFromPlan = useCallback(async (
     plan: { name: string; tiles: Tile[]; layout: TilePlacement[] },
+    /** Base et feuille sur lesquelles le tableau est BÂTI. ⚠ Sans elles, un tableau construit
+     *  sur une feuille, rouvert avec une autre active, tombe en « colonne inconnue » sans
+     *  jamais dire sur quoi il a été fait. */
+    origin?: { sourceDbId?: string; sourceDbName?: string; sourceSheetName?: string },
   ): Promise<string | null> => {
     if (!uid || !user) { toast.error(t('bi.save.failed')); return null }
     try {
@@ -78,6 +82,7 @@ export function useBoardCommands(uid: string | null) {
         id, name: plan.name, accountId, workspaceUid: uid,
         tiles: plan.tiles, layout: plan.layout, filters: [],
         pages: [page],
+        ...origin,
         version: DASHBOARD_VERSION, createdAt: now, updatedAt: now, createdBy: user.uid,
       })
       return id

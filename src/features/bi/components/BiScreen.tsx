@@ -8,6 +8,7 @@
 // est montée ici avec `key={`${id}:${pageId}`}` : changer l'un des deux démonte/remonte le
 // composant, et `useState(initial)` repart bien de la mise en page fraîchement désignée.
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTvMode } from '../hooks/useTvMode'
 import { useDashboards } from '../hooks/useDashboards'
 import { useWorkspaceUid } from '@/features/access/useWorkspaceUid'
 import { useCan } from '@/features/access/useAccess'
@@ -50,6 +51,17 @@ export function BiScreen() {
     () => pages.find((p) => p.id === pageId) ?? pages[0] ?? null,
     [pages, pageId],
   )
+
+  // ⚠⚠ Le mode TV vit ICI et non dans `BiBoard` : celle-ci est REMONTÉE à chaque changement
+  // de page (`key={id:pageId}`, cf. l'en-tête). Un état de mode TV porté par `BiBoard` serait
+  // donc remis à zéro par la première rotation — vingt secondes après l'entrée, la barre
+  // revient, les pages cessent de tourner, et l'écran reste en plein écran sans rien pour en
+  // sortir sinon Échap. C'est le seul état que la rotation détruirait elle-même.
+  const nextPage = useCallback(() => {
+    const i = pages.findIndex((p) => p.id === page?.id)
+    if (i >= 0 && pages.length > 1) setPageId(pages[(i + 1) % pages.length].id)
+  }, [pages, page?.id])
+  const tv = useTvMode(nextPage, pages.length)
 
   // Une page ajoutée s'affiche TOUT DE SUITE : les deux états dans le même gestionnaire,
   // React les regroupe en un seul rendu.
@@ -124,6 +136,7 @@ export function BiScreen() {
           onSelect={setCurrentId}
           onSelectPage={setPageId}
           onPageCreated={onPageCreated}
+          tv={tv}
           headerAction={(
             <div className="flex items-center gap-2">
               <TemplatesButton onOpen={setCurrentId} canEdit={canEdit} />

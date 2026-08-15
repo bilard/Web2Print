@@ -22,6 +22,9 @@ const col = (key: string): ExcelColumn => ({
   key, label: key, fieldType: 'text', detectedType: 'text', isPrimary: false, width: 160,
 })
 
+/** Mode TV éteint : ces tests portent sur la grille, pas sur l'écran mural. */
+const TV_OFF = { on: false, enter: vi.fn(), exit: vi.fn() }
+
 class ResizeObserverStub { observe() {} unobserve() {} disconnect() {} }
 vi.stubGlobal('ResizeObserver', ResizeObserverStub)
 
@@ -53,7 +56,7 @@ describe('BiBoard', () => {
     const dashboard = makeDashboard('d1', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     const before = gridCalls().at(-1)![0]
 
@@ -73,13 +76,13 @@ describe('BiBoard', () => {
     const dashboard = makeDashboard('d2', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     const { rerender } = render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     const before = gridCalls().at(-1)![0]
 
     rerender(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     const after = gridCalls().at(-1)![0]
 
@@ -95,7 +98,7 @@ describe('BiBoard', () => {
     function Wrapper({ current }: { current: Dashboard }) {
       return (
         <BiBoard key={current.id} current={current} page={current.pages[0]} pages={current.pages} items={[current]} uid="u1"
-          editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />
+          editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />
       )
     }
 
@@ -122,19 +125,19 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const dashboard = makeDashboard('d3', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     const { rerender } = render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     expect(AddTileMenu).not.toHaveBeenCalled() // édition seule ne suffit pas sans le droit
 
     rerender(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit={false} onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit={false} onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     expect(AddTileMenu).not.toHaveBeenCalled() // le droit seul ne suffit pas hors édition
 
     rerender(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     expect(AddTileMenu).toHaveBeenCalled()
   })
@@ -143,7 +146,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const dashboard = makeDashboard('d4', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
     render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
@@ -173,7 +176,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const dashboard = makeDashboard('d6', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
     const props = (current: Dashboard) => (
       <BiBoard current={current} page={current.pages[0]} pages={current.pages} items={[current]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />
     )
     const { rerender } = render(props(dashboard))
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
@@ -210,7 +213,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const dashboard = makeDashboard('d7', [{ tileId: 't1', x: 0, y: 0, w: 6, h: 4 }])
     const first = render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', { id: 'count' }))
     first.unmount() // sinon ce premier tableau, abonné à la feuille active, se rendrait encore
@@ -225,7 +228,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const built = { ...dashboard, sourceSheetName: 'Catalogue 2026' }
     render(
       <BiBoard current={built} page={built.pages[0]} pages={built.pages} items={[built]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     act(() => vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd('kpi', { id: 'count' }))
     expect(vi.mocked(saveDashboard).mock.calls.at(-1)![1].sourceSheetName).toBe('Catalogue 2026')
@@ -235,7 +238,7 @@ describe('BiBoard — menu d’ajout de tuile', () => {
     const dashboard = makeDashboard('d5', [])
     render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid={null}
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     const onAdd = vi.mocked(AddTileMenu).mock.calls.at(-1)![0].onAdd
 
@@ -257,7 +260,7 @@ describe('BiBoard — sélection d’une tuile et pages', () => {
     const dashboard = makeDashboard('d7', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     // Rien de sélectionné : la galerie n'annonce aucun type actif.
     expect(screen.queryByRole('button', { pressed: true, name: 'Indicateur' })).toBeNull()
@@ -277,7 +280,7 @@ describe('BiBoard — sélection d’une tuile et pages', () => {
     render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages}
         items={[dashboard]} uid="u1" editing onToggleEdit={vi.fn()} canEdit
-        onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     // Le geste : déplacé, relâché — mais l'écho de la base n'est pas encore revenu.
     const moved = [{ tileId: 't1', x: 6, y: 3, w: 3, h: 2 }]
@@ -294,7 +297,7 @@ describe('BiBoard — sélection d’une tuile et pages', () => {
     const dashboard = makeDashboard('d8', [{ tileId: 't1', x: 0, y: 0, w: 3, h: 2 }])
     render(
       <BiBoard current={dashboard} page={dashboard.pages[0]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     act(() => gridCalls().at(-1)![0].onSelectTile('t1'))
     act(() => { screen.getByRole('button', { name: 'Barres' }).click() })
@@ -313,7 +316,7 @@ describe('BiBoard — sélection d’une tuile et pages', () => {
     })
     render(
       <BiBoard current={dashboard} page={dashboard.pages[1]} pages={dashboard.pages} items={[dashboard]} uid="u1"
-        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()} onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     expect(screen.getByRole('tab', { selected: true }).textContent).toBe('Couverture')
     expect(screen.getAllByRole('tab')).toHaveLength(2)
@@ -338,7 +341,7 @@ describe('BiBoard — ajout d’une page', () => {
     const { container } = render(
       <BiBoard current={d} page={pages[0]} pages={pages} items={[d]} uid="u1"
         editing onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()}
-        onSelectPage={vi.fn()} onPageCreated={onPageCreated} />,
+        onSelectPage={vi.fn()} onPageCreated={onPageCreated} tv={TV_OFF} />,
     )
     act(() => { within(container).getByRole('button', { name: 'Nouvelle page' }).click() })
   }
@@ -375,7 +378,7 @@ describe('BiBoard — ajout d’une page', () => {
     render(
       <BiBoard current={d} page={d.pages[0]} pages={d.pages} items={[d]} uid="u1"
         editing={false} onToggleEdit={vi.fn()} canEdit onSelect={vi.fn()}
-        onSelectPage={vi.fn()} onPageCreated={vi.fn()} />,
+        onSelectPage={vi.fn()} onPageCreated={vi.fn()} tv={TV_OFF} />,
     )
     expect(screen.queryByRole('button', { name: 'Nouvelle page' })).toBeNull()
   })

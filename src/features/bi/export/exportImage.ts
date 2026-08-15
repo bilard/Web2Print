@@ -19,18 +19,49 @@ function fileName(boardName: string, ext: string): string {
   return `${clean}-${stamp}.${ext}`
 }
 
+/**
+ * Déplie le conteneur de défilement le temps de la capture, et rend de quoi le replier.
+ *
+ * ⚠⚠ Seul le défilement de la PAGE est déplié — jamais celui des tuiles. Déplier une tuile
+ * ferait déborder un tableau de cinq cents lignes hors de son cadre, et la capture ne
+ * ressemblerait plus à ce qu'on voit.
+ */
+function unfold(root: HTMLElement): () => void {
+  const scroller = root.querySelector<HTMLElement>('[data-bi-scroll]')
+  if (!scroller) return () => {}
+  const { height, maxHeight, overflow } = scroller.style
+  scroller.style.height = 'auto'
+  scroller.style.maxHeight = 'none'
+  scroller.style.overflow = 'visible'
+  return () => {
+    scroller.style.height = height
+    scroller.style.maxHeight = maxHeight
+    scroller.style.overflow = overflow
+  }
+}
+
 async function capture(el: HTMLElement): Promise<HTMLCanvasElement> {
   const { default: html2canvas } = await import('html2canvas')
   const backgroundColor = getComputedStyle(document.body).backgroundColor || '#0b0b0f'
-  return html2canvas(el, {
-    backgroundColor,
-    // ⚠ Double densité : un tableau capturé à 1× est illisible dès qu'on le projette ou
-    // qu'on l'imprime. Au-delà de 2, le canvas dépasse vite les limites du navigateur.
-    scale: 2,
-    logging: false,
-    // Les images du tableau viennent de Storage : sans cela, elles sortent en cases vides.
-    useCORS: true,
-  })
+  const fold = unfold(el)
+  try {
+    return await html2canvas(el, {
+      backgroundColor,
+      // ⚠ Double densité : un tableau capturé à 1× est illisible dès qu'on le projette ou
+      // qu'on l'imprime. Au-delà de 2, le canvas dépasse vite les limites du navigateur.
+      scale: 2,
+      logging: false,
+      // Les images du tableau viennent de Storage : sans cela, elles sortent en cases vides.
+      useCORS: true,
+      // La zone dépliée dépasse la fenêtre : sans ces hauteurs, html2canvas rogne au viewport.
+      height: el.scrollHeight,
+      windowHeight: el.scrollHeight,
+    })
+  } finally {
+    // ⚠ Replié DANS TOUS LES CAS : une capture qui échoue ne doit pas laisser l'écran
+    // déroulé sur toute sa hauteur, sans barre de défilement.
+    fold()
+  }
 }
 
 export async function exportBoardToPng(el: HTMLElement, boardName: string): Promise<void> {
