@@ -46,7 +46,10 @@ function bucketOf(value: unknown, bucket: 'day' | 'week' | 'month'): string | nu
   return monday.toISOString().slice(0, 10)
 }
 
-function matches(row: Row, f: FilterClause, dim: Dimension | undefined): boolean {
+/** Une ligne satisfait-elle une clause ? ⚠ Exportée pour que la vue « lignes sous-jacentes »
+ *  filtre EXACTEMENT comme le moteur : deux lectures divergentes feraient afficher un
+ *  détail qui ne compose pas le total qu'on a cliqué. */
+export function matches(row: Row, f: FilterClause, dim: Dimension | undefined): boolean {
   const v = dim ? dim.get(row) : row[f.field]
   const s = v == null ? '' : String(v).toLowerCase()
   const n = Number(v)

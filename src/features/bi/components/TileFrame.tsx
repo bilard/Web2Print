@@ -4,6 +4,7 @@
 // ⚠⚠ L'âge BAT ici, dans le cadre, et surtout PAS dans `TileBody` (`DashboardGrid`) : c'est
 // lui qui porte `useTileData`, et un état qui s'y rafraîchit relancerait l'agrégation de la
 // tuile toutes les dix secondes. Le cadre ne sait rien de la donnée, il ne fait que compter.
+import { Table2 } from 'lucide-react'
 import { TileSkeleton, TileEmpty, TileError, TileNotice } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
 import { ageLabel } from '../engine/age'
@@ -39,6 +40,9 @@ interface Props {
   /** Clic sur le cadre. ⚠ `pointerdown` et non `click` : le geste de déplacement avale le
    *  `click`, et une tuile qu'on vient de bouger doit rester celle que les volets décrivent. */
   onSelect: () => void
+  /** Ouvre le détail : les LIGNES derrière le chiffre. Absent = la tuile n'en propose pas
+   *  (rien à montrer tant qu'elle n'a pas de données). */
+  onInspect?: () => void
   onRetry: () => void
   onClearFilters: () => void
   children: React.ReactNode
@@ -46,7 +50,7 @@ interface Props {
 
 export function TileFrame({
   title, updatedAt, live, state, skeleton, message, hasFilters, editing, selected,
-  onSelect, onRetry, onClearFilters, children,
+  onSelect, onInspect, onRetry, onClearFilters, children,
 }: Props) {
   const { t } = useTranslation()
   const text = message === undefined ? undefined
@@ -65,6 +69,18 @@ export function TileFrame({
     >
       <div className={`flex items-center gap-2 px-3 py-2 border-b border-white/[0.05] shrink-0 ${handleClass}`}>
         <h3 className="text-[12px] font-semibold text-white truncate flex-1">{title}</h3>
+        {/* ⚠ Le détail n'est proposé QUE sur une tuile qui rend des chiffres : ailleurs, le
+            bouton ouvrirait un tiroir vide et se lirait comme une panne. */}
+        {onInspect && state === 'ready' && (
+          <button type="button" title={t('bi.detail.open')} aria-label={t('bi.detail.open')}
+            /* ⚠ `stopPropagation` : le cadre entier sélectionne la tuile au `pointerdown`,
+               et un tiroir qui s'ouvre ne doit pas en plus déplacer la sélection. */
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onInspect}
+            className="shrink-0 p-1 rounded text-white/30 hover:text-white hover:bg-white/[0.06]">
+            <Table2 className="w-3.5 h-3.5" />
+          </button>
+        )}
         {live && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />}
         <span className="text-[10px] tabular-nums text-white/35 shrink-0" title={t('bi.tile.ageTitle')}>
           {ageLabel(updatedAt, now)}

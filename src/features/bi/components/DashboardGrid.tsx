@@ -22,6 +22,8 @@ import { ChartTile } from './tiles/ChartTile'
 import { TableTile } from './tiles/TableTile'
 import { PivotTile } from './tiles/PivotTile'
 import { useTileData } from '../hooks/useTileData'
+import { useTileDetail } from '../hooks/useTileDetail'
+import { DetailDrawer } from './DetailDrawer'
 import { applyDrill, type DrillStep } from '../filters/drill'
 import { measureKey, type FilterClause, type Tile, type TilePlacement } from '../types'
 
@@ -65,6 +67,9 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     () => new Set((tile.query.tooltips ?? []).map((m) => measureKey(m))), [tile.query])
 
   const { result, state, message, updatedAt, live, retry } = useTileData(query, globalFilters)
+  // ⚠ Le détail lit la requête EFFECTIVE (forage compris) : le tiroir doit montrer les
+  // lignes du niveau où l'on se trouve, pas celles du niveau d'origine.
+  const inspect = useTileDetail(tile.title, query, globalFilters)
   const skeleton = tile.kind === 'kpi' || tile.kind === 'gauge'
     ? 'kpi'
     : tile.kind === 'table' || tile.kind === 'pivot' || tile.kind === 'heatmap' ? 'table' : 'chart'
@@ -73,7 +78,8 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
       skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected}
-      onSelect={() => onSelect(tile.id)} onRetry={retry} onClearFilters={onClearFilters}
+      onSelect={() => onSelect(tile.id)} onInspect={() => inspect.toggle(true)}
+      onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
         tile.kind === 'kpi' ? <KpiTile result={result} />
@@ -90,6 +96,10 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
               tooltipKeys={tooltipKeys} onPick={onPick} onDrill={onDrill} />
       )}
     </TileFrame>
+    {inspect.open && inspect.detail && (
+      <DetailDrawer title={tile.title} detail={inspect.detail} filters={inspect.filterLabels}
+        onClose={() => inspect.toggle(false)} onExport={inspect.exportRows} />
+    )}
     </div>
   )
 })
