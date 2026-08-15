@@ -1,7 +1,7 @@
-// L'étage central de l'écran : rail de vues · canevas · trois volets.
+// L'étage central de l'écran : rail de vues · canevas · volets de composition.
 //
 // ⚠⚠ La grille exige une largeur en PIXELS, et ce n'est plus celle de l'écran depuis que les
-// volets en prennent près de 750. C'est donc le canevas — et lui seul — qui est mesuré, et
+// volets en prennent plusieurs centaines. C'est donc le canevas — et lui seul — qui est mesuré, et
 // il livre sa largeur au rendu de la grille (`canvas(width)`).
 //
 // ⚠ En consultation, ni rail ni volets : la seule vue disponible est déjà celle qu'on
@@ -28,7 +28,7 @@ export function BiWorkspace({
   crossbar?: ReactNode
   /** Rendu de la grille, à la largeur MESURÉE du canevas. */
   canvas: (width: number) => ReactNode
-  /** Les trois volets, montés par le tableau de bord qui possède leur état. */
+  /** Les volets de droite, montés par le tableau de bord qui possède leur état. */
   panels: ReactNode
 }) {
   const [ref, width] = useMeasuredWidth()

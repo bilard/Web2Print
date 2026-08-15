@@ -1,4 +1,4 @@
-// Le CONTEXTE de glissement des trois volets : un champ saisi ici doit pouvoir atterrir
+// Le CONTEXTE de glissement des volets de droite : un champ saisi ici doit pouvoir atterrir
 // dans une zone rendue par un AUTRE volet, donc un seul `DndContext` les enveloppe tous.
 //
 // ⚠ `activationConstraint: { distance: 5 }` : sans seuil, dnd-kit capte le `pointerdown` et
@@ -84,7 +84,7 @@ export function BiBuilderDnd({ tile, source, onApply, children }: {
     <DndContext
       sensors={sensors} collisionDetection={pointerWithin}
       /* ⚠⚠ Mesure CONTINUE des zones, et non une seule fois au démarrage du glissement. Deux
-         raisons, vérifiées à l'écran : les trois volets DÉFILENT (une zone mesurée avant le
+         raisons, vérifiées à l'écran : les volets DÉFILENT (une zone mesurée avant le
          défilement n'est plus là où on croit — c'est le piège de géométrie documenté dans ce
          dépôt), et un geste bref déclenche l'activation puis le relâchement avant que la
          mesure initiale ait été posée : le lâcher ne trouve alors AUCUNE cible, en silence. */

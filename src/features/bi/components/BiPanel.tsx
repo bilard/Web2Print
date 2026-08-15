@@ -1,4 +1,4 @@
-// Coquille COMMUNE aux trois volets de droite : un en-tête discret, un corps qui défile.
+// Coquille COMMUNE aux volets de droite : un en-tête discret, un corps qui défile.
 //
 // ⚠ `min-h-0` sur le corps : sans lui, un enfant flex refuse de rétrécir et c'est l'ÉCRAN
 // entier qui s'allonge — le défilement doit rester DANS le volet, comme dans les tuiles.
@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
 export function BiPanel({ label, width, visibility, children }: {
   /** Libellé DÉJÀ traduit. */
   label: string
-  /** Largeur en pixels, reprise de la maquette : les trois volets ne sont pas égaux. */
+  /** Largeur en pixels, reprise de la maquette : les volets ne sont pas égaux. */
   width: number
   /** Classes de visibilité LITTÉRALES, écrites par l'appelant — Tailwind ne compile que ce
    *  qu'il lit dans les sources, une classe composée ici n'existerait pas à l'exécution. */

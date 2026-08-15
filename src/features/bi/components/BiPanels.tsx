@@ -1,11 +1,10 @@
-// Les trois volets de droite, sous UN SEUL contexte de glissement.
+// Les deux volets de droite, sous UN SEUL contexte de glissement.
 //
 // ⚠⚠ Un champ saisi dans le volet « Champs » doit pouvoir atterrir dans une zone rendue par
-// le volet « Visualisations » ou par le volet « Filtres » : les trois vivent donc dans le
-// même `DndContext`, monté ici. Trois contextes séparés rendraient le geste impossible entre
-// volets, sans la moindre erreur — dnd-kit ne verrait simplement aucune cible.
+// le volet « Visualisations » — puits ET filtres, désormais dans la même colonne : les deux
+// vivent donc dans le même `DndContext`, monté ici. Deux contextes séparés rendraient le
+// geste impossible entre volets, sans la moindre erreur — dnd-kit ne verrait aucune cible.
 import { BiBuilderDnd } from './BiBuilderDnd'
-import { BiFiltersPanel } from './BiFiltersPanel'
 import { BiVisualsPanel } from './BiVisualsPanel'
 import { BiFieldsPanel } from './BiFieldsPanel'
 import type { DataSource } from '../registry/types'
@@ -22,13 +21,9 @@ export function BiPanels({ tile, source, globalFilters, canEdit, onChangeKind, o
 }) {
   return (
     <BiBuilderDnd tile={tile} source={source} onApply={onApply}>
-      <BiFiltersPanel
-        tile={tile} source={source} globalFilters={globalFilters}
-        canEdit={canEdit} onApply={onApply}
-      />
       <BiVisualsPanel
-        tile={tile} source={source} onChangeKind={onChangeKind}
-        onApply={onApply} canEdit={canEdit}
+        tile={tile} source={source} globalFilters={globalFilters}
+        onChangeKind={onChangeKind} onApply={onApply} canEdit={canEdit}
       />
       <BiFieldsPanel source={source} tile={tile} canEdit={canEdit} onApply={onApply} />
     </BiBuilderDnd>

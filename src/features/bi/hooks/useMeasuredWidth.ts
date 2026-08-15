@@ -1,6 +1,6 @@
 // Largeur en PIXELS d'un conteneur, suivie au redimensionnement.
 //
-// ⚠⚠ `react-grid-layout` exige une largeur en pixels, et depuis l'ossature à trois volets ce
+// ⚠⚠ `react-grid-layout` exige une largeur en pixels, et depuis l'ossature à volets ce
 // n'est PLUS celle de l'écran : les volets Filtres / Visualisations / Champs en prennent près
 // de 750 px. Mesurer l'écran ferait déborder la grille sous les volets, silencieusement.
 //
