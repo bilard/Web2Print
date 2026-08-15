@@ -107,17 +107,29 @@ export function SourcePicker({
         {onDbChange && pimInvolved(sourceId, demanded, editing) && (
           <PimDbPicker dbId={dbId} sheetName={sheetName} onChange={onDbChange} />
         )}
-        {shown.length > 0 && (
+        {/* ⚠⚠ Un seul suivi : on l'AFFICHE, on ne le fait pas choisir. Un menu déroulant qui
+            n'offre qu'une entrée se lit comme un réglage dont on cherche en vain l'effet —
+            et les suivis ne se créent pas ici, mais dans le module Veille tarifaire. */}
+        {shown.length > 0 && (watchOptions.length > 1 ? (
           <BiPicker
-            label={t('bi.source.watch')} value={context.watchId ?? ''} options={watchOptions}
+            label={t('bi.source.watch')} hint={t('bi.source.watchHint')}
+            value={context.watchId ?? ''} options={watchOptions}
             onChange={setWatchId}
           />
-        )}
+        ) : watchOptions.length === 1 && (
+          <span className="flex flex-col gap-1 min-w-0" title={t('bi.source.watchHint')}>
+            <span className="text-[10px] uppercase tracking-wider text-white/35">
+              {t('bi.source.watch')}
+            </span>
+            <span className="text-xs text-white/70 truncate max-w-[200px]">{watchOptions[0].label}</span>
+          </span>
+        ))}
         {/* ⚠⚠ Un seul concurrent en mémoire à la fois : le sélecteur en DÉSIGNE un, il n'en
             précharge aucun autre (plusieurs Mo par site, cf. `useSiteExplorer`). */}
         {needsSite && (siteOptions.length > 0 ? (
           <BiPicker
-            label={t('bi.source.pickSite')} value={context.siteId ?? ''} options={siteOptions}
+            label={t('bi.source.pickSite')} hint={t('bi.source.pickSiteHint')}
+            value={context.siteId ?? ''} options={siteOptions}
             onChange={setSiteId}
           />
         ) : <span className="text-[11px] text-white/35 mb-1">{t('bi.source.noSite')}</span>)}

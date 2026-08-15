@@ -477,6 +477,8 @@ export const fr = {
   'bi.db.unsavedSheets': 'Des données non enregistrées sont ouvertes dans le module Données : elles seraient perdues. Enregistrez-les avant de charger une autre base.',
   'bi.db.failed': 'Base illisible : {error}',
   'bi.source.picker': 'Source des nouvelles tuiles',
+  'bi.source.watchHint': 'La veille tarifaire qui alimente ce tableau. Un nouveau suivi se crée dans le module « Veille tarifaire », en lançant un workflow de comparaison.',
+  'bi.source.pickSiteHint': 'Le concurrent dont les FICHES sont chargées, pour construire des visuels sur son catalogue. Pour filtrer le tableau sur un concurrent, utilisez le sélecteur « Concurrent » de la barre.',
   'bi.source.watch': 'Suivi',
   'bi.source.pickSite': 'Concurrent',
   'bi.source.noSite': 'Aucun concurrent indexé',

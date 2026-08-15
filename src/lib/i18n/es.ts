@@ -458,6 +458,8 @@ export const es: Record<TranslationKey, string> = {
   'bi.db.unsavedSheets': 'Hay datos sin guardar abiertos en el módulo Datos: se perderían. Guárdelos antes de cargar otra base.',
   'bi.db.failed': 'Base ilegible: {error}',
   'bi.source.picker': 'Fuente de las nuevas tarjetas',
+  'bi.source.watchHint': 'La vigilancia de precios que alimenta este panel. Los seguimientos se crean en el módulo «Vigilancia de precios», lanzando un flujo de comparación.',
+  'bi.source.pickSiteHint': 'El competidor cuyas FICHAS se cargan, para construir visuales sobre su catálogo. Para restringir el panel a un competidor, use el selector «Competidor» de la barra.',
   'bi.source.watch': 'Seguimiento',
   'bi.source.pickSite': 'Competidor',
   'bi.source.noSite': 'Ningún competidor indexado',

@@ -88,6 +88,30 @@ describe('SourcePicker', () => {
     expect(result.current.siteId).toBe('b')
   })
 
+  it('⚠ un SEUL suivi : il s’affiche, il ne se choisit pas', () => {
+    // Un menu déroulant à une entrée se lit comme un réglage dont on cherche en vain
+    // l'effet — et les suivis ne se créent pas ici.
+    selectWatch('f1')
+    show('watch.summary', ['watch.summary'])
+    expect(screen.getByText('Suivi')).toBeTruthy()
+    expect(screen.getByText('F1 Veille')).toBeTruthy()
+    // Rien à dérouler : pas de bouton portant le nom du suivi.
+    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
+    expect(buttons.some((x) => x?.includes('F1 Veille'))).toBe(false)
+  })
+
+  it('plusieurs suivis : le choix revient', () => {
+    selectWatch('f1')
+    show('watch.summary', ['watch.summary'], context({
+      watches: [
+        { watchId: 'f1', label: 'F1 Veille', updatedAt: 1 },
+        { watchId: 'f2', label: 'F2 Veille', updatedAt: 2 },
+      ],
+    }))
+    const buttons = screen.getAllByRole('button').map((b) => b.textContent)
+    expect(buttons.some((x) => x?.includes('F1 Veille'))).toBe(true)
+  })
+
   it('dit qu’aucun suivi n’existe plutôt que d’afficher un sélecteur vide', () => {
     show('watch.summary', [], context({ watches: [], sites: [], watchId: null }))
     expect(screen.getByText(/Aucun suivi de veille/)).toBeTruthy()

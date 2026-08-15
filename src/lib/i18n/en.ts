@@ -459,6 +459,8 @@ export const en: Record<TranslationKey, string> = {
   'bi.db.unsavedSheets': 'Unsaved data is open in the Data module and would be lost. Save it before loading another database.',
   'bi.db.failed': 'Database unreadable: {error}',
   'bi.source.picker': 'Source for new tiles',
+  'bi.source.watchHint': 'The price watch feeding this dashboard. New watches are created in the Price watch module, by running a comparison workflow.',
+  'bi.source.pickSiteHint': 'The competitor whose LISTINGS are loaded, to build visuals on its catalogue. To narrow the dashboard to one competitor, use the “Competitor” selector in the bar.',
   'bi.source.watch': 'Watch',
   'bi.source.pickSite': 'Competitor',
   'bi.source.noSite': 'No indexed competitor',
