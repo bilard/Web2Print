@@ -55,4 +55,31 @@ describe('la section de mise en forme', () => {
     const { view } = mount(null)
     expect(view.container.textContent).toBe('')
   })
+
+  it('propose la ligne de repère sur les visuels À ÉCHELLE, jamais au croisé', () => {
+    const { view } = mount(tile('bar'))
+    expect(screen.getByText('Ligne de repère')).toBeTruthy()
+    view.unmount()
+    mount(tile('pivot'))
+    expect(screen.queryByText('Ligne de repère')).toBeNull()
+  })
+
+  it('pose le repère, et le RETIRE quand le champ est vidé', () => {
+    const { view, onApply } = mount(tile('bar'))
+    fireEvent.change(screen.getByPlaceholderText('Aucune'), { target: { value: '100' } })
+    expect((onApply.mock.calls[0][0] as Tile).options?.referenceLine).toBe(100)
+    view.unmount()
+
+    const posed = mount(tile('bar', { referenceLine: 100 }))
+    fireEvent.change(screen.getByPlaceholderText('Aucune'), { target: { value: '' } })
+    const next = posed.onApply.mock.calls[0][0] as Tile
+    expect('referenceLine' in (next.options ?? {})).toBe(false)
+  })
+
+  // ⚠ Un texte illisible ne pose PAS un repère à zéro : on ignore la frappe.
+  it('ignore une saisie qui n’est pas un nombre', () => {
+    const { onApply } = mount(tile('bar'))
+    fireEvent.change(screen.getByPlaceholderText('Aucune'), { target: { value: 'abc' } })
+    expect(onApply).not.toHaveBeenCalled()
+  })
 })

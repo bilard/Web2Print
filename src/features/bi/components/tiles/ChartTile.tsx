@@ -19,21 +19,31 @@ import { formatMeasure } from '../../engine/formatValue'
 import { biLabel } from '../biLabel'
 import { installChartVisibilityRepair } from '@/lib/chartVisibility'
 import { chartModel } from './chartData'
+import { referenceLinePlugin } from './referenceLine'
 import type { AggregateResult } from '../../engine/aggregate'
 import type { TileKind } from '../../types'
 
 Chart.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement,
-  Tooltip, Legend, Filler)
+  Tooltip, Legend, Filler, referenceLinePlugin)
 // ⚠⚠ Un graphe monté pendant que l'onglet est masqué garde des zones cliquables de hauteur
 // NULLE : plus aucun clic ne filtre. La réparation se pose une fois, au retour de l'onglet.
 installChartVisibilityRepair()
 
 const EMPTY: ReadonlySet<string> = new Set()
 
-export function ChartTile({ result, kind, stacked, horizontal, tooltipKeys, onPick, onDrill }: {
+export function ChartTile({
+  result, kind, stacked, horizontal, stackPercent, diverging, referenceLine,
+  tooltipKeys, onPick, onDrill,
+}: {
   result: AggregateResult; kind: TileKind; stacked?: boolean
   /** Barres couchées : l'axe des CATÉGORIES passe en vertical. */
   horizontal?: boolean
+  /** Empilement ramené à 100 % — n'a de sens qu'empilé, et le force donc. */
+  stackPercent?: boolean
+  /** Barres teintées par le SIGNE de leur valeur. */
+  diverging?: boolean
+  /** Repère tracé en travers du graphe. ⚠ Ne déclenche RIEN, contrairement au seuil. */
+  referenceLine?: number
   /** Clés des mesures montrées AU SURVOL seulement. */
   tooltipKeys?: ReadonlySet<string>
   /**
@@ -58,8 +68,9 @@ export function ChartTile({ result, kind, stacked, horizontal, tooltipKeys, onPi
   // ⚠ La mémoïsation ne tient QUE si `result` et `hidden` sont stables : `useTileData`
   // mémoïse le premier, `DashboardGrid` le second. `t` est bien en dépendance ici — ce
   // composant ne rend que la tuile SÉLECTIONNÉE ou visible, jamais une agrégation.
-  const model = useMemo(() => chartModel(result, kind, (c) => biLabel(c, t), hidden),
-    [result, kind, hidden, t])
+  const model = useMemo(
+    () => chartModel(result, kind, (c) => biLabel(c, t), hidden, { diverging, stackPercent }),
+    [result, kind, hidden, t, diverging, stackPercent])
   const tips = result.columns.filter((c) => c.role === 'measure' && hidden.has(c.key))
 
   const data = { labels: model.labels, datasets: model.datasets }
@@ -104,10 +115,27 @@ export function ChartTile({ result, kind, stacked, horizontal, tooltipKeys, onPi
         },
       },
     },
-    scales: kind === 'pie' || kind === 'doughnut' ? undefined : {
-      x: { stacked, ticks: { color: tick }, grid: { color: grid } },
-      y: { stacked, ticks: { color: tick }, grid: { color: grid } },
+    // ⚠ Le repère voyage dans les options : chart.js transporte les clés qu'il ne connaît
+    // pas jusqu'aux plugins, c'est le canal prévu pour ça.
+    referenceLine: referenceLine === undefined ? undefined : {
+      value: referenceLine,
+      label: formatMeasure(referenceLine, model.formatOf(0), intlLocale(locale)),
+      color: dark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
     },
+    scales: kind === 'pie' || kind === 'doughnut' ? undefined : (() => {
+      // ⚠⚠ Une répartition à 100 % EXIGE l'empilement : sans lui, chart.js poserait des parts
+      // côte à côte dont chacune monterait jusqu'à 100 — un graphe qui ne répartit rien.
+      const piled = stacked || stackPercent === true
+      // L'axe des VALEURS est `x` sur des barres couchées : c'est lui qu'on borne à 100.
+      const valueAxis = horizontal && kind === 'bar' ? 'x' : 'y'
+      const bounds = stackPercent ? { min: 0, max: 100 } : {}
+      return {
+        x: { stacked: piled, ticks: { color: tick }, grid: { color: grid },
+          ...(valueAxis === 'x' ? bounds : {}) },
+        y: { stacked: piled, ticks: { color: tick }, grid: { color: grid },
+          ...(valueAxis === 'y' ? bounds : {}) },
+      }
+    })(),
     // Filtrage croisé : ce qui est cliqué est rapporté, jamais interprété ici.
     // ⚠ `onPick` absent ⇒ pas de curseur « main » : une tuile qui a l'air cliquable sans
     // l'être est plus déroutante qu'une tuile inerte.

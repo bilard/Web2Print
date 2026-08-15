@@ -11,10 +11,12 @@ import { useTranslation } from '@/lib/i18n'
 import type { TranslationKey } from '@/lib/i18n'
 import type { Tile, TileKind } from '../types'
 
-type Flag = 'horizontal' | 'stacked' | 'showTotals'
+type Flag = 'horizontal' | 'stacked' | 'stackPercent' | 'diverging' | 'showTotals'
 
 const BARS = (kind: TileKind) => kind === 'bar'
 const STACKABLE = (kind: TileKind) => kind === 'bar' || kind === 'area' || kind === 'line'
+/** Les visuels qui portent une échelle de valeurs : eux seuls peuvent recevoir un repère. */
+const SCALED = (kind: TileKind) => STACKABLE(kind) || kind === 'scatter'
 
 const FLAGS: { flag: Flag; labelKey: TranslationKey; hintKey: TranslationKey
   applies: (kind: TileKind) => boolean }[] = [
@@ -22,6 +24,10 @@ const FLAGS: { flag: Flag; labelKey: TranslationKey; hintKey: TranslationKey
     applies: BARS },
   { flag: 'stacked', labelKey: 'bi.format.stacked', hintKey: 'bi.format.stackedHint',
     applies: STACKABLE },
+  { flag: 'stackPercent', labelKey: 'bi.format.stackPercent', hintKey: 'bi.format.stackPercentHint',
+    applies: STACKABLE },
+  { flag: 'diverging', labelKey: 'bi.format.diverging', hintKey: 'bi.format.divergingHint',
+    applies: BARS },
   { flag: 'showTotals', labelKey: 'bi.format.showTotals', hintKey: 'bi.format.showTotalsHint',
     applies: (kind) => kind === 'pivot' },
 ]
@@ -33,9 +39,22 @@ export function BiFormatSection({ tile, canEdit, onApply }: {
 }) {
   const { t } = useTranslation()
   const shown = tile ? FLAGS.filter((f) => f.applies(tile.kind)) : []
+  const scaled = tile ? SCALED(tile.kind) : false
   // ⚠ Section ENTIÈREMENT masquée quand ce visuel n'a rien à régler : un intertitre suivi du
   // vide se lit comme un volet qui n'a pas fini de charger.
-  if (!tile || shown.length === 0) return null
+  if (!tile || (shown.length === 0 && !scaled)) return null
+
+  const writeReference = (raw: string) => {
+    const options = { ...tile.options }
+    const text = raw.trim()
+    const n = Number(text)
+    // ⚠ Champ vide = plus de repère, et la clé PART du document (Firestore refuse
+    // `undefined`). Un texte illisible ne pose pas un repère à zéro : on ignore la frappe.
+    if (text === '') delete options.referenceLine
+    else if (Number.isFinite(n)) options.referenceLine = n
+    else return
+    onApply({ ...tile, options })
+  }
 
   const toggle = (flag: Flag) => {
     const options = { ...tile.options, [flag]: !tile.options?.[flag] }
@@ -77,6 +96,25 @@ export function BiFormatSection({ tile, canEdit, onApply }: {
           </button>
         )
       })}
+
+      {scaled && (
+        <label className="mt-0.5 flex flex-col gap-1">
+          <span className="text-[10px] text-white/45">{t('bi.format.referenceLine')}</span>
+          <input
+            type="number" inputMode="decimal" disabled={!canEdit}
+            defaultValue={tile.options?.referenceLine ?? ''}
+            placeholder={t('bi.format.referenceNone')}
+            onChange={(e) => writeReference(e.target.value)}
+            className="w-full rounded border border-white/10 bg-well px-2 py-1 text-[11px]
+              tabular-nums text-white placeholder:text-white/25 focus:border-indigo-500/60
+              focus:outline-none disabled:opacity-40"
+          />
+          {/* ⚠ La confusion avec le seuil d'alerte est DITE : l'un sonne, l'autre se dessine. */}
+          <span className="text-[10px] leading-snug text-white/25">
+            {t('bi.format.referenceHint')}
+          </span>
+        </label>
+      )}
     </div>
   )
 }

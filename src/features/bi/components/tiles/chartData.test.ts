@@ -57,3 +57,57 @@ describe('ce que le clic rapporte', () => {
     expect(m.dimensionValueAt(1)).toBe('Bosch')
   })
 })
+
+describe('la coloration DIVERGENTE', () => {
+  // ⚠⚠ Deux teintes NEUTRES, jamais vert et rouge : un écart négatif est bon pour l'acheteur
+  // et mauvais pour le vendeur, et le module ne sait pas de quel côté on est. La divergence
+  // dit le SIGNE, pas le jugement.
+  it('donne une teinte par SIGNE, une seule barre à la fois', () => {
+    const m = chartModel(result([
+      { brand: 'a', count: -5 }, { brand: 'b', count: 3 }, { brand: 'c', count: -1 },
+    ]), 'bar', label, NONE, { diverging: true })
+    const colors = m.datasets[0].backgroundColor as string[]
+    expect(colors[0]).toBe(colors[2])
+    expect(colors[0]).not.toBe(colors[1])
+  })
+
+  it('laisse les COURBES tranquilles — une ligne bicolore est illisible', () => {
+    const m = chartModel(result([{ brand: 'a', count: -5 }, { brand: 'b', count: 3 }]),
+      'line', label, NONE, { diverging: true })
+    expect(Array.isArray(m.datasets[0].backgroundColor)).toBe(false)
+  })
+})
+
+describe('l’empilement à 100 %', () => {
+  const twoSeries = (rows: AggregateResult['rows']): AggregateResult => ({
+    columns: [
+      { key: 'brand', labelKey: 'bi.dim.brand', role: 'dimension' },
+      { key: 'family', labelKey: 'bi.dim.family', role: 'dimension' },
+      { key: 'count', labelKey: 'bi.measure.count', role: 'measure', format: 'int' },
+    ] as AggregateResult['columns'],
+    rows,
+  })
+
+  it('ramène chaque colonne à cent', () => {
+    const m = chartModel(twoSeries([
+      { brand: 'a', family: 'x', count: 30 }, { brand: 'a', family: 'y', count: 10 },
+    ]), 'bar', label, NONE, { stackPercent: true })
+    expect(m.datasets.map((d) => d.data[0])).toEqual([75, 25])
+  })
+
+  // ⚠⚠ Le piège des valeurs mêlées : une somme SIGNÉE peut valoir zéro (+50 et -50), et la
+  // part deviendrait infinie. Ce sont les valeurs absolues qui font le total.
+  it('survit à des valeurs de signes opposés', () => {
+    const m = chartModel(twoSeries([
+      { brand: 'a', family: 'x', count: 50 }, { brand: 'a', family: 'y', count: -50 },
+    ]), 'bar', label, NONE, { stackPercent: true })
+    expect(m.datasets.map((d) => d.data[0])).toEqual([50, -50])
+  })
+
+  it('ne transforme pas une case ABSENTE en part nulle', () => {
+    const m = chartModel(twoSeries([
+      { brand: 'a', family: 'x', count: 20 }, { brand: 'b', family: 'y', count: 40 },
+    ]), 'bar', label, NONE, { stackPercent: true })
+    expect(m.datasets[0].data[1]).toBeNull()
+  })
+})

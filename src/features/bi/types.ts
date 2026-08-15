@@ -155,6 +155,18 @@ const tileSchema = z.object({
      *  incline les libellés à 45° et les tronque. */
     horizontal: z.boolean().optional(),
     showTotals: z.boolean().optional(),
+    /** Empilement ramené à 100 % : la tuile dit la RÉPARTITION, plus les volumes. */
+    stackPercent: z.boolean().optional(),
+    /** Coloration DIVERGENTE des barres, par le SIGNE de la valeur (cf. `chartData`). */
+    diverging: z.boolean().optional(),
+    /**
+     * Ligne de REPÈRE tracée en travers du graphe (un objectif, une base 100, un zéro).
+     *
+     * ⚠⚠ À ne pas confondre avec `alert`, juste au-dessous : le seuil d'alerte SONNE quand
+     * il est franchi, cette ligne se DESSINE et ne déclenche rien. Deux réglages, deux
+     * intentions — les fondre ferait sonner toute tuile portant un repère.
+     */
+    referenceLine: z.number().optional(),
     /** Dimension portée en COLONNES du tableau croisé ; les autres restent en lignes. */
     pivotColumn: z.string().optional(),
     /**
