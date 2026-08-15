@@ -12,6 +12,7 @@ import { useSourceRows } from '../hooks/useSourceRows'
 import { readDrag } from '../builder/dndPayload'
 import { acceptField, type WellVerdict } from '../builder/wellRules'
 import { wellChips, WELL_LABEL_KEY, type WellId } from '../builder/wells'
+import { WELL_COLOR, tinted } from './fieldColors'
 import type { DataSource } from '../registry/types'
 import type { Tile } from '../types'
 
@@ -69,14 +70,25 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
         ? 'border-indigo-400/30'
         : 'border-white/[0.14]'
 
+  const tint = WELL_COLOR[well]
+
   return (
     <div>
-      <BiEyebrow>{label}</BiEyebrow>
+      <BiEyebrow>
+        {/* ⚠ La teinte relie la ZONE à la puce qu'elle porte : sur cinq zones identiques,
+            elle dit d'un coup d'œil où un champ a atterri. */}
+        <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle"
+          style={{ background: tint }} />
+        {label}
+      </BiEyebrow>
       <div
         /* ⚠ `data-bi-well` : le repli du relâchement (cf. `BiBuilderDnd`) retrouve la zone
            SOUS LE POINTEUR quand dnd-kit n'a pas eu le temps de désigner une cible. */
         ref={setNodeRef} aria-label={label} data-bi-well={well}
-        style={refused && hovering ? REFUSED_STRIPES : undefined}
+        style={refused && hovering
+          ? REFUSED_STRIPES
+          // Fond très dilué : la zone se distingue sans que ses puces perdent en lisibilité.
+          : (chips.length > 0 ? { background: tinted(tint, '0d') } : undefined)}
         className={`mt-1.5 min-h-[34px] rounded-lg border border-dashed bg-well p-1.5 flex flex-col gap-1 transition-colors ${border}`}
       >
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>

@@ -30,7 +30,10 @@ export function BiFiltersPanel({ tile, source, globalFilters, canEdit, onApply }
   return (
     <BiPanel label={t('bi.panel.filters')} width={WIDTH} visibility="hidden xl:flex">
       <div className="flex flex-col gap-1.5">
-        <BiEyebrow>{t('bi.filters.onVisual')}</BiEyebrow>
+        {/* ⚠⚠ Une teinte par PORTÉE : trois blocs identiques se confondaient, et un filtre
+            posé sur le visuel se lisait comme un filtre de tout le tableau — ce qui n'a pas
+            du tout les mêmes conséquences sur les chiffres. */}
+        <BiEyebrow><Dot color={SCOPE_COLOR.visual} />{t('bi.filters.onVisual')}</BiEyebrow>
         {/* ⚠ `slot` distinct : deux zones dnd-kit ne peuvent pas porter le même identifiant,
             alors que le puits visé, lui, est bien le même. */}
         <BiFieldWell
@@ -39,11 +42,11 @@ export function BiFiltersPanel({ tile, source, globalFilters, canEdit, onApply }
         />
       </div>
 
-      <Scope label={t('bi.filters.onPage')}>
+      <Scope label={t('bi.filters.onPage')} color={SCOPE_COLOR.page}>
         <Note text={t('bi.filters.pageSoon')} />
       </Scope>
 
-      <Scope label={t('bi.filters.onAllPages')}>
+      <Scope label={t('bi.filters.onAllPages')} color={SCOPE_COLOR.board}>
         {globalFilters.length === 0
           ? <Note text={t('bi.filters.none')} />
           : globalFilters.map((f, i) => (
@@ -60,10 +63,22 @@ export function BiFiltersPanel({ tile, source, globalFilters, canEdit, onApply }
   )
 }
 
-function Scope({ label, children }: { label: string; children: React.ReactNode }) {
+/** Les trois portées : du plus étroit (un visuel) au plus large (tout le tableau). */
+const SCOPE_COLOR = { visual: '#fbbf24', page: '#a78bfa', board: '#f472b6' }
+
+function Dot({ color }: { color: string }) {
+  return (
+    <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle"
+      style={{ background: color }} />
+  )
+}
+
+function Scope({ label, children, color }: {
+  label: string; children: React.ReactNode; color: string
+}) {
   return (
     <div className="flex flex-col gap-1.5">
-      <BiEyebrow>{label}</BiEyebrow>
+      <BiEyebrow><Dot color={color} />{label}</BiEyebrow>
       {children}
     </div>
   )

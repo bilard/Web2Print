@@ -11,6 +11,7 @@ import { BiPanel, BiEyebrow } from './BiPanel'
 import { BiDraggableField } from './BiDraggableField'
 import { biLabel } from './biLabel'
 import { groupMeasures } from '../registry/groupMeasures'
+import { KIND_COLOR, AGG_COLOR, tinted } from './fieldColors'
 import { bestWellFor } from '../builder/wellRules'
 import { dropInWell } from '../builder/wellEdits'
 import type { DraggedField } from '../builder/wells'
@@ -81,18 +82,20 @@ export function BiFieldsPanel({ source, tile, canEdit, onApply }: {
           return (
             <BiDraggableField
               key={field.id} field={field} disabled={!canEdit} onAdd={() => add(field)}
-              icon={<Icon className="w-3 h-3 text-white/30" />}
+              /* ⚠ La teinte dit le TYPE : sur cent champs, elle remplace la lecture. */
+              icon={<Icon className="w-3 h-3" style={{ color: KIND_COLOR[kind] }} />}
             />
           )
         })}
       </Group>
 
       {measureGroups.map((g) => (
-        <Group key={g.key} label={`${t('bi.fields.measures')} · ${t(g.labelKey)}`}>
+        <Group key={g.key} label={`${t('bi.fields.measures')} · ${t(g.labelKey)}`}
+          color={AGG_COLOR[g.key] ?? AGG_COLOR.declared}>
           {g.fields.map((field) => (
             <BiDraggableField
               key={field.id} field={field} disabled={!canEdit} onAdd={() => add(field)}
-              icon={<Sigma className="w-3 h-3 text-indigo-400" />}
+              icon={<Sigma className="w-3 h-3" style={{ color: AGG_COLOR[g.key] ?? AGG_COLOR.declared }} />}
             />
           ))}
         </Group>
@@ -103,11 +106,26 @@ export function BiFieldsPanel({ source, tile, canEdit, onApply }: {
   )
 }
 
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
+function Group({ label, children, color }: {
+  label: string
+  children: React.ReactNode
+  /** Teinte de la famille : une pastille devant l'intertitre, et un liseré le long des
+   *  champs. Sans elle, dix intertitres gris se ressemblent au défilement. */
+  color?: string
+}) {
   return (
     <div className="flex flex-col gap-0.5">
-      <BiEyebrow>{label}</BiEyebrow>
-      <div className="mt-1 flex flex-col">{children}</div>
+      <BiEyebrow>
+        {color && (
+          <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle"
+            style={{ background: color }} />
+        )}
+        {label}
+      </BiEyebrow>
+      <div className="mt-1 flex flex-col border-l pl-1"
+        style={{ borderColor: color ? tinted(color, '40') : 'transparent' }}>
+        {children}
+      </div>
     </div>
   )
 }
