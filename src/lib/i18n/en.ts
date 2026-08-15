@@ -546,6 +546,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.prompt.working': 'Building…',
   'bi.prompt.failed': 'Creating from a prompt failed.',
   'bi.prompt.sourceSwitched': 'Switched to “{source}” — it is the only source that holds what you asked for.',
+  'bi.prompt.nothingIn': 'No tile kept on “{source}”: {detail}',
   'bi.prompt.nothing': 'No usable tile: the request matches no field in this source.',
   'bi.prompt.example1': 'Price watch overview',
   'bi.prompt.example2': 'Top 10 cheapest competitors',

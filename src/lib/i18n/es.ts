@@ -545,6 +545,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.prompt.working': 'Construyendo…',
   'bi.prompt.failed': 'La creación con prompt ha fallado.',
   'bi.prompt.sourceSwitched': 'Fuente cambiada a «{source}»: es la única que contiene lo que ha pedido.',
+  'bi.prompt.nothingIn': 'Ninguna tarjeta conservada en «{source}»: {detail}',
   'bi.prompt.nothing': 'Ninguna tarjeta utilizable: la petición no corresponde a ningún campo de esta fuente.',
   'bi.prompt.example1': 'Visión general de la vigilancia',
   'bi.prompt.example2': 'Top 10 de competidores más baratos',

@@ -564,6 +564,7 @@ export const fr = {
   'bi.prompt.working': 'Construction…',
   'bi.prompt.failed': 'La création par prompt a échoué.',
   'bi.prompt.sourceSwitched': 'Source changée pour « {source} » : elle seule porte ce que vous avez demandé.',
+  'bi.prompt.nothingIn': 'Aucune tuile retenue sur « {source} » : {detail}',
   'bi.prompt.nothing': 'Aucune tuile exploitable : la demande ne correspond à aucun champ de cette source.',
   'bi.prompt.example1': 'Vue d’ensemble de la veille',
   'bi.prompt.example2': 'Top 10 des concurrents les moins chers',

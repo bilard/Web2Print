@@ -55,7 +55,14 @@ export function PromptBoardDialog({ open, onOpenChange, source, sourceId, onPlan
       if (board.tiles.length === 0) {
         // ⚠ Refuser plutôt que créer un tableau VIDE : un cadre sans tuile se lit comme une
         // panne, et il faudrait ensuite le supprimer à la main.
-        toast.error(board.rejected[0] ?? t('bi.prompt.nothing'))
+        // ⚠⚠ Le message NOMME la source : « mesure inconnue : avg:medGapPct » ne dit pas
+        // dans quoi elle est inconnue, et c'est justement quand le modèle change de source
+        // qu'on lit ce message — vu à l'écran, incompréhensible sans ce nom.
+        toast.error(board.rejected.length
+          ? t('bi.prompt.nothingIn', {
+            source: t(getSource(target).labelKey), detail: board.rejected[0],
+          })
+          : t('bi.prompt.nothing'))
         return
       }
       if (chosen) {

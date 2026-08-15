@@ -17,6 +17,9 @@ import type { TranslationKey, TransParams } from '@/lib/i18n'
 const MAX_FIELDS = 80
 /** Un tableau lisible tient en une douzaine de visuels. Au-delà, on ne lit plus rien. */
 const MAX_TILES = 12
+/** Champs décrits pour les sources NON affichées. ⚠ Plus court que pour celle qu'on regarde :
+ *  il en faut assez pour composer, pas de quoi doubler le prompt à chaque source. */
+const MAX_OTHER_FIELDS = 30
 
 const planSchema = z.object({
   name: z.string(),
@@ -31,6 +34,16 @@ const planSchema = z.object({
     title: z.string(),
     measure: z.string(),
     dimension: z.string().optional(),
+    /**
+     * Condition portée par la tuile. ⚠ PERMISSIVE ici (des chaînes) : c'est `planToBoard`
+     * qui la confronte à la source, avec un message — un filtre mal formé ne doit pas
+     * coûter l'appel entier.
+     */
+    filter: z.object({
+      field: z.string(),
+      op: z.string(),
+      value: z.union([z.string(), z.number(), z.boolean()]).optional(),
+    }).optional(),
     limit: z.number().optional(),
     sortDesc: z.boolean().optional(),
   })).max(MAX_TILES),
@@ -50,6 +63,16 @@ const SCHEMA_FOR_LLM = {
           title: { type: 'string', description: 'Titre lisible de la tuile.' },
           measure: { type: 'string', description: 'Identifiant EXACT d’une mesure de la liste fournie.' },
           dimension: { type: 'string', description: 'Identifiant EXACT d’une dimension. Absent pour kpi et gauge.' },
+          filter: {
+            type: 'object',
+            description: 'Condition à appliquer, quand la demande dit « où … », « seulement … », « les X qui … ».',
+            properties: {
+              field: { type: 'string', description: 'Identifiant EXACT d’une dimension de la source retenue.' },
+              op: { type: 'string', description: 'gt | gte | lt | lte | eq | ne | contains | empty | notEmpty' },
+              value: { description: 'Valeur comparée. Absente pour empty et notEmpty.' },
+            },
+            required: ['field', 'op'],
+          },
           limit: { type: 'number', description: 'Nombre maximum de groupes affichés (ex. 10 pour un top 10).' },
           sortDesc: { type: 'boolean', description: 'Tri décroissant sur la mesure. Vrai par défaut.' },
         },
@@ -63,17 +86,25 @@ const SCHEMA_FOR_LLM = {
 type Translate = (key: TranslationKey, params?: TransParams) => string
 
 /**
- * Décrit les sources CANDIDATES et ce qu'une ligne y représente.
+ * Décrit les sources CANDIDATES : leur maille, ET leurs champs.
  *
- * ⚠⚠ La MAILLE est ce qui manquait au modèle. Il ne recevait qu'une source, sans savoir ce
- * qu'elle décrit : sur une synthèse par concurrent, « les produits où je suis plus cher »
- * ne pouvait produire qu'un tableau par concurrent — plausible, hors sujet, et rien ne le
- * disait. Vu à l'écran, c'est ce qui a motivé ce choix explicite.
+ * ⚠⚠ La MAILLE est ce qui manquait d'abord au modèle : sans elle, sur une synthèse par
+ * concurrent, « les produits où je suis plus cher » ne pouvait produire qu'un tableau par
+ * concurrent — plausible, hors sujet, et rien ne le disait.
+ *
+ * ⚠⚠ Les CHAMPS ont manqué ensuite, et le défaut était pire : à qui ne reçoit que le
+ * catalogue de la source affichée, changer de source revient à composer à l'aveugle. Vu à
+ * l'écran — le modèle a bien basculé sur les produits appariés, puis demandé `domain` et
+ * `avg:medGapPct`, qui appartiennent à la synthèse : TOUTES les tuiles ont été refusées.
+ * Lui interdire de proposer des champs sur une autre source ne réglait rien, cela lui
+ * demandait de composer un tableau sans rien dedans.
  */
 function sourceMenu(sources: { id: SourceId; source: DataSource }[], t: Translate): string {
-  return sources
-    .map(({ id, source }) => `- ${id} : ${t(source.labelKey)} — une ligne = ${GRAIN[id] ?? '?'}`)
-    .join('\n')
+  return sources.map(({ id, source }) => [
+    `### ${id} — ${t(source.labelKey)}`,
+    `Une ligne = ${GRAIN[id] ?? '?'}`,
+    catalogue(source, t, MAX_OTHER_FIELDS),
+  ].join('\n')).join('\n\n')
 }
 
 /** Ce qu'une LIGNE représente dans chaque source. */
@@ -89,11 +120,11 @@ const GRAIN: Partial<Record<SourceId, string>> = {
   'traffic.events': 'une visite',
 }
 
-/** Décrit la source au modèle : ses identifiants, avec leur nom lisible. */
-function catalogue(source: DataSource, t: Translate): string {
-  const dims = source.dimensions.slice(0, MAX_FIELDS)
+/** Décrit une source au modèle : ses identifiants, avec leur nom lisible. */
+function catalogue(source: DataSource, t: Translate, max = MAX_FIELDS): string {
+  const dims = source.dimensions.slice(0, max)
     .map((d) => `- ${d.id} : ${d.label ?? t(d.labelKey)} (${d.kind})`).join('\n')
-  const measures = source.measures.slice(0, MAX_FIELDS)
+  const measures = source.measures.slice(0, max)
     .map((m) => `- ${m.id} : ${biLabel(m, t)}`).join('\n')
   return `DIMENSIONS (pour grouper) :\n${dims}\n\nMESURES (pour chiffrer) :\n${measures}`
 }
@@ -114,10 +145,11 @@ export async function askBoardPlan(
     ...(others.length === 0 ? [] : [
       '',
       'AUTRES SOURCES DISPONIBLES — choisis-en une (champ `source`) si elle répond MIEUX à la',
-      'demande que la source affichée, notamment quand la maille ne correspond pas :',
+      'demande que la source affichée, notamment quand sa MAILLE correspond mieux :',
       sourceMenu(others, t),
-      '⚠ Si tu changes de source, ne propose AUCUN champ : ceux listés plus haut appartiennent',
-      'à la source affichée. Donne seulement `source`, `name` et les titres, sans `measure`.',
+      '',
+      '⚠⚠ Les champs appartiennent à LEUR source : si tu renseignes `source`, tes `measure` et',
+      '`dimension` doivent venir de CETTE source-là, jamais de la source affichée.',
     ]),
     '',
     'RÈGLES ABSOLUES :',
@@ -127,6 +159,9 @@ export async function askBoardPlan(
     `- Entre 3 et ${MAX_TILES} tuiles. Commence par 2 à 4 indicateurs, puis les graphes.`,
     '- Les titres sont en français, courts, et disent ce que la tuile montre.',
     '- Sur un axe à nombreuses valeurs, pose un `limit` (10 ou 15) pour rester lisible.',
+    '- La demande RESTREINT souvent le champ (« les produits OÙ je suis plus cher », « seulement',
+    '  les ruptures ») : pose alors un `filter` sur une DIMENSION de la source retenue. Sans lui,',
+    '  la tuile montrerait tout, ce qui n’est pas ce qui est demandé.',
   ].join('\n')
 
   return generateJson<BoardPlan>({

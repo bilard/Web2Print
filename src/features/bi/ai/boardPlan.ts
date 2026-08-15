@@ -7,7 +7,7 @@
 import { SIZES } from '../engine/newTile'
 import type { DataSource } from '../registry/types'
 import { TILE_KINDS } from '../types'
-import type { SourceId, Tile, TileKind, TilePlacement } from '../types'
+import type { FilterClause, SourceId, Tile, TileKind, TilePlacement } from '../types'
 
 /** Une tuile telle que le modèle la propose : des IDENTIFIANTS, jamais des libellés.
  *  ⚠ `kind` est une CHAÎNE : le modèle peut proposer un type qui n'existe pas, et ce refus
@@ -19,7 +19,13 @@ interface PlannedTile {
   dimension?: string
   limit?: number
   sortDesc?: boolean
+  /** Condition proposée par le modèle, NON validée : `planToBoard` la confronte à la source. */
+  filter?: { field: string; op: string; value?: string | number | boolean }
 }
+
+/** Opérateurs qu'un plan peut poser. ⚠ Sous-ensemble VOLONTAIRE de `FILTER_OPS` : `in` et
+ *  `between` attendent un tableau, qu'un plan à valeur scalaire ne peut pas former. */
+const PLAN_OPS = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'contains', 'empty', 'notEmpty'] as const
 
 export interface BoardPlan {
   name: string
@@ -89,6 +95,23 @@ export function planToBoard(
       rejected.push(`${p.title || kind} — dimension inconnue : ${p.dimension ?? '—'}`)
       return
     }
+    /**
+     * ⚠⚠ Un filtre mal formé fait REFUSER la tuile, il n'est jamais ignoré. La demande
+     * « les produits OÙ je suis plus cher » sans sa condition montrerait TOUS les produits :
+     * un tableau plausible qui répond à une autre question, ce qui est pire que rien.
+     */
+    let filters: FilterClause[] = []
+    if (p.filter) {
+      if (!dimensions.has(p.filter.field)) {
+        rejected.push(`${p.title || kind} — filtre sur un champ inconnu : ${p.filter.field}`)
+        return
+      }
+      if (!(PLAN_OPS as readonly string[]).includes(p.filter.op)) {
+        rejected.push(`${p.title || kind} — condition inconnue : ${p.filter.op}`)
+        return
+      }
+      filters = [{ field: p.filter.field, op: p.filter.op as FilterClause['op'], value: p.filter.value }]
+    }
     tiles.push({
       id: idOf(i),
       kind,
@@ -97,7 +120,7 @@ export function planToBoard(
         source: sourceId,
         measures: [{ id: p.measure }],
         dimensions: wantsDim && p.dimension ? [{ id: p.dimension }] : [],
-        filters: [],
+        filters,
         // Un classement sans mesure de tri n'a pas de sens : on trie sur CE qu'on mesure.
         ...(wantsDim ? { sort: [{ by: p.measure, dir: p.sortDesc === false ? 'asc' as const : 'desc' as const }] } : {}),
         ...(p.limit && wantsDim ? { limit: p.limit } : {}),

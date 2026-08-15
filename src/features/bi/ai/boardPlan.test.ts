@@ -81,3 +81,39 @@ describe('plan → tableau de bord', () => {
     expect(r.tiles[0].title).toBe('count')
   })
 })
+
+describe('le filtre d’une tuile', () => {
+  // ⚠⚠ « les produits OÙ je suis plus cher » sans sa condition montrerait TOUS les produits :
+  // un tableau plausible qui répond à une autre question, ce qui est pire que rien.
+  it('est posé sur la tuile quand il vise une dimension connue', () => {
+    const board = planToBoard({
+      name: 'T', tiles: [{
+        kind: 'table', title: 'Trop chers', measure: 'count', dimension: 'domain',
+        filter: { field: 'domain', op: 'notEmpty' },
+      }],
+    }, source, 'watch.summary', (i) => `t${i}`)
+    expect(board.tiles[0].query.filters).toEqual([{ field: 'domain', op: 'notEmpty', value: undefined }])
+  })
+
+  it('fait REFUSER la tuile s’il vise un champ inconnu — jamais ignoré', () => {
+    const board = planToBoard({
+      name: 'T', tiles: [{
+        kind: 'table', title: 'Trop chers', measure: 'count', dimension: 'domain',
+        filter: { field: 'inventé', op: 'gt', value: 0 },
+      }],
+    }, source, 'watch.summary', (i) => `t${i}`)
+    expect(board.tiles).toHaveLength(0)
+    expect(board.rejected[0]).toMatch(/inventé/)
+  })
+
+  it('refuse aussi une condition que le moteur ne connaît pas', () => {
+    const board = planToBoard({
+      name: 'T', tiles: [{
+        kind: 'table', title: 'Trop chers', measure: 'count', dimension: 'domain',
+        filter: { field: 'domain', op: 'ressemble', value: 'x' },
+      }],
+    }, source, 'watch.summary', (i) => `t${i}`)
+    expect(board.tiles).toHaveLength(0)
+    expect(board.rejected[0]).toMatch(/ressemble/)
+  })
+})
