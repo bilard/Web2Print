@@ -109,6 +109,27 @@ export function useAnyWatchIdle(ids: readonly WatchSourceId[]): boolean {
   return useWatchStore((s) => ids.some((id) => s.data[id].state === 'idle'))
 }
 
+/**
+ * Fraîcheur des données QUI ALIMENTENT l'écran — le plus récent relevé parmi les sources
+ * réellement citées par les tuiles.
+ *
+ * ⚠⚠ Surtout PAS la source sélectionnée dans le bandeau : celle-ci ne décide que de la
+ * PROCHAINE tuile posée. Le bandeau affichait « jamais relevé » dès qu'on regardait une
+ * source non encore utilisée, alors que l'écran, lui, montrait des chiffres datés — un âge
+ * qui parle d'autre chose que ce qu'on a sous les yeux ne se corrige par aucun libellé.
+ */
+export function useShownUpdatedAt(ids: readonly SourceId[]): number | null {
+  const watched = ids.filter(isWatchSource)
+  return useWatchStore((s) => {
+    let latest: number | null = null
+    for (const id of watched) {
+      const at = s.data[id].updatedAt
+      if (at != null && (latest === null || at > latest)) latest = at
+    }
+    return latest
+  })
+}
+
 /** Suivi actif + concurrent choisi, et les gestes pour en changer (le sélecteur de source). */
 export function useWatchSelection() {
   const watchId = useWatchStore((s) => s.watchId)

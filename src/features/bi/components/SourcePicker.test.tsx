@@ -30,8 +30,11 @@ function selectWatch(id: string | null) {
 
 beforeEach(() => resetWatchDataForTest())
 
-const show = (sourceId: SourceId, demanded: SourceId[] = [], ctx = context()) =>
-  render(<SourcePicker context={ctx} demanded={demanded} sourceId={sourceId} onSourceChange={() => {}} />)
+// ⚠ `editing` par défaut : ces tests décrivent le CONSTRUCTEUR. En consultation, le choix de
+// la source des nouvelles tuiles n'est pas offert — c'est l'objet du dernier bloc.
+const show = (sourceId: SourceId, demanded: SourceId[] = [], ctx = context(), editing = true) =>
+  render(<SourcePicker context={ctx} demanded={demanded} sourceId={sourceId}
+    onSourceChange={() => {}} editing={editing} />)
 
 describe('SourcePicker', () => {
   it('⚠⚠ n’utilise AUCUN menu natif (spec lot 2, D5)', () => {
@@ -52,7 +55,7 @@ describe('SourcePicker', () => {
     selectWatch('f1')
     show('pim.products', ['watch.catalog'])
     expect(screen.getByText('Suivi')).toBeTruthy()
-    expect(screen.getByText(/Rien n’est chargé/)).toBeTruthy()
+    expect(screen.getByText(/n’alimente encore aucune tuile/)).toBeTruthy()
   })
 
   it('nomme le suivi actif dès qu’une source de veille est choisie', () => {
@@ -90,10 +93,12 @@ describe('SourcePicker', () => {
     expect(screen.getByText(/Aucun suivi de veille/)).toBeTruthy()
   })
 
-  it('annonce que rien ne se charge tant qu’aucune tuile ne réclame la source', () => {
+  it('annonce, avec le GESTE à faire, qu’une source n’alimente encore rien', () => {
+    // « Rien n'est chargé » constatait sans rien proposer : on reste devant un écran qui
+    // paraît en panne. La phrase dit maintenant quoi faire pour que ça charge.
     selectWatch('f1')
     show('watch.catalog')
-    expect(screen.getByText(/Rien n’est chargé/)).toBeTruthy()
+    expect(screen.getByText(/posez-en une pour la charger/)).toBeTruthy()
   })
 
   it('⚠ ne redit PAS la limite du moteur serveur une fois par source', () => {
@@ -102,6 +107,32 @@ describe('SourcePicker', () => {
     selectWatch('f1')
     show('watch.summary', ['watch.summary', 'watch.catalog'])
     expect(screen.getAllByText(/se lit isolément/)).toHaveLength(1)
+  })
+})
+
+describe('SourcePicker — en consultation', () => {
+  it('⚠⚠ n’offre PAS de changer la source des nouvelles tuiles', () => {
+    // Posée là, elle se lit comme le jeu de données du tableau : on la change, l'écran ne
+    // bouge pas, et tout paraît cassé.
+    selectWatch('f1')
+    show('watch.summary', ['watch.summary'], context(), false)
+    expect(screen.queryByText('Source des nouvelles tuiles')).toBeNull()
+  })
+
+  it('DIT en toutes lettres ce qui alimente l’écran', () => {
+    // Un tableau dont on ignore la source ne se vérifie pas.
+    selectWatch('f1')
+    show('watch.site', ['watch.summary'], context(), false)
+    expect(screen.getByText('Données affichées')).toBeTruthy()
+    expect(screen.getByText(/synthèse par concurrent/)).toBeTruthy()
+  })
+
+  it('⚠ ne propose pas un concurrent qu’aucune tuile ne lit', () => {
+    // Le sélectionner ne chargerait rien de visible : c'est exactement le geste qui donnait
+    // l'impression que l'écran ne répondait plus.
+    selectWatch('f1')
+    show('watch.site', ['watch.summary'], context(), false)
+    expect(screen.queryByText('Concurrent')).toBeNull()
   })
 })
 

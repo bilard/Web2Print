@@ -474,14 +474,15 @@ export const fr = {
   'bi.db.missing': 'Base introuvable : elle a été supprimée ou renommée dans le module Données. Choisissez-en une autre.',
   'bi.db.unsavedSheets': 'Des données non enregistrées sont ouvertes dans le module Données : elles seraient perdues. Enregistrez-les avant de charger une autre base.',
   'bi.db.failed': 'Base illisible : {error}',
-  'bi.source.picker': 'Source des tuiles',
+  'bi.source.picker': 'Source des nouvelles tuiles',
   'bi.source.watch': 'Suivi',
   'bi.source.pickSite': 'Concurrent',
   'bi.source.noSite': 'Aucun concurrent indexé',
   'bi.source.oneSiteAtATime': 'Un seul concurrent en mémoire à la fois : plusieurs Mo par site.',
   'bi.source.loadingCatalog': 'Lecture du catalogue source — tranche {done}/{total}, {expected} produits annoncés',
   'bi.source.loadingSite': 'Lecture des fiches de {site}…',
-  'bi.source.idle': 'Rien n’est chargé tant qu’aucune tuile ne réclame cette source.',
+  'bi.source.shown': 'Données affichées',
+  'bi.source.idle': 'Cette source n’alimente encore aucune tuile : posez-en une pour la charger.',
   'bi.source.serverNeeded': 'Croiser TOUS les concurrents à la maille fiche demande le moteur serveur (lot 3) : chaque source ci-dessus se lit isolément.',
 
   // ── Ossature de l'écran : bandeau, rail de vues, volets, onglets de pages (lot 2) ──────

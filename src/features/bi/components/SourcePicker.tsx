@@ -47,16 +47,21 @@ interface SourcePickerProps {
    *  une LIGNE : la phrase du lot 3 y prend toute la largeur et renvoie les boutons au rang
    *  suivant — vu en recette. L'état va alors dans la barre transversale, qui a la place. */
   withStatus?: boolean
+  /** Mode ÉDITION : seul lui expose le choix de la source des NOUVELLES tuiles. */
+  editing?: boolean
 }
 
 export function SourcePicker({
   context, demanded, sourceId, onSourceChange, dbId, sheetName, onDbChange, withStatus = true,
+  editing = false,
 }: SourcePickerProps) {
   const { t } = useTranslation()
   const { setWatchId, setSiteId } = useWatchSelection()
-  // Sources de veille concernées : celles qui alimentent des tuiles, plus celle qu'on vient
-  // de choisir (elle n'alimente encore rien, mais son état se prépare sous les yeux).
-  const shown = WATCH_IDS.filter((id) => demanded.includes(id) || id === sourceId)
+  // ⚠⚠ En CONSULTATION, la source des nouvelles tuiles n'a rien à faire dans le bandeau :
+  // elle ne change rien à ce qui est affiché. Posée là, elle se lit comme le jeu de données
+  // du tableau — on la change, l'écran ne bouge pas, et tout paraît cassé. On n'expose alors
+  // que ce qui AGIT vraiment sur les chiffres : le suivi, et le concurrent s'il est lu.
+  const shown = WATCH_IDS.filter((id) => demanded.includes(id) || (editing && id === sourceId))
   const needsSite = shown.includes('watch.site')
 
   const sourceOptions = OFFERED.map((id) => ({ id, label: t(getSource(id).labelKey) }))
@@ -67,11 +72,27 @@ export function SourcePicker({
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-end gap-2">
         <Database className="w-3.5 h-3.5 text-white/30 mb-1.5 shrink-0" />
-        <BiPicker
-          label={t('bi.source.picker')} value={sourceId} options={sourceOptions}
-          // ⚠ L'identifiant vient de `OFFERED`, donc du registre : jamais une chaîne libre.
-          onChange={(id) => { const s = OFFERED.find((x) => x === id); if (s) onSourceChange(s) }}
-        />
+        {editing ? (
+          <BiPicker
+            label={t('bi.source.picker')} value={sourceId} options={sourceOptions}
+            // ⚠ L'identifiant vient de `OFFERED`, donc du registre : jamais une chaîne libre.
+            onChange={(id) => { const s = OFFERED.find((x) => x === id); if (s) onSourceChange(s) }}
+          />
+        ) : (
+          /* Ce qui alimente l'écran, en toutes lettres : un tableau dont on ignore la source
+             ne se vérifie pas. */
+          <span className="flex flex-col gap-1 min-w-0">
+            <span className="text-[10px] uppercase tracking-wider text-white/35">
+              {t('bi.source.shown')}
+            </span>
+            <span className="text-xs text-white/70 truncate max-w-[240px]"
+              title={shown.map((id) => t(getSource(id).labelKey)).join(' · ')}>
+              {shown.length === 0
+                ? t(getSource(sourceId).labelKey)
+                : shown.map((id) => t(getSource(id).labelKey)).join(' · ')}
+            </span>
+          </span>
+        )}
         {/* ⚠⚠ Monté seulement quand le PIM est en jeu : c'est lui qui porte le CHARGEMENT de
             la base, et un tableau de veille n'a aucune raison d'en lire une. */}
         {onDbChange && pimInvolved(sourceId, demanded) && (

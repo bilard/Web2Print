@@ -455,14 +455,15 @@ export const es: Record<TranslationKey, string> = {
   'bi.db.missing': 'Base no encontrada: se ha eliminado o renombrado en el módulo Datos. Elija otra.',
   'bi.db.unsavedSheets': 'Hay datos sin guardar abiertos en el módulo Datos: se perderían. Guárdelos antes de cargar otra base.',
   'bi.db.failed': 'Base ilegible: {error}',
-  'bi.source.picker': 'Origen de los mosaicos',
+  'bi.source.picker': 'Fuente de las nuevas tarjetas',
   'bi.source.watch': 'Seguimiento',
   'bi.source.pickSite': 'Competidor',
   'bi.source.noSite': 'Ningún competidor indexado',
   'bi.source.oneSiteAtATime': 'Un solo competidor en memoria a la vez: varios MB por sitio.',
   'bi.source.loadingCatalog': 'Lectura del catálogo de origen — bloque {done}/{total}, {expected} productos anunciados',
   'bi.source.loadingSite': 'Lectura de las fichas de {site}…',
-  'bi.source.idle': 'No se carga nada mientras ningún mosaico solicite este origen.',
+  'bi.source.shown': 'Datos mostrados',
+  'bi.source.idle': 'Esta fuente aún no alimenta ninguna tarjeta: añada una para cargarla.',
   'bi.source.serverNeeded': 'Cruzar TODOS los competidores a nivel de ficha requiere el motor de servidor (lote 3): cada origen anterior se lee por separado.',
 
   // ── Estructura de la pantalla: barra superior, raíl de vistas, paneles, pestañas (lote 2) ──

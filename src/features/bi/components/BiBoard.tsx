@@ -26,7 +26,7 @@ import { useBoardCommands } from '../hooks/useBoardCommands'
 import type { TvMode } from '../hooks/useTvMode'
 import { PromptBoardDialog } from './PromptBoardDialog'
 import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
-import { useBoardSource, useWatchSourceState, isWatchSource } from '../hooks/useWatchData'
+import { useBoardSource, useWatchSourceState, useShownUpdatedAt, isWatchSource } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
 import { ageLabel } from '../engine/age'
 import { useTileEdits } from '../builder/useTileEdits'
@@ -179,6 +179,7 @@ export function BiBoard({
   // lectures réclamées par les tuiles POSÉES, jamais par la source seulement choisie.
   const { sourceId, setSourceId, source, context, demanded } = useBoardSource(tiles, sheet)
   const watch = useWatchSourceState(sourceId)
+  const shownUpdatedAt = useShownUpdatedAt(demanded)
   const onWatch = isWatchSource(sourceId)
 
   // ⚠ L'export part des filtres EFFECTIFS (ceux du tableau plus celui d'un clic croisé) :
@@ -271,11 +272,13 @@ export function BiBoard({
       ) : (
       <BiTopBar
         current={current} items={items} canEdit={canEdit} onSelectBoard={onSelect}
-        onRename={act.rename} updatedAt={onWatch ? watch.updatedAt : null} now={now}
+        /* ⚠ L'âge des données AFFICHÉES, jamais celui de la source choisie pour la prochaine
+           tuile : cf. `useShownUpdatedAt`. */
+        onRename={act.rename} updatedAt={shownUpdatedAt} now={now}
         /* ⚠ `onDbChange` seulement pour qui peut écrire : le choix de base est PERSISTÉ dans
            le document, un rôle consultation seule ne doit pas tenter l'écriture. */
         sourcePicker={<SourcePicker context={context} demanded={demanded} sourceId={sourceId}
-          onSourceChange={setSourceId} withStatus={false}
+          onSourceChange={setSourceId} withStatus={false} editing={inEdit}
           dbId={current.sourceDbId} sheetName={current.sourceSheetName}
           onDbChange={canEdit ? act.setSourceDb : undefined} />}
         editing={editing} onToggleEdit={onToggleEdit} onExport={exportBoard}
