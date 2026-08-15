@@ -192,7 +192,7 @@ export function BiBoard({
   // ⚠⚠ UNE seule paire de flèches pour DEUX piles : la mise en page et la configuration des
   // champs. Le journal d'ordre rend aux flèches la chronologie que l'utilisateur attend.
   const hist = useBuilderHistory({
-    setDraft: draft.setDraft, commit: draft.commit, addPlacement: draft.addPlacement,
+    setDraft: draft.setDraft, commit: draft.commit, commitLayout: draft.commitLayout,
     layoutUndo: draft.undo, layoutRedo: draft.redo,
     canLayoutUndo: draft.canUndo, canLayoutRedo: draft.canRedo, edits,
   })
@@ -201,7 +201,7 @@ export function BiBoard({
   // entier annulerait la mémoïsation du rappel.
   const addTile = useAddTile({
     uid, current, pageId: page.id, tiles, layout: draft.layout, source, sourceId, onWatch,
-    sheet, hasSheet, addPending, addPlacement: hist.onAddPlacement, onCreated: setSelectedTileId,
+    sheet, hasSheet, addPending, commitLayout: hist.onCommitLayout, onCreated: setSelectedTileId,
   })
 
   const selected = tiles.find((x) => x.id === selectedTileId) ?? null
@@ -222,14 +222,32 @@ export function BiBoard({
    */
   const removeTile = useCallback((tileId: string) => {
     const tile = tiles.find((x) => x.id === tileId)
-    const undo = act.removeTile(tileId, tiles, draft.layout)
+    const before = draft.layout
+    const undo = act.removeTile(tileId, tiles, before)
     if (!undo) return
+    // ⚠⚠ Le BROUILLON de mise en page suit l'écriture. `useLayoutDraft` ne se resynchronise
+    // jamais sur le document (état de montage figé) : sans cette pose, la tuile restaurée
+    // revenait sans placement, et `react-grid-layout` lui donnait une case 1×1 dans un coin.
+    hist.onCommitLayout(before.filter((l) => l.tileId !== tileId))
     // La sélection suit : les volets de droite décriraient sinon une tuile qui n'existe plus.
     setSelectedTileId((cur) => (cur === tileId ? null : cur))
     toast.success(t('bi.tile.removed', { title: tile?.title || '—' }), {
-      action: { label: t('bi.tile.undo'), onClick: () => undo() },
+      action: {
+        label: t('bi.tile.undo'),
+        // ⚠⚠ La tuile revient DANS LE RENDU en même temps que son placement. Sans
+        // `addPending`, l'écriture part mais la grille ne connaît encore que sept enfants
+        // pour huit cases : `react-grid-layout` élague la case orpheline et rappelle
+        // `onLayoutChange`, si bien que la tuile — arrivée une seconde plus tard avec
+        // l'écho Firestore — se retrouvait sans place et tombait en 1×1 dans un coin. C'est
+        // le décalage que `usePendingTiles` existe pour couvrir, déjà vu à la pose.
+        onClick: () => {
+          undo()
+          if (tile) addPending(tile)
+          hist.onCommitLayout(before)
+        },
+      },
     })
-  }, [act, tiles, draft.layout])
+  }, [act, tiles, draft.layout, hist, addPending])
 
   const onAddPage = useCallback(() => onPageCreated(act.addPage(pages)), [act, pages, onPageCreated])
 

@@ -15,7 +15,7 @@ interface HistoryContext {
   /** Les rappels de `useLayoutDraft`, un par un : l'objet qu'il rend est recréé à chaque rendu. */
   setDraft: (l: TilePlacement[]) => void
   commit: () => void
-  addPlacement: (l: TilePlacement[]) => void
+  commitLayout: (l: TilePlacement[]) => void
   layoutUndo: () => void
   layoutRedo: () => void
   canLayoutUndo: boolean
@@ -25,7 +25,7 @@ interface HistoryContext {
 
 export function useBuilderHistory(ctx: HistoryContext) {
   const {
-    setDraft, commit, addPlacement, layoutUndo, layoutRedo,
+    setDraft, commit, commitLayout, layoutUndo, layoutRedo,
     canLayoutUndo, canLayoutRedo, edits,
   } = ctx
   const past = useRef<Step[]>([])
@@ -51,18 +51,18 @@ export function useBuilderHistory(ctx: HistoryContext) {
   }, [commit])
 
   /**
-   * Pose d'une tuile. ⚠⚠ `useLayoutDraft.addPlacement` VIDE ses piles (voir son commentaire :
+   * Pose d'une tuile. ⚠⚠ `useLayoutDraft.commitLayout` VIDE ses piles (voir son commentaire :
    * un `undo` après un ajout ferait persister une mise en page sans la tuile, et
    * `parseDashboard` lèverait sur une tuile orpheline). Le journal doit donc être vidé avec,
    * sinon ses étapes « layout » désigneraient une pile qui ne les porte plus.
    */
-  const onAddPlacement = useCallback((l: TilePlacement[]) => {
+  const onCommitLayout = useCallback((l: TilePlacement[]) => {
     past.current = []
     future.current = []
     armed.current = false
-    addPlacement(l)
+    commitLayout(l)
     force((n) => n + 1)
-  }, [addPlacement])
+  }, [commitLayout])
 
   const note = useCallback(() => {
     past.current = [...past.current, 'query' as Step].slice(-50)
@@ -101,7 +101,7 @@ export function useBuilderHistory(ctx: HistoryContext) {
   const redo = useCallback(() => walk('redo'), [walk])
 
   return {
-    onDrag, onCommit, onAddPlacement, note, undo, redo,
+    onDrag, onCommit, onCommitLayout, note, undo, redo,
     canUndo: past.current.some((s) => canStep(s, 'undo')),
     canRedo: future.current.some((s) => canStep(s, 'redo')),
   }

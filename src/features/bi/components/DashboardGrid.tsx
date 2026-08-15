@@ -184,6 +184,10 @@ export function DashboardGrid({
       isDraggable={editing}
       isResizable={editing}
       draggableHandle=".bi-tile-handle"
+      /* ⚠⚠ Les boutons de l'en-tête sont DANS la poignée de déplacement : sans cette
+         exclusion, `react-grid-layout` amorce un glissement au `pointerdown` et avale le
+         clic — la corbeille et la loupe paraissaient alors mortes en mode Édition. */
+      draggableCancel=".bi-no-drag"
       // ⚠ Pendant le geste, on ne fait que MÉMORISER : l'écriture se fait au relâchement.
       // ⚠⚠ `react-grid-layout` 1.x appelle `onLayoutChange` une première fois au MONTAGE,
       // après sa passe de correction interne, même sans le moindre geste — vérifié en test.

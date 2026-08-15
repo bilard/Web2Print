@@ -33,16 +33,16 @@ describe('brouillon de mise en page', () => {
 })
 
 // ⚠⚠ Régression T11 : poser une tuile (menu d'ajout) N'EST PAS un geste de glissement.
-// `addPlacement` doit avancer `committed` immédiatement et vider les piles — sinon un
+// `commitLayout` doit avancer `committed` immédiatement et vider les piles — sinon un
 // `commit()` déclenché par un geste ultérieur pousserait la mise en page D'AVANT l'ajout sur
 // la pile, et un `undo()` la referait persister avec une tuile désormais orpheline
 // (présente dans `tiles`, absente de `layout`), ce que `parseDashboard` refuse.
-describe('addPlacement — poser une tuile', () => {
+describe('commitLayout — poser une tuile', () => {
   it("met à jour la mise en page SANS appeler `onCommit` (l'appelant persiste lui-même)", () => {
     const onCommit = vi.fn()
     const { result } = renderHook(() => useLayoutDraft(initial, onCommit))
     const withTile = [...initial, { tileId: 't2', x: 0, y: 2, w: 3, h: 2 }]
-    act(() => result.current.addPlacement(withTile))
+    act(() => result.current.commitLayout(withTile))
     expect(result.current.layout).toEqual(withTile)
     expect(onCommit).not.toHaveBeenCalled()
   })
@@ -51,7 +51,7 @@ describe('addPlacement — poser une tuile', () => {
     const onCommit = vi.fn()
     const { result } = renderHook(() => useLayoutDraft(initial, onCommit))
     const withTile = [...initial, { tileId: 't2', x: 0, y: 2, w: 3, h: 2 }]
-    act(() => result.current.addPlacement(withTile))
+    act(() => result.current.commitLayout(withTile))
 
     // Un geste de glissement sur la tuile existante, relâché.
     const dragged = withTile.map((l) => (l.tileId === 't1' ? { ...l, x: 4 } : l))
@@ -59,7 +59,7 @@ describe('addPlacement — poser une tuile', () => {
     act(() => result.current.commit())
     expect(onCommit).toHaveBeenLastCalledWith(dragged)
 
-    // `undo()` doit revenir à l'état posé par `addPlacement` (avec t2), jamais à `initial`
+    // `undo()` doit revenir à l'état posé par `commitLayout` (avec t2), jamais à `initial`
     // (sans t2) : sans le correctif, `onCommit` recevrait ici une mise en page orpheline.
     act(() => result.current.undo())
     expect(result.current.canUndo).toBe(false)
@@ -71,7 +71,7 @@ describe('addPlacement — poser une tuile', () => {
     act(() => { result.current.setDraft([{ tileId: 't1', x: 4, y: 0, w: 3, h: 2 }]); result.current.commit() })
     expect(result.current.canUndo).toBe(true)
 
-    act(() => result.current.addPlacement([...initial, { tileId: 't2', x: 0, y: 2, w: 3, h: 2 }]))
+    act(() => result.current.commitLayout([...initial, { tileId: 't2', x: 0, y: 2, w: 3, h: 2 }]))
     expect(result.current.canUndo).toBe(false)
     expect(result.current.canRedo).toBe(false)
   })

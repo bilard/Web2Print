@@ -67,7 +67,7 @@ export function useLayoutDraft(initial: TilePlacement[], onCommit: (l: TilePlace
   // tuile orpheline (présente dans `tiles`, absente de `layout`). On fixe donc `committed`
   // au nouvel état ET on vide les piles : l'ajout d'une tuile n'est pas annulable au lot 1,
   // c'est honnête plutôt que de risquer un `undo()` qui casse l'écriture suivante.
-  const addPlacement = useCallback((next: TilePlacement[]) => {
+  const commitLayout = useCallback((next: TilePlacement[]) => {
     draft.current = null
     committed.current = next
     past.current = []
@@ -77,7 +77,7 @@ export function useLayoutDraft(initial: TilePlacement[], onCommit: (l: TilePlace
   }, [])
 
   return {
-    layout, setDraft, commit, undo, redo, addPlacement,
+    layout, setDraft, commit, undo, redo, commitLayout,
     canUndo: past.current.length > 0, canRedo: future.current.length > 0,
   }
 }

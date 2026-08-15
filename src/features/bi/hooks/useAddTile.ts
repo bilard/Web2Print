@@ -26,7 +26,7 @@ interface AddTileContext {
   sheet: ExcelSheet | null
   hasSheet: boolean
   addPending: (tile: Tile) => void
-  addPlacement: (layout: TilePlacement[]) => void
+  commitLayout: (layout: TilePlacement[]) => void
   onCreated: (tileId: string) => void
 }
 
@@ -34,7 +34,7 @@ export function useAddTile(ctx: AddTileContext) {
   const { t } = useTranslation()
   const {
     uid, current, pageId, tiles, layout, source, sourceId, onWatch,
-    sheet, hasSheet, addPending, addPlacement, onCreated,
+    sheet, hasSheet, addPending, commitLayout, onCreated,
   } = ctx
 
   return useCallback((
@@ -56,7 +56,7 @@ export function useAddTile(ctx: AddTileContext) {
     // ⚠⚠ Les trois dans le MÊME gestionnaire : React les regroupe en un seul rendu, et la
     // grille reçoit la tuile, son placement et sa sélection ensemble.
     addPending(tile)
-    addPlacement(next)
+    commitLayout(next)
     onCreated(tile.id)
     // ⚠⚠ Feuille mémorisée à la POSE DE LA PREMIÈRE TUILE, jamais à la création, et jamais
     // pour une source de VEILLE : celle-ci ne lit pas la feuille active.
@@ -67,5 +67,5 @@ export function useAddTile(ctx: AddTileContext) {
     // ⚠ `t` hors dépendances À DESSEIN : fermeture recréée à chaque rendu, elle romprait la
     // mémoïsation que `DashboardGrid` exige de tout ce que `BiBoard` lui transmet.
   }, [uid, current, pageId, tiles, layout, source, sourceId, onWatch, sheet, hasSheet,
-    addPending, addPlacement, onCreated])
+    addPending, commitLayout, onCreated])
 }

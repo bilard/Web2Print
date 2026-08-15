@@ -112,7 +112,7 @@ describe('BiBoard', () => {
 
 // ⚠⚠ Tâche 11 : le menu d'ajout est le SEUL chemin de création du module — sans lui, poser
 // une tuile exigerait d'écrire dans Firestore à la main. Ces tests couvrent l'assemblage
-// bout en bout (`AddTileMenu.onAdd` → `newTile`/`placeTile` → `addPlacement` → persistance)
+// bout en bout (`AddTileMenu.onAdd` → `newTile`/`placeTile` → `commitLayout` → persistance)
 // ET le cadenas d'édition, qui n'avait encore AUCUNE couverture.
 describe('BiBoard — menu d’ajout de tuile', () => {
   beforeEach(() => {

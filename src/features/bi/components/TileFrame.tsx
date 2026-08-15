@@ -96,7 +96,7 @@ export function TileFrame({
                et un tiroir qui s'ouvre ne doit pas en plus déplacer la sélection. */
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onInspect}
-            className="shrink-0 p-1 rounded text-white/30 hover:text-white hover:bg-white/[0.06]">
+            className="bi-no-drag shrink-0 p-1 rounded text-white/30 hover:text-white hover:bg-white/[0.06]">
             <Table2 className="w-3.5 h-3.5" />
           </button>
         )}
@@ -107,7 +107,7 @@ export function TileFrame({
                un glissement. */
             onPointerDown={(e) => e.stopPropagation()}
             onClick={onRemove}
-            className="shrink-0 p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10">
+            className="bi-no-drag shrink-0 p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
