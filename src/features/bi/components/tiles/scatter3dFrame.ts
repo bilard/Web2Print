@@ -69,8 +69,8 @@ function gridPlane(
   return grid
 }
 
-/** Boîte + sol + deux parois du fond. Le sol est franc, les parois discrètes : en tournant,
- *  une paroi passe devant le nuage et ne doit jamais concurrencer les points. */
+/** Boîte + sol + deux parois. ⚠ Les parois sont ÉTIQUETÉES (`userData.wall`) pour qu'
+ *  `orientWalls` puisse les renvoyer au fond à chaque changement de point de vue. */
 export function buildFrame(r: number, colors: FrameColors): THREE.Object3D {
   const group = new THREE.Group()
   group.add(boxEdges(r, colors))
@@ -78,7 +78,26 @@ export function buildFrame(r: number, colors: FrameColors): THREE.Object3D {
   const [floor, wall] = colors.gridOpacity
   const t = colors.tint
   group.add(gridPlane(r, new THREE.Euler(), new THREE.Vector3(0, -r, 0), x, z, t, floor))
-  group.add(gridPlane(r, new THREE.Euler(Math.PI / 2, 0, 0), new THREE.Vector3(0, 0, -r), x, y, t, wall))
-  group.add(gridPlane(r, new THREE.Euler(0, 0, Math.PI / 2), new THREE.Vector3(-r, 0, 0), y, z, t, wall))
+  const xy = gridPlane(r, new THREE.Euler(Math.PI / 2, 0, 0), new THREE.Vector3(0, 0, -r), x, y, t, wall)
+  xy.userData.wall = 'xy'
+  group.add(xy)
+  const yz = gridPlane(r, new THREE.Euler(0, 0, Math.PI / 2), new THREE.Vector3(-r, 0, 0), y, z, t, wall)
+  yz.userData.wall = 'yz'
+  group.add(yz)
   return group
+}
+
+/**
+ * Renvoie les deux parois DERRIÈRE le nuage, selon le côté d'où l'on regarde.
+ *
+ * ⚠⚠ À parois fixes, tourner d'un quart de tour en amenait une DEVANT les données : son
+ * quadrillage barrait les marqueurs et l'arête vive du premier plan tirait l'œil hors du
+ * nuage. C'est la convention de tous les graphes 3D — on ne montre jamais la cage entière,
+ * seulement le coin du fond. Appelé à chaque image ; deux affectations, rien de plus.
+ */
+export function orientWalls(frame: THREE.Object3D, camera: THREE.Camera, r: number): void {
+  for (const child of frame.children) {
+    if (child.userData.wall === 'xy') child.position.z = camera.position.z >= 0 ? -r : r
+    if (child.userData.wall === 'yz') child.position.x = camera.position.x >= 0 ? -r : r
+  }
 }

@@ -20,7 +20,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { rampAt } from './scatter3dRamp'
-import { buildFrame } from './scatter3dFrame'
+import { buildFrame, orientWalls } from './scatter3dFrame'
 import type { Scatter3DPoint } from './scatter3dData'
 
 export interface Scatter3DTheme {
@@ -76,6 +76,13 @@ const HOME = new THREE.Vector3(2.7, 1.55, 3.1)
  * cache le nuage — et le nuage dense se lit alors par sa densité, pas point par point.
  */
 const MAX_STEMS = 150
+/**
+ * Où se posent les BORNES le long de leur arête : à 75 %, jamais sur le coin.
+ *
+ * ⚠⚠ Trois axes se rejoignent à chaque coin, et trois bornes au même endroit se
+ * chevauchaient — vu à l'écran, le minimum de X passait par-dessus celui de Y.
+ */
+const T = R * 0.75
 
 /** Ancrage horizontal d'une étiquette : vers où le texte se développe depuis son point. */
 type Anchor = 'center' | 'left' | 'right'
@@ -90,7 +97,7 @@ type Anchor = 'center' | 'left' | 'right'
  * posé au bord gauche du volume débordait de la moitié de sa largeur et se faisait rogner
  * par le cadre — « Produits appariés » s'affichait « oduits appariés ».
  */
-function labelSprite(text: string, color: string, frac: number, anchor: Anchor): THREE.Sprite {
+function labelSprite(text: string, color: string, frac: number): THREE.Sprite {
   const canvas = document.createElement('canvas')
   const font = 48
   const pad = 8
@@ -117,10 +124,9 @@ function labelSprite(text: string, color: string, frac: number, anchor: Anchor):
   // caméra, pour que le texte garde la même taille À L'ÉCRAN. Un sprite à taille de monde
   // fixe rapetissait avec le cadrage — sur une tuile large, les graduations devenaient
   // illisibles alors qu'elles portent les seules VALEURS du visuel.
+  // ⚠ Position, échelle et ANCRE sont toutes posées au rendu (`sizeLabels`) : elles
+  // dépendent du point de vue, qui change à chaque geste.
   sprite.userData = { frac, aspect: canvas.width / canvas.height }
-  // `center` déplace l'ancre DANS le sprite : à gauche du volume on développe vers
-  // l'intérieur, à droite vers l'extérieur — jamais par-dessus la boîte.
-  sprite.center.set(anchor === 'center' ? 0.5 : anchor === 'left' ? 0 : 1, 0.5)
   sprite.renderOrder = 10
   return sprite
 }
@@ -140,25 +146,43 @@ function discTexture(): THREE.CanvasTexture {
   return new THREE.CanvasTexture(canvas)
 }
 
-/** Où se posent le nom et les deux bornes de chaque axe, et vers où leur texte se développe.
- *  Chaque axe prend une arête DIFFÉRENTE : sur la même, les textes se chevauchent. */
-// ⚠⚠ Les bornes sont rentrées à 88 % de l'arête, jamais posées sur le COIN : trois axes s'y
-// rejoignent, et trois bornes au même endroit se chevauchaient — vu à l'écran, le minimum de
-// X passait par-dessus celui de Y.
-const T = R * 0.75
-const AXIS_ANCHORS: { name: [number, number, number]; min: [number, number, number]
-  max: [number, number, number]; anchor: Anchor }[] = [
-  // X — arête avant-basse. Le nom passe SOUS les bornes pour ne pas les croiser.
-  { name: [0, -R - 0.19, R], min: [-T, -R - 0.07, R + 0.02], max: [T, -R - 0.07, R + 0.02],
-    anchor: 'center' },
-  // Y — arête ARRIÈRE-gauche, verticale. ⚠ Arrière et non avant : sur l'arête avant, ses
-  // bornes tombaient dans le même coin que celles de X et se chevauchaient.
-  { name: [-R - 0.03, R + 0.15, -R], min: [-R - 0.05, -T, -R], max: [-R - 0.05, T, -R],
-    anchor: 'right' },
-  // Z — arête droite-basse, en profondeur. Textes développés vers l'extérieur.
-  { name: [R + 0.07, -R - 0.16, 0], min: [R + 0.07, -R - 0.03, T], max: [R + 0.07, -R - 0.03, -T],
-    anchor: 'left' },
-]
+/** Rang d'une étiquette sur son axe. */
+type Slot = 'name' | 'min' | 'max'
+
+/**
+ * Où se pose une étiquette, et vers où son texte se développe — RECALCULÉ à chaque image.
+ *
+ * ⚠⚠ Rien de fixe ici. Vu à l'écran : à positions figées, un demi-tour ramenait les trois
+ * noms d'axes et leurs six bornes AU MILIEU du volume, les uns par-dessus les autres, sur des
+ * arêtes qui étaient passées devant. Chaque axe suit désormais l'arête du fond de son côté,
+ * exactement comme les parois du quadrillage.
+ */
+function placeLabel(
+  axis: 0 | 1 | 2, slot: Slot, camera: THREE.Camera,
+): { at: [number, number, number]; anchor: Anchor } {
+  // Côté d'où l'on regarde : `1` = la caméra est du côté positif de cet axe.
+  const sx = camera.position.x >= 0 ? 1 : -1
+  const sz = camera.position.z >= 0 ? 1 : -1
+  const end = slot === 'min' ? -T : T
+  if (axis === 0) {
+    // X — arête basse la plus PROCHE : c'est celle qu'on lit sans être gêné par le nuage.
+    return slot === 'name'
+      ? { at: [0, -R - 0.19, sz * R], anchor: 'center' }
+      : { at: [end, -R - 0.07, sz * (R + 0.02)], anchor: 'center' }
+  }
+  if (axis === 1) {
+    // Y — arête verticale du FOND, à l'opposé de la caméra : elle ne croise jamais le nuage.
+    const anchor: Anchor = sx > 0 ? 'right' : 'left'
+    return slot === 'name'
+      ? { at: [-sx * (R + 0.03), R + 0.15, -sz * R], anchor }
+      : { at: [-sx * (R + 0.05), end, -sz * R], anchor }
+  }
+  // Z — arête basse du côté de la caméra, texte développé vers l'extérieur.
+  const anchor: Anchor = sx > 0 ? 'left' : 'right'
+  return slot === 'name'
+    ? { at: [sx * (R + 0.07), -R - 0.16, 0], anchor }
+    : { at: [sx * (R + 0.07), -R - 0.03, end], anchor }
+}
 
 export class Scatter3DScene {
   private renderer: THREE.WebGLRenderer
@@ -174,6 +198,7 @@ export class Scatter3DScene {
    * milliers de sphères en UN appel de dessin.
    */
   private points: THREE.InstancedMesh
+  private frame: THREE.Object3D
   private composer: EffectComposer | null = null
   private bloomPass: UnrealBloomPass | null = null
   /** Colonnes vers le sol + leur pied. `null` = nuage trop dense pour en porter. */
@@ -226,10 +251,14 @@ export class Scatter3DScene {
     // ⚠⚠ Décor en RETRAIT : arêtes franches (elles portent l'identité de l'axe), quadrillage
     // presque effacé. Vu à l'écran avec un quadrillage à pleine teinte : le rose et le cyan
     // des mailles écrasaient les sphères, et on ne lisait plus le nuage mais la cage.
-    this.scene.add(buildFrame(R, {
+    // ⚠ Arêtes DISCRÈTES : à 0,7 elles dessinaient une cage vive qui enfermait le nuage et
+    // tirait l'œil vers le premier plan. Elles gardent leur teinte — c'est elle qui dit
+    // quel axe on regarde — mais s'effacent devant les marqueurs.
+    this.frame = buildFrame(R, {
       axes: theme.axisColors, tint: theme.frame,
-      edgeOpacity: 0.7, gridOpacity: [0.16, 0.09],
-    }))
+      edgeOpacity: 0.34, gridOpacity: [0.14, 0.08],
+    })
+    this.scene.add(this.frame)
     this.points = this.buildPoints([], theme)
     this.scene.add(this.points)
     // ⚠ Le seuil est en unités de MONDE : les points vivent dans [-1, 1], un seuil par
@@ -432,19 +461,18 @@ export class Scatter3DScene {
     }
     this.labels = []
     axes.forEach((axis, i) => {
-      const at = AXIS_ANCHORS[i]
-      // ⚠ Le NOM est toujours centré sur son arête, quel que soit l'ancrage des bornes :
-      // c'est le plus long des trois textes, et développé d'un seul côté il sortait du cadre
-      // sur une tuile étroite — « Écart médian (%) » s'affichait « Écart médian ( ».
-      const parts: [string, [number, number, number], number, string, Anchor][] = [
-        [axis.label, at.name, 0.05, this.theme.axisColors[i], 'center'],
-        [axis.min, at.min, 0.038, this.theme.inkDim, at.anchor],
-        [axis.max, at.max, 0.038, this.theme.inkDim, at.anchor],
+      // ⚠ Le NOM porte la teinte de son axe — c'est ce qui le relie à son arête — quand les
+      // bornes gardent l'encre neutre : le nom dit une identité, la borne une valeur.
+      const parts: [Slot, string, number, string][] = [
+        ['name', axis.label, 0.05, this.theme.axisColors[i]],
+        ['min', axis.min, 0.038, this.theme.inkDim],
+        ['max', axis.max, 0.038, this.theme.inkDim],
       ]
-      for (const [text, position, frac, color, anchor] of parts) {
+      for (const [slot, text, frac, color] of parts) {
         if (!text) continue
-        const sprite = labelSprite(text, color, frac, anchor)
-        sprite.position.set(...position)
+        const sprite = labelSprite(text, color, frac)
+        sprite.userData.axis = i
+        sprite.userData.slot = slot
         this.scene.add(sprite)
         this.labels.push(sprite)
       }
@@ -491,7 +519,13 @@ export class Scatter3DScene {
   private sizeLabels(): void {
     const k = 2 * Math.tan((this.camera.fov * Math.PI) / 360)
     for (const sprite of this.labels) {
-      const { frac, aspect } = sprite.userData as { frac: number; aspect: number }
+      const { frac, aspect, axis, slot } =
+        sprite.userData as { frac: number; aspect: number; axis: 0 | 1 | 2; slot: Slot }
+      const { at, anchor } = placeLabel(axis, slot, this.camera)
+      sprite.position.set(...at)
+      // `center` déplace l'ancre DANS le sprite : d'un côté du volume le texte se développe
+      // vers l'intérieur, de l'autre vers l'extérieur — jamais par-dessus la boîte.
+      sprite.center.set(anchor === 'center' ? 0.5 : anchor === 'left' ? 0 : 1, 0.5)
       const height = k * this.camera.position.distanceTo(sprite.position) * frac
       sprite.scale.set(height * aspect, height, 1)
     }
@@ -500,6 +534,7 @@ export class Scatter3DScene {
   render(): void {
     if (this.disposed) return
     this.sizeLabels()
+    orientWalls(this.frame, this.camera, R)
     if (this.composer) this.composer.render()
     else this.renderer.render(this.scene, this.camera)
   }
