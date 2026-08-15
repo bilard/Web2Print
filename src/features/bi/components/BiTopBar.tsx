@@ -55,10 +55,14 @@ export function BiTopBar({
   const boardOptions = items.map((d) => ({ id: d.id, label: d.name }))
 
   return (
-    /* ⚠⚠ `flex-nowrap` et hauteur FIXE : en `flex-wrap`, la barre passait à la ligne dès
-       que la fenêtre rétrécissait, sa hauteur changeait, et tout l'écran sautait sous elle.
-       Ce qui ne tient pas défile horizontalement — jamais en descendant. */
-    <header className="flex h-12 items-center gap-2.5 flex-nowrap shrink-0 px-3 bg-surface border-b border-white/[0.06] overflow-x-auto overflow-y-hidden">
+    /* ⚠⚠ `flex-nowrap` et hauteur FIXE : en `flex-wrap`, la barre passait à la ligne dès que
+       la fenêtre rétrécissait, sa hauteur changeait, et tout l'écran sautait sous elle.
+       ⚠⚠ Et surtout AUCUN `overflow` ici : les sélecteurs et les menus s'ancrent DANS cette
+       barre haute de 48 px. Un `overflow-hidden` — même posé pour contenir la largeur — les
+       tranche net, et ils s'ouvrent sans que rien ne s'affiche : des menus muets. La largeur
+       se tient autrement, en laissant les blocs de gauche se comprimer (`min-w-0`) et en
+       clouant ceux de droite (`shrink-0`). */
+    <header className="flex h-12 items-center gap-2.5 flex-nowrap shrink-0 px-3 bg-surface border-b border-white/[0.06]">
       <BiDocTitle name={current.name} canEdit={canEdit} onRename={onRename} />
 
       {items.length > 1 && (
@@ -71,12 +75,14 @@ export function BiTopBar({
       {sourcePicker}
 
       {/* Fraîcheur : un chiffre sans âge est invérifiable, y compris au niveau de l'écran. */}
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-well px-2 py-1 text-[11px] text-white/45">
+      <span className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-well px-2 py-1 text-[11px] text-white/45">
         {updatedAt != null && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
         {updatedAt == null ? t('bi.status.noAge') : t('bi.status.age', { age: ageLabel(updatedAt, now) })}
       </span>
 
-      <span className="flex-1" />
+      {/* ⚠ `min-w-0` : c'est cet espace qui absorbe la compression. Sans lui, la barre
+          poussait ses boutons hors de l'écran au lieu de se resserrer. */}
+      <span className="flex-1 min-w-0" />
 
       <BiModeSwitch
         editing={editing} onToggleEdit={onToggleEdit} canEdit={canEdit}
@@ -94,7 +100,7 @@ export function BiTopBar({
       {onPrompt && canEdit && (
         <button
           type="button" onClick={onPrompt}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[12px] text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-1 text-[12px] text-indigo-200 hover:bg-indigo-500/20 transition-colors"
         >
           <Sparkles className="w-3.5 h-3.5" />{t('bi.prompt.button')}
         </button>
