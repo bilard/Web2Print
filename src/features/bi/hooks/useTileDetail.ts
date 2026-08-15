@@ -1,9 +1,9 @@
-// Le détail d'une tuile : ouvrir, calculer les lignes, les exporter.
+// Le détail d'une tuile : ses lignes, leurs filtres, leur export.
 //
-// ⚠⚠ Rien n'est calculé tant que le tiroir est FERMÉ. Vingt tuiles qui prépareraient chacune
-// son détail « au cas où » recopieraient vingt fois le jeu de lignes à chaque rendu — sur la
-// veille, c'est plusieurs centaines de milliers de lignes.
-import { useCallback, useMemo, useState } from 'react'
+// ⚠⚠ Appelé UNIQUEMENT depuis `TileDetail`, monté le tiroir ouvert. Ce hook recompose les
+// lignes de la source (`useSourceRows`) : appelé dans chaque tuile « au cas où », il ferait
+// une copie de la feuille active PAR TUILE, en plus de celle de `useTileData`.
+import { useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { useTranslation, type TranslationKey } from '@/lib/i18n'
@@ -21,9 +21,7 @@ import type { FilterClause, QuerySpec } from '../types'
 const MAX_DETAIL_ROWS = 500
 
 export interface TileDetail {
-  open: boolean
-  toggle: (next: boolean) => void
-  /** `null` tant que le tiroir n'a pas été ouvert. */
+  /** `null` seulement si la source n'a rien à montrer. */
   detail: UnderlyingRows | null
   /** Filtres actifs, décrits en clair pour le bandeau du tiroir. */
   filterLabels: string[]
@@ -32,7 +30,6 @@ export interface TileDetail {
 
 export function useTileDetail(title: string, query: QuerySpec, globalFilters: FilterClause[]): TileDetail {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
   const rows = useSourceRows(query.source)
   const sheet = useExcelStore((s) => s.sheets[s.activeSheetIndex] ?? null)
 
@@ -47,12 +44,12 @@ export function useTileDetail(title: string, query: QuerySpec, globalFilters: Fi
     () => [...query.filters, ...globalFilters], [query.filters, globalFilters])
 
   const detail = useMemo(
-    () => (open ? underlyingRows(rows, filters, source, MAX_DETAIL_ROWS) : null),
-    [open, rows, filters, source])
+    () => underlyingRows(rows, filters, source, MAX_DETAIL_ROWS),
+    [rows, filters, source])
 
   const filterLabels = useMemo(
-    () => (open ? filters.map((f) => describeFilter(f, dimensionLabel(source, f.field, t))) : []),
-    [open, filters, source, t])
+    () => filters.map((f) => describeFilter(f, dimensionLabel(source, f.field, t))),
+    [filters, source, t])
 
   const exportRows = useCallback(() => {
     if (!detail || detail.total === 0) { toast.error(t('bi.export.nothing')); return }
@@ -72,5 +69,5 @@ export function useTileDetail(title: string, query: QuerySpec, globalFilters: Fi
     })
   }, [detail, title, source, filterLabels, t])
 
-  return { open, toggle: setOpen, detail, filterLabels, exportRows }
+  return { detail, filterLabels, exportRows }
 }

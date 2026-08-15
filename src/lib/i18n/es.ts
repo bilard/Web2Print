@@ -513,6 +513,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.alert.none': 'Sin alerta',
   'bi.alert.above': 'Alertar por encima de',
   'bi.alert.below': 'Alertar por debajo de',
+  'bi.alert.on': 'Sobre: {measure}',
   'bi.alert.hint': 'En un visual agrupado, el valor más desfavorable dispara la alerta.',
   'bi.alert.remove': 'Quitar la alerta',
   'bi.detail.open': 'Ver las filas',

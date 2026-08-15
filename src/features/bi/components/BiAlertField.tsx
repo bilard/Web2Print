@@ -7,16 +7,27 @@
 // ⚠ Champ vide = aucune alerte, et l'option disparaît du document. Garder un seuil à zéro
 // ferait sonner toutes les tuiles positives.
 import { useTranslation } from '@/lib/i18n'
+import { biLabel } from './biLabel'
+import { measureKey } from '../types'
+import type { DataSource } from '../registry/types'
 import type { Tile } from '../types'
 
-export function BiAlertField({ tile, canEdit, onApply }: {
+export function BiAlertField({ tile, source, canEdit, onApply }: {
   tile: Tile | null
+  source: DataSource
   canEdit: boolean
   onApply: (next: Tile) => void
 }) {
   const { t } = useTranslation()
   const alert = tile?.options?.alert
   const disabled = !tile || !canEdit
+  // ⚠⚠ Le seuil porte sur la PREMIÈRE mesure de la tuile — celle qu'`evaluateAlert` lit. Sur
+  // un visuel à deux mesures (un écart ET un décompte), taper « 30 » sans savoir laquelle est
+  // gardée pose une alerte sur le mauvais sujet : le nom de la mesure s'affiche donc ici.
+  const ref = tile?.query.measures[0]
+  const guarded = ref
+    ? source.measures.find((m) => m.id === measureKey({ ...ref, alias: undefined }))
+    : undefined
 
   const write = (next: { op: 'gt' | 'lt'; value: number } | undefined) => {
     if (!tile) return
@@ -64,6 +75,11 @@ export function BiAlertField({ tile, canEdit, onApply }: {
           className="flex-1 min-w-0 rounded bg-well border border-white/10 px-2 py-1 text-[11px] text-white tabular-nums placeholder:text-white/25 focus:outline-none focus:border-indigo-500/60 disabled:opacity-40"
         />
       </div>
+      {guarded && (
+        <p className="text-[10px] text-white/45 truncate" title={biLabel(guarded, t)}>
+          {t('bi.alert.on', { measure: biLabel(guarded, t) })}
+        </p>
+      )}
       <p className="text-[10px] text-white/25 leading-snug">{t('bi.alert.hint')}</p>
     </div>
   )

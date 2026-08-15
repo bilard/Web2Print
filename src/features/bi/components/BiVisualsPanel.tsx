@@ -44,7 +44,7 @@ export function BiVisualsPanel({ tile, source, onChangeKind, onApply, canEdit }:
 
       {/* Le seuil ferme le volet : c'est un réglage de SURVEILLANCE, pas de composition. */}
       <div className="pt-2 mt-1 border-t border-white/[0.06]">
-        <BiAlertField tile={tile} canEdit={canEdit} onApply={onApply} />
+        <BiAlertField tile={tile} source={source} canEdit={canEdit} onApply={onApply} />
       </div>
     </BiPanel>
   )

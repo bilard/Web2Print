@@ -8,7 +8,7 @@
 // chaque rendu) jusqu'à `useTileData`, qui mémoïse sur l'égalité RÉFÉRENTIELLE de `query` et
 // `globalFilters`. Seules `rgl`/`toPlacements`, qui ne nourrissent QUE `react-grid-layout`
 // (jamais `useTileData`), sont recalculées à chaque rendu — sans conséquence.
-import { memo, useMemo } from 'react'
+import { memo, useMemo, useState } from 'react'
 import GridLayout, { type Layout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -22,8 +22,7 @@ import { ChartTile } from './tiles/ChartTile'
 import { TableTile } from './tiles/TableTile'
 import { PivotTile } from './tiles/PivotTile'
 import { useTileData } from '../hooks/useTileData'
-import { useTileDetail } from '../hooks/useTileDetail'
-import { DetailDrawer } from './DetailDrawer'
+import { TileDetail } from './TileDetail'
 import { applyDrill, type DrillStep } from '../filters/drill'
 import { evaluateAlert } from '../engine/alert'
 import { formatMeasure } from '../engine/formatValue'
@@ -72,7 +71,9 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   const { result, state, message, updatedAt, live, retry } = useTileData(query, globalFilters)
   // ⚠ Le détail lit la requête EFFECTIVE (forage compris) : le tiroir doit montrer les
   // lignes du niveau où l'on se trouve, pas celles du niveau d'origine.
-  const inspect = useTileDetail(tile.title, query, globalFilters)
+  // ⚠ Seul l'ÉTAT d'ouverture vit ici : le calcul du détail est porté par `TileDetail`, qui
+  // n'est monté qu'ouvert (cf. son en-tête).
+  const [detailOpen, setDetailOpen] = useState(false)
   const { t, locale } = useTranslation()
   // ⚠ Le seuil se lit sur le résultat AFFICHÉ (filtres et forage compris) : évalué sur les
   // chiffres d'avant filtrage, il sonnerait pour des lignes que la tuile ne montre plus.
@@ -95,7 +96,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
     <TileFrame
       title={tile.title} updatedAt={updatedAt} live={live} state={state} message={message} editing={editing}
       skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected} alert={alert}
-      onSelect={() => onSelect(tile.id)} onInspect={() => inspect.toggle(true)}
+      onSelect={() => onSelect(tile.id)} onInspect={() => setDetailOpen(true)}
       onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
@@ -113,9 +114,9 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
               tooltipKeys={tooltipKeys} onPick={onPick} onDrill={onDrill} />
       )}
     </TileFrame>
-    {inspect.open && inspect.detail && (
-      <DetailDrawer title={tile.title} detail={inspect.detail} filters={inspect.filterLabels}
-        onClose={() => inspect.toggle(false)} onExport={inspect.exportRows} />
+    {detailOpen && (
+      <TileDetail title={tile.title} query={query} globalFilters={globalFilters}
+        onClose={() => setDetailOpen(false)} />
     )}
     </div>
   )

@@ -532,6 +532,7 @@ export const fr = {
   'bi.alert.none': 'Aucune alerte',
   'bi.alert.above': 'Alerter au-dessus de',
   'bi.alert.below': 'Alerter en dessous de',
+  'bi.alert.on': 'Sur : {measure}',
   'bi.alert.hint': 'Sur un visuel groupé, c’est la valeur la plus défavorable qui déclenche.',
   'bi.alert.remove': 'Retirer l’alerte',
   'bi.detail.open': 'Voir les lignes',

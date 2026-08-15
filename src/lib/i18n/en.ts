@@ -514,6 +514,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.alert.none': 'No alert',
   'bi.alert.above': 'Alert above',
   'bi.alert.below': 'Alert below',
+  'bi.alert.on': 'On: {measure}',
   'bi.alert.hint': 'On a grouped visual, the least favourable value triggers the alert.',
   'bi.alert.remove': 'Remove the alert',
   'bi.detail.open': 'View rows',
