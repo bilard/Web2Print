@@ -4,7 +4,7 @@
 // ⚠⚠ L'âge BAT ici, dans le cadre, et surtout PAS dans `TileBody` (`DashboardGrid`) : c'est
 // lui qui porte `useTileData`, et un état qui s'y rafraîchit relancerait l'agrégation de la
 // tuile toutes les dix secondes. Le cadre ne sait rien de la donnée, il ne fait que compter.
-import { Table2, TriangleAlert, Trash2 } from 'lucide-react'
+import { Table2, TriangleAlert, Trash2, Maximize2 } from 'lucide-react'
 import { TileSkeleton, TileEmpty, TileError, TileNotice } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
 import { ageLabel } from '../engine/age'
@@ -48,6 +48,8 @@ interface Props {
   /** Ouvre le détail : les LIGNES derrière le chiffre. Absent = la tuile n'en propose pas
    *  (rien à montrer tant qu'elle n'a pas de données). */
   onInspect?: () => void
+  /** Ouvre la tuile en grand. Absent = rien à agrandir (pas encore de données). */
+  onExpand?: () => void
   /** Suppression de la tuile. ⚠ N'apparaît qu'en ÉDITION : en consultation, un bouton qui
    *  détruit à un pixel du bouton qui explore serait un piège. */
   onRemove?: () => void
@@ -58,7 +60,7 @@ interface Props {
 
 export function TileFrame({
   title, updatedAt, live, state, skeleton, message, hasFilters, editing, selected,
-  onSelect, onInspect, onRemove, onRetry, onClearFilters, alert, accent, children,
+  onSelect, onInspect, onExpand, onRemove, onRetry, onClearFilters, alert, accent, children,
 }: Props) {
   const { t } = useTranslation()
   const text = message === undefined ? undefined
@@ -98,6 +100,19 @@ export function TileFrame({
             onClick={onInspect}
             className="bi-no-drag shrink-0 p-1 rounded text-white/30 hover:text-white hover:bg-white/[0.06]">
             <Table2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {/* ⚠ Proposé en CONSULTATION comme en édition : agrandir ne modifie rien au document,
+            c'est le geste qu'on fait pour LIRE une tuile dense. */}
+        {onExpand && state === 'ready' && (
+          <button type="button" title={t('bi.zoom.open')} aria-label={t('bi.zoom.open')}
+            /* ⚠ `stopPropagation` : le cadre entier sélectionne au `pointerdown`, et la
+               poignée de déplacement l'entoure — sans cela, viser ce bouton amorcerait
+               un glissement au lieu d'ouvrir la fenêtre. */
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onExpand}
+            className="bi-no-drag shrink-0 p-1 rounded text-white/30 hover:text-white hover:bg-white/[0.06]">
+            <Maximize2 className="w-3.5 h-3.5" />
           </button>
         )}
         {editing && onRemove && (

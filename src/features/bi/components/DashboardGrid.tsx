@@ -13,15 +13,8 @@ import GridLayout, { type Layout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import { TileFrame } from './TileFrame'
-import { KpiTile } from './tiles/KpiTile'
-import { GaugeTile } from './tiles/GaugeTile'
-import { FunnelTile } from './tiles/FunnelTile'
-import { ScatterTile } from './tiles/ScatterTile'
-import { Scatter3DTile } from './tiles/Scatter3DTile'
-import { HeatmapTile } from './tiles/HeatmapTile'
-import { ChartTile } from './tiles/ChartTile'
-import { TableTile } from './tiles/TableTile'
-import { PivotTile } from './tiles/PivotTile'
+import { TileVisual } from './TileVisual'
+import { TileZoomDialog } from './TileZoomDialog'
 import { useTileData } from '../hooks/useTileData'
 import { TileDetail } from './TileDetail'
 import { applyDrill, type DrillStep } from '../filters/drill'
@@ -79,6 +72,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   // ⚠ Seul l'ÉTAT d'ouverture vit ici : le calcul du détail est porté par `TileDetail`, qui
   // n'est monté qu'ouvert (cf. son en-tête).
   const [detailOpen, setDetailOpen] = useState(false)
+  const [zoomOpen, setZoomOpen] = useState(false)
   // ⚠ Teinte STABLE, tirée de l'identifiant : déplacer une tuile ne doit pas changer sa
   // couleur — c'est ce qui permet de la retrouver d'un coup d'œil dans une page dense.
   const accent = accentOf(tile.id)
@@ -99,6 +93,13 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   const skeleton = tile.kind === 'kpi' || tile.kind === 'gauge'
     ? 'kpi'
     : tile.kind === 'table' || tile.kind === 'pivot' || tile.kind === 'heatmap' ? 'table' : 'chart'
+  // ⚠ Le MÊME élément est rendu dans la grille et dans la fenêtre d'agrandissement : un
+  // élément React est une description, React en monte donc deux instances distinctes. Deux
+  // aiguillages écrits séparément finiraient par diverger.
+  const visual = result && (
+    <TileVisual tile={tile} result={result} accent={accent}
+      tooltipKeys={tooltipKeys} onPick={onPick} onDrill={onDrill} />
+  )
   return (
     <div className={`h-full transition-opacity duration-200 ${dimmed ? 'opacity-40' : ''}`}>
     <TileFrame
@@ -106,25 +107,17 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
       skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected} alert={alert}
       accent={accent}
       onSelect={() => onSelect(tile.id)} onInspect={() => setDetailOpen(true)}
+      onExpand={() => setZoomOpen(true)}
       onRemove={() => onRemove(tile.id)}
       onRetry={retry} onClearFilters={onClearFilters}
     >
-      {result && (
-        tile.kind === 'kpi' ? <KpiTile result={result} accent={accent} />
-          : tile.kind === 'gauge' ? <GaugeTile result={result} accent={accent} />
-          : tile.kind === 'funnel' ? <FunnelTile result={result} />
-          : tile.kind === 'scatter' ? <ScatterTile result={result} />
-          : tile.kind === 'scatter3d' ? <Scatter3DTile result={result} />
-          : tile.kind === 'heatmap'
-            ? <HeatmapTile result={result} columnDim={tile.options?.pivotColumn} />
-          : tile.kind === 'table' ? <TableTile result={result} />
-          : tile.kind === 'pivot'
-            ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}
-                showTotals={tile.options?.showTotals} />
-          : <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked}
-              tooltipKeys={tooltipKeys} onPick={onPick} onDrill={onDrill} />
-      )}
+      {visual}
     </TileFrame>
+    {zoomOpen && visual && (
+      <TileZoomDialog title={tile.title} kind={tile.kind} onClose={() => setZoomOpen(false)}>
+        {visual}
+      </TileZoomDialog>
+    )}
     {detailOpen && (
       <TileDetail title={tile.title} query={query} globalFilters={globalFilters}
         onClose={() => setDetailOpen(false)} />
