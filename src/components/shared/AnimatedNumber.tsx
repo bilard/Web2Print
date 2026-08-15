@@ -15,6 +15,13 @@ export function useAnimatedValue(target: number, durationMs = 700): number {
   useEffect(() => {
     const from = fromRef.current
     if (from === target || !Number.isFinite(target)) { fromRef.current = target; setVal(target); return }
+    // ⚠⚠ Onglet MASQUÉ : `requestAnimationFrame` ne bat pas. Lancer l'animation y figerait
+    // le nombre à mi-course — un chiffre FAUX affiché pour toujours, sans rien qui le dise.
+    // Relevé en prod sur le module BI : un KPI resté à 60 156 entre son ancien total et sa
+    // vraie valeur filtrée. Onglet caché = pas d'animation, la cible directement.
+    if (typeof document !== 'undefined' && document.hidden) {
+      fromRef.current = target; setVal(target); return
+    }
     let start: number | null = null
     const step = (ts: number) => {
       if (start == null) start = ts
@@ -24,8 +31,13 @@ export function useAnimatedValue(target: number, durationMs = 700): number {
       else { fromRef.current = target; setVal(target) }
     }
     rafRef.current = requestAnimationFrame(step)
+    // ⚠⚠ Filet : l'onglet peut passer en arrière-plan APRÈS le départ, et les frames
+    // s'arrêtent alors en cours de route. Les timers, eux, sont ralentis mais jamais gelés :
+    // celui-ci pose la cible quoi qu'il arrive. Au repos il ne coûte rien (même valeur).
+    const guard = setTimeout(() => { fromRef.current = target; setVal(target) }, durationMs + 250)
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      clearTimeout(guard)
       fromRef.current = target // reprise propre si la cible rechange en cours d'anim
     }
   }, [target, durationMs])
