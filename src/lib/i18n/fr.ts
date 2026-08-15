@@ -502,6 +502,10 @@ export const fr = {
   'bi.source.retargeted': '{count} tuile(s) basculée(s) sur la nouvelle source',
   'bi.source.retargetNone': 'Aucune tuile ne peut lire cette source',
   'bi.source.blockedOne': '{title} — champ absent : {field}',
+  'bi.loading.of': 'Tranche {done} sur {total}',
+  'bi.loading.catalog': 'Lecture du catalogue source',
+  'bi.loading.site': 'Lecture des fiches du concurrent',
+  'bi.loading.db': 'Lecture de la base produits',
   'bi.source.idle': 'Cette source n’alimente encore aucune tuile : posez-en une pour la charger.',
   'bi.source.serverNeeded': 'Croiser TOUS les concurrents à la maille fiche demande le moteur serveur (lot 3) : chaque source ci-dessus se lit isolément.',
 

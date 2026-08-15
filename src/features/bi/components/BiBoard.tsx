@@ -16,6 +16,8 @@ import { CrossFilterChip } from './CrossFilterChip'
 import { BiQuickFilter } from './BiQuickFilter'
 import { BiSourceRail } from './BiSourceRail'
 import { BiViewRail, type BiView } from './BiViewRail'
+import { BiProgressBar } from './BiProgressBar'
+import { usePimDbState } from '../hooks/usePimDatabases'
 import { BiDataView } from './BiDataView'
 import { quickFilterTarget } from '../filters/quickFilter'
 import { DrillCrumbs } from './DrillCrumbs'
@@ -33,7 +35,8 @@ import type { TvMode } from '../hooks/useTvMode'
 import { PromptBoardDialog } from './PromptBoardDialog'
 import { exportBoardToPng, exportBoardToPdf } from '../export/exportImage'
 import {
-  useBoardSource, useWatchSourceState, useShownUpdatedAt, useWatchSelection, isWatchSource,
+  useBoardSource, useWatchSourceState, useShownUpdatedAt, useWatchSelection, useWatchLoading,
+  isWatchSource,
 } from '../hooks/useWatchData'
 import { getSource } from '../registry/sources'
 import { effectivePimSource } from '../registry/pim.source'
@@ -200,6 +203,10 @@ export function BiBoard({
   const watch = useWatchSourceState(sourceId)
   const shownUpdatedAt = useShownUpdatedAt(demanded)
   const { setWatchId } = useWatchSelection()
+  // ⚠ Le chargement des sources LOURDES (catalogue, fiches d'un concurrent) : une phrase
+  // grise sous le bandeau ne se voyait pas — on croyait l'écran figé et on rechargeait.
+  const loading = useWatchLoading(demanded.filter(isWatchSource))
+  const pimLoading = usePimDbState()
   // Sur quoi porte le filtre d'un coup d'œil (le concurrent, sur la veille).
   const quick = useMemo(() => quickFilterTarget(demanded), [demanded])
   const onWatch = isWatchSource(sourceId)
@@ -335,6 +342,13 @@ export function BiBoard({
         onExportPng={captureBoard(exportBoardToPng)}
         onExportPdf={captureBoard(exportBoardToPdf)}
         onPrompt={() => setPromptOpen(true)}
+        progress={loading
+          ? <BiProgressBar
+              label={t(loading.id === 'watch.catalog' ? 'bi.loading.catalog' : 'bi.loading.site')}
+              done={loading.done} total={loading.total} />
+          : pimLoading.state === 'loading'
+            ? <BiProgressBar label={pimLoading.name ?? t('bi.loading.db')} done={0} total={0} />
+            : undefined}
         undo={hist.undo} redo={hist.redo} canUndo={hist.canUndo} canRedo={hist.canRedo}
         actions={headerAction}
       />

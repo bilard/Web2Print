@@ -483,6 +483,10 @@ export const es: Record<TranslationKey, string> = {
   'bi.source.retargeted': '{count} tarjeta(s) cambiada(s) a la nueva fuente',
   'bi.source.retargetNone': 'Ninguna tarjeta puede leer esta fuente',
   'bi.source.blockedOne': '{title} — campo ausente: {field}',
+  'bi.loading.of': 'Tramo {done} de {total}',
+  'bi.loading.catalog': 'Lectura del catálogo fuente',
+  'bi.loading.site': 'Lectura de las fichas del competidor',
+  'bi.loading.db': 'Lectura de la base de productos',
   'bi.source.idle': 'Esta fuente aún no alimenta ninguna tarjeta: añada una para cargarla.',
   'bi.source.serverNeeded': 'Cruzar TODOS los competidores a nivel de ficha requiere el motor de servidor (lote 3): cada origen anterior se lee por separado.',
 

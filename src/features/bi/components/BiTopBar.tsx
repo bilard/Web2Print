@@ -44,12 +44,14 @@ interface BiTopBarProps {
   onExportPdf?: () => Promise<void>
   /** Création d'un tableau décrit en langage naturel. */
   onPrompt?: () => void
+  /** Chargement en cours, rendu par le tableau de bord qui sait ce qu'il lit. */
+  progress?: ReactNode
 }
 
 export function BiTopBar({
   current, items, canEdit, onSelectBoard, onRename, sourcePicker,
   updatedAt, now, editing, onToggleEdit, undo, redo, canUndo, canRedo, actions,
-  onExport, onExportPng, onExportPdf, onPrompt,
+  onExport, onExportPng, onExportPdf, onPrompt, progress,
 }: BiTopBarProps) {
   const { t } = useTranslation()
   const boardOptions = items.map((d) => ({ id: d.id, label: d.name }))
@@ -73,6 +75,10 @@ export function BiTopBar({
       )}
 
       {sourcePicker}
+
+      {/* ⚠ Le chargement AVANT la fraîcheur : tant qu'il tourne, l'âge affiché est celui de
+          la donnée d'AVANT, et c'est le travail en cours qui explique l'écran. */}
+      {progress}
 
       {/* Fraîcheur : un chiffre sans âge est invérifiable, y compris au niveau de l'écran. */}
       <span className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-well px-2 py-1 text-[11px] text-white/45">

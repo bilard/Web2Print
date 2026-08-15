@@ -4,7 +4,7 @@
 // la décision (« quelle base »), l'autre moitié — « ce tableau lit le PIM » — vivant dans un
 // second sélecteur, sans lien apparent. Ici ne reste que l'état.
 import { useTranslation } from '@/lib/i18n'
-import { Loading, Warning } from './SourceStatus'
+import { Warning } from './SourceStatus'
 import { usePimDbState } from '../hooks/usePimDatabases'
 
 /**
@@ -18,11 +18,9 @@ export function PimDbStatus({ storedName }: { storedName: string | undefined }) 
   const { t } = useTranslation()
   const data = usePimDbState()
 
-  if (data.state === 'loading') {
-    return <Loading text={data.name
-      ? t('bi.db.loading', { name: data.name, rows: data.rows })
-      : t('bi.db.listing')} />
-  }
+  // ⚠ Le chargement n'est plus dit ici : il vit dans le bandeau, en barre de progression.
+  // Une phrase grise sous le bandeau ne se voyait pas, et la redire ferait doublon.
+  if (data.state === 'loading') return null
   if (data.message) {
     // La base nommée par le TABLEAU : la liste, elle, ne la contient peut-être plus.
     const text = data.message.kind === 'key' ? t(data.message.key, data.message.params) : data.message.text

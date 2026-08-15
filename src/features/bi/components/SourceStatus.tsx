@@ -5,34 +5,25 @@
 // ⚠ Le type `WatchContext` vient du HOOK (`hooks/useWatchData`), jamais de `SourcePicker` :
 // un type exporté depuis un module de composant est la cause récurrente des cycles de ce
 // projet.
-import { AlertTriangle, Loader2 } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n'
 import { getSource } from '../registry/sources'
-import { useWatchSelection, useWatchSourceState, type WatchContext } from '../hooks/useWatchData'
+import { useWatchSourceState } from '../hooks/useWatchData'
 import type { SourceId } from '../types'
 
 /**
- * ⚠⚠ Un chargement de plusieurs secondes SANS explication se lit comme une panne :
- * l'avancement s'affiche en TRANCHES, l'unité dans laquelle le catalogue source est relu.
+ * Ce qui EMPÊCHE de mesurer, ou la réserve qui accompagne des chiffres. L'avancement d'un
+ * chargement, lui, vit dans le bandeau (`BiProgressBar`).
  */
-export function SourceStatus({ sourceId, sites }: { sourceId: SourceId; sites: WatchContext['sites'] }) {
+export function SourceStatus({ sourceId }: { sourceId: SourceId }) {
   const { t } = useTranslation()
-  const { siteId } = useWatchSelection()
   const data = useWatchSourceState(sourceId)
   const name = t(getSource(sourceId).labelKey)
 
-  if (data.state === 'loading') {
-    const { done, total, expected } = data.progress
-    const site = sites.find((s) => s.siteId === siteId)?.domain ?? siteId ?? ''
-    return (
-      <span className="inline-flex items-center gap-1.5 text-[11px] text-white/45">
-        <Loader2 className="w-3 h-3 animate-spin shrink-0" />
-        {sourceId === 'watch.site'
-          ? t('bi.source.loadingSite', { site })
-          : t('bi.source.loadingCatalog', { done, total, expected })}
-      </span>
-    )
-  }
+  // ⚠⚠ Le CHARGEMENT n'est plus dit ici : il vit dans le bandeau, en barre de progression
+  // (`BiProgressBar`). Une phrase grise sous le bandeau ne se voyait pas — et la redire
+  // ici, à côté de la barre, ferait deux fois la même information.
+  if (data.state === 'loading') return null
 
   // ⚠⚠ Une réserve se dit AUSSI quand la source rend des chiffres (relevé incomplet) : c'est
   // le seul cas où l'avertissement accompagne des totaux au lieu de les remplacer, et le
@@ -60,12 +51,3 @@ export function Warning({ text }: { text: string }) {
   )
 }
 
-/** Un chargement en cours, nommé et chiffré. Muet ne veut pas dire immobile. */
-export function Loading({ text }: { text: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-white/45">
-      <Loader2 className="w-3 h-3 animate-spin shrink-0" />
-      {text}
-    </span>
-  )
-}

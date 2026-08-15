@@ -100,6 +100,29 @@ export function setWatchStateForTest(id: WatchSourceId, next: WatchSourceState):
 }
 
 /**
+ * Le chargement EN COURS, s'il y en a un — celui qu'il faut montrer.
+ *
+ * ⚠ Un seul abonnement pour toute la liste : lire l'état source par source demanderait un
+ * hook dans une boucle, ce que React interdit.
+ * ⚠ `total` nul = chargement sans fraction connue (les fiches d'un concurrent) : l'appelant
+ * dessine alors une barre indéterminée plutôt que d'inventer un pourcentage.
+ */
+export function useWatchLoading(ids: readonly WatchSourceId[]): {
+  id: WatchSourceId
+  done: number
+  total: number
+} | null {
+  return useWatchStore((s) => {
+    for (const id of ids) {
+      const d = s.data[id]
+      if (d.state !== 'loading') continue
+      return { id, done: d.progress.done, total: d.progress.total }
+    }
+    return null
+  })
+}
+
+/**
  * L'une au moins de ces sources n'a-t-elle RIEN de chargé ?
  *
  * ⚠ Un seul abonnement pour toute la liste : lire l'état source par source demanderait un

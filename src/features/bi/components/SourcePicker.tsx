@@ -109,7 +109,7 @@ export function SourceStatusList({ context, demanded, sourceId, dbName }: {
   return (
     <>
       {pim}
-      {shown.map((id) => <SourceStatus key={id} sourceId={id} sites={context.sites} />)}
+      {shown.map((id) => <SourceStatus key={id} sourceId={id} />)}
       {idle && <span className="text-[11px] text-white/30">{t('bi.source.idle')}</span>}
       {/* ⚠ Dite UNE fois, et seulement quand PLUSIEURS sources alimentent le tableau : c'est
           là qu'« isolément » veut dire quelque chose. Répétée par source, elle occupait deux
