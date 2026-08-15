@@ -25,8 +25,17 @@ const OFFERED: SourceId[] = [pimSource.id, ...WATCH_SOURCES.map((s) => s.id)]
 const WATCH_IDS: SourceId[] = WATCH_SOURCES.map((s) => s.id)
 
 /** La source PIM est-elle en jeu — choisie, ou déjà réclamée par une tuile posée ? */
-const pimInvolved = (sourceId: SourceId, demanded: SourceId[]) =>
-  sourceId === pimSource.id || demanded.includes(pimSource.id)
+/**
+ * Le PIM est-il en jeu ?
+ *
+ * ⚠⚠ En CONSULTATION, seules les tuiles comptent : proposer une base produits sur un tableau
+ * qui ne lit que la veille n'a aucun effet visible, et la liste des bases — « google — 1
+ * ligne », « Makita — 1 ligne » — se lit alors comme un choix incompréhensible. En ÉDITION,
+ * la source simplement CHOISIE suffit : sans base, le menu des champs n'aurait aucune
+ * colonne à proposer et la première tuile serait impossible à construire.
+ */
+const pimInvolved = (sourceId: SourceId, demanded: SourceId[], editing: boolean) =>
+  demanded.includes(pimSource.id) || (editing && sourceId === pimSource.id)
 
 // ⚠ Non exportée : elle ne sert qu'ici (convention du projet, cf. `npm run dead`).
 interface SourcePickerProps {
@@ -95,7 +104,7 @@ export function SourcePicker({
         )}
         {/* ⚠⚠ Monté seulement quand le PIM est en jeu : c'est lui qui porte le CHARGEMENT de
             la base, et un tableau de veille n'a aucune raison d'en lire une. */}
-        {onDbChange && pimInvolved(sourceId, demanded) && (
+        {onDbChange && pimInvolved(sourceId, demanded, editing) && (
           <PimDbPicker dbId={dbId} sheetName={sheetName} onChange={onDbChange} />
         )}
         {shown.length > 0 && (
@@ -135,7 +144,7 @@ export function SourceStatusList({ context, demanded, sourceId, dbName }: {
 }) {
   const { t } = useTranslation()
   const shown = WATCH_IDS.filter((id) => demanded.includes(id) || id === sourceId)
-  const pim = pimInvolved(sourceId, demanded) ? <PimDbStatus storedName={dbName} /> : null
+  const pim = pimInvolved(sourceId, demanded, true) ? <PimDbStatus storedName={dbName} /> : null
   // ⚠ « Rien n'est chargé » ne dépend pas de LA source : dit une fois pour l'ensemble, il
   // occupait sinon une ligne de bandeau par source concernée.
   const idle = useAnyWatchIdle(shown.filter(isWatchSource))

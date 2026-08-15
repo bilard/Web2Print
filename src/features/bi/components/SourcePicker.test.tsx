@@ -139,45 +139,49 @@ describe('SourcePicker — en consultation', () => {
 // ⚠⚠ Vu chez l'utilisateur : dix bases dans le module Données, et une seule entrée
 // « Produits (PIM) » qui désignait implicitement la feuille ouverte AILLEURS.
 describe('SourcePicker — choix de la base du PIM', () => {
-  const showDb = (sourceId: SourceId, demanded: SourceId[] = [], onDbChange = () => {}) =>
+  // ⚠ `editing` : c'est en construisant qu'on choisit une base pour une source seulement
+  // SÉLECTIONNÉE. En consultation, seules les tuiles décident (cf. dernier test).
+  const showDb = (sourceId: SourceId, demanded: SourceId[] = [], onDbChange = () => {}, editing = true) =>
     render(
       <SourcePicker
         context={context()} demanded={demanded} sourceId={sourceId} onSourceChange={() => {}}
-        onDbChange={onDbChange} withStatus={false}
+        onDbChange={onDbChange} withStatus={false} editing={editing}
       />,
     )
 
   it('liste les bases du module Données, sans menu natif', async () => {
     const { container } = showDb('pim.products')
     expect(container.querySelector('select')).toBeNull()
-    fireEvent.click(screen.getByText('Base de données').parentElement!.querySelector('button')!)
+    fireEvent.click(screen.getByText('Base produits (PIM)').parentElement!.querySelector('button')!)
     expect(await screen.findByText(/Catalogue_GSB_2026/)).toBeTruthy()
     expect(screen.getByText(/Makita/)).toBeTruthy()
   })
 
   it('offre toujours de rendre la main à la feuille ouverte', async () => {
     showDb('pim.products')
-    fireEvent.click(screen.getByText('Base de données').parentElement!.querySelector('button')!)
+    fireEvent.click(screen.getByText('Base produits (PIM)').parentElement!.querySelector('button')!)
     // Deux occurrences : le libellé du bouton fermé, et l'entrée de la liste ouverte.
-    expect(await screen.findAllByText(/Feuille ouverte/)).toHaveLength(2)
+    // ⚠ L'entrée par défaut DIT que c'est un comportement (« suivre la feuille ouverte »),
+    // et non une base parmi les autres — c'est ce qui la rendait incompréhensible.
+    expect(await screen.findAllByText(/Suivre la feuille ouverte/)).toHaveLength(2)
   })
 
   it('⚠ le choix REMONTE, identifiant ET nom : le nom sert à nommer une base disparue', async () => {
     const onDbChange = vi.fn()
     showDb('pim.products', [], onDbChange)
-    fireEvent.click(screen.getByText('Base de données').parentElement!.querySelector('button')!)
+    fireEvent.click(screen.getByText('Base produits (PIM)').parentElement!.querySelector('button')!)
     fireEvent.click(await screen.findByText(/Makita/))
     expect(onDbChange).toHaveBeenCalledWith('db2', 'Makita')
   })
 
   it('⚠ absent d’un tableau de veille : aucune base n’a de raison d’y être lue', () => {
     showDb('watch.summary')
-    expect(screen.queryByText('Base de données')).toBeNull()
+    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
   })
 
   it('présent dès qu’une TUILE réclame le PIM, même si la liste montre la veille', () => {
     showDb('watch.summary', ['pim.products'])
-    expect(screen.getByText('Base de données')).toBeTruthy()
+    expect(screen.getByText('Base produits (PIM)')).toBeTruthy()
   })
 
   it('⚠⚠ invisible pour un rôle consultation seule : le choix est PERSISTÉ dans le document', () => {
@@ -185,6 +189,13 @@ describe('SourcePicker — choix de la base du PIM', () => {
       <SourcePicker context={context()} demanded={[]} sourceId="pim.products"
         onSourceChange={() => {}} withStatus={false} />,
     )
-    expect(screen.queryByText('Base de données')).toBeNull()
+    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
+  })
+
+  it('⚠⚠ en CONSULTATION, absent tant qu’aucune TUILE ne lit le PIM', () => {
+    // Vu à l'écran : un tableau de veille proposait une liste de bases produits — « google —
+    // 1 ligne », « Makita — 1 ligne » — dont le choix ne changeait rien de visible.
+    showDb('pim.products', ['watch.summary'], () => {}, false)
+    expect(screen.queryByText('Base produits (PIM)')).toBeNull()
   })
 })

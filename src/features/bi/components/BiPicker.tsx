@@ -19,8 +19,11 @@ export interface PickerOption {
 /** Au-delà, la liste ne se parcourt plus à l'œil : le champ de recherche apparaît. */
 const SEARCH_THRESHOLD = 10
 
-export function BiPicker({ label, value, options, onChange }: {
+export function BiPicker({ label, value, options, onChange, hint }: {
   label: string
+  /** Phrase d'aide au survol : à quoi sert ce choix. Un sélecteur dont on ne devine pas
+   *  l'effet se lit comme un réglage au hasard. */
+  hint?: string
   value: string
   options: PickerOption[]
   onChange: (id: string) => void
@@ -63,7 +66,7 @@ export function BiPicker({ label, value, options, onChange }: {
       <span className="text-[10px] uppercase tracking-wider text-white/35">{label}</span>
       <div className="relative">
         <button
-          type="button" onClick={() => setOpen((v) => !v)}
+          type="button" onClick={() => setOpen((v) => !v)} title={hint}
           className="w-full flex items-center gap-1.5 bg-well border border-white/10 rounded-lg px-2 py-1 text-xs text-white hover:border-white/20 transition-colors"
         >
           <span className="truncate max-w-[180px]">{selected?.label ?? '—'}</span>

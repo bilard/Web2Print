@@ -31,12 +31,17 @@ export function PimDbPicker({ dbId, sheetName, onChange }: {
 
   const options = [
     { id: ACTIVE_SHEET, label: t('bi.db.activeSheet') },
-    ...items.map((f) => ({ id: f.docId, label: t('bi.db.option', { name: f.name, rows: f.rows }) })),
+    // ⚠ « 1 lignes » se remarque et fait douter du reste : l'accord se fait ici, le
+    // catalogue ne sait pas décliner.
+    ...items.map((f) => ({
+      id: f.docId,
+      label: t(f.rows === 1 ? 'bi.db.optionOne' : 'bi.db.option', { name: f.name, rows: f.rows }),
+    })),
   ]
 
   return (
     <BiPicker
-      label={t('bi.db.picker')} value={dbId ?? ACTIVE_SHEET} options={options}
+      label={t('bi.db.picker')} hint={t('bi.db.hint')} value={dbId ?? ACTIVE_SHEET} options={options}
       onChange={(id) => {
         const db = items.find((f) => f.docId === id)
         onChange(db?.docId, db?.name)
