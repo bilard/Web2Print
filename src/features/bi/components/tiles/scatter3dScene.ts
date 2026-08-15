@@ -20,11 +20,20 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { rampAt } from './scatter3dRamp'
+import { buildFrame } from './scatter3dFrame'
 import type { Scatter3DPoint } from './scatter3dData'
 
 export interface Scatter3DTheme {
-  /** Arêtes de la boîte et grilles : présentes, jamais concurrentes des points. */
+  /** Grisé de repli du décor (pied des tiges). */
   frame: string
+  /**
+   * Teinte des trois axes, dans l'ordre X, Y, Z : arête, quadrillage et NOM de l'axe la
+   * portent ensemble, c'est ce qui dit quel axe on regarde après une rotation.
+   *
+   * ⚠ Prises HORS de la rampe des points (`viridis`) : rien dans le décor ne doit pouvoir se
+   * confondre avec une valeur mesurée.
+   */
+  axisColors: readonly [string, string, string]
   /** Encre des étiquettes d'axes. */
   ink: string
   /** Encre des graduations — plus pâle que les noms d'axes : on lit le nom, on consulte
@@ -214,7 +223,13 @@ export class Scatter3DScene {
     this.controls.addEventListener('start', () => { this.touched = true })
 
     this.scene.add(this.buildLights())
-    this.scene.add(this.buildFrame(theme))
+    // ⚠⚠ Décor en RETRAIT : arêtes franches (elles portent l'identité de l'axe), quadrillage
+    // presque effacé. Vu à l'écran avec un quadrillage à pleine teinte : le rose et le cyan
+    // des mailles écrasaient les sphères, et on ne lisait plus le nuage mais la cage.
+    this.scene.add(buildFrame(R, {
+      axes: theme.axisColors, tint: theme.frame,
+      edgeOpacity: 0.7, gridOpacity: [0.16, 0.09],
+    }))
     this.points = this.buildPoints([], theme)
     this.scene.add(this.points)
     // ⚠ Le seuil est en unités de MONDE : les points vivent dans [-1, 1], un seuil par
@@ -261,33 +276,6 @@ export class Scatter3DScene {
     const rim = new THREE.DirectionalLight(0xffffff, 0.9)
     rim.position.set(-1.5, 2, -5)
     group.add(rim)
-    return group
-  }
-
-  /** Boîte, sol et parois du fond. Les grilles donnent l'assise : sans elles, les points
-   *  flottent dans un cadre vide et rien ne dit à quelle profondeur. */
-  private buildFrame(theme: Scatter3DTheme): THREE.Object3D {
-    const group = new THREE.Group()
-    group.add(new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(2 * R, 2 * R, 2 * R)),
-      new THREE.LineBasicMaterial({ color: new THREE.Color(theme.frame) })))
-    // Sol franc, parois plus discrètes : en tournant, une paroi passe devant le nuage et ne
-    // doit jamais concurrencer les points.
-    const grids: [THREE.Euler, THREE.Vector3, number][] = [
-      [new THREE.Euler(), new THREE.Vector3(0, -R, 0), 0.55],
-      [new THREE.Euler(Math.PI / 2, 0, 0), new THREE.Vector3(0, 0, -R), 0.28],
-      [new THREE.Euler(0, 0, Math.PI / 2), new THREE.Vector3(-R, 0, 0), 0.28],
-    ]
-    for (const [rotation, position, opacity] of grids) {
-      const grid = new THREE.GridHelper(2 * R, 8, theme.frame, theme.frame)
-      grid.rotation.copy(rotation)
-      grid.position.copy(position)
-      const material = grid.material as THREE.Material
-      material.transparent = true
-      material.opacity = opacity
-      material.depthWrite = false
-      group.add(grid)
-    }
     return group
   }
 
@@ -420,7 +408,7 @@ export class Scatter3DScene {
       // c'est le plus long des trois textes, et développé d'un seul côté il sortait du cadre
       // sur une tuile étroite — « Écart médian (%) » s'affichait « Écart médian ( ».
       const parts: [string, [number, number, number], number, string, Anchor][] = [
-        [axis.label, at.name, 0.05, this.theme.ink, 'center'],
+        [axis.label, at.name, 0.05, this.theme.axisColors[i], 'center'],
         [axis.min, at.min, 0.038, this.theme.inkDim, at.anchor],
         [axis.max, at.max, 0.038, this.theme.inkDim, at.anchor],
       ]

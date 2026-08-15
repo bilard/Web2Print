@@ -20,10 +20,18 @@ const Scatter3DCanvas = lazy(() => import('./Scatter3DCanvas'))
 /** Deux jeux CHOISIS, jamais l'inversion automatique l'un de l'autre : une rampe réglée sur
  *  fond sombre perd ses crans bas sur fond clair. */
 const THEMES: Record<'dark' | 'light', Scatter3DTheme> = {
-  dark: { frame: '#4a4a5e', ink: '#c4c4cc', inkDim: '#8b8b96', ramp: RAMP_DARK, bloom: 0.48 },
+  dark: {
+    frame: '#4a4a5e', ink: '#c4c4cc', inkDim: '#8b8b96',
+    axisColors: ['#38bdf8', '#f472b6', '#fb923c'], ramp: RAMP_DARK, bloom: 0.48,
+  },
   // ⚠ Pas de halo sur fond clair : il n'éclaire que ce qui est plus sombre que lui, et sur
   // du blanc il délave les points au lieu de les faire ressortir.
-  light: { frame: '#c9c9d2', ink: '#3f3f46', inkDim: '#71717a', ramp: RAMP_LIGHT, bloom: 0 },
+  light: {
+    frame: '#c9c9d2', ink: '#3f3f46', inkDim: '#71717a',
+    // ⚠ Crans FONCÉS des mêmes teintes : sur fond blanc, le cyan et l'orange clairs du thème
+    // sombre s'effacent — le nom d'un axe y devient illisible.
+    axisColors: ['#0284c7', '#be185d', '#c2410c'], ramp: RAMP_LIGHT, bloom: 0,
+  },
 }
 
 export function Scatter3DTile({ result }: { result: AggregateResult }) {
