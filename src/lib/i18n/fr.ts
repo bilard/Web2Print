@@ -447,7 +447,7 @@ export const fr = {
   'bi.dim.watchGapPct': 'Écart % (moi − meilleur)',
   'bi.dim.watchPricedCount': 'Concurrents chiffrés',
   'bi.source.watchProducts': 'Veille · produits appariés',
-  'bi.watch.productsTruncated': 'Détail borné aux {count} produits les moins bien positionnés — l’exhaustif est dans l’export Excel du cockpit.',
+  'bi.watch.productsTruncated': 'Échantillon : les {count} produits les moins bien positionnés (exhaustif dans l’export Excel).',
   'bi.dim.watchSiteId': 'Identifiant du site',
   'bi.dim.watchPctListPrice': 'Part de fiches avec prix barré',
   'bi.dim.watchPctStock': 'Part de fiches avec disponibilité',

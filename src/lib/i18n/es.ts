@@ -428,7 +428,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.dim.watchGapPct': 'Diferencia % (yo − mejor)',
   'bi.dim.watchPricedCount': 'Competidores con precio',
   'bi.source.watchProducts': 'Vigilancia · productos emparejados',
-  'bi.watch.productsTruncated': 'Detalle limitado a los {count} productos peor posicionados: el conjunto completo está en la exportación Excel del cockpit.',
+  'bi.watch.productsTruncated': 'Muestra: los {count} productos peor posicionados (conjunto completo en la exportación Excel).',
   'bi.dim.watchSiteId': 'Identificador del sitio',
   'bi.dim.watchPctListPrice': 'Proporción de fichas con precio tachado',
   'bi.dim.watchPctStock': 'Proporción de fichas con disponibilidad',

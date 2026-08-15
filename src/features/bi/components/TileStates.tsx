@@ -57,11 +57,20 @@ export function TileEmpty({ message, hasFilters, onClearFilters }: {
  * règle « aucun chiffre faux en silence » tient dès lors que l'incomplétude est dite À CÔTÉ
  * du chiffre, en permanence — donc jamais dans un `title=` que personne ne survole.
  */
+/**
+ * La RÉSERVE qui accompagne des chiffres bien rendus (relevé incomplet, détail plafonné).
+ *
+ * ⚠⚠ UNE LIGNE, tronquée, jamais un pavé. Vu à l'écran : une réserve de trois lignes sur une
+ * tuile d'indicateur haute de trois cases mangeait toute la place et COUPAIT le nombre —
+ * l'avertissement écrasait ce qu'il était censé nuancer, et le tableau devenait illisible.
+ * Le texte entier reste au survol, et la pastille ambre le signale de toute façon.
+ */
 export function TileNotice({ text }: { text: string }) {
   return (
-    <p className="flex items-start gap-1.5 mb-2 rounded bg-amber-400/10 border border-amber-400/25 px-2 py-1 text-[10px] leading-snug text-amber-200">
-      <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-px" />
-      {text}
+    <p title={text}
+      className="flex items-center gap-1.5 mb-1.5 rounded bg-amber-400/10 border border-amber-400/25 px-1.5 py-0.5 text-[10px] leading-tight text-amber-200/90">
+      <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+      <span className="truncate">{text}</span>
     </p>
   )
 }

@@ -429,7 +429,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.dim.watchGapPct': 'Gap % (me − best)',
   'bi.dim.watchPricedCount': 'Competitors with a price',
   'bi.source.watchProducts': 'Price watch · matched products',
-  'bi.watch.productsTruncated': 'Detail capped at the {count} worst-positioned products — the full set is in the cockpit’s Excel export.',
+  'bi.watch.productsTruncated': 'Sample: the {count} worst-positioned products (full set in the Excel export).',
   'bi.dim.watchSiteId': 'Site identifier',
   'bi.dim.watchPctListPrice': 'Share of listings with a was price',
   'bi.dim.watchPctStock': 'Share of listings with availability',
