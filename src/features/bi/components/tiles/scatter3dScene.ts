@@ -20,7 +20,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 import { rampAt } from './scatter3dRamp'
-import { buildFrame, orientWalls } from './scatter3dFrame'
+import { buildFrame, orientFrame } from './scatter3dFrame'
 import type { Scatter3DPoint } from './scatter3dData'
 
 export interface Scatter3DTheme {
@@ -251,12 +251,13 @@ export class Scatter3DScene {
     // ⚠⚠ Décor en RETRAIT : arêtes franches (elles portent l'identité de l'axe), quadrillage
     // presque effacé. Vu à l'écran avec un quadrillage à pleine teinte : le rose et le cyan
     // des mailles écrasaient les sphères, et on ne lisait plus le nuage mais la cage.
-    // ⚠ Arêtes DISCRÈTES : à 0,7 elles dessinaient une cage vive qui enfermait le nuage et
-    // tirait l'œil vers le premier plan. Elles gardent leur teinte — c'est elle qui dit
-    // quel axe on regarde — mais s'effacent devant les marqueurs.
+    // ⚠⚠ Le rapport est INVERSÉ par rapport au premier jet : c'est le QUADRILLAGE qui porte
+    // la structure, coloré et bien présent, et le trièdre qui reste sobre. L'inverse — une
+    // cage vive autour d'un quadrillage effacé — enfermait le nuage et tirait l'œil vers le
+    // premier plan.
     this.frame = buildFrame(R, {
-      axes: theme.axisColors, tint: theme.frame,
-      edgeOpacity: 0.26, gridOpacity: [0.1, 0.055],
+      axes: theme.axisColors, tint: theme.frame, gridDesaturation: 0.3,
+      edgeOpacity: 1, gridOpacity: [0.4, 0.28],
     })
     this.scene.add(this.frame)
     this.points = this.buildPoints([], theme)
@@ -536,7 +537,7 @@ export class Scatter3DScene {
   render(): void {
     if (this.disposed) return
     this.sizeLabels()
-    orientWalls(this.frame, this.camera, R)
+    orientFrame(this.frame, this.camera, R)
     if (this.composer) this.composer.render()
     else this.renderer.render(this.scene, this.camera)
   }
