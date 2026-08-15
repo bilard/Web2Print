@@ -4,7 +4,7 @@
 // ⚠⚠ L'âge BAT ici, dans le cadre, et surtout PAS dans `TileBody` (`DashboardGrid`) : c'est
 // lui qui porte `useTileData`, et un état qui s'y rafraîchit relancerait l'agrégation de la
 // tuile toutes les dix secondes. Le cadre ne sait rien de la donnée, il ne fait que compter.
-import { Table2, TriangleAlert } from 'lucide-react'
+import { Table2, TriangleAlert, Trash2 } from 'lucide-react'
 import { TileSkeleton, TileEmpty, TileError, TileNotice } from './TileStates'
 import { useTranslation } from '@/lib/i18n'
 import { ageLabel } from '../engine/age'
@@ -48,6 +48,9 @@ interface Props {
   /** Ouvre le détail : les LIGNES derrière le chiffre. Absent = la tuile n'en propose pas
    *  (rien à montrer tant qu'elle n'a pas de données). */
   onInspect?: () => void
+  /** Suppression de la tuile. ⚠ N'apparaît qu'en ÉDITION : en consultation, un bouton qui
+   *  détruit à un pixel du bouton qui explore serait un piège. */
+  onRemove?: () => void
   onRetry: () => void
   onClearFilters: () => void
   children: React.ReactNode
@@ -55,7 +58,7 @@ interface Props {
 
 export function TileFrame({
   title, updatedAt, live, state, skeleton, message, hasFilters, editing, selected,
-  onSelect, onInspect, onRetry, onClearFilters, alert, accent, children,
+  onSelect, onInspect, onRemove, onRetry, onClearFilters, alert, accent, children,
 }: Props) {
   const { t } = useTranslation()
   const text = message === undefined ? undefined
@@ -95,6 +98,17 @@ export function TileFrame({
             onClick={onInspect}
             className="shrink-0 p-1 rounded text-white/30 hover:text-white hover:bg-white/[0.06]">
             <Table2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {editing && onRemove && (
+          <button type="button" title={t('bi.tile.remove')} aria-label={t('bi.tile.remove')}
+            /* ⚠ `stopPropagation` : le cadre sélectionne la tuile au `pointerdown`, et la
+               poignée de déplacement l'entoure — sans cela, viser la corbeille amorcerait
+               un glissement. */
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onRemove}
+            className="shrink-0 p-1 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10">
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
         {live && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />}

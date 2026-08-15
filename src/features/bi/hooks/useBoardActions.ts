@@ -126,6 +126,34 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
     return next.pages[next.pages.length - 1]
   }, [write, fresh])
 
+  /**
+   * Retire une tuile de la page — et rend de quoi la REMETTRE.
+   *
+   * ⚠⚠ Les tuiles et la mise en page viennent de l'appelant, jamais de `current` : entre le
+   * geste et l'écho Firestore, `current` retarde d'un aller-retour, et supprimer depuis lui
+   * ressusciterait la tuile qu'on vient d'ajouter ou déplacerait celles qu'on vient de
+   * bouger. Même mal que celui documenté sur `persistLayout`.
+   *
+   * ⚠⚠ La tuile part AVEC son placement. Laisser le placement orphelin ne se verrait pas
+   * tout de suite — `react-grid-layout` ignore une case sans tuile — mais réserverait un
+   * trou dans la grille que plus rien ne remplirait.
+   */
+  const removeTile = useCallback((
+    tileId: string, tiles: Tile[], layout: TilePlacement[],
+  ): (() => void) | null => {
+    if (!tiles.some((x) => x.id === tileId)) return null
+    const nextTiles = tiles.filter((x) => x.id !== tileId)
+    const nextLayout = layout.filter((l) => l.tileId !== tileId)
+    live.current = { pageId, tiles: nextTiles, layout: nextLayout }
+    write(replacePage(current, pageId, { tiles: nextTiles, layout: nextLayout }))
+    // Restauration : on réécrit l'état d'AVANT, tel qu'il était au moment du geste. Une
+    // suppression sans retour en arrière se paie d'une tuile à reconstruire de zéro.
+    return () => {
+      live.current = { pageId, tiles, layout }
+      write(replacePage(current, pageId, { tiles, layout }))
+    }
+  }, [write, current, pageId])
+
   // ⚠⚠ Changer le type d'un visuel n'est PLUS ici : c'est devenu un geste du constructeur
   // (`retypeTile` + `useTileEdits`), pour trois raisons qui tiennent ensemble — la requête
   // doit être remise d'aplomb avec le type (un indicateur ne garde pas d'axe, sous peine
@@ -135,5 +163,5 @@ export function useBoardActions(uid: string | null, current: Dashboard, pageId: 
 
   // ⚠ `write` n'est PAS rendu : c'était l'échappatoire générique par laquelle un appelant
   // pouvait réécrire le document sans passer par `fresh()` — donc réintroduire le défaut.
-  return { trackPage, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage }
+  return { trackPage, persistLayout, persistFilters, clearFilters, rename, setSourceDb, addPage, removeTile }
 }

@@ -39,12 +39,15 @@ const NO_STEPS: readonly DrillStep[] = []
 // `React.memo` : converti en rendus SAUTÉS les références stables que le parent doit fournir
 // (`tile`, `globalFilters`, `onClearFilters`) — sans lui, chaque `onLayoutChange` pendant un
 // geste re-rendrait les vingt tuiles (et leurs graphes chart.js) même quand aucune n'a bougé.
-const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect, onPick, onDrill, drillSteps, dimmed }: {
+const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect, onRemove, onPick, onDrill, drillSteps, dimmed }: {
   tile: Tile; editing: boolean; selected: boolean
   globalFilters: FilterClause[]; onClearFilters: () => void
   /** ⚠ Reçoit l'IDENTIFIANT plutôt qu'une fermeture par tuile : le parent transmet UNE
    *  fonction stable, et la mémoïsation de `React.memo` tient pendant un geste. */
   onSelect: (tileId: string) => void
+  /** Suppression de la tuile. ⚠ Reçoit l'IDENTIFIANT, comme `onSelect` : le parent transmet
+   *  UNE fonction stable, et la mémoïsation tient pendant un geste. */
+  onRemove: (tileId: string) => void
   /** Clic sur un élément du visuel : filtre la PAGE sur la valeur cliquée. */
   onPick: (field: string, value: string | null) => void
   /** Double-clic : descendre d'un niveau dans la hiérarchie de l'axe de CETTE tuile. */
@@ -102,6 +105,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
       skeleton={skeleton} hasFilters={globalFilters.length > 0} selected={selected} alert={alert}
       accent={accent}
       onSelect={() => onSelect(tile.id)} onInspect={() => setDetailOpen(true)}
+      onRemove={() => onRemove(tile.id)}
       onRetry={retry} onClearFilters={onClearFilters}
     >
       {result && (
@@ -139,7 +143,7 @@ function layoutsEqual(a: Layout[], b: Layout[]): boolean {
 
 export function DashboardGrid({
   tiles, layout, editing, width, globalFilters, selectedTileId, crossFilter, drills,
-  onDrag, onCommit, onClearFilters, onSelectTile, onPick, onDrill,
+  onDrag, onCommit, onClearFilters, onSelectTile, onRemoveTile, onPick, onDrill,
 }: {
   tiles: Tile[]
   layout: TilePlacement[]
@@ -163,6 +167,7 @@ export function DashboardGrid({
   /** ⚠ Doit être RÉFÉRENTIELLEMENT STABLE : `TileBody` est mémoïsé, et une fonction fraîche
    *  à chaque rendu annulerait la mémoïsation que ce fichier existe pour préserver. */
   onSelectTile: (tileId: string) => void
+  onRemoveTile: (tileId: string) => void
 }) {
   const rgl: Layout[] = layout.map((l) => ({ i: l.tileId, x: l.x, y: l.y, w: l.w, h: l.h }))
   const toPlacements = (l: Layout[]): TilePlacement[] =>
@@ -197,6 +202,7 @@ export function DashboardGrid({
                laisserait croire à une tuile mise en avant pour une raison. */
             tile={t} editing={editing} selected={editing && t.id === selectedTileId}
             globalFilters={globalFilters} onClearFilters={onClearFilters} onSelect={onSelectTile}
+            onRemove={onRemoveTile}
             /* ⚠ La tuile d'où part le filtre reste PLEINE : c'est elle qu'on regarde. Les
                autres s'estompent pour dire « je montre moins », sans se dérober. */
             dimmed={!!crossFilter && crossFilter.tileId !== t.id}

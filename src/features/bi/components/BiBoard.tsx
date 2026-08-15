@@ -7,6 +7,7 @@
 // son agrégation.
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { TvMinimal } from 'lucide-react'
+import { toast } from 'sonner'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { upsertFilter, describeFilter } from '../filters/filterOptions'
@@ -212,6 +213,24 @@ export function BiBoard({
   const onChangeKind = useCallback((kind: TileKind) => {
     if (selected) applyEdit(retypeTile(selected, kind))
   }, [selected, applyEdit])
+  /**
+   * Supprime une tuile — avec le geste pour la reprendre.
+   *
+   * ⚠⚠ Pas de fenêtre de confirmation : elle arrêterait le travail pour un geste qui se
+   * défait en un clic. Le toast porte l'annulation, et il porte le NOM de la tuile — « Tuile
+   * supprimée » sur un tableau de vingt cadres ne dit pas laquelle est partie.
+   */
+  const removeTile = useCallback((tileId: string) => {
+    const tile = tiles.find((x) => x.id === tileId)
+    const undo = act.removeTile(tileId, tiles, draft.layout)
+    if (!undo) return
+    // La sélection suit : les volets de droite décriraient sinon une tuile qui n'existe plus.
+    setSelectedTileId((cur) => (cur === tileId ? null : cur))
+    toast.success(t('bi.tile.removed', { title: tile?.title || '—' }), {
+      action: { label: t('bi.tile.undo'), onClick: () => undo() },
+    })
+  }, [act, tiles, draft.layout])
+
   const onAddPage = useCallback(() => onPageCreated(act.addPage(pages)), [act, pages, onPageCreated])
 
   return (
@@ -316,6 +335,7 @@ export function BiBoard({
             onDrill={drillInto} drills={drills}
             onDrag={hist.onDrag} onCommit={hist.onCommit}
             onClearFilters={act.clearFilters} onSelectTile={setSelectedTileId}
+            onRemoveTile={removeTile}
           />
         )}
         panels={(
