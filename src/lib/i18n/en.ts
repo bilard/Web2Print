@@ -334,7 +334,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.gauge.outOf': 'out of {max}',
   'bi.funnel.needsMeasure': 'A funnel needs at least one measure',
   'bi.scatter.needsTwoMeasures': 'A scatter plot needs two measures — one per axis',
-  'bi.scatter3d.needsThreeMeasures': 'A 3D scatter plot needs three measures — one per axis (X, Y, Z)',
+  'bi.scatter3d.needsThreeMeasures': 'A 3D scatter plot compares three measures, one per axis (X, Y, Z). Drop {missing} more into “Values”, on the right.',
   'bi.scatter3d.dropped': '{count} row(s) dropped — missing coordinate',
   'bi.heatmap.noValue': 'Crossing never measured',
   'bi.kind.gauge': 'Gauge',

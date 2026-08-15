@@ -333,7 +333,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.gauge.outOf': 'de {max}',
   'bi.funnel.needsMeasure': 'Un embudo necesita al menos una medida',
   'bi.scatter.needsTwoMeasures': 'Un diagrama de dispersión necesita dos medidas: una por eje',
-  'bi.scatter3d.needsThreeMeasures': 'Un diagrama de dispersión 3D necesita tres medidas: una por eje (X, Y, Z)',
+  'bi.scatter3d.needsThreeMeasures': 'Una nube de puntos 3D compara tres medidas, una por eje (X, Y, Z). Añada {missing} más en «Valores», a la derecha.',
   'bi.scatter3d.dropped': '{count} fila(s) descartada(s): falta una coordenada',
   'bi.heatmap.noValue': 'Cruce nunca medido',
   'bi.kind.gauge': 'Indicador',

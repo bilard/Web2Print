@@ -3,7 +3,8 @@
 // axe en pourcentage contre une arête, et des lignes incomplètes écartées en silence.
 import { describe, it, expect } from 'vitest'
 import { buildScatter3D } from './scatter3dData'
-import type { AggregateResult } from '../../engine/aggregate'
+import { aggregate, type AggregateResult } from '../../engine/aggregate'
+import type { DataSource } from '../../registry/types'
 
 const result = (rows: AggregateResult['rows'], measures = 3): AggregateResult => ({
   columns: [
@@ -86,5 +87,51 @@ describe('les lignes incomplètes', () => {
     const m = buildScatter3D(result([]))
     expect(m?.points).toEqual([])
     expect(m?.dropped).toBe(0)
+  })
+})
+
+// ⚠⚠ Ce que ce dernier bloc protège : l'ORDRE des axes. La première mesure déposée dans la
+// zone « Valeurs » doit être l'axe X — si le moteur ou la tuile réordonnaient les colonnes,
+// le nuage resterait plausible tout en portant les mesures sur les mauvais axes, et personne
+// ne le verrait à l'écran.
+const source: DataSource = {
+  id: 'pim.products',
+  labelKey: 'bi.source.pim',
+  engine: 'client',
+  dimensions: [{ id: 'brand', labelKey: 'bi.dim.brand', kind: 'text', get: (r) => r.brand }],
+  measures: [
+    { id: 'count', labelKey: 'bi.measure.count', format: 'int', aggregable: true,
+      compute: (rows) => rows.length },
+    { id: 'sum:price', labelKey: 'bi.measure.price', format: 'eur', aggregable: true,
+      compute: (rows) => rows.reduce((n, r) => n + Number(r.price ?? 0), 0) },
+    { id: 'max:price', labelKey: 'bi.measure.price', format: 'eur', aggregable: true,
+      compute: (rows) => Math.max(...rows.map((r) => Number(r.price ?? 0))) },
+  ],
+}
+
+describe('la chaîne moteur → nuage', () => {
+  it('porte les mesures sur les axes dans l’ordre de la zone « Valeurs »', () => {
+    const result = aggregate(
+      [{ brand: 'Makita', price: 10 }, { brand: 'Bosch', price: 40 }],
+      { source: 'pim.products', dimensions: [{ id: 'brand' }], filters: [],
+        measures: [{ id: 'sum:price' }, { id: 'count' }, { id: 'max:price' }] },
+      source)
+    const m = buildScatter3D(result)
+    expect([m?.axes.x.column.key, m?.axes.y.column.key, m?.axes.z.column.key])
+      .toEqual(['sum:price', 'count', 'max:price'])
+    // ⚠ Le point est cherché par son LIBELLÉ : le moteur trie les groupes sur la première
+    // mesure, l'ordre des lignes n'est donc pas celui des données d'entrée.
+    // Makita : somme 10, compte 1, max 10 — la valeur brute de chaque axe suit sa mesure.
+    expect(m?.points.find((p) => p.label === 'Makita'))
+      .toMatchObject({ x: 10, y: 1, z: 10 })
+  })
+
+  it('se tait tant que la zone « Valeurs » n’en porte que deux', () => {
+    const result = aggregate(
+      [{ brand: 'Makita', price: 10 }],
+      { source: 'pim.products', dimensions: [{ id: 'brand' }], filters: [],
+        measures: [{ id: 'count' }, { id: 'sum:price' }] },
+      source)
+    expect(buildScatter3D(result)).toBeNull()
   })
 })

@@ -44,7 +44,14 @@ export function Scatter3DTile({ result }: { result: AggregateResult }) {
   }, [model, locale])
 
   if (!model) {
-    return <p className="text-[11px] text-white/35">{t('bi.scatter3d.needsThreeMeasures')}</p>
+    // ⚠ Le message COMPTE ce qui manque et NOMME la zone où déposer : « demande trois
+    // mesures » laissait devant une tuile vide sans savoir quel geste la remplirait.
+    const missing = 3 - result.columns.filter((c) => c.role === 'measure').length
+    return (
+      <p className="grid h-full place-items-center px-4 text-center text-[11px] text-white/35">
+        {t('bi.scatter3d.needsThreeMeasures', { missing })}
+      </p>
+    )
   }
 
   const z = model.axes.z
