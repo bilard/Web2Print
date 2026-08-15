@@ -572,6 +572,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.well.tooltips': 'Tooltips',
   'bi.well.visualFilters': 'Filters on this visual',
   'bi.well.drop': 'Drop a field here',
+  'bi.well.dropMore': '+ another field',
   'bi.fields.search': 'Search a field…',
   'bi.fields.dimensions': 'Dimensions',
   'bi.fields.declared': 'Dataset indicators',

@@ -571,6 +571,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.well.tooltips': 'Informaciones sobre herramientas',
   'bi.well.visualFilters': 'Filtros del visual',
   'bi.well.drop': 'Suelte un campo aquí',
+  'bi.well.dropMore': '+ otro campo',
   'bi.fields.search': 'Buscar un campo…',
   'bi.fields.dimensions': 'Dimensiones',
   'bi.fields.declared': 'Indicadores del conjunto',

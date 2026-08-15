@@ -11,7 +11,7 @@ import { BiWellChip } from './BiWellChip'
 import { useSourceRows } from '../hooks/useSourceRows'
 import { readDrag } from '../builder/dndPayload'
 import { acceptField, type WellVerdict } from '../builder/wellRules'
-import { wellChips, WELL_LABEL_KEY, type WellId } from '../builder/wells'
+import { wellCapacity, wellChips, WELL_LABEL_KEY, type WellId } from '../builder/wells'
 import { WELL_COLOR, tinted } from './fieldColors'
 import type { DataSource } from '../registry/types'
 import type { Tile } from '../types'
@@ -102,6 +102,13 @@ export function BiFieldWell({ well, slot = 'main', tile, source, canEdit, onAppl
 
         {chips.length === 0 && !refused && (
           <span className="px-1 py-0.5 text-[11px] text-white/25">{t('bi.well.drop')}</span>
+        )}
+        {/* ⚠⚠ Une zone déjà pourvue mais NON PLEINE le dit. Vu à l'écran sur le nuage 3D :
+            l'invite disparaissait à la première puce, et rien n'apprenait plus qu'on pouvait
+            en déposer une deuxième — la tuile réclamait trois mesures devant une zone qui
+            semblait close. */}
+        {chips.length > 0 && !refused && tile && chips.length < wellCapacity(well, tile.kind) && (
+          <span className="px-1 text-[10px] text-white/20">{t('bi.well.dropMore')}</span>
         )}
       </div>
 

@@ -590,6 +590,7 @@ export const fr = {
   'bi.well.tooltips': 'Info-bulles',
   'bi.well.visualFilters': 'Filtres du visuel',
   'bi.well.drop': 'Déposez un champ ici',
+  'bi.well.dropMore': '+ un autre champ',
   'bi.well.remove': 'Retirer ce champ',
   'bi.well.reorder': 'Déplacer ce champ',
   'bi.well.agg': 'Agrégation',
