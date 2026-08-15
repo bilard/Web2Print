@@ -94,14 +94,17 @@ describe('volet en consultation', () => {
     })
   })
 
-  it('⚠ RETIENT un changement de nature, et dit pourquoi', () => {
-    // Les tuiles lisent la veille : passer au PIM demanderait de les rebâtir.
+  it('⚠⚠ une entrée que le tableau ne lit pas reste CLIQUABLE, et dit où elle mène', () => {
+    // Un bouton grisé est un mur : on ne sait ni pourquoi, ni quoi faire ensuite. Le clic
+    // remonte le choix — c'est l'écran qui explique et propose de créer un tableau dessus.
     const onChoose = rail(vi.fn(), 'watch.summary', ['watch.summary'], true)
     const entry = screen.getByText(/Catalogue_GSB_2026/) as HTMLButtonElement
-    expect(entry.disabled).toBe(true)
-    expect(entry.title).toMatch(/Passez en Édition/)
+    expect(entry.disabled).toBe(false)
+    expect(entry.title).toMatch(/cliquez pour en créer un/)
     fireEvent.click(entry)
-    expect(onChoose).not.toHaveBeenCalled()
+    expect(onChoose).toHaveBeenCalledWith({
+      source: 'pim.products', dbId: 'db1', dbName: 'Catalogue_GSB_2026',
+    })
   })
 
   it('laisse changer d’angle de veille en ÉDITION', () => {

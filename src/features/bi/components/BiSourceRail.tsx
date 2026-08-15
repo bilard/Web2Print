@@ -46,11 +46,12 @@ export function BiSourceRail({
   const active = datasetValue(sourceId, watchId, dbId)
   // Ce que le tableau LIT, entrée par entrée : la veille sur le suivi actif, et la base
   // produits retenue.
-  /** L'entrée est-elle atteignable sans modifier le document ? */
-  const reachable = (id: string): boolean => {
+  /** L'entrée s'applique-t-elle DIRECTEMENT à ce tableau ? Les autres restent cliquables :
+   *  ⚠⚠ un bouton grisé est un mur — on ne sait ni pourquoi, ni quoi faire ensuite. Le clic
+   *  explique, et propose de créer un tableau sur ce jeu de données. */
+  const direct = (id: string): boolean => {
     if (!readOnly) return true
     const c = parseDataset(id, items)
-    // Même nature de source que ce que les tuiles lisent déjà : rien à rebâtir.
     return c !== null && demanded.includes(c.source)
   }
 
@@ -85,9 +86,9 @@ export function BiSourceRail({
           </p>
           {g.items.map((o) => (
             <button
-              key={o.id} type="button" disabled={!reachable(o.id)}
-              title={!reachable(o.id)
-                ? t('bi.dataset.needsEdit')
+              key={o.id} type="button"
+              title={!direct(o.id)
+                ? t('bi.dataset.otherBoard')
                 : isRead(o.id) ? `${o.label} — ${t('bi.dataset.feeds')}` : o.label}
               // ⚠ Une entrée qui ne se relit pas est IGNORÉE, jamais remplacée par un repli
               // deviné : le tableau lirait un jeu de données que personne n'a désigné.
@@ -95,9 +96,10 @@ export function BiSourceRail({
               className={`w-full text-left px-3 py-1.5 text-[11.5px] truncate transition-colors ${
                 o.id === active
                   ? 'bg-indigo-500/15 text-indigo-200 border-l-2 border-indigo-400'
-                  : reachable(o.id)
+                  : direct(o.id)
                     ? 'text-white/65 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent'
-                    : 'text-white/25 cursor-not-allowed border-l-2 border-transparent'
+                    // Estompée, jamais éteinte : elle reste un chemin.
+                    : 'text-white/40 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent'
               }`}
             >
               {/* ⚠ Le point vert dit « ALIMENTE ce tableau », le surlignage dit « choisi

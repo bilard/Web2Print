@@ -66,7 +66,11 @@ export function useBoardCommands(uid: string | null) {
    * ⚠ Le même geste est offert par le bouton de l'écran vide et par le menu du bandeau :
    * deux écritures écrites séparément finiraient par diverger sur un champ.
    */
-  const createBlank = useCallback(async (): Promise<string | null> => {
+  const createBlank = useCallback(async (
+    /** Base à retenir d'emblée : le tableau s'ouvre alors sur le jeu de données voulu, au
+     *  lieu de demander à l'utilisateur de le rechoisir après coup. */
+    origin?: { sourceDbId?: string; sourceDbName?: string },
+  ): Promise<string | null> => {
     if (!uid || !user) { toast.error(t('bi.save.failed')); return null }
     try {
       const id = await freeId(uid)
@@ -74,6 +78,7 @@ export function useBoardCommands(uid: string | null) {
       await saveDashboard(uid, {
         id, name: t('bi.new.defaultName'), accountId, workspaceUid: uid,
         tiles: [], layout: [], filters: [],
+        ...origin,
         version: DASHBOARD_VERSION, createdAt: now, updatedAt: now, createdBy: user.uid,
       })
       return id

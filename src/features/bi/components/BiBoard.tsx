@@ -101,7 +101,7 @@ export function BiBoard({
    * société, d'un simple clic en lecture — et sans que rien ne l'annonce.
    */
   const [previewDb, setPreviewDb] = useState<{ id?: string; name?: string } | null>(null)
-  const { createFromPlan } = useBoardCommands(uid)
+  const { createFromPlan, createBlank } = useBoardCommands(uid)
   // ⚠ Le canevas est monté dans tous les cas, mais la référence peut n'être pas encore
   // posée au tout premier rendu : on refuse alors la capture au lieu de laisser passer un
   // `null` qui ferait échouer html2canvas avec un message incompréhensible.
@@ -366,9 +366,29 @@ export function BiBoard({
               // Le suivi est déjà un état d'écran : il ne s'écrit nulle part.
               if (c.watchId) setWatchId(c.watchId)
               if (!inEdit) {
-                // ⚠ Consultation : APERÇU. Le document reste tel qu'il est, et le bandeau
-                // le dit — sans quoi on croirait le tableau modifié pour tout le monde.
-                if (c.dbId !== undefined) setPreviewDb({ id: c.dbId ?? undefined, name: c.dbName })
+                // ⚠⚠ Consultation. Deux cas, et aucun cul-de-sac :
+                // — le tableau LIT déjà cette nature de source : APERÇU, non enregistré ;
+                // — il ne la lit pas : on le dit, et on propose de créer un tableau dessus,
+                //   plutôt que de laisser un bouton grisé dont on ignore le pourquoi.
+                if (demanded.includes(c.source)) {
+                  if (c.dbId !== undefined) setPreviewDb({ id: c.dbId ?? undefined, name: c.dbName })
+                  return
+                }
+                toast.info(t('bi.dataset.otherBoardToast'), {
+                  action: canEdit
+                    ? {
+                      label: t('bi.new.button'),
+                      onClick: () => {
+                        const origin = c.dbId !== undefined
+                          ? { sourceDbId: c.dbId ?? undefined, sourceDbName: c.dbName }
+                          : undefined
+                        void createBlank(origin).then((id: string | null) => {
+                          if (id) onSelect(id)
+                        })
+                      },
+                    }
+                    : undefined,
+                })
                 return
               }
               setPreviewDb(null)
