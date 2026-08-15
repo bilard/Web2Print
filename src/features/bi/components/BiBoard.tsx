@@ -9,7 +9,9 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useExcelStore } from '@/stores/excel.store'
 import { usePimStore } from '@/stores/pim.store'
 import { upsertFilter, describeFilter } from '../filters/filterOptions'
+import { drillDown, applyDrill, type DrillStep } from '../filters/drill'
 import { CrossFilterChip } from './CrossFilterChip'
+import { DrillCrumbs } from './DrillCrumbs'
 import { dimensionLabel } from '../filters/dimensionLabel'
 import { useLayoutDraft } from '../hooks/useLayoutDraft'
 import { usePendingTiles } from '../hooks/usePendingTiles'
@@ -112,6 +114,30 @@ export function BiBoard({
   // tuile continuerait d'afficher les chiffres d'avant.
   const edits = useTileEdits({ uid, current, pageId: page.id, tiles: posed, layout: draft.layout })
   const tiles = edits.tiles
+
+  /**
+   * Forage en cours, PAR TUILE : descendre dans « Ventes par univers » ne doit pas changer
+   * l'axe des autres tuiles de la page.
+   *
+   * ⚠ Non persisté, comme le filtre croisé : c'est une exploration. Rouvrir le tableau
+   * ramène chaque tuile à son niveau enregistré, sinon on retrouverait un axe qu'on n'a
+   * jamais configuré et des chiffres réduits sans savoir pourquoi.
+   */
+  const [drills, setDrills] = useState<Record<string, DrillStep[]>>({})
+  const drillInto = useCallback((tileId: string, value: string | null) => {
+    const tile = tiles.find((x) => x.id === tileId)
+    if (!tile) return
+    const steps = drills[tileId] ?? []
+    // La requête courante inclut les pas déjà franchis : on repart d'elle, pas de la tuile
+    // enregistrée, sinon le second niveau écraserait le premier.
+    const base = steps.length ? applyDrill(tile.query, steps) : tile.query
+    const next = drillDown(base, value, tile.interactions?.drillPath)
+    if (!next) return
+    setDrills((cur) => ({ ...cur, [tileId]: [...steps, next.step] }))
+  }, [tiles, drills])
+  const drillBack = useCallback((tileId: string, index: number) => {
+    setDrills((cur) => ({ ...cur, [tileId]: (cur[tileId] ?? []).slice(0, index) }))
+  }, [])
   shownTiles.current = tiles
   // ⚠⚠ La page TELLE QU'AFFICHÉE, publiée aux écritures qui ne prétendent toucher NI aux
   // tuiles NI à la mise en page (renommer, changer de base source, vider les filtres, ajouter
@@ -197,6 +223,16 @@ export function BiBoard({
                   onClear={() => setCrossFilter(null)}
                 />
               )}
+              {/* ⚠ Le forage de la tuile SÉLECTIONNÉE : sans fil d'Ariane, l'axe change,
+                  les chiffres se réduisent, et rien ne dit ni d'où l'on vient ni comment
+                  revenir. */}
+              {selectedTileId && (drills[selectedTileId]?.length ?? 0) > 0 && (
+                <DrillCrumbs
+                  steps={drills[selectedTileId]}
+                  labelOf={(f) => dimensionLabel(source, f, t)}
+                  onUp={(i) => drillBack(selectedTileId, i)}
+                />
+              )}
               {editing && canEdit && <AddTileMenu source={source} onAdd={addTile} />}</>}
           />
         )}
@@ -207,6 +243,7 @@ export function BiBoard({
                sinon le graphe cliqué serait le seul à changer et la page se contredirait. */
             globalFilters={effectiveFilters} selectedTileId={selectedTileId}
             crossFilter={crossFilter} onPick={pick}
+            onDrill={drillInto} drills={drills}
             onDrag={hist.onDrag} onCommit={hist.onCommit}
             onClearFilters={act.clearFilters} onSelectTile={setSelectedTileId}
           />

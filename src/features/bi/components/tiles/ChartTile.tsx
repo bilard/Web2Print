@@ -26,7 +26,7 @@ Chart.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement
 
 const EMPTY: ReadonlySet<string> = new Set()
 
-export function ChartTile({ result, kind, stacked, tooltipKeys, onPick }: {
+export function ChartTile({ result, kind, stacked, tooltipKeys, onPick, onDrill }: {
   result: AggregateResult; kind: TileKind; stacked?: boolean
   /** Clés des mesures montrées AU SURVOL seulement. */
   tooltipKeys?: ReadonlySet<string>
@@ -39,6 +39,9 @@ export function ChartTile({ result, kind, stacked, tooltipKeys, onPick }: {
    * de la page.
    */
   onPick?: (field: string, value: string | null) => void
+  /** Double-clic sur un élément : descendre d'un niveau dans la hiérarchie de l'axe.
+   *  ⚠ Distinct du clic simple, qui filtre : deux gestes, deux intentions. */
+  onDrill?: (value: string | null) => void
 }) {
   const { t, locale } = useTranslation()
   const dark = useThemeStore((s) => s.resolvedTheme) === 'dark'
@@ -107,10 +110,23 @@ export function ChartTile({ result, kind, stacked, tooltipKeys, onPick }: {
         }
       : undefined,
   }
-  const cursor = onPick ? { cursor: 'pointer' } : undefined
+  const cursor = onPick || onDrill ? { cursor: 'pointer' } : undefined
+  // ⚠ chart.js n'a pas de « double-clic » : on écoute celui du conteneur et on retrouve
+  // l'élément sous le pointeur par sa propre API — sinon il faudrait deviner la barre.
+  const onDoubleClick = onDrill
+    ? (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const chart = Chart.getChart(e.currentTarget)
+        const els = chart?.getElementsAtEventForMode(
+          e.nativeEvent, 'nearest', { intersect: true }, false) ?? []
+        const el = els[0]
+        if (!el) return
+        const value = model.dimensionValueAt(el.index)
+        if (value !== undefined) onDrill(value)
+      }
+    : undefined
 
-  if (kind === 'pie') return <Pie data={data} options={options} style={cursor} />
-  if (kind === 'doughnut') return <Doughnut data={data} options={options} style={cursor} />
-  if (kind === 'line' || kind === 'area') return <Line data={data} options={options} style={cursor} />
-  return <Bar data={data} options={options} style={cursor} />
+  if (kind === 'pie') return <Pie data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
+  if (kind === 'doughnut') return <Doughnut data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
+  if (kind === 'line' || kind === 'area') return <Line data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
+  return <Bar data={data} options={options} style={cursor} onDoubleClick={onDoubleClick} />
 }

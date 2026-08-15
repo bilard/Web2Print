@@ -18,15 +18,19 @@ import { ChartTile } from './tiles/ChartTile'
 import { TableTile } from './tiles/TableTile'
 import { PivotTile } from './tiles/PivotTile'
 import { useTileData } from '../hooks/useTileData'
+import { applyDrill, type DrillStep } from '../filters/drill'
 import { measureKey, type FilterClause, type Tile, type TilePlacement } from '../types'
 
 const COLS = 12
 const ROW_HEIGHT = 40
 
+/** Référence stable : un tableau frais casserait la mémoïsation des tuiles non forées. */
+const NO_STEPS: readonly DrillStep[] = []
+
 // `React.memo` : converti en rendus SAUTÉS les références stables que le parent doit fournir
 // (`tile`, `globalFilters`, `onClearFilters`) — sans lui, chaque `onLayoutChange` pendant un
 // geste re-rendrait les vingt tuiles (et leurs graphes chart.js) même quand aucune n'a bougé.
-const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect, onPick, dimmed }: {
+const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters, onClearFilters, onSelect, onPick, onDrill, drillSteps, dimmed }: {
   tile: Tile; editing: boolean; selected: boolean
   globalFilters: FilterClause[]; onClearFilters: () => void
   /** ⚠ Reçoit l'IDENTIFIANT plutôt qu'une fermeture par tuile : le parent transmet UNE
@@ -34,6 +38,10 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   onSelect: (tileId: string) => void
   /** Clic sur un élément du visuel : filtre la PAGE sur la valeur cliquée. */
   onPick: (field: string, value: string | null) => void
+  /** Double-clic : descendre d'un niveau dans la hiérarchie de l'axe de CETTE tuile. */
+  onDrill: (value: string | null) => void
+  /** Pas de forage déjà franchis par cette tuile : sa requête est rejouée en conséquence. */
+  drillSteps: readonly DrillStep[]
   /** La tuile est estompée parce qu'une AUTRE porte le filtre croisé actif. On estompe au
    *  lieu de masquer : le contexte de ce qu'on écarte reste visible. */
   dimmed: boolean
@@ -43,9 +51,12 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
   // PAR IDENTITÉ quand la tuile n'en porte pas : `useTileData` mémoïse sur la référence de
   // `query`, et un littéral frais à chaque rendu referait l'agrégation à chaque frame.
   const query = useMemo(() => {
-    const tips = tile.query.tooltips
-    return tips?.length ? { ...tile.query, measures: [...tile.query.measures, ...tips] } : tile.query
-  }, [tile.query])
+    // ⚠ Le forage se REJOUE ici, il n'est jamais écrit dans la tuile : rouvrir le tableau
+    // doit ramener chaque tuile au niveau que l'utilisateur a configuré.
+    const base = drillSteps.length ? applyDrill(tile.query, drillSteps) : tile.query
+    const tips = base.tooltips
+    return tips?.length ? { ...base, measures: [...base.measures, ...tips] } : base
+  }, [tile.query, drillSteps])
   const tooltipKeys = useMemo(
     () => new Set((tile.query.tooltips ?? []).map((m) => measureKey(m))), [tile.query])
 
@@ -65,7 +76,7 @@ const TileBody = memo(function TileBody({ tile, editing, selected, globalFilters
             ? <PivotTile result={result} columnDim={tile.options?.pivotColumn}
                 showTotals={tile.options?.showTotals} />
           : <ChartTile result={result} kind={tile.kind} stacked={tile.options?.stacked}
-              tooltipKeys={tooltipKeys} onPick={onPick} />
+              tooltipKeys={tooltipKeys} onPick={onPick} onDrill={onDrill} />
       )}
     </TileFrame>
     </div>
@@ -83,8 +94,8 @@ function layoutsEqual(a: Layout[], b: Layout[]): boolean {
 }
 
 export function DashboardGrid({
-  tiles, layout, editing, width, globalFilters, selectedTileId, crossFilter,
-  onDrag, onCommit, onClearFilters, onSelectTile, onPick,
+  tiles, layout, editing, width, globalFilters, selectedTileId, crossFilter, drills,
+  onDrag, onCommit, onClearFilters, onSelectTile, onPick, onDrill,
 }: {
   tiles: Tile[]
   layout: TilePlacement[]
@@ -97,6 +108,11 @@ export function DashboardGrid({
   crossFilter: { tileId: string; field: string; value: string | null } | null
   /** Un clic dans une tuile : le tableau de bord décide ce qu'il en fait. */
   onPick: (tileId: string, field: string, value: string | null) => void
+  /** Double-clic : descendre d'un niveau dans la hiérarchie de l'axe de la tuile visée. */
+  onDrill: (tileId: string, value: string | null) => void
+  /** Pas de forage PAR TUILE — non persistés : le forage est une exploration, pas une
+   *  configuration. Rouvrir le tableau ramène chaque tuile à son niveau enregistré. */
+  drills: Record<string, DrillStep[]>
   onDrag: (l: TilePlacement[]) => void
   onCommit: () => void
   onClearFilters: () => void
@@ -141,6 +157,8 @@ export function DashboardGrid({
                autres s'estompent pour dire « je montre moins », sans se dérober. */
             dimmed={!!crossFilter && crossFilter.tileId !== t.id}
             onPick={(field, value) => onPick(t.id, field, value)}
+            onDrill={(value) => onDrill(t.id, value)}
+            drillSteps={drills[t.id] ?? NO_STEPS}
           />
         </div>
       ))}
