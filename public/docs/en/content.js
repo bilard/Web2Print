@@ -1379,6 +1379,100 @@ export const MODULES = [
     "shortcuts": []
   },
   {
+    "id": "dashboard-bi",
+    "cat": "Data",
+    "icon": "✦",
+    "title": "Dashboard BI",
+    "intro": "Les visuels, leurs zones, leurs réglages — et ce qui les fait mentir",
+    "features": [
+      {
+        "title": "Composer une tuile : les cinq zones",
+        "desc": "Le volet de droite porte cinq zones de dépôt. On y fait glisser un champ depuis le volet « Champs », ou on double-clique le champ pour qu'il rejoigne la zone la plus probable."
+      },
+      {
+        "title": "Indicateur",
+        "desc": "Une mesure, en grand. Le visuel le plus lu d'un tableau de bord : on le regarde sans le lire."
+      },
+      {
+        "title": "Indicateur à tendance",
+        "desc": "Le même, avec une dimension dans « Axe » : dernier point en grand, variation depuis le point précédent, courbe de la série."
+      },
+      {
+        "title": "Jauge",
+        "desc": "Une valeur située sur une course. Utile pour un taux, un remplissage, une progression vers un objectif."
+      },
+      {
+        "title": "Barres",
+        "desc": "Comparer des grandeurs entre catégories. Le visuel par défaut, et le bon choix neuf fois sur dix."
+      },
+      {
+        "title": "Barres couchées",
+        "desc": "Le même, réglage « Barres couchées » de la section Mise en forme."
+      },
+      {
+        "title": "Couleur par signe, et ligne de repère",
+        "desc": "Deux réglages combinés : la teinte suit le signe de la valeur, une ligne pointillée marque le zéro."
+      },
+      {
+        "title": "Barres empilées",
+        "desc": "Les séries s'additionnent au lieu de se côtoyer. À réserver aux parts d'un même tout."
+      },
+      {
+        "title": "Empilement à 100 %",
+        "desc": "Chaque colonne dit la répartition, plus les volumes. Le bon visuel pour comparer des profils entre catégories de tailles très différentes."
+      },
+      {
+        "title": "Courbe",
+        "desc": "Suivre une évolution. Ici avec une ligne de repère à 450 000."
+      },
+      {
+        "title": "Aires",
+        "desc": "Une courbe dont le dessous est rempli. Elle insiste sur le volume cumulé plutôt que sur la variation."
+      },
+      {
+        "title": "Camembert",
+        "desc": "La part de chacun dans un tout."
+      },
+      {
+        "title": "Anneau",
+        "desc": "Un camembert évidé. Le centre libre allège la lecture."
+      },
+      {
+        "title": "Tableau",
+        "desc": "Les chiffres tels quels, sans interprétation. Le recours quand un visuel simplifie trop."
+      },
+      {
+        "title": "Tableau croisé",
+        "desc": "Deux dimensions croisées, l'une en lignes, l'autre en colonnes. Ici avec la ligne de totaux."
+      },
+      {
+        "title": "Carte de chaleur",
+        "desc": "Le même croisement, en intensité de couleur. On y repère une zone chaude sans lire un chiffre."
+      },
+      {
+        "title": "Nuage de points",
+        "desc": "Deux mesures confrontées — prix contre écart, volume contre couverture. Il montre une structure : des grappes, des points aberrants."
+      },
+      {
+        "title": "Nuage coloré par catégorie",
+        "desc": "Le même, avec une dimension dans « Légende ». C'est ce qui permet de lire « qui est moins cher » d'un coup d'œil, sans survoler."
+      },
+      {
+        "title": "Nuage 3D",
+        "desc": "Trois mesures dans un volume qu'on tourne à la souris. Chaque marqueur descend au sol par une colonne — sans elle, un point flotte à une hauteur indéterminable."
+      },
+      {
+        "title": "Entonnoir",
+        "desc": "Des étapes qui se réduisent : catalogue, indexés, appariés, avec prix."
+      },
+      {
+        "title": "Ce que le module refuse de faire",
+        "desc": "Ces refus ne sont pas des limites techniques : ce sont des garde-fous. Chacun correspond à une façon connue de faire dire à un graphe autre chose que ce que la donnée dit."
+      }
+    ],
+    "shortcuts": []
+  },
+  {
     "id": "retail-promo",
     "cat": "Data",
     "icon": "🏷️",

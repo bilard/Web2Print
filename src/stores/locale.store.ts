@@ -53,6 +53,9 @@ function initialLocale(): Locale {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (isLocale(stored)) return stored
   } catch { /* localStorage indisponible (Safari privé) : on retombe sur le navigateur */ }
+  // ⚠ Même garde qu'`applyToDom` : hors navigateur (générateurs du projet), on prend le
+  // français sans chercher plus loin.
+  if (typeof navigator === 'undefined') return 'fr'
   // `navigator.language` vaut « en-GB », « es-419 »… : on ne garde que le préfixe.
   const nav = navigator.language?.toLowerCase().split('-')[0]
   return isLocale(nav) ? nav : 'fr'
@@ -65,7 +68,14 @@ interface LocaleState {
 
 const initial = initialLocale()
 
+/**
+ * ⚠⚠ Garde de RENDU HORS NAVIGATEUR : ce module est chargé tel quel par les générateurs du
+ * projet (site /docs/, documentation), qui tournent dans Node. Sans elle, le seul fait
+ * d'importer l'i18n y levait « document is not defined » et cassait le build — vu en
+ * recette, et masqué par un `tail` sur la sortie.
+ */
 function applyToDom(locale: Locale) {
+  if (typeof document === 'undefined') return
   document.documentElement.lang = BCP47[locale]
 }
 
