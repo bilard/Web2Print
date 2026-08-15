@@ -8,7 +8,7 @@
 // chaque rendu) jusqu'à `useTileData`, qui mémoïse sur l'égalité RÉFÉRENTIELLE de `query` et
 // `globalFilters`. Seules `rgl`/`toPlacements`, qui ne nourrissent QUE `react-grid-layout`
 // (jamais `useTileData`), sont recalculées à chaque rendu — sans conséquence.
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import GridLayout, { type Layout } from 'react-grid-layout'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
@@ -164,6 +164,10 @@ export function DashboardGrid({
   onSelectTile: (tileId: string) => void
   onRemoveTile: (tileId: string) => void
 }) {
+  // ⚠ Un GESTE est en cours : posé au départ du glissement ou du redimensionnement, consommé
+  // par le `onLayoutChange` qui le clôt. C'est la seule façon de distinguer une mise en page
+  // que l'utilisateur a voulue de celle que la grille se corrige toute seule.
+  const gesture = useRef(false)
   const rgl: Layout[] = layout.map((l) => ({ i: l.tileId, x: l.x, y: l.y, w: l.w, h: l.h }))
   const toPlacements = (l: Layout[]): TilePlacement[] =>
     l.map((x) => ({ tileId: x.i, x: x.x, y: x.y, w: x.w, h: x.h }))
@@ -183,15 +187,25 @@ export function DashboardGrid({
          exclusion, `react-grid-layout` amorce un glissement au `pointerdown` et avale le
          clic — la corbeille et la loupe paraissaient alors mortes en mode Édition. */
       draggableCancel=".bi-no-drag"
-      // ⚠ Pendant le geste, on ne fait que MÉMORISER : l'écriture se fait au relâchement.
-      // ⚠⚠ `react-grid-layout` 1.x appelle `onLayoutChange` une première fois au MONTAGE,
-      // après sa passe de correction interne, même sans le moindre geste — vérifié en test.
-      // Sans garde, cet appel arme `draft.current` côté `useLayoutDraft` : un `commit()`
-      // déclenché ensuite pour une tout autre raison écrirait une mise en page que personne
-      // n'a bougée. On ne relaie l'appel que si la mise en page a RÉELLEMENT changé.
-      onLayoutChange={(l) => { if (!layoutsEqual(rgl, l)) onDrag(toPlacements(l)) }}
-      onDragStop={onCommit}
-      onResizeStop={onCommit}
+      /* ⚠⚠ Le GESTE s'arme au départ, l'écriture part de `onLayoutChange`, et surtout PAS de
+         `onDragStop` : `react-grid-layout` appelle `onDragStop` AVANT `onLayoutChange`
+         (ReactGridLayout.js, l. 198 puis 208). Le commit s'exécutait donc alors que la
+         nouvelle mise en page n'était pas encore posée — le premier déplacement n'était
+         jamais enregistré, et chacun des suivants persistait celui d'AVANT. Vu à l'écran :
+         « le placement n'est pas sauvegardé ». */
+      onDragStart={() => { gesture.current = true }}
+      onResizeStart={() => { gesture.current = true }}
+      /* ⚠⚠ `react-grid-layout` 1.x appelle aussi `onLayoutChange` au MONTAGE, après sa passe
+         de correction interne et sans le moindre geste — vérifié en test. D'où la double
+         garde : la mise en page doit avoir RÉELLEMENT changé, et un geste doit l'avoir
+         provoquée. Sans elle, un tableau simplement ouvert réécrirait sa mise en page. */
+      onLayoutChange={(l) => {
+        if (layoutsEqual(rgl, l)) return
+        onDrag(toPlacements(l))
+        if (!gesture.current) return
+        gesture.current = false
+        onCommit()
+      }}
     >
       {tiles.map((t) => (
         <div key={t.id}>
