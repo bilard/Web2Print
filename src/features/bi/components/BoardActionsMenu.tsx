@@ -12,12 +12,13 @@
 // ⚠ Le renommage n'est PAS ici : le nom du bandeau (`BiDocTitle`) s'édite sur place, d'un
 // clic. Deux chemins pour le même geste feraient douter du premier.
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Copy, LayoutTemplate, MoreHorizontal, Plus, Trash2, Tv } from 'lucide-react'
+import { BookOpen, Copy, LayoutTemplate, MoreHorizontal, Plus, Trash2, Tv } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useTranslation } from '@/lib/i18n'
+import { useHelpStore } from '@/features/help/help.store'
 import { useBoardCommands } from '../hooks/useBoardCommands'
 import { TemplatesDialog } from '../templates/TemplatesDialog'
 import type { Dashboard } from '../types'
@@ -37,6 +38,7 @@ export function BoardActionsMenu({ board, uid, canEdit, onDuplicated, onDeleted,
 }) {
   const { t } = useTranslation()
   const { duplicate, remove, createBlank } = useBoardCommands(uid)
+  const goToSection = useHelpStore((s) => s.goToSection)
   const [templates, setTemplates] = useState(false)
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -103,6 +105,13 @@ export function BoardActionsMenu({ board, uid, canEdit, onDuplicated, onDeleted,
           <MenuItem icon={<Tv className="w-3.5 h-3.5" />}
             onClick={() => { setOpen(false); onTv() }}>
             {t('bi.top.tv')}
+          </MenuItem>
+          {/* ⚠ L'aide n'est PAS derrière le droit d'édition : lire comment un visuel se
+              compose n'est pas le modifier, et c'est en consultation qu'on se pose la
+              question. */}
+          <MenuItem icon={<BookOpen className="w-3.5 h-3.5" />}
+            onClick={() => { setOpen(false); goToSection('dashboard-bi') }}>
+            {t('bi.board.help')}
           </MenuItem>
           {canEdit && <div className="my-1 border-t border-white/[0.06]" />}
           {canEdit && (

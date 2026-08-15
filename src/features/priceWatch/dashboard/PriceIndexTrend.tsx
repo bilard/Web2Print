@@ -7,6 +7,7 @@
 // tout, sinon la courbe racontait la progression du scraping, pas le mouvement des prix.
 import { Line } from 'react-chartjs-2'
 import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip } from 'chart.js'
+import type { Plugin } from 'chart.js'
 import { useThemeStore } from '@/stores/theme.store'
 import type { KpiHistoryPoint } from '../types'
 import { priceIndexSeries } from './analytics'
@@ -16,9 +17,11 @@ import { t } from '@/lib/i18n'
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip)
 
 /** Ligne de référence « marché » tracée à 100 (plugin local, pas de dépendance annotation). */
-const marketLine = {
+// ⚠ Typé `Plugin<'line'>` — le type qu'attend `<Line plugins={…}>`. En objet littéral,
+// l'inférence donnait un plugin GÉNÉRIQUE que TypeScript refuse d'y passer.
+const marketLine: Plugin<'line'> = {
   id: 'pw-market-line',
-  afterDatasetsDraw(chart: Chart) {
+  afterDatasetsDraw(chart) {
     const y = chart.scales.y
     if (!y || 100 < y.min || 100 > y.max) return
     const { ctx, chartArea } = chart

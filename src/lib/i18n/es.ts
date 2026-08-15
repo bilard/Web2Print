@@ -355,6 +355,7 @@ export const es: Record<TranslationKey, string> = {
   'bi.new.button': 'Nuevo panel',
   'bi.new.defaultName': 'Sin título',
   'bi.board.menu': 'Acciones sobre este panel',
+  'bi.board.help': 'Ayuda del módulo',
   'bi.board.duplicate': 'Duplicar',
   'bi.board.duplicated': 'Copia creada.',
   'bi.board.copyName': '{name} (copia)',

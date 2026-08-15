@@ -369,6 +369,7 @@ export const fr = {
   'bi.new.button': 'Nouveau tableau de bord',
   'bi.new.defaultName': 'Sans titre',
   'bi.board.menu': 'Actions sur ce tableau de bord',
+  'bi.board.help': 'Aide du module',
   'bi.board.duplicate': 'Dupliquer',
   'bi.board.duplicated': 'Copie créée.',
   'bi.board.copyName': '{name} (copie)',

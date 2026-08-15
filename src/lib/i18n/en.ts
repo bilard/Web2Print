@@ -356,6 +356,7 @@ export const en: Record<TranslationKey, string> = {
   'bi.new.button': 'New dashboard',
   'bi.new.defaultName': 'Untitled',
   'bi.board.menu': 'Actions on this dashboard',
+  'bi.board.help': 'Module help',
   'bi.board.duplicate': 'Duplicate',
   'bi.board.duplicated': 'Copy created.',
   'bi.board.copyName': '{name} (copy)',

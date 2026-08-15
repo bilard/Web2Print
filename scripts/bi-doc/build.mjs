@@ -11,12 +11,18 @@
 // Usage : node scripts/bi-doc/build.mjs [url] [sortie.pdf]
 import { writeFile } from 'node:fs/promises'
 import { chromium } from '@playwright/test'
-import { meta, wells, visuals, gestures, rules } from './content.mjs'
+
 
 const BASE = process.argv[2] ?? 'http://127.0.0.1:5173'
 const OUT = process.argv[3] ?? 'docs/dashboard-bi.pdf'
 
-/** Photographie chaque visuel de la planche, en base64. */
+/**
+ * Photographie chaque visuel de la planche, et en RAPPORTE le texte.
+ *
+ * ⚠⚠ Le contenu est lu SUR LA PAGE (`window.__biDoc`), jamais dupliqué ici : il vit en
+ * TypeScript dans `src/features/bi/help`, d'où l'aide intégrée le rend aussi. Node ne
+ * compilerait pas ce module, mais Vite le sert déjà pour la planche.
+ */
 async function shoot(browser) {
   const page = await browser.newPage({
     viewport: { width: 700, height: 900 }, deviceScaleFactor: 2,
@@ -32,34 +38,49 @@ async function shoot(browser) {
     const id = await el.getAttribute('data-shot')
     shots[id] = (await el.screenshot()).toString('base64')
   }
+  const doc = await page.evaluate(() => window.__biDoc)
   await page.close()
   if (errors.length) throw new Error(`La planche a levé : ${errors.join(' · ')}`)
-  const missing = visuals.filter((v) => !shots[v.shot]).map((v) => v.shot)
+  if (!doc) throw new Error('La planche n’a pas exposé son contenu')
+  const missing = doc.visuals.filter((v) => !shots[v.shot]).map((v) => v.shot)
   // ⚠ Une illustration manquante ARRÊTE la génération : un PDF au trou se diffuse quand même,
   // et personne ne remarque que le visuel documenté n'a pas pu se monter.
   if (missing.length) throw new Error(`Visuels non capturés : ${missing.join(', ')}`)
-  return shots
+  return { shots, doc }
 }
+
+/**
+ * Markdown minimal vers HTML : la source est écrite en markdown pour l'aide intégrée, qui le
+ * rend nativement. ⚠ Seuls le gras et l'italique sont traduits — la documentation n'utilise
+ * rien d'autre, et un convertisseur complet ici serait une seconde implémentation à tenir.
+ */
+const md = (s) => String(s)
+  .replace(/&(?![a-z]+;|#)/g, '&amp;')
+  .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+  .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>')
+  .replace(/\n/g, '<br />')
 
 const esc = (s) => String(s).replace(/&(?![a-z]+;|#)/g, '&amp;')
 
 const section = (title) => `<h2>${esc(title)}</h2>`
 
 const table = (rows) => `<table>${rows.map(([k, v]) => `
-  <tr><th>${esc(k)}</th><td>${v}</td></tr>`).join('')}</table>`
+  <tr><th>${esc(k)}</th><td>${md(v)}</td></tr>`).join('')}</table>`
 
 const visualBlock = (v, shots) => `
   <section class="visual">
     <h3>${esc(v.name)}</h3>
     <img src="data:image/png;base64,${shots[v.shot]}" alt="${esc(v.name)}" />
     <div class="notes">
-      <p>${v.what}</p>
-      <p class="needs"><span>Il lui faut</span> ${v.needs}</p>
-      <p class="trap"><span>À savoir</span> ${v.trap}</p>
+      <p>${md(v.what)}</p>
+      <p class="needs"><span>Il lui faut</span> ${md(v.needs)}</p>
+      <p class="trap"><span>À savoir</span> ${md(v.trap)}</p>
     </div>
   </section>`
 
-const html = (shots) => `<!doctype html>
+const html = (shots, doc) => {
+  const { meta, wells, visuals, gestures, rules } = doc
+  return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8" /><title>${esc(meta.title)}</title>
 <style>
   @page { size: A4; margin: 16mm 14mm; }
@@ -95,13 +116,13 @@ const html = (shots) => `<!doctype html>
 <body>
   <h1>${esc(meta.title)}</h1>
   <p class="sub">${esc(meta.subtitle)}</p>
-  <p class="intro">${meta.intro}</p>
+  <p class="intro">${md(meta.intro)}</p>
 
   ${section(wells.title)}
-  <p>${wells.intro}</p>
+  <p>${md(wells.intro)}</p>
   ${table(wells.rows)}
   <p style="margin-top:8pt"><b>Trois refus qu'on rencontre vite</b></p>
-  <ul>${wells.traps.map((x) => `<li>${x}</li>`).join('')}</ul>
+  <ul>${wells.traps.map((x) => `<li>${md(x)}</li>`).join('')}</ul>
 
   ${section('Les visuels')}
   ${visuals.map((v) => visualBlock(v, shots)).join('')}
@@ -110,28 +131,29 @@ const html = (shots) => `<!doctype html>
   ${table(gestures.rows)}
 
   ${section(rules.title)}
-  <p>${rules.intro}</p>
+  <p>${md(rules.intro)}</p>
   ${table(rules.rows)}
 
   <footer>Illustrations capturées sur les composants réels du module.</footer>
 </body></html>`
+}
 
 const browser = await chromium.launch()
 try {
-  const shots = await shoot(browser)
+  const { shots, doc } = await shoot(browser)
   const page = await browser.newPage()
-  await page.setContent(html(shots), { waitUntil: 'load' })
+  await page.setContent(html(shots, doc), { waitUntil: 'load' })
   const pdf = await page.pdf({
     format: 'A4', printBackground: true,
     displayHeaderFooter: true,
     headerTemplate: '<span></span>',
     footerTemplate: `<div style="width:100%;font:8pt system-ui;color:#8b8b96;
       padding:0 14mm;display:flex;justify-content:space-between">
-      <span>${meta.title}</span><span class="pageNumber"></span></div>`,
+      <span>Dashboard BI</span><span class="pageNumber"></span></div>`,
     margin: { top: '16mm', bottom: '16mm', left: '14mm', right: '14mm' },
   })
   await writeFile(OUT, pdf)
-  console.log(`${OUT} — ${visuals.length} visuels, ${Math.round(pdf.length / 1024)} ko`)
+  console.log(`${OUT} — ${doc.visuals.length} visuels, ${Math.round(pdf.length / 1024)} ko`)
 } finally {
   await browser.close()
 }
